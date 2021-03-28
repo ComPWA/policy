@@ -1,0 +1,9 @@
+name: compwa-meta
+channels:
+  - defaults
+dependencies:
+  - python==3.8.*
+  - pip
+  - pip:
+      - -r reqs/3.8/requirements-dev.txt
+      - -e .

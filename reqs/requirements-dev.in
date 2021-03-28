@@ -1,0 +1,6 @@
+-r requirements-sty.in
+
+# Additional developer tools
+labels
+pip-tools != 6.0.0  # https://github.com/jazzband/pip-tools/issues/1352
+tox >= 1.9  # for skip_install, use_develop

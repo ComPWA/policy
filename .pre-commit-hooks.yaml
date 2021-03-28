@@ -1,0 +1,23 @@
+# cspell:ignore nbcell
+
+- id: fix-first-nbcell
+  name: Check and fix first cells in notebooks
+  description: >
+    Add or replace the first cell in a Jupyter notebook by adding install
+    statements and IPython configurations.
+  entry: fix-first-nbcell
+  args: [--replace]
+  exclude: >
+    (?x)^(
+      docs/adr/.*
+    )$
+  language: python
+  types:
+    - jupyter
+
+- id: fix-nbformat-version
+  name: Set nbformat minor version to 4 and remove cell IDs
+  entry: fix-nbformat-version
+  language: python
+  types:
+    - jupyter
