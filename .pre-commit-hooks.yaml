@@ -6,7 +6,6 @@
     Add or replace the first cell in a Jupyter notebook by adding install
     statements and IPython configurations.
   entry: fix-first-nbcell
-  args: [--replace]
   exclude: >
     (?x)^(
       docs/adr/.*
