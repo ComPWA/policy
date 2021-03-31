@@ -21,11 +21,12 @@ cfg = configparser.ConfigParser()
 cfg.read("setup.cfg")
 
 PACKAGE_NAME = cfg["metadata"]["name"]
-EXPECTED_CELL_CONTENT = f"""
+DEFAULT_CONTENT = """
 %%capture
 %config Completer.use_jedi = False
 %config InlineBackend.figure_formats = ['svg']
-
+"""
+COLAB_CONTENT = f"""
 # Install on Google Colab
 import subprocess
 import sys
@@ -70,9 +71,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Replace first cell instead of prepending a new cell.",
     )
+    parser.add_argument(
+        "--colab",
+        action="store_true",
+        help="Add pip install statements for Google Colab.",
+    )
     args = parser.parse_args(argv)
 
-    expected_cell_content = EXPECTED_CELL_CONTENT.strip("\n")
+    expected_cell_content = DEFAULT_CONTENT.strip("\n")
+    if args.colab:
+        expected_cell_content += "\n\n"
+        expected_cell_content += COLAB_CONTENT.strip("\n")
     exit_code = 0
     for filename in args.filenames:
         fix_first_cell(
