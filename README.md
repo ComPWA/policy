@@ -1,4 +1,4 @@
-# ComPWA [pre-commit](https://pre-commit.com) hooks
+# Repository maintenance
 
 This repository is to standardize the developer environment of Python packages
 by the [ComPWA organization](https://github.com/ComPWA).

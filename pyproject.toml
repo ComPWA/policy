@@ -6,7 +6,7 @@ requires = [
 ]
 
 [tool.setuptools_scm]
-write_to = "src/compwa_meta/version.py"
+write_to = "src/repoma/version.py"
 
 [tool.black]
 line-length = 79

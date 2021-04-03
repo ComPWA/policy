@@ -1,4 +1,4 @@
-name: compwa-meta
+name: repoma
 channels:
   - defaults
 dependencies:

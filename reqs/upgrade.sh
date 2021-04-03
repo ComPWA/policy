@@ -8,7 +8,7 @@ if [[ -z "$PYTHON_VERSION" ]]; then
 fi
 
 mkdir -p reqs/$PYTHON_VERSION &&
-    python3 src/compwa_meta/dev_tools/extract_install_requires.py &&
+    python3 src/repoma/dev_tools/extract_install_requires.py &&
     cp reqs/requirements*.in reqs/$PYTHON_VERSION/ &&
     rm reqs/$PYTHON_VERSION/requirements-dev.in &&
     pip-compile --upgrade \
