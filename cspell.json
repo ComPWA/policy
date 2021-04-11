@@ -59,6 +59,8 @@
         "nargs",
         "nbcell",
         "nbformat",
+        "noqa",
+        "pylint",
         "pyright",
         "repos",
         "reqs",

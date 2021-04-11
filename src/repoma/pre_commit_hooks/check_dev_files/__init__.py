@@ -19,9 +19,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
     fix = not args.no_fix
-    check_editor_config_hook()
-    check_has_labels(fix)
-    return 0
+    try:
+        check_editor_config_hook()
+        check_has_labels(fix)
+        return 0
+    except Exception as exception:  # pylint: disable=broad-except  # noqa:B902
+        print(str("\n".join(exception.args)))
+        return 1
 
 
 if __name__ == "__main__":
