@@ -16,6 +16,7 @@
         "parmater"
     ],
     "ignorePaths": [
+        "**/.cspell.json",
         "*.bib",
         "*.ico",
         "*.root",
@@ -30,10 +31,9 @@
         ".vscode/*",
         ".vscode/.gitignore",
         "Makefile",
-        "docs/adr/*/*",
         "codecov.yml",
-        "cspell.json",
         "docs/_templates/*",
+        "docs/adr/*/*",
         "docs/conf.py",
         "pyproject.toml",
         "pyrightconfig.json",
