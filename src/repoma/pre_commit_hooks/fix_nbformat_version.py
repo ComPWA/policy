@@ -1,4 +1,3 @@
-# cspell:ignore nargs
 """Set nbformat minor version to 4.
 
 nbformat adds random cell ids since version 5.x. This is annoying for git
