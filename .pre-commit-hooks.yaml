@@ -1,5 +1,10 @@
 # cspell:ignore nbcell
 
+- id: check-dev-files
+  name: Check developer config files in the repository
+  entry: check-dev-files
+  language: python
+
 - id: fix-first-nbcell
   name: Check and fix first cells in notebooks
   description: >
