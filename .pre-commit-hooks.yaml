@@ -2,6 +2,8 @@
   name: Check developer config files in the repository
   entry: check-dev-files
   language: python
+  always_run: true
+  pass_filenames: false
 
 - id: fix-first-nbcell
   name: Check and fix first cells in notebooks
