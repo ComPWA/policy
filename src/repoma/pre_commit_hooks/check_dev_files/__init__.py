@@ -4,7 +4,7 @@ import argparse
 import sys
 from typing import Optional, Sequence
 
-from .check_labels import check_has_labels_toml
+from .check_labels import check_has_labels
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -16,7 +16,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Fix the identified problems.",
     )
     args = parser.parse_args(argv)
-    check_has_labels_toml(fix=not args.no_fix)
+    check_has_labels(fix=not args.no_fix)
     return 0
 
 

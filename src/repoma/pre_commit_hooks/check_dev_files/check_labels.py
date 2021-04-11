@@ -11,7 +11,7 @@ from typing import List
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def check_has_labels_toml(fix: bool) -> None:
+def check_has_labels(fix: bool) -> None:
     if os.path.exists(__LABELS_CONFIG_FILE):
         message = (
             f'Repository contains a file "{__LABELS_CONFIG_FILE}" for the'
@@ -20,21 +20,26 @@ def check_has_labels_toml(fix: bool) -> None:
             " https://github.com/ComPWA/meta repository."
         )
         if fix:
+            message += " Please remove it."
+        else:
+            message += " It has been removed."
             os.remove(__LABELS_CONFIG_FILE)
+    faulty_req_files = [
+        str(file.absolute())
+        for file in _get_requirement_files()
+        if _check_has_labels_requirement(file)
+    ]
+    if faulty_req_files:
+        message = (
+            "Repository lists the labels package"
+            " (https://pypi.org/project/labels) as a developer requirement."
+        )
+        if fix:
             _remove_all_labels_requirement()
             message += " Problems have been fixed, please re-stage files."
         else:
-            faulty_req_files = [
-                str(file.absolute())
-                for file in _get_requirement_files()
-                if _check_has_labels_requirement(file)
-            ]
-            message += (
-                " In addition, the following requirement files also list"
-                ' "labels" as a requirement:\n  '
-            )
+            message += ' Please remove "labels" from the following files:\n  '
             message += "\n  ".join(faulty_req_files)
-            message += "\nPlease remove those."
         raise FileExistsError(message)
 
 
@@ -81,6 +86,5 @@ def _remove_labels_requirement(path: pathlib.Path) -> None:
             requirement = requirement.split("=")[0]
             requirement = requirement.split("!")[0]
             requirement = requirement.strip()
-            if requirement == "labels":
-                continue
-            stream.write(line)
+            if requirement != "labels":
+                stream.write(line)
