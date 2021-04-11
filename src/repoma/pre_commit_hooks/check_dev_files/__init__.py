@@ -5,6 +5,7 @@ import sys
 from typing import Optional, Sequence
 
 from .check_labels import check_has_labels
+from .editor_config_hook import check_editor_config_hook
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -16,7 +17,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Fix the identified problems.",
     )
     args = parser.parse_args(argv)
-    check_has_labels(fix=not args.no_fix)
+    fix = not args.no_fix
+    check_editor_config_hook()
+    check_has_labels(fix)
     return 0
 
 
