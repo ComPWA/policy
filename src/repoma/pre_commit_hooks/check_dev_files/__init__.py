@@ -10,6 +10,7 @@ from .editor_config_hook import check_editor_config_hook
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("filenames", nargs="*", help="Dummy for pre-commit")
     parser.add_argument(
         "--no-fix",
         default=False,
