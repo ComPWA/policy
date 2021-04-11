@@ -8,6 +8,8 @@ import os
 import pathlib
 from typing import List
 
+from repoma.pre_commit_hooks.errors import PrecommitError
+
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
@@ -40,7 +42,7 @@ def check_has_labels(fix: bool) -> None:
         else:
             message += ' Please remove "labels" from the following files:\n  '
             message += "\n  ".join(faulty_req_files)
-        raise FileExistsError(message)
+        raise PrecommitError(message)
 
 
 def _check_has_labels_requirement(path: pathlib.Path) -> bool:
