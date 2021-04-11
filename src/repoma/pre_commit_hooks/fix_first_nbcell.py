@@ -1,4 +1,3 @@
-# cspell:ignore nargs
 """Add install statements to first cell in a Jupyter notebook.
 
 Google Colaboratory does not install a package automatically, so this has to be
