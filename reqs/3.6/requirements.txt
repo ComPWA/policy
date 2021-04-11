@@ -5,7 +5,7 @@
 #    pip-compile --no-annotate --output-file=reqs/3.6/requirements.txt reqs/3.6/requirements.in
 #
 attrs==20.3.0
-decorator==5.0.5
+decorator==5.0.6
 importlib-metadata==3.10.0
 ipython-genutils==0.2.0
 jsonschema==3.2.0
