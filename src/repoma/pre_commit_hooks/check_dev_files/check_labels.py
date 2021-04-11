@@ -20,10 +20,10 @@ def check_has_labels(fix: bool) -> None:
             " https://github.com/ComPWA/meta repository."
         )
         if fix:
-            message += " Please remove it."
-        else:
             message += " It has been removed."
             os.remove(__LABELS_CONFIG_FILE)
+        else:
+            message += " Please remove it."
     faulty_req_files = [
         str(file.absolute())
         for file in _get_requirement_files()
