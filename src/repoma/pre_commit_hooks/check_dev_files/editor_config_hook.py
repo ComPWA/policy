@@ -34,20 +34,20 @@ def check_editor_config_hook() -> None:
 
 
 def _has_editor_config() -> bool:
-    if not os.path.exists(".editorconfig"):
+    if not os.path.exists(__EDITORCONFIG_FILE):
         return False
     return True
 
 
 def _has_precommit_hook() -> bool:
-    if not os.path.exists(".editorconfig"):
+    if not os.path.exists(__PRECOMMIT_CONFIG_FILE):
         return False
-    with open(".pre-commit-config.yaml") as stream:
+    with open(__PRECOMMIT_CONFIG_FILE) as stream:
         config = yaml.load(stream, Loader=yaml.SafeLoader)
     repos = config.get("repos")
     if repos is None:
         return False
     repos_urls = {repo.get("repo") for repo in repos if isinstance(repo, dict)}
-    if __EDITORCONFIG_HOOK not in repos_urls:
+    if __EDITORCONFIG_URL not in repos_urls:
         return False
     return True
