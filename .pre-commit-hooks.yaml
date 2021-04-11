@@ -1,5 +1,3 @@
-# cspell:ignore nbcell
-
 - id: check-dev-files
   name: Check developer config files in the repository
   entry: check-dev-files

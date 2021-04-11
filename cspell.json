@@ -57,8 +57,10 @@
         "commitlint",
         "conda",
         "nargs",
+        "nbcell",
         "nbformat",
         "pyright",
+        "repos",
         "reqs",
         "venv"
     ]
