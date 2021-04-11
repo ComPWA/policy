@@ -1,0 +1,49 @@
+{
+    "version": "0.1",
+    "enableFiletypes": [
+        "git-commit",
+        "jupyter"
+    ],
+    "flagWords": [
+        "analyse",
+        "colour",
+        "comparision",
+        "favour",
+        "flavour",
+        "hte",
+        "optimise",
+        "paramater",
+        "parmater"
+    ],
+    "ignorePaths": [
+        "**/.cspell.json",
+        "*.bib",
+        "*.ico",
+        "*.root",
+        "*.rst_t",
+        "*.svg",
+        "*particle*.*ml",
+        ".gitignore",
+        ".gitpod.*",
+        ".pre-commit-config.yaml",
+        ".pylintrc",
+        ".readthedocs.yml",
+        ".vscode/*",
+        ".vscode/.gitignore",
+        "Makefile",
+        "codecov.yml",
+        "docs/_templates/*",
+        "docs/adr/*/*",
+        "docs/conf.py",
+        "pyproject.toml",
+        "pyrightconfig.json",
+        "reqs/**/*.in",
+        "reqs/**/*.txt",
+        "requirements*.txt",
+        "setup.cfg",
+        "setup.py",
+        "tox.ini",
+        "typings"
+    ],
+    "language": "en-US"
+}
