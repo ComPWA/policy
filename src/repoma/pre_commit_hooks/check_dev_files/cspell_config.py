@@ -11,6 +11,11 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 __EXPECTED_CONFIG_FILE = ".cspell.json"
 
+__JSON_DUMP_OPTIONS = {
+    "indent": 4,
+    "ensure_ascii": False,
+}
+
 
 def check_cspell_config(fix: bool) -> None:
     _check_has_config()
@@ -23,7 +28,7 @@ def _check_has_config() -> None:
         "cspell.json"
     ):
         raise PrecommitError(
-            "This repository contains no .cspell.json config file"
+            f"This repository contains no {__EXPECTED_CONFIG_FILE} config file"
         )
 
 
@@ -46,23 +51,29 @@ def _sort_config_entries(fix: bool) -> None:
         sorted_section_content = sorted(section_content)
         if sorted_section_content == section_content:
             continue
-        indent = 4 * " "
         error_message += (
             f'Section "{section}" in cSpell config '
             f'"./{__EXPECTED_CONFIG_FILE}" is not alphabetically sorted.'
         )
+        config[section] = sorted_section_content
         if fix:
-            config[section] = sorted_section_content
             error_message += " Problem has been fixed."
         else:
-            json_content = map(lambda s: f'"{s}"', sorted_section_content)
             error_message += " Content should be:\n\n"
-            error_message += f'{indent}"{section}": [\n{2 * indent}'
-            error_message += f",\n{2 * indent}".join(json_content)
-            error_message += f"\n{indent}]\n"
+            error_message += __render_section(config, section)
+            error_message += "\n"
         break
     if fix:
         with open(__EXPECTED_CONFIG_FILE, "w") as stream:
-            json.dump(config, stream, indent=4, ensure_ascii=False)
+            json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
     if error_message:
         raise PrecommitError(error_message)
+
+
+def __render_section(config: dict, section: str) -> str:
+    output = json.dumps(
+        {section: config[section]},
+        **__JSON_DUMP_OPTIONS,  # type: ignore
+    )
+    output = "\n".join(output.split("\n")[1:-1])
+    return output
