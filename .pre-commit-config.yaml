@@ -20,7 +20,7 @@ repos:
           (?x)^(
             .*\.bib|
             .*\.svg|
-            .cspell.json
+            .*\.cspell\.json
           )$
       - id: mixed-line-ending
       - id: name-tests-test

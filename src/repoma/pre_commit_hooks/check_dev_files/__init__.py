@@ -19,12 +19,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Fix the identified problems.",
     )
+    parser.add_argument(
+        "--extend",
+        default=False,
+        action="store_true",
+        help="Insert expected config entries rather than overwriting existing ones.",
+    )
     args = parser.parse_args(argv)
     fix = not args.no_fix
     try:
         check_editor_config_hook()
         check_has_labels(fix)
-        check_cspell_config(fix)
+        check_cspell_config(fix, args.extend)
         return 0
     except PrecommitError as exception:
         print(str("\n".join(exception.args)))
