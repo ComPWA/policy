@@ -1,4 +1,4 @@
-name-template: ComPWA Repo Maintenance $NEXT_PATCH_VERSION
+name-template: Repo Maintenance $NEXT_PATCH_VERSION
 tag-template: $NEXT_PATCH_VERSION
 
 categories:
