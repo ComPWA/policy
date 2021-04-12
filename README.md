@@ -15,12 +15,12 @@ content:
 ```yaml
 repos:
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.2
+    rev: ""
     hooks:
       - id: check-dev-files
       - id: fix-first-nbcell
       - id: fix-nbformat-version
 ```
 
-This example lists all available hooks (listed here as `id`s) ― you can remove
-some of them.
+then run `pre-commit autoupdate`. This example lists all available hooks
+(listed here as `id`s) ― you can remove some of them.

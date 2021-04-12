@@ -53,6 +53,7 @@
         "repoma"
     ],
     "ignoreWords": [
+        "autoupdate",
         "colab",
         "commitlint",
         "conda",
