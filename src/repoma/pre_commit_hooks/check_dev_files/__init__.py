@@ -25,11 +25,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Insert expected config entries rather than overwriting existing ones.",
     )
+    parser.add_argument(
+        "--allow-labels",
+        default=False,
+        action="store_true",
+        help="Do not perform the check on labels.toml",
+    )
     args = parser.parse_args(argv)
     fix = not args.no_fix
     try:
         check_editor_config_hook()
-        check_has_labels(fix)
+        if not args.allow_labels:
+            check_has_labels(fix)
         check_cspell_config(fix, args.extend)
         return 0
     except PrecommitError as exception:
