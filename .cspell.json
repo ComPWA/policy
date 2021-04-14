@@ -33,6 +33,7 @@
         ".vscode/.gitignore",
         "Makefile",
         "codecov.yml",
+        "constraints*.txt",
         "docs/_templates/*",
         "docs/adr/*/*",
         "docs/conf.py",
