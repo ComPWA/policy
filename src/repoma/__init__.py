@@ -5,8 +5,7 @@ This package contains `pre-commit <https://pre-commit.com>` hooks that the
 """
 
 __all__ = [
-    "dev_tools",
     "pre_commit_hooks",
 ]
 
-from . import dev_tools, pre_commit_hooks
+from . import pre_commit_hooks
