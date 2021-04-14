@@ -12,6 +12,7 @@ import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 __EXPECTED_CONFIG_FILE = ".cspell.json"
+__EXPECTED_BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)\n"  # pylint: disable=line-too-long
 __REPOMA_DIR = os.path.dirname(repoma.__file__)
 with open(f"{__REPOMA_DIR}/{__EXPECTED_CONFIG_FILE}") as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
@@ -27,6 +28,7 @@ def check_cspell_config(fix: bool, extend: bool) -> None:
     _fix_config_name(fix)
     _fix_config_content(fix, extend)
     _sort_config_entries(fix)
+    _check_badge(fix)
 
 
 def _check_has_config() -> None:
@@ -134,3 +136,33 @@ def __render_section(config: dict, section: str) -> str:
     )
     output = "\n".join(output.split("\n")[1:-1])
     return output
+
+
+def _check_badge(fix: bool = True) -> None:
+    readme_path = "README.md"
+    if not os.path.exists("README.md"):
+        raise PrecommitError(
+            f'This repository contains no "{readme_path}", so cannot add cSpell badge'
+        )
+    with open(readme_path) as stream:
+        lines = stream.readlines()
+    expected_badge = __EXPECTED_BADGE
+    if expected_badge not in lines:
+        error_message = f'"{readme_path}" contains no cSpell badge. '
+        if fix:
+            insert_position = 0
+            for insert_position, line in enumerate(lines):  # noqa: B007
+                if line.startswith("#"):  # find first Markdown section
+                    break
+            if len(lines) == 0 or insert_position == len(lines) - 1:
+                raise PrecommitError(
+                    f'"{readme_path}" contains no title, so cannot add cSpell badge'
+                )
+            lines.insert(insert_position + 1, f"\n{expected_badge}")
+            with open(readme_path, "w") as stream:
+                stream.writelines(lines)
+            error_message += "Error has been fixed"
+        else:
+            error_message += "Please add the following line:\n\n  "
+            error_message += expected_badge
+        raise PrecommitError(error_message)

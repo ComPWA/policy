@@ -1,5 +1,7 @@
 # Repository maintenance
 
+[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)
+
 This repository is to standardize the developer environment of Python packages
 by the [ComPWA organization](https://github.com/ComPWA). The maintenance is
 performed through [pre-commit](https://pre-commit.com).
