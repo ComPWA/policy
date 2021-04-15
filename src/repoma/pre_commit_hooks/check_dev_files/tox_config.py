@@ -2,7 +2,7 @@
 
 from configparser import ConfigParser
 from copy import deepcopy
-from typing import Tuple
+from typing import List, Tuple
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
@@ -13,17 +13,20 @@ __EXPECTED_CONFIG_FILE = "tox.ini"
 
 def check_tox_ini(fix: bool) -> None:
     check_has_file(__EXPECTED_CONFIG_FILE)
-    extract_section("flake8", output_file=".flake8", fix=fix)
-    extract_section("pydocstyle", output_file=".pydocstyle", fix=fix)
+    extract_sections(["flake8"], output_file=".flake8", fix=fix)
+    extract_sections(["pydocstyle"], output_file=".pydocstyle", fix=fix)
+    extract_sections(
+        ["coverage:run", "pytest"], output_file="pytest.ini", fix=fix
+    )
 
 
-def extract_section(section: str, output_file: str, fix: bool) -> None:
+def extract_sections(sections: List[str], output_file: str, fix: bool) -> None:
     cfg = ConfigParser()
     cfg.read(__EXPECTED_CONFIG_FILE)
-    if cfg.has_section(section):
-        error_message = f'Section "{section}" in "./{__EXPECTED_CONFIG_FILE}" '
+    if any(map(cfg.has_section, sections)):
+        error_message = f'Section "{", ".join(sections)}"" in "./{__EXPECTED_CONFIG_FILE}" '
         if fix:
-            old_cfg, extracted_cfg = __split_config(cfg, section)
+            old_cfg, extracted_cfg = __split_config(cfg, sections)
             __write_config(old_cfg, __EXPECTED_CONFIG_FILE)
             __write_config(extracted_cfg, output_file)
             error_message += (
@@ -37,13 +40,14 @@ def extract_section(section: str, output_file: str, fix: bool) -> None:
 
 
 def __split_config(
-    cfg: ConfigParser, extracted_section: str
+    cfg: ConfigParser, extracted_sections: List[str]
 ) -> Tuple[ConfigParser, ConfigParser]:
     old_config = deepcopy(cfg)
     extracted_config = deepcopy(cfg)
-    old_config.remove_section(extracted_section)
     for section in cfg.sections():
-        if section != extracted_section:
+        if section in extracted_sections:
+            old_config.remove_section(section)
+        else:
             extracted_config.remove_section(section)
     return old_config, extracted_config
 
