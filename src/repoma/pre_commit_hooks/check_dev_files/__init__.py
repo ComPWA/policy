@@ -10,6 +10,7 @@ from .check_labels import check_has_labels
 from .cspell_config import check_cspell_config
 from .editor_config_hook import check_editor_config_hook
 from .github_templates import check_github_templates
+from .gitpod import check_gitpod_config
 from .tox_config import check_tox_ini
 
 
@@ -41,6 +42,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             check_has_labels(fix)
         check_cspell_config(fix, args.extend)
         check_github_templates()
+        check_gitpod_config()
         check_tox_ini(fix)
         return 0
     except PrecommitError as exception:
