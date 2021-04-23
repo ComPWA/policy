@@ -59,7 +59,8 @@
   "search.exclude": {
     "**/tests/**/__init__.py": true,
     "*/.pydocstyle": true,
-    "reqs/3.*/*.txt": true
+    "reqs/3.*/*.txt": true,
+    "src/repoma/.github/**": true
   },
   "telemetry.enableCrashReporter": false,
   "telemetry.enableTelemetry": false
