@@ -7,7 +7,7 @@ import yaml
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
-from ._helpers import REPOMA_DIR, write_yaml
+from ._helpers import REPOMA_DIR, add_badge, get_repo_url, write_yaml
 
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 __EXTENSIONS_FILE = ".vscode/extensions.json"
@@ -29,6 +29,11 @@ def check_gitpod_config() -> None:
         write_yaml(expected_config, output_path=__GITPOD_CONFIG_FILE)
         error_message += ". Problem has been fixed."
         raise PrecommitError(error_message)
+    repo_url = get_repo_url()
+    add_badge(
+        # pylint: disable=line-too-long
+        f"[![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#{repo_url})\n"
+    )
 
 
 def _extract_extensions() -> dict:
