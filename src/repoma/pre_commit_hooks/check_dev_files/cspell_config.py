@@ -8,13 +8,13 @@ import json
 import os
 from typing import Any
 
-import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+from ._helpers import REPOMA_DIR
 
 __EXPECTED_CONFIG_FILE = ".cspell.json"
 __EXPECTED_BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)\n"  # pylint: disable=line-too-long
-__REPOMA_DIR = os.path.dirname(repoma.__file__)
-with open(f"{__REPOMA_DIR}/{__EXPECTED_CONFIG_FILE}") as __STREAM:
+with open(f"{REPOMA_DIR}/{__EXPECTED_CONFIG_FILE}") as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 __JSON_DUMP_OPTIONS = {
