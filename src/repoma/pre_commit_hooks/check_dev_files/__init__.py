@@ -40,7 +40,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.allow_labels:
             check_has_labels(fix)
         check_cspell_config(fix, args.extend)
-        check_github_templates(fix)
+        check_github_templates()
         check_tox_ini(fix)
         return 0
     except PrecommitError as exception:
