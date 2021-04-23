@@ -5,7 +5,8 @@ from repoma.pre_commit_hooks.check_dev_files.github_templates import (
 
 
 def test_list_issue_templates():
-    assert _list_template_files(f"{REPOMA_DIR}/.github/ISSUE_TEMPLATE") == [
+    files = _list_template_files(f"{REPOMA_DIR}/.github/ISSUE_TEMPLATE")
+    assert set(files) == {
         "bug_report.md",
         "feature_request.md",
-    ]
+    }

@@ -1,6 +1,6 @@
 # cspell:ignore unittests
 
-name: CI
+name: CI-style
 
 on:
   push:
