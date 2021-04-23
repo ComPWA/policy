@@ -7,8 +7,8 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 from ._helpers import REPOMA_DIR
 
-__TEMPLATE_FILE = ".github/pull_request_template.md"
-with open(f"{REPOMA_DIR}/{__TEMPLATE_FILE}") as __STREAM:
+__PR_TEMPLATE_PATH = ".github/pull_request_template.md"
+with open(f"{REPOMA_DIR}/{__PR_TEMPLATE_PATH}") as __STREAM:
     __PR_TEMPLATE_CONTENT = __STREAM.read()
 
 
@@ -18,8 +18,8 @@ def check_github_templates(fix: bool) -> None:
 
 def _check_pr_template(fix: bool) -> None:
     error_message = ""
-    if not exists(__TEMPLATE_FILE):
-        error_message = f'This repository has no "{__TEMPLATE_FILE}" file. '
+    if not exists(__PR_TEMPLATE_PATH):
+        error_message = f'This repository has no "{__PR_TEMPLATE_PATH}" file. '
         if fix:
             __write_pr_template()
             error_message += "Problem has been fixed."
@@ -31,10 +31,13 @@ def _check_pr_template(fix: bool) -> None:
                 __PR_TEMPLATE_CONTENT, prefix=2 * " "
             )
     else:
-        with open(__TEMPLATE_FILE) as stream:
+        with open(__PR_TEMPLATE_PATH) as stream:
             template_content = stream.read()
         if template_content != __PR_TEMPLATE_CONTENT:
-            error_message = f'PR template "{__TEMPLATE_FILE}" does not contain expected content. '
+            error_message = (
+                f'PR template "{__PR_TEMPLATE_PATH}"'
+                " does not contain expected content. "
+            )
             if fix:
                 __write_pr_template()
                 error_message += "Problem has been fixed."
@@ -50,5 +53,5 @@ def _check_pr_template(fix: bool) -> None:
 
 
 def __write_pr_template() -> None:
-    with open(__TEMPLATE_FILE, "w") as stream:
+    with open(__PR_TEMPLATE_PATH, "w") as stream:
         stream.write(__PR_TEMPLATE_CONTENT)
