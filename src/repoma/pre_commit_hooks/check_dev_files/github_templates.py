@@ -48,6 +48,7 @@ def _check_issue_templates() -> None:
 
 def _check_pr_template() -> None:
     if not os.path.exists(__PR_TEMPLATE_PATH):
+        os.makedirs(os.path.dirname(__PR_TEMPLATE_PATH), exist_ok=True)
         expected_content = __get_template_content(
             f"{REPOMA_DIR}/{__PR_TEMPLATE_PATH}"
         )
