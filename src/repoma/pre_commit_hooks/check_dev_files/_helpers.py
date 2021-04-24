@@ -52,9 +52,17 @@ def get_repo_url() -> str:
         raise PrecommitError("setup.cfg does not contain a metadata section")
     project_urls_def = cfg["metadata"].get("project_urls", None)
     if project_urls_def is None:
-        raise PrecommitError(
-            "metadata in setup.cfg does not contain project_urls"
+        error_message = (
+            "Section metadata in setup.cfg does not contain project_urls."
+            " Should be something like:\n\n"
+            "[metadata]\n"
+            "...\n"
+            "project_urls =\n"
+            "    Tracker = https://github.com/ComPWA/ampform/issues\n"
+            "    Source = https://github.com/ComPWA/ampform\n"
+            "    ...\n"
         )
+        raise PrecommitError(error_message)
     project_url_lines = project_urls_def.split("\n")
     project_url_lines = list(
         filter(lambda line: line.strip(), project_url_lines)
