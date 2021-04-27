@@ -58,6 +58,7 @@
     ],
     "ignoreWords": [
         "autoupdate",
+        "codecov",
         "colab",
         "commitlint",
         "conda",
