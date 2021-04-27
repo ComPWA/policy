@@ -67,7 +67,7 @@ def get_repo_url() -> str:
     project_url_lines = list(
         filter(lambda line: line.strip(), project_url_lines)
     )
-    project_urls = dict()
+    project_urls = {}
     for line in project_url_lines:
         url_type, url, *_ = tuple(line.split("="))
         url_type = url_type.strip()

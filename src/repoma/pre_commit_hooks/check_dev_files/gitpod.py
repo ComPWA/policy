@@ -40,7 +40,7 @@ def _extract_extensions() -> dict:
     if os.path.exists(__EXTENSIONS_FILE):
         with open(__EXTENSIONS_FILE) as stream:
             return json.load(stream)["recommendations"]
-    return dict()
+    return {}
 
 
 def _generate_gitpod_config(pin_dependencies: bool) -> dict:
