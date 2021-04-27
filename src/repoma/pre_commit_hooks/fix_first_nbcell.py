@@ -30,6 +30,8 @@ COLAB_CONTENT = f"""
 import subprocess
 import sys
 
+from IPython import get_ipython
+
 install_packages = "google.colab" in str(get_ipython())
 if install_packages:
     for package in ["{PACKAGE_NAME}", "graphviz"]:
