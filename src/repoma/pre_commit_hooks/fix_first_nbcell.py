@@ -24,6 +24,9 @@ DEFAULT_CONTENT = """
 %%capture
 %config Completer.use_jedi = False
 %config InlineBackend.figure_formats = ['svg']
+import os
+
+STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
 """
 COLAB_CONTENT = f"""
 # Install on Google Colab
