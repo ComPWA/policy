@@ -37,7 +37,7 @@ from IPython import get_ipython
 
 install_packages = "google.colab" in str(get_ipython())
 if install_packages:
-    for package in ["{PACKAGE_NAME}", "graphviz"]:
+    for package in ["{PACKAGE_NAME}[doc]", "graphviz"]:
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", package]
         )
