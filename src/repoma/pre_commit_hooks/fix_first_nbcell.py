@@ -10,7 +10,7 @@ to SVG. This is because the Sphinx configuration can't set this externally.
 
 Notebooks can be ignored by making the first cell a `Markdown cell
 <https://jupyter-notebook.readthedocs.io/en/latest/examples/Notebook/Working%20With%20Markdown%20Cells.html>`_
-and setting its content to:
+and starting its content with:
 
 .. code-block:: markdown
 
@@ -66,12 +66,13 @@ def fix_first_cell(
     if old_cell["cell_type"] == "markdown":
         old_cell_content: str = old_cell["source"]
         old_cell_content = old_cell_content.lower()
-        old_cell_content = old_cell_content.strip()
+        first_line = old_cell_content.split("\n")[0]
+        first_line = first_line.strip()
         if (
-            old_cell_content.startswith("<!--")
-            and old_cell_content.endswith("-->")
-            and "ignore" in old_cell_content
-            and "cell" in old_cell_content
+            first_line.startswith("<!--")
+            and first_line.endswith("-->")
+            and "ignore" in first_line
+            and "cell" in first_line
         ):
             return
     new_cell = nbformat.v4.new_code_cell(
