@@ -7,6 +7,14 @@ viewing Jupyter slides.
 
 Additionally, this scripts sets the IPython InlineBackend.figure_formats option
 to SVG. This is because the Sphinx configuration can't set this externally.
+
+Notebooks can be ignored by making the first cell a `Markdown cell
+<https://jupyter-notebook.readthedocs.io/en/latest/examples/Notebook/Working%20With%20Markdown%20Cells.html>`_
+and setting its content to:
+
+.. code-block:: markdown
+
+    <!-- ignore first cell -->
 """
 
 import argparse
@@ -54,6 +62,18 @@ def fix_first_cell(
     filename: str, new_content: str, replace: bool = False
 ) -> None:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    old_cell = notebook["cells"][0]
+    if old_cell["cell_type"] == "markdown":
+        old_cell_content: str = old_cell["source"]
+        old_cell_content = old_cell_content.lower()
+        old_cell_content = old_cell_content.strip()
+        if (
+            old_cell_content.startswith("<!--")
+            and old_cell_content.endswith("-->")
+            and "ignore" in old_cell_content
+            and "cell" in old_cell_content
+        ):
+            return
     new_cell = nbformat.v4.new_code_cell(
         new_content,
         metadata=EXPECTED_CELL_METADATA,
