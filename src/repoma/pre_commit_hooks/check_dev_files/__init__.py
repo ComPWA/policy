@@ -11,6 +11,7 @@ from .cspell_config import check_cspell_config
 from .editor_config_hook import check_editor_config_hook
 from .github_templates import check_github_templates
 from .gitpod import check_gitpod_config
+from .pin_requirements_scripts import check_constraints_folder
 from .tox_config import check_tox_ini
 
 
@@ -34,6 +35,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Do not perform the check on labels.toml",
     )
+    parser.add_argument(
+        "--pin-requirements",
+        default=False,
+        action="store_true",
+        help="Add a script to pin developer requirements to a constraint file",
+    )
     args = parser.parse_args(argv)
     fix = not args.no_fix
     try:
@@ -43,6 +50,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         check_cspell_config(fix, args.extend)
         check_github_templates()
         check_gitpod_config()
+        if args.pin_requirements:
+            check_constraints_folder()
         check_tox_ini(fix)
         return 0
     except PrecommitError as exception:
