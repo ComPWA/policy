@@ -52,7 +52,7 @@ def update_github_workflows() -> None:
 
     def upgrade_workflow(workflow_file: str) -> None:
         expected_workflow_path = os.path.abspath(
-            f"{__THIS_MODULE_DIR}/../../{workflow_file}"
+            f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
         )
         with open(expected_workflow_path) as stream:
             expected_content = stream.read()
