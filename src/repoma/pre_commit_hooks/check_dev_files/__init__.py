@@ -6,6 +6,7 @@ from typing import Optional, Sequence
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
+from . import auto_close_milestone
 from .check_labels import check_has_labels
 from .cspell_config import check_cspell_config
 from .editor_config_hook import check_editor_config_hook
@@ -44,6 +45,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     fix = not args.no_fix
     try:
+        auto_close_milestone.check_workflow_file()
         check_editor_config_hook()
         if not args.allow_labels:
             check_has_labels(fix)
