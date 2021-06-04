@@ -8,15 +8,11 @@ comply with the expected formatting.
 
 import argparse
 import sys
-import textwrap
 from typing import List, Optional, Sequence
 
 import nbformat  # type: ignore
 
 from .errors import PrecommitError
-
-__INDENT_SIZE = 2
-__INDENT = __INDENT_SIZE * " "
 
 
 def check_pinned_requirements(filename: str) -> None:
@@ -26,42 +22,61 @@ def check_pinned_requirements(filename: str) -> None:
             continue
         source: str = cell["source"]
         src_lines = source.split("\n")
+        if len(src_lines) == 0:
+            continue
         if src_lines[0] != "%%sh":
             continue
-        second_line = src_lines[1]
-        if not second_line.startswith("pip install "):
-            raise PrecommitError(
-                f'First shell cell in notebook  "{filename}"'
-                " does not run pip install"
-            )
-        if not second_line.endswith(" > /dev/null"):
-            raise PrecommitError(
-                f'Install statement in notebook "{filename}" should end with'
-                ' " > /dev/null" in order to suppress stdout'
-            )
         if len(src_lines) != 2:
-            source = textwrap.indent(source, prefix=__INDENT)
             raise PrecommitError(
-                f'Install cell in notebook "{filename}" has more than 2 lines:'
-                f"\n\n{source}"
+                f'Install cell in notebook "{filename}" has more than 2 lines'
             )
-        requirements = second_line.split(" ")
-        if len(requirements) <= 4:
-            raise PrecommitError(
-                "At least one dependency required in install cell of "
-                f'"{filename}"'
-            )
-        requirements = requirements[2:-2]
-        for requirement in requirements:
-            if "==" not in requirement:
-                raise PrecommitError(
-                    f'Install cell in notebook "{filename}" contains a'
-                    f" requirement without == ({requirement})"
-                )
+        install_statement = src_lines[1]
+        __check_install_statement(filename, install_statement)
+        __check_metadata(filename, cell["metadata"])
         return
     raise PrecommitError(
         f'Notebook "{filename}" does not contain a pip install cell'
     )
+
+
+def __check_install_statement(filename: str, line: str) -> None:
+    if not line.startswith("pip install "):
+        raise PrecommitError(
+            f'First shell cell in notebook  "{filename}"'
+            " does not run pip install"
+        )
+    if not line.endswith(" > /dev/null"):
+        raise PrecommitError(
+            f'Install statement in notebook "{filename}" should end with'
+            ' " > /dev/null" in order to suppress stdout'
+        )
+    requirements = line.split(" ")
+    if len(requirements) <= 4:
+        raise PrecommitError(
+            "At least one dependency required in install cell of "
+            f'"{filename}"'
+        )
+    requirements = requirements[2:-2]
+    for requirement in requirements:
+        if "==" not in requirement:
+            raise PrecommitError(
+                f'Install cell in notebook "{filename}" contains a'
+                f" requirement without == ({requirement})"
+            )
+
+
+def __check_metadata(filename: str, metadata: dict) -> None:
+    source_hidden = metadata.get("jupyter", {}).get("source_hidden")
+    if not source_hidden:
+        raise PrecommitError(
+            f'Install cell in notebook "{filename}" is not hidden'
+        )
+    tags = metadata.get("tags")
+    expected_tag = "hide-cell"
+    if tags is None or expected_tag not in tags:
+        raise PrecommitError(
+            f'Install cell in notebook "{filename}" should have tag "{expected_tag}"'
+        )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
