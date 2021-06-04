@@ -87,6 +87,10 @@ def __check_metadata(filename: str, metadata: dict) -> None:
         raise PrecommitError(
             f'Install cell in notebook "{filename}" should have tag "{expected_tag}"'
         )
+    if "remove-cell" in tags:
+        raise PrecommitError(
+            f'Install cell in notebook "{filename}" has tag "remove-cell"'
+        )
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
