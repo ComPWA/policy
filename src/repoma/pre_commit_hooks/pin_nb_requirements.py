@@ -32,6 +32,7 @@ def check_pinned_requirements(filename: str) -> None:
             )
         install_statement = src_lines[1]
         __check_install_statement(filename, install_statement)
+        __check_requirements(filename, install_statement)
         __check_metadata(filename, cell["metadata"])
         return
     raise PrecommitError(
@@ -39,18 +40,21 @@ def check_pinned_requirements(filename: str) -> None:
     )
 
 
-def __check_install_statement(filename: str, line: str) -> None:
-    if not line.startswith("pip install "):
+def __check_install_statement(filename: str, install_statement: str) -> None:
+    if not install_statement.startswith("pip install "):
         raise PrecommitError(
             f'First shell cell in notebook  "{filename}"'
             " does not run pip install"
         )
-    if not line.endswith(" > /dev/null"):
+    if not install_statement.endswith(" > /dev/null"):
         raise PrecommitError(
             f'Install statement in notebook "{filename}" should end with'
             ' " > /dev/null" in order to suppress stdout'
         )
-    requirements = line.split(" ")
+
+
+def __check_requirements(filename: str, install_statement: str) -> None:
+    requirements = install_statement.split(" ")
     if len(requirements) <= 4:
         raise PrecommitError(
             "At least one dependency required in install cell of "
@@ -63,6 +67,12 @@ def __check_install_statement(filename: str, line: str) -> None:
                 f'Install cell in notebook "{filename}" contains a'
                 f" requirement without == ({requirement})"
             )
+    requirements_lower = [r.lower() for r in requirements]
+    if sorted(requirements_lower) != requirements_lower:
+        raise PrecommitError(
+            f'Requirements in notebook "{filename}"'
+            " are not sorted alphabetically"
+        )
 
 
 def __check_metadata(filename: str, metadata: dict) -> None:
