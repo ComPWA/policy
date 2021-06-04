@@ -69,9 +69,11 @@ def __check_requirements(filename: str, install_statement: str) -> None:
             )
     requirements_lower = [r.lower() for r in requirements]
     if sorted(requirements_lower) != requirements_lower:
+        sorted_requirements = " ".join(sorted(requirements))
         raise PrecommitError(
             f'Requirements in notebook "{filename}"'
-            " are not sorted alphabetically"
+            " are not sorted alphabetically. Should be:\n\n  "
+            f"  {sorted_requirements}"
         )
 
 
