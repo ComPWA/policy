@@ -62,6 +62,9 @@ def __check_requirements(filename: str, install_statement: str) -> None:
         )
     requirements = requirements[2:-2]
     for requirement in requirements:
+        requirement = requirement.strip()
+        if not requirement:
+            continue
         if "==" not in requirement:
             raise PrecommitError(
                 f'Install cell in notebook "{filename}" contains a'
