@@ -52,6 +52,9 @@ if install_packages:
 """
 
 EXPECTED_CELL_METADATA = {
+    "hideCode": True,
+    "hideOutput": True,
+    "hidePrompt": True,
     "jupyter": {"source_hidden": True},
     "slideshow": {"slide_type": "skip"},
     "tags": ["remove-cell"],
