@@ -7,8 +7,8 @@ This repository is to standardize the developer environment of Python packages
 by the [ComPWA organization](https://github.com/ComPWA). The maintenance is
 performed through [pre-commit](https://pre-commit.com).
 
-See also the [develop](https://pwa.readthedocs.io/develop.html) page on the
-[PWA pages](https://pwa.readthedocs.io).
+See also the
+[develop](https://compwa-org.readthedocs.io/en/stable/develop.html) page.
 
 ## Usage
 
