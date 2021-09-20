@@ -72,5 +72,6 @@ def update_github_workflows() -> None:
 
 
 def write_script(content: str, path: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as stream:
         stream.write(content)
