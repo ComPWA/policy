@@ -10,6 +10,8 @@ import os
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
+from ._helpers import write_script
+
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -31,8 +33,3 @@ def check_workflow_file() -> None:
     if existing_content != expected_content:
         write_script(expected_content, path=workflow_path)
         raise PrecommitError(f'Updated "{workflow_path}" workflow')
-
-
-def write_script(content: str, path: str) -> None:
-    with open(path, "w") as stream:
-        stream.write(content)

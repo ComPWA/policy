@@ -4,6 +4,8 @@ import os
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
+from ._helpers import write_script
+
 __CONSTRAINTS_DIR = ".constraints"
 __SCRIPT_NAME = "pin_requirements.py"
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -69,9 +71,3 @@ def update_github_workflows() -> None:
 
     upgrade_workflow("requirements-cron.yml")
     upgrade_workflow("requirements-pr.yml")
-
-
-def write_script(content: str, path: str) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as stream:
-        stream.write(content)

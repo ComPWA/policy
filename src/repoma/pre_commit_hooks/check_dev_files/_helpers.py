@@ -81,6 +81,12 @@ def get_repo_url() -> str:
     return source_url
 
 
+def write_script(content: str, path: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as stream:
+        stream.write(content)
+
+
 class _IncreasedYamlIndent(yaml.Dumper):
     # pylint: disable=too-many-ancestors
     def increase_indent(self, flow=False, indentless=False):  # type: ignore
