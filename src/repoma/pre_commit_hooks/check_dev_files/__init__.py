@@ -13,6 +13,7 @@ from .editor_config_hook import check_editor_config_hook
 from .github_templates import check_github_templates
 from .gitpod import check_gitpod_config
 from .pin_requirements_scripts import check_constraints_folder
+from .prettier_config import fix_prettier_config
 from .tox_config import check_tox_ini
 
 
@@ -51,6 +52,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.allow_labels:
             check_has_labels(fix)
         fix_cspell_config()
+        fix_prettier_config()
         check_github_templates()
         check_gitpod_config()
         if is_python_repo:

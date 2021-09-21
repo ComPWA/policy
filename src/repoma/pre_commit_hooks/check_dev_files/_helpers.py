@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from configparser import ConfigParser
@@ -11,6 +12,7 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 REPOMA_DIR = os.path.dirname(repoma.__file__)
 __PRECOMMIT_CONFIG_FILE = ".pre-commit-config.yaml"
 __README_PATH = "README.md"
+__VSCODE_EXTENSIONS_PATH = ".vscode/extensions.json"
 
 
 def add_badge(badge_line: str) -> None:
@@ -139,6 +141,44 @@ def get_repo_url() -> str:
             'metadata.project_urls in setup.cfg does not contain "Source" URL'
         )
     return source_url
+
+
+def add_vscode_extension_recommendation(extension_name: str) -> None:
+    if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
+        os.makedirs(os.path.dirname(__VSCODE_EXTENSIONS_PATH), exist_ok=True)
+        config = {}
+    else:
+        with open(__VSCODE_EXTENSIONS_PATH) as stream:
+            config = json.load(stream)
+    recommended_extensions = config.get("recommendations", [])
+    if extension_name not in set(recommended_extensions):
+        recommended_extensions.append(extension_name)
+        config["recommendations"] = recommended_extensions
+        __dump_vscode_config(config)
+        raise PrecommitError(
+            f'Added VSCode extension recommendation "{extension_name}"'
+        )
+
+
+def remove_vscode_extension_recommendation(extension_name: str) -> None:
+    if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
+        return
+    with open(__VSCODE_EXTENSIONS_PATH) as stream:
+        config = json.load(stream)
+    recommended_extensions = list(config.get("recommendations", []))
+    if extension_name in recommended_extensions:
+        recommended_extensions.remove(extension_name)
+        config["recommendations"] = recommended_extensions
+        __dump_vscode_config(config)
+        raise PrecommitError(
+            f'Removed VSCode extension recommendation "{extension_name}"'
+        )
+
+
+def __dump_vscode_config(config: dict) -> None:
+    with open(__VSCODE_EXTENSIONS_PATH, "w") as stream:
+        json.dump(config, stream, indent=2, sort_keys=True)
+        stream.write("\n")
 
 
 def write_script(content: str, path: str) -> None:
