@@ -29,11 +29,14 @@ def check_gitpod_config() -> None:
         write_yaml(expected_config, output_path=__GITPOD_CONFIG_FILE)
         error_message += ". Problem has been fixed."
         raise PrecommitError(error_message)
-    repo_url = get_repo_url()
-    add_badge(
-        # pylint: disable=line-too-long
-        f"[![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#{repo_url})\n"
-    )
+    try:
+        repo_url = get_repo_url()
+        add_badge(
+            # pylint: disable=line-too-long
+            f"[![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#{repo_url})\n"
+        )
+    except PrecommitError:
+        pass
 
 
 def _extract_extensions() -> dict:
