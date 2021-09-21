@@ -10,7 +10,7 @@ from typing import Any, Sequence
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
-from ._helpers import REPOMA_DIR, add_badge
+from ._helpers import REPOMA_DIR, add_badge, find_precommit_hook
 
 __EXPECTED_CONFIG_FILE = ".cspell.json"
 with open(f"{REPOMA_DIR}/{__EXPECTED_CONFIG_FILE}") as __STREAM:
@@ -27,6 +27,7 @@ def fix_cspell_config(extend: bool) -> None:
     _fix_config_name()
     _fix_config_content(extend)
     _sort_config_entries()
+    _update_prettier_ignore()
     add_badge(
         # pylint: disable=line-too-long
         "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)\n"
@@ -89,6 +90,27 @@ def _sort_config_entries() -> None:
             ' in "./{__EXPECTED_CONFIG_FILE}" has been sorted alphabetically.'
         )
         raise PrecommitError(error_message)
+
+
+def _update_prettier_ignore() -> None:
+    prettier_hook = find_precommit_hook(r".*/mirrors-prettier")
+    if prettier_hook is None:
+        return
+    prettier_ignore_path = ".prettierignore"
+    expected_line = __EXPECTED_CONFIG_FILE + "\n"
+    if not os.path.exists(prettier_ignore_path):
+        with open(prettier_ignore_path, "w") as stream:
+            stream.write(expected_line)
+    else:
+        with open(prettier_ignore_path, "r") as stream:
+            prettier_ignore_content = stream.readlines()
+        if expected_line in set(prettier_ignore_content):
+            return
+        with open(prettier_ignore_path, "w+") as stream:
+            stream.write(expected_line)
+    raise PrecommitError(
+        f'Added "{__EXPECTED_CONFIG_FILE}" to "./{prettier_ignore_path}"'
+    )
 
 
 def __get_expected_content(config: dict, section: str, *, extend: bool) -> Any:

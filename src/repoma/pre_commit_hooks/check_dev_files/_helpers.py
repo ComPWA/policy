@@ -1,5 +1,7 @@
 import os
+import re
 from configparser import ConfigParser
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -7,6 +9,7 @@ import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 REPOMA_DIR = os.path.dirname(repoma.__file__)
+__PRECOMMIT_CONFIG_FILE = ".pre-commit-config.yaml"
 
 
 def add_badge(badge_line: str) -> None:
@@ -40,6 +43,40 @@ def add_badge(badge_line: str) -> None:
 def check_has_file(path: str) -> None:
     if not os.path.exists(path) and not os.path.exists("cspell.json"):
         raise PrecommitError(f"This repository contains no {path} config file")
+
+
+def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
+    """Find repo definition from .pre-commit-config.yaml.
+
+    >>> repo = find_precommit_hook(r".*pre-commit/mirrors-prettier")
+    >>> repo["hooks"]
+    [{'id': 'prettier'}]
+    >>> find_precommit_hook("non-existent")
+    """
+    precommit_repos = get_precommit_repos()
+    for repo in precommit_repos:
+        url = repo.get("repo")
+        if url is None:
+            continue
+        if re.match(search_pattern, url):
+            return repo
+    return None
+
+
+def get_precommit_repos() -> List[Dict[str, Any]]:
+    if not os.path.exists(__PRECOMMIT_CONFIG_FILE):
+        raise PrecommitError(
+            "Are you sure this repository contains a"
+            f' "./{__PRECOMMIT_CONFIG_FILE}" file?'
+        )
+    with open(__PRECOMMIT_CONFIG_FILE) as stream:
+        config = yaml.load(stream, Loader=yaml.SafeLoader)
+    repos = config.get("repos")
+    if repos is None:
+        raise PrecommitError(
+            f'"./{__PRECOMMIT_CONFIG_FILE}" does not contain a "repos" section'
+        )
+    return repos
 
 
 def get_repo_url() -> str:
