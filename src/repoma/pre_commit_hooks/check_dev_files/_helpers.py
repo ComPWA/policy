@@ -65,11 +65,6 @@ def remove_badge(badge_pattern: str) -> None:
     )
 
 
-def check_has_file(path: str) -> None:
-    if not os.path.exists(path) and not os.path.exists("cspell.json"):
-        raise PrecommitError(f"This repository contains no {path} config file")
-
-
 def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
     """Find repo definition from .pre-commit-config.yaml.
 

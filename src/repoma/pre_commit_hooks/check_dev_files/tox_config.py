@@ -1,18 +1,18 @@
 """Check contents of a ``tox.ini`` file."""
 
+import os
 from configparser import ConfigParser
 from copy import deepcopy
 from typing import List, Tuple
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
-from ._helpers import check_has_file
-
-__EXPECTED_CONFIG_FILE = "tox.ini"
+__CONFIG_PATH = "tox.ini"
 
 
 def check_tox_ini(fix: bool) -> None:
-    check_has_file(__EXPECTED_CONFIG_FILE)
+    if not os.path.exists(__CONFIG_PATH):
+        return
     extract_sections(["flake8"], output_file=".flake8", fix=fix)
     extract_sections(["pydocstyle"], output_file=".pydocstyle", fix=fix)
     extract_sections(
@@ -22,12 +22,14 @@ def check_tox_ini(fix: bool) -> None:
 
 def extract_sections(sections: List[str], output_file: str, fix: bool) -> None:
     cfg = ConfigParser()
-    cfg.read(__EXPECTED_CONFIG_FILE)
+    cfg.read(__CONFIG_PATH)
     if any(map(cfg.has_section, sections)):
-        error_message = f'Section "{", ".join(sections)}"" in "./{__EXPECTED_CONFIG_FILE}" '
+        error_message = (
+            f'Section "{", ".join(sections)}"" in "./{__CONFIG_PATH}" '
+        )
         if fix:
             old_cfg, extracted_cfg = __split_config(cfg, sections)
-            __write_config(old_cfg, __EXPECTED_CONFIG_FILE)
+            __write_config(old_cfg, __CONFIG_PATH)
             __write_config(extracted_cfg, output_file)
             error_message += (
                 f'has been extracted to a "./{output_file}" config file.'
