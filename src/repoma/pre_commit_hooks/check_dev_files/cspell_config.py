@@ -6,7 +6,7 @@ See `cSpell
 
 import json
 import os
-from typing import Any
+from typing import Any, Sequence
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
@@ -22,11 +22,11 @@ __JSON_DUMP_OPTIONS = {
 }
 
 
-def check_cspell_config(fix: bool, extend: bool) -> None:
+def fix_cspell_config(extend: bool) -> None:
     _check_has_config()
-    _fix_config_name(fix)
-    _fix_config_content(fix, extend)
-    _sort_config_entries(fix)
+    _fix_config_name()
+    _fix_config_content(extend)
+    _sort_config_entries()
     add_badge(
         # pylint: disable=line-too-long
         "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)\n"
@@ -42,19 +42,15 @@ def _check_has_config() -> None:
         )
 
 
-def _fix_config_name(fix: bool) -> None:
+def _fix_config_name() -> None:
     if os.path.exists("cspell.json"):
-        if fix:
-            os.rename("cspell.json", __EXPECTED_CONFIG_FILE)
-        raise PrecommitError(
-            f'Config file for cSpell should be named "{__EXPECTED_CONFIG_FILE}"'
-        )
+        os.rename("cspell.json", __EXPECTED_CONFIG_FILE)
 
 
-def _fix_config_content(fix: bool, extend: bool) -> None:
+def _fix_config_content(extend: bool) -> None:
     with open(__EXPECTED_CONFIG_FILE) as stream:
         config = json.load(stream)
-    error_message = ""
+    fixed_sections = []
     for section in __EXPECTED_CONFIG:
         expected_section_content = __get_expected_content(
             config, section, extend=extend
@@ -62,22 +58,36 @@ def _fix_config_content(fix: bool, extend: bool) -> None:
         section_content = config.get(section)
         if section_content == expected_section_content:
             continue
-        error_message += (
-            f'Section "{section}" in cSpell config '
-            f'"./{__EXPECTED_CONFIG_FILE}" is missing expected entries.'
-        )
+        fixed_sections.append('"' + section + '"')
         config[section] = expected_section_content
-        if fix:
-            error_message += " Problem has been fixed."
-        else:
-            error_message += " Content should be:\n\n"
-            error_message += __render_section(config, section)
-            error_message += "\n"
-        break
-    if fix:
+    if fixed_sections:
         with open(__EXPECTED_CONFIG_FILE, "w") as stream:
             json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
-    if error_message:
+        error_message = __express_list_of_sections(fixed_sections)
+        error_message += f' in "./{__EXPECTED_CONFIG_FILE}" has been updated.'
+        raise PrecommitError(error_message)
+
+
+def _sort_config_entries() -> None:
+    with open(__EXPECTED_CONFIG_FILE) as stream:
+        config = json.load(stream)
+    error_message = ""
+    fixed_sections = []
+    for section, section_content in config.items():
+        if not isinstance(section_content, list):
+            continue
+        sorted_section_content = sorted(section_content)
+        if section_content == sorted_section_content:
+            continue
+        fixed_sections.append('"' + section + '"')
+        config[section] = sorted_section_content
+    with open(__EXPECTED_CONFIG_FILE, "w") as stream:
+        json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
+    if fixed_sections:
+        error_message = __express_list_of_sections(fixed_sections)
+        error_message += (
+            ' in "./{__EXPECTED_CONFIG_FILE}" has been sorted alphabetically.'
+        )
         raise PrecommitError(error_message)
 
 
@@ -102,39 +112,27 @@ def __get_expected_content(config: dict, section: str, *, extend: bool) -> Any:
     )
 
 
-def _sort_config_entries(fix: bool) -> None:
-    with open(__EXPECTED_CONFIG_FILE) as stream:
-        config = json.load(stream)
-    error_message = ""
-    for section, section_content in config.items():
-        if not isinstance(section_content, list):
-            continue
-        sorted_section_content = sorted(section_content)
-        if section_content == sorted_section_content:
-            continue
-        error_message += (
-            f'Section "{section}" in cSpell config '
-            f'"./{__EXPECTED_CONFIG_FILE}" is not alphabetically sorted.'
-        )
-        config[section] = sorted_section_content
-        if fix:
-            error_message += " Problem has been fixed."
-        else:
-            error_message += " Content should be:\n\n"
-            error_message += __render_section(config, section)
-            error_message += "\n"
-        break
-    if fix:
-        with open(__EXPECTED_CONFIG_FILE, "w") as stream:
-            json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
-    if error_message:
-        raise PrecommitError(error_message)
+def __express_list_of_sections(sections: Sequence[str]) -> str:
+    """Convert list of sections into natural language.
 
-
-def __render_section(config: dict, section: str) -> str:
-    output = json.dumps(
-        {section: config[section]},
-        **__JSON_DUMP_OPTIONS,  # type: ignore
-    )
-    output = "\n".join(output.split("\n")[1:-1])
-    return output
+    >>> __express_list_of_sections(["one"])
+    'Section one'
+    >>> __express_list_of_sections(["one", "two"])
+    'Sections one and two'
+    >>> __express_list_of_sections(["one", "two", "three"])
+    'Sections one, two, and three'
+    >>> __express_list_of_sections([])
+    ''
+    """
+    if not sections:
+        return ""
+    sentence = "Section"
+    if len(sections) == 1:
+        sentence += " " + sections[0]
+    else:
+        sentence += "s "
+        sentence += ", ".join(sections[:-1])
+        if len(sections) > 2:
+            sentence += ","
+        sentence += " and " + sections[-1]
+    return sentence

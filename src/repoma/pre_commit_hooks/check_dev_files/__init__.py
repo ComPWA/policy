@@ -8,7 +8,7 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 from . import auto_close_milestone
 from .check_labels import check_has_labels
-from .cspell_config import check_cspell_config
+from .cspell_config import fix_cspell_config
 from .editor_config_hook import check_editor_config_hook
 from .github_templates import check_github_templates
 from .gitpod import check_gitpod_config
@@ -56,7 +56,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         check_editor_config_hook()
         if not args.allow_labels:
             check_has_labels(fix)
-        check_cspell_config(fix, args.extend)
+        fix_cspell_config(args.extend)
         check_github_templates()
         check_gitpod_config()
         if is_python_repo:
