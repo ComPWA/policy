@@ -19,6 +19,12 @@ from .tox_config import check_tox_ini
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
+        "--no-python",
+        default=False,
+        action="store_true",
+        help="Skip check that concern config files for Python projects.",
+    )
+    parser.add_argument(
         "--no-fix",
         default=False,
         action="store_true",
@@ -44,6 +50,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
     fix = not args.no_fix
+    is_python_repo = not args.no_python
     try:
         auto_close_milestone.check_workflow_file()
         check_editor_config_hook()
@@ -52,9 +59,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         check_cspell_config(fix, args.extend)
         check_github_templates()
         check_gitpod_config()
-        if args.pin_requirements:
-            check_constraints_folder()
-        check_tox_ini(fix)
+        if is_python_repo:
+            if args.pin_requirements:
+                check_constraints_folder()
+            check_tox_ini(fix)
         return 0
     except PrecommitError as exception:
         print(str("\n".join(exception.args)))
