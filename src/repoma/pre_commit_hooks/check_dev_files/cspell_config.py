@@ -74,18 +74,18 @@ def _fix_config_content() -> None:
             stream.write("{}")
     config = __get_config(__CSPELL_CONFIG_PATH)
     fixed_sections = []
-    for section in __EXPECTED_CONFIG:
-        extend = False
-        if section in {"words", "ignoreWords"}:
-            extend = True
-        expected_section_content = __get_expected_content(
-            config, section, extend=extend
-        )
-        section_content = config.get(section)
+    for section_name in __EXPECTED_CONFIG:
+        if section_name in {"words", "ignoreWords"}:
+            if section_name not in config:
+                fixed_sections.append('"' + section_name + '"')
+                config[section_name] = []
+            continue
+        expected_section_content = __get_expected_content(config, section_name)
+        section_content = config.get(section_name)
         if section_content == expected_section_content:
             continue
-        fixed_sections.append('"' + section + '"')
-        config[section] = expected_section_content
+        fixed_sections.append('"' + section_name + '"')
+        config[section_name] = expected_section_content
     if fixed_sections:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
@@ -154,7 +154,9 @@ def _update_vscode_extensions() -> None:
         )
 
 
-def __get_expected_content(config: dict, section: str, *, extend: bool) -> Any:
+def __get_expected_content(
+    config: dict, section: str, *, extend: bool = False
+) -> Any:
     if section not in config:
         return __EXPECTED_CONFIG[section]
     section_content = config[section]
