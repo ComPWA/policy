@@ -31,13 +31,13 @@ with open(f"{REPOMA_DIR}/{__EXPECTED_CONFIG_PATH}") as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def fix_cspell_config(extend: bool) -> None:
+def fix_cspell_config() -> None:
     _rename_cspell_config()
     cspell_hook = find_precommit_hook(r".*/mirrors-cspell")
     if cspell_hook is None:
         _remove_cspell_configuration()
     else:
-        _fix_config_content(extend)
+        _fix_config_content()
         _sort_config_entries()
         _update_prettier_ignore()
         add_badge(f"{__CSPELL_BADGE}\n")
@@ -70,7 +70,7 @@ def _remove_cspell_configuration() -> None:
     remove_badge(__CSPELL_BADGE_PATTERN)
 
 
-def _fix_config_content(extend: bool) -> None:
+def _fix_config_content() -> None:
     if not os.path.exists(__EXPECTED_CONFIG_PATH):
         with open(__EXPECTED_CONFIG_PATH, "w") as stream:
             stream.write("{}")
@@ -79,7 +79,7 @@ def _fix_config_content(extend: bool) -> None:
     fixed_sections = []
     for section in __EXPECTED_CONFIG:
         expected_section_content = __get_expected_content(
-            config, section, extend=extend
+            config, section, extend=False
         )
         section_content = config.get(section)
         if section_content == expected_section_content:

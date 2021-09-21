@@ -31,12 +31,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Fix the identified problems.",
     )
     parser.add_argument(
-        "--extend",
-        default=False,
-        action="store_true",
-        help="Insert expected config entries rather than overwriting existing ones.",
-    )
-    parser.add_argument(
         "--allow-labels",
         default=False,
         action="store_true",
@@ -56,7 +50,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         check_editor_config_hook()
         if not args.allow_labels:
             check_has_labels(fix)
-        fix_cspell_config(args.extend)
+        fix_cspell_config()
         check_github_templates()
         check_gitpod_config()
         if is_python_repo:
