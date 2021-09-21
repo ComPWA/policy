@@ -197,3 +197,4 @@ def __get_config(path: str) -> dict:
 def __write_config(config: dict) -> None:
     with open(__CONFIG_PATH, "w") as stream:
         json.dump(config, stream, indent=4, ensure_ascii=False)
+        stream.write("\n")

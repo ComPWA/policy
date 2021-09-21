@@ -28,12 +28,6 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: end-of-file-fixer
-        exclude: >
-          (?x)^(
-            .*\.bib|
-            .*\.svg|
-            .*\.cspell\.json
-          )$
       - id: mixed-line-ending
       - id: name-tests-test
         name: Tests should start with test_
