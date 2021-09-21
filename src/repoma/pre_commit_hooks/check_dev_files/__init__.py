@@ -14,6 +14,7 @@ from .github_templates import check_github_templates
 from .gitpod import check_gitpod_config
 from .pin_requirements_scripts import check_constraints_folder
 from .prettier_config import fix_prettier_config
+from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
 
 
@@ -64,6 +65,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if is_python_repo:
             if args.pin_requirements:
                 check_constraints_folder()
+            fix_setup_cfg()
             check_tox_ini(fix)
         return 0
     except PrecommitError as exception:
