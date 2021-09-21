@@ -14,6 +14,7 @@ from ._helpers import REPOMA_DIR, add_badge, find_precommit_hook, remove_badge
 
 __CSPELL_CONFIG_PATH = ".cspell.json"
 __PRETTIER_IGNORE_PATH = ".prettierignore"
+__VSCODE_EXTENSIONS_PATH = ".vscode/extensions.json"
 
 # cspell:ignore pelling
 # pylint: disable=line-too-long
@@ -36,6 +37,7 @@ def fix_cspell_config() -> None:
         _fix_config_content()
         _sort_config_entries()
         _update_prettier_ignore()
+        _update_vscode_extensions()
         add_badge(f"{__CSPELL_BADGE}\n")
 
 
@@ -70,7 +72,7 @@ def _fix_config_content() -> None:
     if not os.path.exists(__CSPELL_CONFIG_PATH):
         with open(__CSPELL_CONFIG_PATH, "w") as stream:
             stream.write("{}")
-    config = __get_existing_config()
+    config = __get_config(__CSPELL_CONFIG_PATH)
     fixed_sections = []
     for section in __EXPECTED_CONFIG:
         extend = False
@@ -92,7 +94,7 @@ def _fix_config_content() -> None:
 
 
 def _sort_config_entries() -> None:
-    config = __get_existing_config()
+    config = __get_config(__CSPELL_CONFIG_PATH)
     error_message = ""
     fixed_sections = []
     for section, section_content in config.items():
@@ -131,6 +133,25 @@ def _update_prettier_ignore() -> None:
     raise PrecommitError(
         f'Added "{__CSPELL_CONFIG_PATH}" to "./{prettier_ignore_path}"'
     )
+
+
+def _update_vscode_extensions() -> None:
+    if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
+        os.makedirs(os.path.dirname(__VSCODE_EXTENSIONS_PATH), exist_ok=True)
+        config = {}
+    else:
+        config = __get_config(__VSCODE_EXTENSIONS_PATH)
+    recommended_extensions = config.get("recommendations", [])
+    cspell_vscode_extension = "streetsidesoftware.code-spell-checker"
+    if cspell_vscode_extension not in set(recommended_extensions):
+        recommended_extensions.append(cspell_vscode_extension)
+        config["recommendations"] = recommended_extensions
+        with open(__VSCODE_EXTENSIONS_PATH, "w") as stream:
+            json.dump(config, stream, indent=2, sort_keys=True)
+            stream.write("\n")
+        raise PrecommitError(
+            "Added VSCode extension recommendation for cSpell"
+        )
 
 
 def __get_expected_content(config: dict, section: str, *, extend: bool) -> Any:
@@ -180,8 +201,8 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     return sentence
 
 
-def __get_existing_config() -> dict:
-    with open(__CSPELL_CONFIG_PATH) as stream:
+def __get_config(path: str) -> dict:
+    with open(path) as stream:
         return json.load(stream)
 
 
