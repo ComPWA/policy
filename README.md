@@ -2,6 +2,7 @@
 
 [![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)
 [![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ComPWA/repo-maintenance)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/ComPWA/repo-maintenance/main.svg)](https://results.pre-commit.ci/latest/github/ComPWA/repo-maintenance/main)
 
 This repository is to standardize the developer environment of Python packages
 by the [ComPWA organization](https://github.com/ComPWA). The maintenance is

@@ -17,7 +17,6 @@ def test_extract_extensions():
         "editorconfig.editorconfig",
         "esbenp.prettier-vscode",
         "github.vscode-pull-request-github",
-        "littlefoxteam.vscode-python-test-adapter",
         "ms-python.python",
         "ms-python.vscode-pylance",
         "ms-vsliveshare.vsliveshare",

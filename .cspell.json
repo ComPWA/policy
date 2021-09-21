@@ -53,6 +53,7 @@
         "compwa",
         "ipython",
         "mkdir",
+        "mypy",
         "pytest",
         "repoma"
     ],
