@@ -70,6 +70,7 @@
         "nbcell",
         "nbformat",
         "noqa",
+        "prettierrc",
         "pydocstyle",
         "pylint",
         "pyright",

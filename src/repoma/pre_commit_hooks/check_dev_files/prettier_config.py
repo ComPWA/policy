@@ -13,7 +13,7 @@ from ._helpers import (
     remove_vscode_extension_recommendation,
 )
 
-# cspell:ignore esbenp prettierrc
+# cspell:ignore esbenp
 __CONFIG_PATH = ".prettierrc"
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
 
@@ -26,12 +26,12 @@ with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 
-def fix_prettier_config() -> None:
+def fix_prettier_config(no_prettierrc: bool) -> None:
     precommit_hook = find_precommit_hook(r".*/mirrors-prettier")
     if precommit_hook is None:
         _remove_configuration()
     else:
-        _fix_config_content()
+        _fix_config_content(no_prettierrc)
         add_badge(f"{__BADGE}\n")
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
@@ -46,16 +46,23 @@ def _remove_configuration() -> None:
     remove_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
 
-def _fix_config_content() -> None:
-    if not os.path.exists(__CONFIG_PATH):
-        existing_content = ""
+def _fix_config_content(no_prettierrc: bool) -> None:
+    if no_prettierrc:
+        if os.path.exists(__CONFIG_PATH):
+            os.remove(__CONFIG_PATH)
+            raise PrecommitError(
+                f'Removed "./{__CONFIG_PATH}" as requested by --no-prettierrc'
+            )
     else:
-        with open(__CONFIG_PATH, "r") as stream:
-            existing_content = stream.read()
-    if existing_content != __EXPECTED_CONFIG:
-        with open(__CONFIG_PATH, "w") as stream:
-            stream.write(__EXPECTED_CONFIG)
-        raise PrecommitError(f'Updated "./{__CONFIG_PATH}" config file')
+        if not os.path.exists(__CONFIG_PATH):
+            existing_content = ""
+        else:
+            with open(__CONFIG_PATH, "r") as stream:
+                existing_content = stream.read()
+        if existing_content != __EXPECTED_CONFIG:
+            with open(__CONFIG_PATH, "w") as stream:
+                stream.write(__EXPECTED_CONFIG)
+            raise PrecommitError(f'Updated "./{__CONFIG_PATH}" config file')
 
     wrong_config_paths = [  # https://prettier.io/docs/en/configuration.html
         ".prettierrc.json",

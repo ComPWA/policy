@@ -32,6 +32,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Fix the identified problems.",
     )
     parser.add_argument(
+        "--no-prettierrc",
+        default=False,
+        action="store_true",
+        help="Remove the prettierrc, so that Prettier's default values are used.",
+    )
+    parser.add_argument(
         "--allow-labels",
         default=False,
         action="store_true",
@@ -52,7 +58,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.allow_labels:
             check_has_labels(fix)
         fix_cspell_config()
-        fix_prettier_config()
+        fix_prettier_config(args.no_prettierrc)
         check_github_templates()
         check_gitpod_config()
         if is_python_repo:
