@@ -10,46 +10,71 @@ from typing import Any, Sequence
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
-from ._helpers import REPOMA_DIR, add_badge, find_precommit_hook
+from ._helpers import REPOMA_DIR, add_badge, find_precommit_hook, remove_badge
 
-__EXPECTED_CONFIG_FILE = ".cspell.json"
-with open(f"{REPOMA_DIR}/{__EXPECTED_CONFIG_FILE}") as __STREAM:
-    __EXPECTED_CONFIG = json.load(__STREAM)
+__EXPECTED_CONFIG_PATH = ".cspell.json"
+__PRETTIER_IGNORE_PATH = ".prettierignore"
+
+# cspell:ignore pelling
+# pylint: disable=line-too-long
+__CSPELL_BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
+__CSPELL_BADGE_PATTERN = (
+    r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
+)
 
 __JSON_DUMP_OPTIONS = {
     "indent": 4,
     "ensure_ascii": False,
 }
 
+with open(f"{REPOMA_DIR}/{__EXPECTED_CONFIG_PATH}") as __STREAM:
+    __EXPECTED_CONFIG = json.load(__STREAM)
+
 
 def fix_cspell_config(extend: bool) -> None:
-    _check_has_config()
-    _fix_config_name()
-    _fix_config_content(extend)
-    _sort_config_entries()
-    _update_prettier_ignore()
-    add_badge(
-        # pylint: disable=line-too-long
-        "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)\n"
-    )
+    _rename_cspell_config()
+    cspell_hook = find_precommit_hook(r".*/mirrors-cspell")
+    if cspell_hook is None:
+        _remove_cspell_configuration()
+    else:
+        _fix_config_content(extend)
+        _sort_config_entries()
+        _update_prettier_ignore()
+        add_badge(f"{__CSPELL_BADGE}\n")
 
 
-def _check_has_config() -> None:
-    if not os.path.exists(__EXPECTED_CONFIG_FILE) and not os.path.exists(
-        "cspell.json"
-    ):
-        raise PrecommitError(
-            f"This repository contains no {__EXPECTED_CONFIG_FILE} config file"
-        )
-
-
-def _fix_config_name() -> None:
+def _rename_cspell_config() -> None:
     if os.path.exists("cspell.json"):
-        os.rename("cspell.json", __EXPECTED_CONFIG_FILE)
+        os.rename("cspell.json", __EXPECTED_CONFIG_PATH)
+
+
+def _remove_cspell_configuration() -> None:
+    if os.path.exists(__EXPECTED_CONFIG_PATH):
+        os.remove(__EXPECTED_CONFIG_PATH)
+        raise PrecommitError(
+            f'"{__EXPECTED_CONFIG_PATH}" is no longer required'
+            " and has been removed"
+        )
+    if os.path.exists(__PRETTIER_IGNORE_PATH):
+        with open(__PRETTIER_IGNORE_PATH, "r") as stream:
+            prettier_ignore_content = stream.readlines()
+        expected_line = __EXPECTED_CONFIG_PATH + "\n"
+        if expected_line in set(prettier_ignore_content):
+            prettier_ignore_content.remove(expected_line)
+            with open(__PRETTIER_IGNORE_PATH, "w") as stream:
+                stream.writelines(prettier_ignore_content)
+            raise PrecommitError(
+                f'"{__EXPECTED_CONFIG_PATH}" in "./{__PRETTIER_IGNORE_PATH}"'
+                " is no longer required and has been removed"
+            )
+    remove_badge(__CSPELL_BADGE_PATTERN)
 
 
 def _fix_config_content(extend: bool) -> None:
-    with open(__EXPECTED_CONFIG_FILE) as stream:
+    if not os.path.exists(__EXPECTED_CONFIG_PATH):
+        with open(__EXPECTED_CONFIG_PATH, "w") as stream:
+            stream.write("{}")
+    with open(__EXPECTED_CONFIG_PATH) as stream:
         config = json.load(stream)
     fixed_sections = []
     for section in __EXPECTED_CONFIG:
@@ -62,15 +87,15 @@ def _fix_config_content(extend: bool) -> None:
         fixed_sections.append('"' + section + '"')
         config[section] = expected_section_content
     if fixed_sections:
-        with open(__EXPECTED_CONFIG_FILE, "w") as stream:
+        with open(__EXPECTED_CONFIG_PATH, "w") as stream:
             json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
         error_message = __express_list_of_sections(fixed_sections)
-        error_message += f' in "./{__EXPECTED_CONFIG_FILE}" has been updated.'
+        error_message += f' in "./{__EXPECTED_CONFIG_PATH}" has been updated.'
         raise PrecommitError(error_message)
 
 
 def _sort_config_entries() -> None:
-    with open(__EXPECTED_CONFIG_FILE) as stream:
+    with open(__EXPECTED_CONFIG_PATH) as stream:
         config = json.load(stream)
     error_message = ""
     fixed_sections = []
@@ -82,7 +107,7 @@ def _sort_config_entries() -> None:
             continue
         fixed_sections.append('"' + section + '"')
         config[section] = sorted_section_content
-    with open(__EXPECTED_CONFIG_FILE, "w") as stream:
+    with open(__EXPECTED_CONFIG_PATH, "w") as stream:
         json.dump(config, stream, **__JSON_DUMP_OPTIONS)  # type: ignore
     if fixed_sections:
         error_message = __express_list_of_sections(fixed_sections)
@@ -97,7 +122,7 @@ def _update_prettier_ignore() -> None:
     if prettier_hook is None:
         return
     prettier_ignore_path = ".prettierignore"
-    expected_line = __EXPECTED_CONFIG_FILE + "\n"
+    expected_line = __EXPECTED_CONFIG_PATH + "\n"
     if not os.path.exists(prettier_ignore_path):
         with open(prettier_ignore_path, "w") as stream:
             stream.write(expected_line)
@@ -109,7 +134,7 @@ def _update_prettier_ignore() -> None:
         with open(prettier_ignore_path, "w+") as stream:
             stream.write(expected_line)
     raise PrecommitError(
-        f'Added "{__EXPECTED_CONFIG_FILE}" to "./{prettier_ignore_path}"'
+        f'Added "{__EXPECTED_CONFIG_PATH}" to "./{prettier_ignore_path}"'
     )
 
 

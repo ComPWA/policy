@@ -10,19 +10,19 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 REPOMA_DIR = os.path.dirname(repoma.__file__)
 __PRECOMMIT_CONFIG_FILE = ".pre-commit-config.yaml"
+__README_PATH = "README.md"
 
 
 def add_badge(badge_line: str) -> None:
-    readme_path = "README.md"
-    if not os.path.exists("README.md"):
+    if not os.path.exists(__README_PATH):
         raise PrecommitError(
-            f'This repository contains no "{readme_path}", so cannot add badge'
+            f'This repository contains no "{__README_PATH}", so cannot add badge'
         )
-    with open(readme_path) as stream:
+    with open(__README_PATH) as stream:
         lines = stream.readlines()
     expected_badge = badge_line
     if expected_badge not in lines:
-        error_message = f'"{readme_path}" is missing a badge:\n'
+        error_message = f'"{__README_PATH}" is missing a badge:\n'
         error_message += f"  {badge_line}"
         insert_position = 0
         for insert_position, line in enumerate(lines):  # noqa: B007
@@ -30,14 +30,37 @@ def add_badge(badge_line: str) -> None:
                 break
         if len(lines) == 0 or insert_position == len(lines) - 1:
             error_message += (
-                f'"{readme_path}" contains no title, so cannot add badge'
+                f'"{__README_PATH}" contains no title, so cannot add badge'
             )
             raise PrecommitError(error_message)
         lines.insert(insert_position + 1, f"\n{expected_badge}")
-        with open(readme_path, "w") as stream:
+        with open(__README_PATH, "w") as stream:
             stream.writelines(lines)
         error_message += "Problem has been fixed."
         raise PrecommitError(error_message)
+
+
+def remove_badge(badge_pattern: str) -> None:
+    if not os.path.exists(__README_PATH):
+        raise PrecommitError(
+            f'This repository contains no "{__README_PATH}", so cannot add badge'
+        )
+    with open(__README_PATH) as stream:
+        lines = stream.readlines()
+    badge_line = None
+    for line in lines:
+        if re.match(badge_pattern, line):
+            badge_line = line
+            break
+    if badge_line is None:
+        return
+    lines.remove(badge_line)
+    with open(__README_PATH, "w") as stream:
+        stream.writelines(lines)
+    raise PrecommitError(
+        f'A badge has been removed from "{__README_PATH}":\n\n'
+        f"  {badge_line}"
+    )
 
 
 def check_has_file(path: str) -> None:
