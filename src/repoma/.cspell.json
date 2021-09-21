@@ -51,5 +51,7 @@
         "tox.ini",
         "typings"
     ],
-    "language": "en-US"
+    "language": "en-US",
+    "words": [],
+    "ignoreWords": []
 }

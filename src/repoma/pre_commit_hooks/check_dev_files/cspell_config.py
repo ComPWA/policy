@@ -78,8 +78,11 @@ def _fix_config_content() -> None:
         config = json.load(stream)
     fixed_sections = []
     for section in __EXPECTED_CONFIG:
+        extend = False
+        if section in {"words", "ignoreWords"}:
+            extend = True
         expected_section_content = __get_expected_content(
-            config, section, extend=False
+            config, section, extend=extend
         )
         section_content = config.get(section)
         if section_content == expected_section_content:
