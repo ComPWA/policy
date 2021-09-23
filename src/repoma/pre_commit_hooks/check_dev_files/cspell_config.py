@@ -31,6 +31,7 @@ __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 # pylint: disable=line-too-long
 __BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
 __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
+__HOOK_PATTERN = r".*(ComPWA/mirrors-cspell|streetsidesoftware/cspell\-cli)"
 
 
 with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
@@ -39,7 +40,7 @@ with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
 
 def fix_cspell_config() -> None:
     _rename_config()
-    precommit_hook = find_precommit_hook(r".*/mirrors-cspell")
+    precommit_hook = find_precommit_hook(__HOOK_PATTERN)
     if precommit_hook is None:
         _remove_configuration()
     else:
@@ -154,7 +155,7 @@ def _check_editor_config() -> None:
 
 
 def _update_prettier_ignore() -> None:
-    prettier_hook = find_precommit_hook(r".*/mirrors-prettier")
+    prettier_hook = find_precommit_hook(__HOOK_PATTERN)
     if prettier_hook is None:
         return
     prettier_ignore_path = ".prettierignore"
