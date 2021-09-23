@@ -32,7 +32,7 @@ __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 # pylint: disable=line-too-long
 __BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
 __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
-__HOOK_PATTERN = r".*(ComPWA/mirrors-cspell|streetsidesoftware/cspell\-cli)"
+__HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
 with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
@@ -41,7 +41,8 @@ with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
 
 def fix_cspell_config() -> None:
     rename_config("cspell.json", __CONFIG_PATH)
-    precommit_hook = find_precommit_hook(__HOOK_PATTERN)
+    _check_hook_url()
+    precommit_hook = find_precommit_hook(__HOOK_URL)
     if precommit_hook is None:
         _remove_configuration()
     else:
@@ -51,6 +52,19 @@ def fix_cspell_config() -> None:
         _update_prettier_ignore()
         add_badge(f"{__BADGE}\n")
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+
+
+def _check_hook_url() -> None:
+    old_url_patters = [
+        r".*/mirrors-cspell",
+    ]
+    for pattern in old_url_patters:
+        old_url = find_precommit_hook(pattern)
+        if old_url is not None:
+            raise PrecommitError(
+                "Pre-commit hook for cspell should be updated."
+                f" Repo URL should be {__HOOK_URL}"
+            )
 
 
 def _remove_configuration() -> None:
@@ -151,7 +165,7 @@ def _check_editor_config() -> None:
 
 
 def _update_prettier_ignore() -> None:
-    prettier_hook = find_precommit_hook(__HOOK_PATTERN)
+    prettier_hook = find_precommit_hook(__HOOK_URL)
     if prettier_hook is None:
         return
     prettier_ignore_path = ".prettierignore"
