@@ -4,8 +4,11 @@ See `cSpell
 <https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell>`_.
 """
 
+import itertools
 import json
 import os
+import textwrap
+from configparser import ConfigParser
 from typing import Any, Sequence
 
 from repoma.pre_commit_hooks.errors import PrecommitError
@@ -20,6 +23,7 @@ from ._helpers import (
 )
 
 __CONFIG_PATH = ".cspell.json"
+__EDITOR_CONFIG_PATH = ".editorconfig"
 __PRETTIER_IGNORE_PATH = ".prettierignore"
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -41,6 +45,7 @@ def fix_cspell_config() -> None:
     else:
         _fix_config_content()
         _sort_config_entries()
+        _check_editor_config()
         _update_prettier_ignore()
         add_badge(f"{__BADGE}\n")
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
@@ -117,6 +122,35 @@ def _sort_config_entries() -> None:
             f' in "./{__CONFIG_PATH}" has been sorted alphabetically.'
         )
         raise PrecommitError(error_message)
+
+
+def _check_editor_config() -> None:
+    if not os.path.exists(__EDITOR_CONFIG_PATH):
+        return
+    cfg = ConfigParser()
+    with open(__EDITOR_CONFIG_PATH) as stream:
+        # https://stackoverflow.com/a/24501036/13219025
+        cfg.read_file(
+            itertools.chain(["[global]"], stream),
+            source=__EDITOR_CONFIG_PATH,
+        )
+    if not cfg.has_section(__CONFIG_PATH):
+        raise PrecommitError(
+            f'./{__EDITOR_CONFIG_PATH} has no section "[{__CONFIG_PATH}]"'
+        )
+    expected_options = {
+        "indent_size": "4",
+    }
+    options = dict(cfg.items(__CONFIG_PATH))
+    if options != expected_options:
+        error_message = (
+            f"./{__EDITOR_CONFIG_PATH} should have the following section:\n\n"
+        )
+        section_content = f"[{__CONFIG_PATH}]\n"
+        for option, value in expected_options.items():
+            section_content += f"{option} = {value}\n"
+        section_content = textwrap.indent(section_content, prefix="  ")
+        raise PrecommitError(error_message + section_content)
 
 
 def _update_prettier_ignore() -> None:
