@@ -138,6 +138,12 @@ def get_repo_url() -> str:
     return source_url
 
 
+def rename_config(old: str, new: str) -> None:
+    if os.path.exists(old):
+        os.rename(old, new)
+        raise PrecommitError(f"File {old} has been renamed to {new}")
+
+
 def add_vscode_extension_recommendation(extension_name: str) -> None:
     if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
         os.makedirs(os.path.dirname(__VSCODE_EXTENSIONS_PATH), exist_ok=True)

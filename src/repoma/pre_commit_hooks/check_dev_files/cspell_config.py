@@ -20,6 +20,7 @@ from ._helpers import (
     find_precommit_hook,
     remove_badge,
     remove_vscode_extension_recommendation,
+    rename_config,
 )
 
 __CONFIG_PATH = ".cspell.json"
@@ -39,7 +40,7 @@ with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
 
 
 def fix_cspell_config() -> None:
-    _rename_config()
+    rename_config("cspell.json", __CONFIG_PATH)
     precommit_hook = find_precommit_hook(__HOOK_PATTERN)
     if precommit_hook is None:
         _remove_configuration()
@@ -50,11 +51,6 @@ def fix_cspell_config() -> None:
         _update_prettier_ignore()
         add_badge(f"{__BADGE}\n")
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
-
-
-def _rename_config() -> None:
-    if os.path.exists("cspell.json"):
-        os.rename("cspell.json", __CONFIG_PATH)
 
 
 def _remove_configuration() -> None:
