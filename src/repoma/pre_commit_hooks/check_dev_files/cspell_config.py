@@ -11,6 +11,8 @@ import textwrap
 from configparser import ConfigParser
 from typing import Any, Sequence
 
+import yaml
+
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 from ._helpers import (
@@ -46,6 +48,7 @@ def fix_cspell_config() -> None:
     if precommit_hook is None:
         _remove_configuration()
     else:
+        _check_check_hook_options()
         _fix_config_content()
         _sort_config_entries()
         _check_editor_config()
@@ -87,6 +90,26 @@ def _remove_configuration() -> None:
             )
     remove_badge(__BADGE_PATTERN)
     remove_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+
+
+def _check_check_hook_options() -> None:
+    config = find_precommit_hook(__HOOK_URL)
+    assert config is not None
+    expected_yaml = f"""
+  - repo: {__HOOK_URL}
+    rev: ...
+    hooks:
+      - id: cspell
+    """
+    expected_config = yaml.safe_load(expected_yaml)[0]
+    if (
+        list(config) != list(expected_config)
+        or config.get("hooks") != expected_config["hooks"]
+    ):
+        raise PrecommitError(
+            "cSpell pre-commit hook should have the following form:\n"
+            + expected_yaml
+        )
 
 
 def _fix_config_content() -> None:
