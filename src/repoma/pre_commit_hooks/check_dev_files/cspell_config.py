@@ -9,7 +9,7 @@ import json
 import os
 import textwrap
 from configparser import ConfigParser
-from typing import Any, Sequence
+from typing import Any, Iterable, List, Sequence
 
 import yaml
 
@@ -144,9 +144,7 @@ def _sort_config_entries() -> None:
     for section, section_content in config.items():
         if not isinstance(section_content, list):
             continue
-        sorted_section_content = sorted(
-            section_content, key=lambda s: s.lower()
-        )
+        sorted_section_content = __sort_section(section_content)
         if section_content == sorted_section_content:
             continue
         fixed_sections.append('"' + section + '"')
@@ -223,10 +221,10 @@ def __get_expected_content(
         return expected_section_content
     if isinstance(expected_section_content, list):
         if not extend:
-            return sorted(expected_section_content)
+            return __sort_section(expected_section_content)
         expected_section_content_set = set(expected_section_content)
         expected_section_content_set.update(section_content)
-        return sorted(expected_section_content_set)
+        return __sort_section(expected_section_content_set)
     raise NotImplementedError(
         "No implementation for section content of type"
         f' {section_content.__class__.__name__} (section: "{section}"'
@@ -268,3 +266,12 @@ def __write_config(config: dict) -> None:
     with open(__CONFIG_PATH, "w") as stream:
         json.dump(config, stream, indent=4, ensure_ascii=False)
         stream.write("\n")
+
+
+def __sort_section(content: Iterable[str]) -> List[str]:
+    """Sort a list section.
+
+    >>> __sort_section({"one", "Two"})
+    ['one', 'Two']
+    """
+    return sorted(content, key=lambda s: s.lower())
