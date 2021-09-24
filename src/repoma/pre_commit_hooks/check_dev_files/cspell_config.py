@@ -144,7 +144,9 @@ def _sort_config_entries() -> None:
     for section, section_content in config.items():
         if not isinstance(section_content, list):
             continue
-        sorted_section_content = sorted(section_content)
+        sorted_section_content = sorted(
+            section_content, key=lambda s: s.lower()
+        )
         if section_content == sorted_section_content:
             continue
         fixed_sections.append('"' + section + '"')
