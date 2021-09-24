@@ -44,6 +44,12 @@ repos:
     hooks:
       - id: blacken-docs
 
+  - repo: https://github.com/ComPWA/repo-maintenance
+    rev: 0.0.37
+    hooks:
+      - id: check-dev-files
+      - id: format-setup-cfg
+
   - repo: https://github.com/streetsidesoftware/cspell-cli
     rev: v5.6.9
     hooks:
