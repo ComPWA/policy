@@ -22,8 +22,10 @@ def add_badge(badge_line: str) -> None:
         )
     with open(__README_PATH) as stream:
         lines = stream.readlines()
+    stripped_lines = set(map(lambda s: s.strip("<br>"), lines))
+    stripped_lines = set(map(lambda s: s.strip("<br />"), lines))
     expected_badge = badge_line
-    if expected_badge not in lines:
+    if expected_badge not in stripped_lines:
         error_message = f'"{__README_PATH}" is missing a badge:\n'
         error_message += f"  {badge_line}"
         insert_position = 0
