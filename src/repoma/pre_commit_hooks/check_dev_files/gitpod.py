@@ -33,7 +33,7 @@ def check_gitpod_config() -> None:
         repo_url = get_repo_url()
         add_badge(
             # pylint: disable=line-too-long
-            f"[![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#{repo_url})\n"
+            f"[![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )
     except PrecommitError:
         pass

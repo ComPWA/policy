@@ -32,7 +32,7 @@ def fix_prettier_config(no_prettierrc: bool) -> None:
         _remove_configuration()
     else:
         _fix_config_content(no_prettierrc)
-        add_badge(f"{__BADGE}\n")
+        add_badge(__BADGE)
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
 

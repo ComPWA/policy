@@ -53,7 +53,7 @@ def fix_cspell_config() -> None:
         _sort_config_entries()
         _check_editor_config()
         _update_prettier_ignore()
-        add_badge(f"{__BADGE}\n")
+        add_badge(__BADGE)
         add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
 
