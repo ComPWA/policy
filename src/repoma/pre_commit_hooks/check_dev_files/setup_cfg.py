@@ -13,11 +13,12 @@ from repoma.pre_commit_hooks.format_setup_cfg import (
 )
 
 
-def fix_setup_cfg() -> None:
+def fix_setup_cfg(ignore_author: bool) -> None:
     if not os.path.exists(SETUP_CFG_PATH):
         return
     _check_required_options()
-    _update_author_data()
+    if not ignore_author:
+        _update_author_data()
     _fix_long_description()
 
 
