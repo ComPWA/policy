@@ -25,7 +25,8 @@ repos:
       - id: check-dev-files
       - id: fix-first-nbcell
       - id: fix-nbformat-version
-      - id: format-setup.cfg
+      - id: format-setup-cfg
+      - id: pin-nb-requirements
 ```
 
 then run `pre-commit autoupdate`. This example lists all available hooks
