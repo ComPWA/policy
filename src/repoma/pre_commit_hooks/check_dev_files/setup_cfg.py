@@ -3,7 +3,6 @@
 import os
 import textwrap
 from collections import defaultdict
-from copy import deepcopy
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 from repoma.pre_commit_hooks.format_setup_cfg import (
@@ -11,6 +10,8 @@ from repoma.pre_commit_hooks.format_setup_cfg import (
     open_setup_cfg,
     write_formatted_setup_cfg,
 )
+
+from ._helpers import copy_config
 
 
 def fix_setup_cfg(ignore_author: bool) -> None:
@@ -54,7 +55,7 @@ def _check_required_options() -> None:
 
 def _update_author_data() -> None:
     old_cfg = open_setup_cfg()
-    new_cfg = deepcopy(old_cfg)
+    new_cfg = copy_config(old_cfg)
     new_cfg.set("metadata", "author", "Common Partial Wave Analysis")
     new_cfg.set("metadata", "author_email", "Common Partial Wave Analysis")
     new_cfg.set("metadata", "author_email", "compwa-admin@ep1.rub.de")
@@ -66,7 +67,7 @@ def _update_author_data() -> None:
 def _fix_long_description() -> None:
     if os.path.exists("README.md"):
         old_cfg = open_setup_cfg()
-        new_cfg = deepcopy(old_cfg)
+        new_cfg = copy_config(old_cfg)
         new_cfg.set("metadata", "long_description", "file: README.md")
         new_cfg.set(
             "metadata", "long_description_content_type", "text/markdown"

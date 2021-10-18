@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import re
@@ -65,6 +66,17 @@ def remove_badge(badge_pattern: str) -> None:
         f'A badge has been removed from "{__README_PATH}":\n\n'
         f"  {badge_line}"
     )
+
+
+def copy_config(cfg: ConfigParser) -> ConfigParser:
+    # can't use deepcopy in Python 3.6
+    # https://stackoverflow.com/a/24343297
+    stream = io.StringIO()
+    cfg.write(stream)
+    stream.seek(0)
+    cfg_copy = ConfigParser()
+    cfg_copy.read_file(stream)
+    return cfg_copy
 
 
 def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:

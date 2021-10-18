@@ -2,10 +2,11 @@
 
 import os
 from configparser import ConfigParser
-from copy import deepcopy
 from typing import List, Tuple
 
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+from ._helpers import copy_config
 
 __CONFIG_PATH = "tox.ini"
 
@@ -44,8 +45,8 @@ def extract_sections(sections: List[str], output_file: str, fix: bool) -> None:
 def __split_config(
     cfg: ConfigParser, extracted_sections: List[str]
 ) -> Tuple[ConfigParser, ConfigParser]:
-    old_config = deepcopy(cfg)
-    extracted_config = deepcopy(cfg)
+    old_config = copy_config(cfg)
+    extracted_config = copy_config(cfg)
     for section in cfg.sections():
         if section in extracted_sections:
             old_config.remove_section(section)
