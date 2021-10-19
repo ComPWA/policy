@@ -3,7 +3,6 @@ ci:
   autoupdate_schedule: monthly
   skip:
     # local hooks
-    - flake8
     - mypy
     - pylint
     # hooks that don't work on pre-commit.ci
@@ -64,6 +63,20 @@ repos:
             .*\.py
           )$
 
+  - repo: https://github.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-blind-except
+          - flake8-bugbear
+          - flake8-builtins
+          - flake8-comprehensions
+          - flake8-pytest-style
+          - flake8-rst-docstrings
+          - flake8-use-fstring
+          - pep8-naming
+
   - repo: https://github.com/pycqa/isort
     rev: 5.9.3
     hooks:
@@ -94,13 +107,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types:
-          - python
-
       - id: mypy
         name: mypy
         entry: mypy
