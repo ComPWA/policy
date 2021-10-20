@@ -2,9 +2,8 @@
 
 import os
 
+from repoma._utilities import write_script
 from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import write_script
 
 __CONSTRAINTS_DIR = ".constraints"
 __SCRIPT_NAME = "pin_requirements.py"

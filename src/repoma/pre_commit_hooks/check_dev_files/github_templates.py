@@ -4,9 +4,8 @@ import os
 import shutil
 from typing import List
 
+from repoma._utilities import REPOMA_DIR
 from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import REPOMA_DIR
 
 __PR_TEMPLATE_PATH = ".github/pull_request_template.md"
 __ISSUE_TEMPLATE_PATH = ".github/ISSUE_TEMPLATE"

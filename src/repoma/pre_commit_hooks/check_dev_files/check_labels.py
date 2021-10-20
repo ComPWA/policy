@@ -8,6 +8,7 @@ import os
 import pathlib
 from typing import List
 
+from repoma._utilities import CONFIG_PATH
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 __LABELS_CONFIG_FILE = "labels.toml"
@@ -59,7 +60,7 @@ def _get_requirement_files() -> List[pathlib.Path]:
     return [
         *pathlib.Path(".").glob("**/requirements*.in"),
         *pathlib.Path(".").glob("**/requirements*.txt"),
-        *pathlib.Path(".").glob("setup.cfg"),
+        *pathlib.Path(".").glob(CONFIG_PATH.setup_cfg),
     ]
 
 

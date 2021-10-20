@@ -24,8 +24,10 @@ from typing import Optional, Sequence
 
 import nbformat  # type: ignore
 
+from repoma._utilities import CONFIG_PATH
+
 cfg = configparser.ConfigParser()
-cfg.read("setup.cfg")
+cfg.read(CONFIG_PATH.setup_cfg)
 
 PACKAGE_NAME = cfg["metadata"]["name"]
 DEFAULT_CONTENT = """

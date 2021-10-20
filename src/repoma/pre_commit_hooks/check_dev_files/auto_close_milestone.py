@@ -8,9 +8,8 @@ See `github.com/mhutchie/update-milestone-on-release
 
 import os
 
+from repoma._utilities import write_script
 from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import write_script
 
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 

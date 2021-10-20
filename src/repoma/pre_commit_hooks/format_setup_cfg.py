@@ -5,7 +5,7 @@ import sys
 from configparser import ConfigParser
 from typing import Optional, Sequence
 
-SETUP_CFG_PATH = "setup.cfg"
+from repoma._utilities import CONFIG_PATH, open_setup_cfg
 
 
 def format_setup_cfg() -> None:
@@ -13,16 +13,10 @@ def format_setup_cfg() -> None:
     write_formatted_setup_cfg(cfg)
 
 
-def open_setup_cfg() -> ConfigParser:
-    cfg = ConfigParser()
-    cfg.read(SETUP_CFG_PATH)
-    return cfg
-
-
 def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
-    with open(SETUP_CFG_PATH, "w") as stream:
+    with open(CONFIG_PATH.setup_cfg, "w") as stream:
         cfg.write(stream)
-    with open(SETUP_CFG_PATH) as stream:
+    with open(CONFIG_PATH.setup_cfg) as stream:
         content = stream.read()
     content = "\n".join(  # remove trailing spaces
         map(lambda line: line.rstrip(), content.split("\n"))
@@ -31,7 +25,7 @@ def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
     content = content.replace("  #", " #")  # remove spaces before comments
     content = content.replace(" #", "  #")  # black: two spaces before comment
     content = content.strip("\n") + "\n"  # remove final line ending
-    with open(SETUP_CFG_PATH, "w") as stream:
+    with open(CONFIG_PATH.setup_cfg, "w") as stream:
         stream.write(content)
 
 
@@ -49,7 +43,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Add pip install statements for Google Colab.",
     )
     args = parser.parse_args(argv)
-    if SETUP_CFG_PATH in args.filenames:
+    if CONFIG_PATH.setup_cfg in args.filenames:
         format_setup_cfg()
     return 0
 

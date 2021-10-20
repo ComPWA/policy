@@ -13,9 +13,8 @@ from typing import Any, Iterable, List, Sequence
 
 import yaml
 
-from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import (
+from repoma._utilities import (
+    CONFIG_PATH,
     REPOMA_DIR,
     add_badge,
     add_vscode_extension_recommendation,
@@ -24,10 +23,8 @@ from ._helpers import (
     remove_vscode_extension_recommendation,
     rename_config,
 )
+from repoma.pre_commit_hooks.errors import PrecommitError
 
-__CONFIG_PATH = ".cspell.json"
-__EDITOR_CONFIG_PATH = ".editorconfig"
-__PRETTIER_IGNORE_PATH = ".prettierignore"
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
 # cspell:ignore pelling
@@ -37,12 +34,12 @@ __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
 __HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
-with open(f"{REPOMA_DIR}/{__CONFIG_PATH}") as __STREAM:
+with open(f"{REPOMA_DIR}/{CONFIG_PATH.cspell}") as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
 def fix_cspell_config() -> None:
-    rename_config("cspell.json", __CONFIG_PATH)
+    rename_config("cspell.json", CONFIG_PATH.cspell)
     _check_hook_url()
     precommit_hook = find_precommit_hook(__HOOK_URL)
     if precommit_hook is None:
@@ -71,21 +68,22 @@ def _check_hook_url() -> None:
 
 
 def _remove_configuration() -> None:
-    if os.path.exists(__CONFIG_PATH):
-        os.remove(__CONFIG_PATH)
+    if os.path.exists(CONFIG_PATH.cspell):
+        os.remove(CONFIG_PATH.cspell)
         raise PrecommitError(
-            f'"{__CONFIG_PATH}" is no longer required' " and has been removed"
+            f'"{CONFIG_PATH.cspell}" is no longer required'
+            " and has been removed"
         )
-    if os.path.exists(__PRETTIER_IGNORE_PATH):
-        with open(__PRETTIER_IGNORE_PATH, "r") as stream:
+    if os.path.exists(CONFIG_PATH.editor_config):
+        with open(CONFIG_PATH.editor_config, "r") as stream:
             prettier_ignore_content = stream.readlines()
-        expected_line = __CONFIG_PATH + "\n"
+        expected_line = CONFIG_PATH.cspell + "\n"
         if expected_line in set(prettier_ignore_content):
             prettier_ignore_content.remove(expected_line)
-            with open(__PRETTIER_IGNORE_PATH, "w") as stream:
+            with open(CONFIG_PATH.editor_config, "w") as stream:
                 stream.writelines(prettier_ignore_content)
             raise PrecommitError(
-                f'"{__CONFIG_PATH}" in "./{__PRETTIER_IGNORE_PATH}"'
+                f'"{CONFIG_PATH.cspell}" in "./{CONFIG_PATH.editor_config}"'
                 " is no longer required and has been removed"
             )
     remove_badge(__BADGE_PATTERN)
@@ -113,10 +111,10 @@ def _check_check_hook_options() -> None:
 
 
 def _fix_config_content() -> None:
-    if not os.path.exists(__CONFIG_PATH):
-        with open(__CONFIG_PATH, "w") as stream:
+    if not os.path.exists(CONFIG_PATH.cspell):
+        with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
-    config = __get_config(__CONFIG_PATH)
+    config = __get_config(CONFIG_PATH.cspell)
     fixed_sections = []
     for section_name in __EXPECTED_CONFIG:
         if section_name in {"words", "ignoreWords"}:
@@ -133,12 +131,12 @@ def _fix_config_content() -> None:
     if fixed_sections:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
-        error_message += f' in "./{__CONFIG_PATH}" has been updated.'
+        error_message += f' in "./{CONFIG_PATH.cspell}" has been updated.'
         raise PrecommitError(error_message)
 
 
 def _sort_config_entries() -> None:
-    config = __get_config(__CONFIG_PATH)
+    config = __get_config(CONFIG_PATH.cspell)
     error_message = ""
     fixed_sections = []
     for section, section_content in config.items():
@@ -153,34 +151,32 @@ def _sort_config_entries() -> None:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
         error_message += (
-            f' in "./{__CONFIG_PATH}" has been sorted alphabetically.'
+            f' in "./{CONFIG_PATH.cspell}" has been sorted alphabetically.'
         )
         raise PrecommitError(error_message)
 
 
 def _check_editor_config() -> None:
-    if not os.path.exists(__EDITOR_CONFIG_PATH):
+    if not os.path.exists(CONFIG_PATH.editor_config):
         return
     cfg = ConfigParser()
-    with open(__EDITOR_CONFIG_PATH) as stream:
+    with open(CONFIG_PATH.editor_config) as stream:
         # https://stackoverflow.com/a/24501036/13219025
         cfg.read_file(
             itertools.chain(["[global]"], stream),
-            source=__EDITOR_CONFIG_PATH,
+            source=CONFIG_PATH.editor_config,
         )
-    if not cfg.has_section(__CONFIG_PATH):
+    if not cfg.has_section(CONFIG_PATH.cspell):
         raise PrecommitError(
-            f'./{__EDITOR_CONFIG_PATH} has no section "[{__CONFIG_PATH}]"'
+            f'./{CONFIG_PATH.editor_config} has no section "[{CONFIG_PATH.cspell}]"'
         )
     expected_options = {
         "indent_size": "4",
     }
-    options = dict(cfg.items(__CONFIG_PATH))
+    options = dict(cfg.items(CONFIG_PATH.cspell))
     if options != expected_options:
-        error_message = (
-            f"./{__EDITOR_CONFIG_PATH} should have the following section:\n\n"
-        )
-        section_content = f"[{__CONFIG_PATH}]\n"
+        error_message = f"./{CONFIG_PATH.editor_config} should have the following section:\n\n"
+        section_content = f"[{CONFIG_PATH.cspell}]\n"
         for option, value in expected_options.items():
             section_content += f"{option} = {value}\n"
         section_content = textwrap.indent(section_content, prefix="  ")
@@ -192,7 +188,7 @@ def _update_prettier_ignore() -> None:
     if prettier_hook is None:
         return
     prettier_ignore_path = ".prettierignore"
-    expected_line = __CONFIG_PATH + "\n"
+    expected_line = CONFIG_PATH.cspell + "\n"
     if not os.path.exists(prettier_ignore_path):
         with open(prettier_ignore_path, "w") as stream:
             stream.write(expected_line)
@@ -204,7 +200,7 @@ def _update_prettier_ignore() -> None:
         with open(prettier_ignore_path, "w+") as stream:
             stream.write(expected_line)
     raise PrecommitError(
-        f'Added "{__CONFIG_PATH}" to "./{prettier_ignore_path}"'
+        f'Added "{CONFIG_PATH.cspell}" to "./{prettier_ignore_path}"'
     )
 
 
@@ -263,7 +259,7 @@ def __get_config(path: str) -> dict:
 
 
 def __write_config(config: dict) -> None:
-    with open(__CONFIG_PATH, "w") as stream:
+    with open(CONFIG_PATH.cspell, "w") as stream:
         json.dump(config, stream, indent=4, ensure_ascii=False)
         stream.write("\n")
 
