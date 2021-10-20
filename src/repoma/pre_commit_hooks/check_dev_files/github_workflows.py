@@ -14,13 +14,21 @@ def check_milestone_workflow() -> None:
     <https://github.com/mhutchie/update-milestone-on-release>`_.
     """
     # cspell:ignore mhutchie
-    workflow_file = "milestone.yml"
+    _copy_workflow_file("milestone.yml")
+
+
+def check_docs_workflow() -> None:
+    if os.path.exists("./docs/") or os.path.exists("./doc/"):
+        _copy_workflow_file("ci-docs.yml")
+
+
+def _copy_workflow_file(filename: str) -> None:
     expected_workflow_path = os.path.abspath(
-        f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
+        f"{__THIS_MODULE_DIR}/../../workflows/{filename}"
     )
     with open(expected_workflow_path) as stream:
         expected_content = stream.read()
-    workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{workflow_file}"
+    workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{filename}"
     if not os.path.exists(workflow_path):
         write_script(expected_content, path=workflow_path)
         raise PrecommitError(f'Created "{workflow_path}" workflow')

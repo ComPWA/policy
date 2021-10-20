@@ -10,7 +10,7 @@ from .check_labels import check_has_labels
 from .cspell_config import fix_cspell_config
 from .editor_config_hook import check_editor_config_hook
 from .github_templates import check_github_templates
-from .github_workflows import check_milestone_workflow
+from .github_workflows import check_docs_workflow, check_milestone_workflow
 from .gitpod import check_gitpod_config
 from .pin_requirements_scripts import check_constraints_folder
 from .prettier_config import fix_prettier_config
@@ -61,6 +61,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     is_python_repo = not args.no_python
     try:
         check_milestone_workflow()
+        check_docs_workflow()
         check_editor_config_hook()
         if not args.allow_labels:
             check_has_labels(fix)
