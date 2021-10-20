@@ -14,6 +14,7 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 class ConfigFilePaths(NamedTuple):
     cspell: str = ".cspell.json"
     editor_config: str = ".editorconfig"
+    github_workflow_dir: str = ".github/workflows"
     pre_commit: str = ".pre-commit-config.yaml"
     prettier: str = ".prettierrc"
     prettier_ignore: str = ".prettierignore"

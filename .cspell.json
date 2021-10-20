@@ -55,6 +55,7 @@
     "language": "en-US",
     "words": [
         "compwa",
+        "graphviz",
         "ipython",
         "mkdir",
         "mypy",
@@ -71,6 +72,7 @@
         "nbcell",
         "nbformat",
         "noqa",
+        "pandoc",
         "prettierrc",
         "pydocstyle",
         "pylint",
