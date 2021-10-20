@@ -20,6 +20,7 @@ def check_milestone_workflow() -> None:
 def check_docs_workflow() -> None:
     if os.path.exists("./docs/") or os.path.exists("./doc/"):
         _copy_workflow_file("ci-docs.yml")
+        _copy_workflow_file("linkcheck.yml")
 
 
 def _copy_workflow_file(filename: str) -> None:
