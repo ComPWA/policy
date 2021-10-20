@@ -2,7 +2,9 @@
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
+
+import attr
 
 from repoma.pre_commit_hooks.errors import PrecommitError
 
@@ -18,7 +20,19 @@ from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+@attr.s(on_setattr=attr.setters.frozen)
+class _HookExecutor:
+    error_messages: List[str] = attr.ib(factory=list, init=False)
+
+    def __call__(self, function: Callable, *args: Any, **kwargs: Any) -> None:
+        try:
+            function(*args, **kwargs)
+        except PrecommitError as exception:
+            error_message = str("\n".join(exception.args))
+            self.error_messages.append(error_message)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--ignore-author",
@@ -59,25 +73,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     fix = not args.no_fix
     is_python_repo = not args.no_python
-    try:
-        check_milestone_workflow()
-        check_docs_workflow()
-        check_editor_config_hook()
-        if not args.allow_labels:
-            check_has_labels(fix)
-        fix_cspell_config()
-        fix_prettier_config(args.no_prettierrc)
-        check_github_templates()
-        check_gitpod_config()
-        if is_python_repo:
-            if args.pin_requirements:
-                check_constraints_folder()
-            fix_setup_cfg(args.ignore_author)
-            check_tox_ini(fix)
-        return 0
-    except PrecommitError as exception:
-        print(str("\n".join(exception.args)))
+
+    executor = _HookExecutor()
+    executor(check_milestone_workflow)
+    executor(check_docs_workflow)
+    executor(check_editor_config_hook)
+    if not args.allow_labels:
+        executor(check_has_labels, fix)
+    executor(fix_cspell_config)
+    executor(fix_prettier_config, args.no_prettierrc)
+    executor(check_github_templates)
+    executor(check_gitpod_config)
+    if is_python_repo:
+        if args.pin_requirements:
+            executor(check_constraints_folder)
+        executor(fix_setup_cfg, args.ignore_author)
+        executor(check_tox_ini, fix)
+    if executor.error_messages:
+        print("\n---------------\n\n".join(executor.error_messages))
         return 1
+    return 0
 
 
 if __name__ == "__main__":
