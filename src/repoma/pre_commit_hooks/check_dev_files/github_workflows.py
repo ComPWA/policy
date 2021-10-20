@@ -1,7 +1,7 @@
 """Check :file:`.github/workflows` folder content."""
 import os
 
-from repoma._utilities import write_script
+from repoma._utilities import CONFIG_PATH, write_script
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -14,14 +14,13 @@ def check_milestone_workflow() -> None:
     <https://github.com/mhutchie/update-milestone-on-release>`_.
     """
     # cspell:ignore mhutchie
-    github_workflow_dir = ".github/workflows"
     workflow_file = "milestone.yml"
     expected_workflow_path = os.path.abspath(
         f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
     )
     with open(expected_workflow_path) as stream:
         expected_content = stream.read()
-    workflow_path = f"{github_workflow_dir}/{workflow_file}"
+    workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{workflow_file}"
     if not os.path.exists(workflow_path):
         write_script(expected_content, path=workflow_path)
         raise PrecommitError(f'Created "{workflow_path}" workflow')
