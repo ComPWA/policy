@@ -127,11 +127,7 @@ def get_precommit_repos() -> List[Dict[str, Any]]:
 
 
 def get_repo_url() -> str:
-    setup_file = CONFIG_PATH.setup_cfg
-    if not os.path.exists(setup_file):
-        raise PrecommitError("This repository contains no setup.cfg file")
-    cfg = ConfigParser()
-    cfg.read(setup_file)
+    cfg = open_setup_cfg()
     if not cfg.has_section("metadata"):
         raise PrecommitError("setup.cfg does not contain a metadata section")
     project_urls_def = cfg["metadata"].get("project_urls", None)
@@ -163,6 +159,15 @@ def get_repo_url() -> str:
             'metadata.project_urls in setup.cfg does not contain "Source" URL'
         )
     return source_url
+
+
+def open_setup_cfg() -> ConfigParser:
+    setup_file = CONFIG_PATH.setup_cfg
+    if not os.path.exists(setup_file):
+        raise PrecommitError("This repository contains no setup.cfg file")
+    cfg = ConfigParser()
+    cfg.read(setup_file)
+    return cfg
 
 
 def rename_config(old: str, new: str) -> None:

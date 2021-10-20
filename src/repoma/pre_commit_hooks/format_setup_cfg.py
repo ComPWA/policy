@@ -5,18 +5,12 @@ import sys
 from configparser import ConfigParser
 from typing import Optional, Sequence
 
-from repoma._utilities import CONFIG_PATH
+from repoma._utilities import CONFIG_PATH, open_setup_cfg
 
 
 def format_setup_cfg() -> None:
     cfg = open_setup_cfg()
     write_formatted_setup_cfg(cfg)
-
-
-def open_setup_cfg() -> ConfigParser:
-    cfg = ConfigParser()
-    cfg.read(CONFIG_PATH.setup_cfg)
-    return cfg
 
 
 def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
