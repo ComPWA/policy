@@ -1,11 +1,4 @@
-# cspell:ignore mhutchie
-"""Add a GitHub Action that auto-closes milestones on a new release.
-
-See `github.com/mhutchie/update-milestone-on-release
-<https://github.com/mhutchie/update-milestone-on-release>`_.
-"""
-
-
+"""Check :file:`.github/workflows` folder content."""
 import os
 
 from repoma._utilities import write_script
@@ -14,7 +7,13 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def check_workflow_file() -> None:
+def check_milestone_workflow() -> None:
+    """Add a GitHub Action that auto-closes milestones on a new release.
+
+    See `github.com/mhutchie/update-milestone-on-release
+    <https://github.com/mhutchie/update-milestone-on-release>`_.
+    """
+    # cspell:ignore mhutchie
     github_workflow_dir = ".github/workflows"
     workflow_file = "milestone.yml"
     expected_workflow_path = os.path.abspath(
