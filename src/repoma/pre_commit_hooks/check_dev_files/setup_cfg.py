@@ -4,14 +4,13 @@ import os
 import textwrap
 from collections import defaultdict
 
+from repoma._utilities import copy_config
 from repoma.pre_commit_hooks.errors import PrecommitError
 from repoma.pre_commit_hooks.format_setup_cfg import (
     SETUP_CFG_PATH,
     open_setup_cfg,
     write_formatted_setup_cfg,
 )
-
-from ._helpers import copy_config
 
 
 def fix_setup_cfg(ignore_author: bool) -> None:

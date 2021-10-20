@@ -2,9 +2,7 @@
 
 import os
 
-from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import (
+from repoma._utilities import (
     REPOMA_DIR,
     add_badge,
     add_vscode_extension_recommendation,
@@ -12,6 +10,7 @@ from ._helpers import (
     remove_badge,
     remove_vscode_extension_recommendation,
 )
+from repoma.pre_commit_hooks.errors import PrecommitError
 
 # cspell:ignore esbenp
 __CONFIG_PATH = ".prettierrc"

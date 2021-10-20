@@ -4,9 +4,8 @@ import os
 from configparser import ConfigParser
 from typing import List, Tuple
 
+from repoma._utilities import copy_config
 from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import copy_config
 
 __CONFIG_PATH = "tox.ini"
 

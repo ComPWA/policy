@@ -1,4 +1,4 @@
-from repoma.pre_commit_hooks.check_dev_files._helpers import REPOMA_DIR
+from repoma._utilities import REPOMA_DIR
 from repoma.pre_commit_hooks.check_dev_files.github_templates import (
     _list_template_files,
 )

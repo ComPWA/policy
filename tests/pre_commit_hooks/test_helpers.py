@@ -1,4 +1,4 @@
-from repoma.pre_commit_hooks.check_dev_files._helpers import get_repo_url
+from repoma._utilities import get_repo_url
 
 
 def test_get_repo_url():

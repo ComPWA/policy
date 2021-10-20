@@ -5,9 +5,8 @@ import os
 
 import yaml
 
+from repoma._utilities import REPOMA_DIR, add_badge, get_repo_url, write_yaml
 from repoma.pre_commit_hooks.errors import PrecommitError
-
-from ._helpers import REPOMA_DIR, add_badge, get_repo_url, write_yaml
 
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 __EXTENSIONS_FILE = ".vscode/extensions.json"
