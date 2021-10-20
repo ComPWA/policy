@@ -4,17 +4,16 @@ import os
 import textwrap
 from collections import defaultdict
 
-from repoma._utilities import copy_config
+from repoma._utilities import CONFIG_PATH, copy_config
 from repoma.pre_commit_hooks.errors import PrecommitError
 from repoma.pre_commit_hooks.format_setup_cfg import (
-    SETUP_CFG_PATH,
     open_setup_cfg,
     write_formatted_setup_cfg,
 )
 
 
 def fix_setup_cfg(ignore_author: bool) -> None:
-    if not os.path.exists(SETUP_CFG_PATH):
+    if not os.path.exists(CONFIG_PATH.setup_cfg):
         return
     _check_required_options()
     if not ignore_author:
@@ -47,7 +46,7 @@ def _check_required_options() -> None:
                 summary += f"{option} = ...\n"
             summary += "...\n"
         raise PrecommitError(
-            f"./{SETUP_CFG_PATH} is missing the following options:\n"
+            f"./{CONFIG_PATH.setup_cfg} is missing the following options:\n"
             + textwrap.indent(summary, prefix="  ")
         )
 
@@ -60,7 +59,9 @@ def _update_author_data() -> None:
     new_cfg.set("metadata", "author_email", "compwa-admin@ep1.rub.de")
     if new_cfg != old_cfg:
         write_formatted_setup_cfg(new_cfg)
-        raise PrecommitError(f"Updated author info in ./{SETUP_CFG_PATH}")
+        raise PrecommitError(
+            f"Updated author info in ./{CONFIG_PATH.setup_cfg}"
+        )
 
 
 def _fix_long_description() -> None:
@@ -74,5 +75,5 @@ def _fix_long_description() -> None:
         if new_cfg != old_cfg:
             write_formatted_setup_cfg(new_cfg)
             raise PrecommitError(
-                f"Updated long_description in ./{SETUP_CFG_PATH}"
+                f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
             )

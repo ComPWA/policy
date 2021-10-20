@@ -3,17 +3,30 @@ import json
 import os
 import re
 from configparser import ConfigParser
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 import yaml
 
 import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
 
+
+class ConfigFilePaths(NamedTuple):
+    cspell: str = ".cspell.json"
+    editor_config: str = ".editorconfig"
+    pre_commit: str = ".pre-commit-config.yaml"
+    prettier: str = ".prettierrc"
+    prettier_ignore: str = ".prettierignore"
+    setup_cfg: str = "setup.cfg"
+    tox: str = "tox.ini"
+    vscode_extensions: str = ".vscode/extensions.json"
+    gitpod: str = ".gitpod.yml"
+
+
+CONFIG_PATH = ConfigFilePaths()
+
 REPOMA_DIR = os.path.dirname(repoma.__file__)
-__PRECOMMIT_CONFIG_FILE = ".pre-commit-config.yaml"
 __README_PATH = "README.md"
-__VSCODE_EXTENSIONS_PATH = ".vscode/extensions.json"
 
 
 def add_badge(badge: str) -> None:
@@ -98,23 +111,23 @@ def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
 
 
 def get_precommit_repos() -> List[Dict[str, Any]]:
-    if not os.path.exists(__PRECOMMIT_CONFIG_FILE):
+    if not os.path.exists(CONFIG_PATH.pre_commit):
         raise PrecommitError(
             "Are you sure this repository contains a"
-            f' "./{__PRECOMMIT_CONFIG_FILE}" file?'
+            f' "./{CONFIG_PATH.pre_commit}" file?'
         )
-    with open(__PRECOMMIT_CONFIG_FILE) as stream:
+    with open(CONFIG_PATH.pre_commit) as stream:
         config = yaml.load(stream, Loader=yaml.SafeLoader)
     repos = config.get("repos")
     if repos is None:
         raise PrecommitError(
-            f'"./{__PRECOMMIT_CONFIG_FILE}" does not contain a "repos" section'
+            f'"./{CONFIG_PATH.pre_commit}" does not contain a "repos" section'
         )
     return repos
 
 
 def get_repo_url() -> str:
-    setup_file = "setup.cfg"
+    setup_file = CONFIG_PATH.setup_cfg
     if not os.path.exists(setup_file):
         raise PrecommitError("This repository contains no setup.cfg file")
     cfg = ConfigParser()
@@ -159,11 +172,13 @@ def rename_config(old: str, new: str) -> None:
 
 
 def add_vscode_extension_recommendation(extension_name: str) -> None:
-    if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
-        os.makedirs(os.path.dirname(__VSCODE_EXTENSIONS_PATH), exist_ok=True)
+    if not os.path.exists(CONFIG_PATH.vscode_extensions):
+        os.makedirs(
+            os.path.dirname(CONFIG_PATH.vscode_extensions), exist_ok=True
+        )
         config = {}
     else:
-        with open(__VSCODE_EXTENSIONS_PATH) as stream:
+        with open(CONFIG_PATH.vscode_extensions) as stream:
             config = json.load(stream)
     recommended_extensions = config.get("recommendations", [])
     if extension_name not in set(recommended_extensions):
@@ -176,9 +191,9 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
 
 
 def remove_vscode_extension_recommendation(extension_name: str) -> None:
-    if not os.path.exists(__VSCODE_EXTENSIONS_PATH):
+    if not os.path.exists(CONFIG_PATH.vscode_extensions):
         return
-    with open(__VSCODE_EXTENSIONS_PATH) as stream:
+    with open(CONFIG_PATH.vscode_extensions) as stream:
         config = json.load(stream)
     recommended_extensions = list(config.get("recommendations", []))
     if extension_name in recommended_extensions:
@@ -191,7 +206,7 @@ def remove_vscode_extension_recommendation(extension_name: str) -> None:
 
 
 def __dump_vscode_config(config: dict) -> None:
-    with open(__VSCODE_EXTENSIONS_PATH, "w") as stream:
+    with open(CONFIG_PATH.vscode_extensions, "w") as stream:
         json.dump(config, stream, indent=2, sort_keys=True)
         stream.write("\n")
 
