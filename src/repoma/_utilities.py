@@ -225,10 +225,12 @@ def write_script(content: str, path: str) -> None:
 
 class _IncreasedYamlIndent(yaml.Dumper):
     # pylint: disable=too-many-ancestors
-    def increase_indent(self, flow=False, indentless=False):  # type: ignore
+    def increase_indent(
+        self, flow: bool = False, indentless: bool = False
+    ) -> None:
         return super().increase_indent(flow, False)
 
-    def write_line_break(self, data=None):  # type: ignore
+    def write_line_break(self, data: Optional[str] = None) -> None:
         """See https://stackoverflow.com/a/44284819."""
         super().write_line_break(data)
         if len(self.indents) == 1:

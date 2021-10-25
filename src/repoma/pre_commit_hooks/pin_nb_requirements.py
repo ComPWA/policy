@@ -10,7 +10,7 @@ import argparse
 import sys
 from typing import List, Optional, Sequence
 
-import nbformat  # type: ignore
+import nbformat
 
 from .errors import PrecommitError
 

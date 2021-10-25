@@ -2,7 +2,7 @@ name: repoma
 channels:
   - defaults
 dependencies:
-  - python==3.6.2
+  - python==3.8.*
   - pip
   - pip:
       - -e .[dev]

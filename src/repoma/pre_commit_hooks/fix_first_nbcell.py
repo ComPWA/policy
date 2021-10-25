@@ -22,7 +22,7 @@ import configparser
 import sys
 from typing import Optional, Sequence
 
-import nbformat  # type: ignore
+import nbformat
 
 from repoma._utilities import CONFIG_PATH
 

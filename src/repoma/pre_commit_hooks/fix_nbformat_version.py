@@ -8,7 +8,7 @@ import argparse
 import sys
 from typing import Optional, Sequence
 
-import nbformat  # type: ignore
+import nbformat
 
 
 def set_nbformat_version(filename: str) -> None:
