@@ -79,6 +79,7 @@
         "pyright",
         "repos",
         "reqs",
+        "ruamel",
         "venv"
     ]
 }

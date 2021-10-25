@@ -1,8 +1,16 @@
 """Check if there is a ``pin_requirements.py`` script."""
 
 import os
+from pathlib import Path
 
-from repoma._utilities import CONFIG_PATH, write_script
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+
+from repoma._utilities import (
+    CONFIG_PATH,
+    get_supported_python_versions,
+    write_script,
+)
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 __CONSTRAINTS_DIR = ".constraints"
@@ -50,20 +58,32 @@ def remove_bash_script() -> None:
 
 def update_github_workflows() -> None:
     def upgrade_workflow(workflow_file: str) -> None:
-        expected_workflow_path = os.path.abspath(
-            f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
+        expected_workflow_path = Path(
+            os.path.abspath(
+                f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
+            )
         )
-        with open(expected_workflow_path) as stream:
-            expected_content = stream.read()
-        workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{workflow_file}"
-        if not os.path.exists(workflow_path):
-            write_script(expected_content, path=workflow_path)
+        yaml = YAML(typ="rt")
+        yaml.preserve_quotes = True  # type: ignore[assignment]
+        expected_data = yaml.load(expected_workflow_path)
+        supported_python_versions = get_supported_python_versions()
+        formatted_python_versions = list(
+            map(DoubleQuotedScalarString, supported_python_versions)
+        )
+        jobs = list(expected_data["jobs"])
+        first_job = jobs[0]
+        expected_data["jobs"][first_job]["strategy"]["matrix"][
+            "python-version"
+        ] = formatted_python_versions
+        workflow_path = Path(
+            f"{CONFIG_PATH.github_workflow_dir}/{workflow_file}"
+        )
+        if not workflow_path.exists():
+            yaml.dump(expected_data, workflow_path)
             raise PrecommitError(f'Created "{workflow_path}" workflow')
-
-        with open(workflow_path) as stream:
-            existing_content = stream.read()
-        if existing_content != expected_content:
-            write_script(expected_content, path=workflow_path)
+        existing_data = yaml.load(workflow_path)
+        if existing_data != expected_data:
+            yaml.dump(expected_data, workflow_path)
             raise PrecommitError(f'Updated "{workflow_path}" workflow')
 
     upgrade_workflow("requirements-cron.yml")

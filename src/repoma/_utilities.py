@@ -127,6 +127,32 @@ def get_precommit_repos() -> List[Dict[str, Any]]:
     return repos
 
 
+def get_supported_python_versions() -> List[str]:
+    """Extract supported Python versions from package classifiers.
+
+    >>> get_supported_python_versions()
+    ['3.6', '3.7', '3.8', '3.9', '3.10']
+    """
+    cfg = open_setup_cfg()
+    if not cfg.has_option("metadata", "classifiers"):
+        raise PrecommitError(
+            "This package does not have Python version classifiers."
+            " See https://pypi.org/classifiers."
+        )
+    raw = cfg.get("metadata", "classifiers")
+    lines = raw.split("\n")
+    lines = list(map(lambda s: s.strip(), lines))
+    identifier = "Programming Language :: Python :: 3."
+    classifiers = list(filter(lambda s: s.startswith(identifier), lines))
+    if not classifiers:
+        raise PrecommitError(
+            "setup.cfg does not have any classifiers of the form"
+            f' "{identifier}*"'
+        )
+    prefix = identifier[:-2]
+    return list(map(lambda s: s.replace(prefix, ""), classifiers))
+
+
 def get_repo_url() -> str:
     cfg = open_setup_cfg()
     if not cfg.has_section("metadata"):
