@@ -18,19 +18,16 @@ and starting its content with:
 """
 
 import argparse
-import configparser
 import sys
 from typing import Optional, Sequence
 
 import nbformat
 
-from repoma._utilities import CONFIG_PATH
+from repoma._utilities import open_setup_cfg
 
-cfg = configparser.ConfigParser()
-cfg.read(CONFIG_PATH.setup_cfg)
-
-PACKAGE_NAME = cfg["metadata"]["name"]
-DEFAULT_CONTENT = """
+__SETUP_CFG = open_setup_cfg()
+__PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]
+__DEFAULT_CONTENT = """
 %%capture
 %config Completer.use_jedi = False
 %config InlineBackend.figure_formats = ['svg']
@@ -38,7 +35,7 @@ import os
 
 STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
 """
-COLAB_CONTENT = f"""
+__COLAB_CONTENT = f"""
 # Install on Google Colab
 import subprocess
 import sys
@@ -47,13 +44,13 @@ from IPython import get_ipython
 
 install_packages = "google.colab" in str(get_ipython())
 if install_packages:
-    for package in ["{PACKAGE_NAME}[doc]", "graphviz"]:
+    for package in ["{__PACKAGE_NAME}[doc]", "graphviz"]:
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", package]
         )
 """
 
-EXPECTED_CELL_METADATA = {
+__EXPECTED_CELL_METADATA = {
     "hideCode": True,
     "hideOutput": True,
     "hidePrompt": True,
@@ -82,7 +79,7 @@ def fix_first_cell(
             return
     new_cell = nbformat.v4.new_code_cell(
         new_content,
-        metadata=EXPECTED_CELL_METADATA,
+        metadata=__EXPECTED_CELL_METADATA,
     )
     del new_cell["id"]  # following nbformat_minor = 4
     if replace:
@@ -108,10 +105,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    expected_cell_content = DEFAULT_CONTENT.strip("\n")
+    expected_cell_content = __DEFAULT_CONTENT.strip("\n")
     if args.colab:
         expected_cell_content += "\n\n"
-        expected_cell_content += COLAB_CONTENT.strip("\n")
+        expected_cell_content += __COLAB_CONTENT.strip("\n")
     exit_code = 0
     for filename in args.filenames:
         fix_first_cell(

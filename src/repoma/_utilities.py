@@ -102,8 +102,7 @@ def extract_config_section(
     extract_to: Union[Path, str],
     sections: List[str],
 ) -> None:
-    cfg = ConfigParser()
-    cfg.read(extract_from)
+    cfg = open_config(extract_from)
     if any(map(cfg.has_section, sections)):
         old_cfg, extracted_cfg = __split_config(cfg, sections)
         __write_config(old_cfg, extract_from)
@@ -147,6 +146,26 @@ def __format_config_file(path: Union[Path, str]) -> None:
     content += "\n"
     with open(path, "w") as stream:
         stream.write(content)
+
+
+def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
+    cfg = ConfigParser()
+    if isinstance(definition, io.TextIOBase):
+        text = definition.read()
+        cfg.read_string(text)
+    elif isinstance(definition, (Path, str)):
+        if isinstance(definition, str):
+            path = Path(definition)
+        else:
+            path = definition
+        if not path.exists():
+            raise PrecommitError(f'Config file "{path}" does not exist')
+        cfg.read(path)
+    else:
+        raise TypeError(
+            f"Cannot create a {ConfigParser.__name__} from a {type(definition).__name__}"
+        )
+    return cfg
 
 
 def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
@@ -247,9 +266,7 @@ def get_repo_url() -> str:
 def open_setup_cfg() -> ConfigParser:
     if not CONFIG_PATH.setup_cfg.exists():
         raise PrecommitError("This repository contains no setup.cfg file")
-    cfg = ConfigParser()
-    cfg.read(CONFIG_PATH.setup_cfg)
-    return cfg
+    return open_config(CONFIG_PATH.setup_cfg)
 
 
 def rename_config(old: str, new: str) -> None:
