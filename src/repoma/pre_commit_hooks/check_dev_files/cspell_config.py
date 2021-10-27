@@ -9,7 +9,8 @@ import json
 import os
 import textwrap
 from configparser import ConfigParser
-from typing import Any, Iterable, List, Sequence
+from pathlib import Path
+from typing import Any, Iterable, List, Sequence, Union
 
 import yaml
 
@@ -39,7 +40,7 @@ with open(f"{REPOMA_DIR}/{CONFIG_PATH.cspell}") as __STREAM:
 
 
 def fix_cspell_config() -> None:
-    rename_config("cspell.json", CONFIG_PATH.cspell)
+    rename_config("cspell.json", str(CONFIG_PATH.cspell))
     _check_hook_url()
     precommit_hook = find_precommit_hook(__HOOK_URL)
     if precommit_hook is None:
@@ -68,16 +69,16 @@ def _check_hook_url() -> None:
 
 
 def _remove_configuration() -> None:
-    if os.path.exists(CONFIG_PATH.cspell):
+    if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)
         raise PrecommitError(
             f'"{CONFIG_PATH.cspell}" is no longer required'
             " and has been removed"
         )
-    if os.path.exists(CONFIG_PATH.editor_config):
+    if CONFIG_PATH.editor_config.exists():
         with open(CONFIG_PATH.editor_config, "r") as stream:
             prettier_ignore_content = stream.readlines()
-        expected_line = CONFIG_PATH.cspell + "\n"
+        expected_line = str(CONFIG_PATH.cspell) + "\n"
         if expected_line in set(prettier_ignore_content):
             prettier_ignore_content.remove(expected_line)
             with open(CONFIG_PATH.editor_config, "w") as stream:
@@ -111,7 +112,7 @@ def _check_check_hook_options() -> None:
 
 
 def _fix_config_content() -> None:
-    if not os.path.exists(CONFIG_PATH.cspell):
+    if not CONFIG_PATH.cspell.exists():
         with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
     config = __get_config(CONFIG_PATH.cspell)
@@ -157,23 +158,23 @@ def _sort_config_entries() -> None:
 
 
 def _check_editor_config() -> None:
-    if not os.path.exists(CONFIG_PATH.editor_config):
+    if not CONFIG_PATH.editor_config.exists():
         return
     cfg = ConfigParser()
     with open(CONFIG_PATH.editor_config) as stream:
         # https://stackoverflow.com/a/24501036/13219025
         cfg.read_file(
             itertools.chain(["[global]"], stream),
-            source=CONFIG_PATH.editor_config,
+            source=str(CONFIG_PATH.editor_config),
         )
-    if not cfg.has_section(CONFIG_PATH.cspell):
+    if not cfg.has_section(str(CONFIG_PATH.cspell)):
         raise PrecommitError(
             f'./{CONFIG_PATH.editor_config} has no section "[{CONFIG_PATH.cspell}]"'
         )
     expected_options = {
         "indent_size": "4",
     }
-    options = dict(cfg.items(CONFIG_PATH.cspell))
+    options = dict(cfg.items(str(CONFIG_PATH.cspell)))
     if options != expected_options:
         error_message = f"./{CONFIG_PATH.editor_config} should have the following section:\n\n"
         section_content = f"[{CONFIG_PATH.cspell}]\n"
@@ -188,7 +189,7 @@ def _update_prettier_ignore() -> None:
     if prettier_hook is None:
         return
     prettier_ignore_path = ".prettierignore"
-    expected_line = CONFIG_PATH.cspell + "\n"
+    expected_line = str(CONFIG_PATH.cspell) + "\n"
     if not os.path.exists(prettier_ignore_path):
         with open(prettier_ignore_path, "w") as stream:
             stream.write(expected_line)
@@ -253,7 +254,7 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     return sentence
 
 
-def __get_config(path: str) -> dict:
+def __get_config(path: Union[str, Path]) -> dict:
     with open(path) as stream:
         return json.load(stream)
 

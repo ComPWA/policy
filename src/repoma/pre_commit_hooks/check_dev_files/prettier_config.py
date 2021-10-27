@@ -36,7 +36,7 @@ def fix_prettier_config(no_prettierrc: bool) -> None:
 
 
 def _remove_configuration() -> None:
-    if os.path.exists(CONFIG_PATH.prettier):
+    if CONFIG_PATH.prettier.exists():
         os.remove(CONFIG_PATH.prettier)
         raise PrecommitError(
             f'"{CONFIG_PATH.prettier}" is no longer required'
@@ -48,13 +48,13 @@ def _remove_configuration() -> None:
 
 def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
-        if os.path.exists(CONFIG_PATH.prettier):
+        if CONFIG_PATH.prettier.exists():
             os.remove(CONFIG_PATH.prettier)
             raise PrecommitError(
                 f'Removed "./{CONFIG_PATH.prettier}" as requested by --no-prettierrc'
             )
     else:
-        if not os.path.exists(CONFIG_PATH.prettier):
+        if not CONFIG_PATH.prettier.exists():
             existing_content = ""
         else:
             with open(CONFIG_PATH.prettier, "r") as stream:

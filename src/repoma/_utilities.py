@@ -3,7 +3,8 @@ import json
 import os
 import re
 from configparser import ConfigParser
-from typing import Any, Dict, List, NamedTuple, Optional
+from pathlib import Path
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 import yaml
 
@@ -12,16 +13,16 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 
 class ConfigFilePaths(NamedTuple):
-    cspell: str = ".cspell.json"
-    editor_config: str = ".editorconfig"
-    github_workflow_dir: str = ".github/workflows"
-    pre_commit: str = ".pre-commit-config.yaml"
-    prettier: str = ".prettierrc"
-    prettier_ignore: str = ".prettierignore"
-    setup_cfg: str = "setup.cfg"
-    tox: str = "tox.ini"
-    vscode_extensions: str = ".vscode/extensions.json"
-    gitpod: str = ".gitpod.yml"
+    cspell: Path = Path(".cspell.json")
+    editor_config: Path = Path(".editorconfig")
+    github_workflow_dir: Path = Path(".github/workflows")
+    pre_commit: Path = Path(".pre-commit-config.yaml")
+    prettier: Path = Path(".prettierrc")
+    prettier_ignore: Path = Path(".prettierignore")
+    setup_cfg: Path = Path("setup.cfg")
+    tox: Path = Path("tox.ini")
+    vscode_extensions: Path = Path(".vscode/extensions.json")
+    gitpod: Path = Path(".gitpod.yml")
 
 
 CONFIG_PATH = ConfigFilePaths()
@@ -112,7 +113,7 @@ def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
 
 
 def get_precommit_repos() -> List[Dict[str, Any]]:
-    if not os.path.exists(CONFIG_PATH.pre_commit):
+    if not CONFIG_PATH.pre_commit.exists():
         raise PrecommitError(
             "Are you sure this repository contains a"
             f' "./{CONFIG_PATH.pre_commit}" file?'
@@ -189,11 +190,10 @@ def get_repo_url() -> str:
 
 
 def open_setup_cfg() -> ConfigParser:
-    setup_file = CONFIG_PATH.setup_cfg
-    if not os.path.exists(setup_file):
+    if not CONFIG_PATH.setup_cfg.exists():
         raise PrecommitError("This repository contains no setup.cfg file")
     cfg = ConfigParser()
-    cfg.read(setup_file)
+    cfg.read(CONFIG_PATH.setup_cfg)
     return cfg
 
 
@@ -204,10 +204,8 @@ def rename_config(old: str, new: str) -> None:
 
 
 def add_vscode_extension_recommendation(extension_name: str) -> None:
-    if not os.path.exists(CONFIG_PATH.vscode_extensions):
-        os.makedirs(
-            os.path.dirname(CONFIG_PATH.vscode_extensions), exist_ok=True
-        )
+    if not CONFIG_PATH.vscode_extensions.exists():
+        CONFIG_PATH.vscode_extensions.parent.mkdir(exist_ok=True)
         config = {}
     else:
         with open(CONFIG_PATH.vscode_extensions) as stream:
@@ -223,7 +221,7 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
 
 
 def remove_vscode_extension_recommendation(extension_name: str) -> None:
-    if not os.path.exists(CONFIG_PATH.vscode_extensions):
+    if not CONFIG_PATH.vscode_extensions.exists():
         return
     with open(CONFIG_PATH.vscode_extensions) as stream:
         config = json.load(stream)
@@ -243,7 +241,7 @@ def __dump_vscode_config(config: dict) -> None:
         stream.write("\n")
 
 
-def write_script(content: str, path: str) -> None:
+def write_script(content: str, path: Union[Path, str]) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as stream:
         stream.write(content)
@@ -263,7 +261,7 @@ class _IncreasedYamlIndent(yaml.Dumper):
             super().write_line_break()
 
 
-def write_yaml(definition: dict, output_path: str) -> None:
+def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:
     """Write a `dict` to disk with standardized YAML formatting."""
     with open(output_path, "w") as stream:
         yaml.dump(

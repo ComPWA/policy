@@ -60,7 +60,7 @@ def _get_requirement_files() -> List[pathlib.Path]:
     return [
         *pathlib.Path(".").glob("**/requirements*.in"),
         *pathlib.Path(".").glob("**/requirements*.txt"),
-        *pathlib.Path(".").glob(CONFIG_PATH.setup_cfg),
+        *pathlib.Path(".").glob(str(CONFIG_PATH.setup_cfg)),
     ]
 
 

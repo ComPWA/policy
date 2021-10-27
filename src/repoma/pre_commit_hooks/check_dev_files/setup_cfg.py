@@ -10,7 +10,7 @@ from repoma.pre_commit_hooks.format_setup_cfg import write_formatted_setup_cfg
 
 
 def fix_setup_cfg(ignore_author: bool) -> None:
-    if not os.path.exists(CONFIG_PATH.setup_cfg):
+    if not CONFIG_PATH.setup_cfg.exists():
         return
     _check_required_options()
     if not ignore_author:

@@ -75,9 +75,7 @@ def update_github_workflows() -> None:
         expected_data["jobs"][first_job]["strategy"]["matrix"][
             "python-version"
         ] = formatted_python_versions
-        workflow_path = Path(
-            f"{CONFIG_PATH.github_workflow_dir}/{workflow_file}"
-        )
+        workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
             yaml.dump(expected_data, workflow_path)
             raise PrecommitError(f'Created "{workflow_path}" workflow')

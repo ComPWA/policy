@@ -21,7 +21,7 @@ def check_gitpod_config() -> None:
     pin_dependencies = os.path.exists(__CONSTRAINTS_FILE)
     error_message = ""
     expected_config = _generate_gitpod_config(pin_dependencies)
-    if os.path.exists(CONFIG_PATH.gitpod):
+    if CONFIG_PATH.gitpod.exists():
         with open(CONFIG_PATH.gitpod) as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)
         if existing_config != expected_config:
@@ -43,7 +43,7 @@ def check_gitpod_config() -> None:
 
 
 def _extract_extensions() -> dict:
-    if os.path.exists(CONFIG_PATH.vscode_extensions):
+    if CONFIG_PATH.vscode_extensions.exists():
         with open(CONFIG_PATH.vscode_extensions) as stream:
             return json.load(stream)["recommendations"]
     return {}

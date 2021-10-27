@@ -43,7 +43,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Add pip install statements for Google Colab.",
     )
     args = parser.parse_args(argv)
-    if CONFIG_PATH.setup_cfg in args.filenames:
+    if str(CONFIG_PATH.setup_cfg) in args.filenames:
         format_setup_cfg()
     return 0
 

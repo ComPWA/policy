@@ -1,15 +1,15 @@
 """Check contents of a ``tox.ini`` file."""
 
-import os
 from configparser import ConfigParser
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Union
 
 from repoma._utilities import CONFIG_PATH, copy_config
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 
 def check_tox_ini(fix: bool) -> None:
-    if not os.path.exists(CONFIG_PATH.tox):
+    if not CONFIG_PATH.tox.exists():
         return
     extract_sections(["flake8"], output_file=".flake8", fix=fix)
     extract_sections(["pydocstyle"], output_file=".pydocstyle", fix=fix)
@@ -52,13 +52,13 @@ def __split_config(
     return old_config, extracted_config
 
 
-def __write_config(cfg: ConfigParser, output_path: str) -> None:
+def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
     with open(output_path, "w") as stream:
         cfg.write(stream)
     __format_config_file(output_path)
 
 
-def __format_config_file(path: str) -> None:
+def __format_config_file(path: Union[Path, str]) -> None:
     with open(path, "r") as stream:
         content = stream.read()
     indent_size = 4
