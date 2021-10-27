@@ -4,7 +4,17 @@ import os
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import yaml
 
@@ -135,12 +145,9 @@ def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
 def format_config(
     input: Union[Path, io.TextIOBase, str],  # noqa: A002
     output: Union[Path, io.TextIOBase, str],
+    additional_rules: Optional[Iterable[Callable[[str], str]]] = None,
 ) -> None:
-    if isinstance(input, (Path, str)):
-        with open(input, "r") as input_stream:
-            content = input_stream.read()
-    else:
-        content = input.read()
+    content = read(input)
     indent_size = 4
     # replace tabs
     content = content.replace("\t", indent_size * " ")
@@ -156,11 +163,29 @@ def format_config(
     # end file with one and only one newline
     content = content.strip()
     content += "\n"
+    if additional_rules is not None:
+        for rule in additional_rules:
+            content = rule(content)
+    write(content, output=output)
+
+
+def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
+    if isinstance(input, (Path, str)):
+        with open(input, "r") as input_stream:
+            return input_stream.read()
+    if isinstance(input, io.TextIOBase):
+        return input.read()
+    raise TypeError(f"Cannot read from {type(input).__name__}")
+
+
+def write(content: str, output: Union[Path, io.TextIOBase, str]) -> None:
     if isinstance(output, (Path, str)):
         with open(output, "w") as output_stream:
             output_stream.write(content)
-    else:
+    elif isinstance(output, io.TextIOBase):
         output.write(content)
+    else:
+        raise TypeError(f"Cannot write from {type(output).__name__}")
 
 
 def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:

@@ -1,9 +1,12 @@
 """Format :code:`setup.cfg` if available."""
 
 import argparse
+import io
+import re
 import sys
 from configparser import ConfigParser
-from typing import Optional, Sequence
+from pathlib import Path
+from typing import Optional, Sequence, Union
 
 from repoma._utilities import CONFIG_PATH, format_config, open_setup_cfg
 
@@ -16,9 +19,28 @@ def format_setup_cfg() -> None:
 def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
     with open(CONFIG_PATH.setup_cfg, "w") as stream:
         cfg.write(stream)
-    format_config(
+    _format_setup_cfg(
         input=CONFIG_PATH.setup_cfg,
         output=CONFIG_PATH.setup_cfg,
+    )
+
+
+def _format_setup_cfg(
+    input: Union[Path, io.TextIOBase, str],  # noqa: A002
+    output: Union[Path, io.TextIOBase, str],
+) -> None:
+    def format_version_constraints(content: str) -> str:
+        content = re.sub(r"(>=?|<=?|==)\s+", r"\1", content)
+        content = re.sub(r"([^\s])(>=?|<=?)", r"\1 \2", content)
+        content = re.sub(r"([^\s])\s\s+(>=?|<=?)", r"\1 \2", content)
+        return content
+
+    format_config(
+        input=input,
+        output=output,
+        additional_rules=[
+            format_version_constraints,
+        ],
     )
 
 
