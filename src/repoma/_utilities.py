@@ -4,7 +4,7 @@ import os
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import yaml
 
@@ -15,14 +15,17 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 class ConfigFilePaths(NamedTuple):
     cspell: Path = Path(".cspell.json")
     editor_config: Path = Path(".editorconfig")
+    flake8: Path = Path(".flake8")
     github_workflow_dir: Path = Path(".github/workflows")
+    gitpod: Path = Path(".gitpod.yml")
     pre_commit: Path = Path(".pre-commit-config.yaml")
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
+    pydocstyle: Path = Path(".pydocstyle")
+    pytest: Path = Path("pytest.ini")
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
-    gitpod: Path = Path(".gitpod.yml")
 
 
 CONFIG_PATH = ConfigFilePaths()
@@ -92,6 +95,58 @@ def copy_config(cfg: ConfigParser) -> ConfigParser:
     cfg_copy = ConfigParser()
     cfg_copy.read_file(stream)
     return cfg_copy
+
+
+def extract_config_section(
+    extract_from: Union[Path, str],
+    extract_to: Union[Path, str],
+    sections: List[str],
+) -> None:
+    cfg = ConfigParser()
+    cfg.read(extract_from)
+    if any(map(cfg.has_section, sections)):
+        old_cfg, extracted_cfg = __split_config(cfg, sections)
+        __write_config(old_cfg, extract_from)
+        __write_config(extracted_cfg, extract_to)
+        raise PrecommitError(
+            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}" '
+            f'has been extracted to a "./{extract_to}" config file.'
+        )
+
+
+def __split_config(
+    cfg: ConfigParser, extracted_sections: List[str]
+) -> Tuple[ConfigParser, ConfigParser]:
+    old_config = copy_config(cfg)
+    extracted_config = copy_config(cfg)
+    for section in cfg.sections():
+        if section in extracted_sections:
+            old_config.remove_section(section)
+        else:
+            extracted_config.remove_section(section)
+    return old_config, extracted_config
+
+
+def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
+    with open(output_path, "w") as stream:
+        cfg.write(stream)
+    __format_config_file(output_path)
+
+
+def __format_config_file(path: Union[Path, str]) -> None:
+    with open(path, "r") as stream:
+        content = stream.read()
+    indent_size = 4
+    content = content.replace("\t", indent_size * " ")
+    content = content.replace("\\\n", "\\\n" + indent_size * " ")
+    while "  #" in content:
+        content = content.replace("  #", " #")
+    while " \n" in content:
+        content = content.replace(" \n", "\n")
+    content = content.strip()
+    content += "\n"
+    with open(path, "w") as stream:
+        stream.write(content)
 
 
 def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
