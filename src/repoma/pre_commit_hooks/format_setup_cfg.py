@@ -5,7 +5,7 @@ import sys
 from configparser import ConfigParser
 from typing import Optional, Sequence
 
-from repoma._utilities import CONFIG_PATH, open_setup_cfg
+from repoma._utilities import CONFIG_PATH, format_config, open_setup_cfg
 
 
 def format_setup_cfg() -> None:
@@ -16,17 +16,10 @@ def format_setup_cfg() -> None:
 def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
     with open(CONFIG_PATH.setup_cfg, "w") as stream:
         cfg.write(stream)
-    with open(CONFIG_PATH.setup_cfg) as stream:
-        content = stream.read()
-    content = "\n".join(  # remove trailing spaces
-        map(lambda line: line.rstrip(), content.split("\n"))
+    format_config(
+        input=CONFIG_PATH.setup_cfg,
+        output=CONFIG_PATH.setup_cfg,
     )
-    content = content.replace("\t", 4 * " ")  # replace tabs
-    content = content.replace("  #", " #")  # remove spaces before comments
-    content = content.replace(" #", "  #")  # black: two spaces before comment
-    content = content.strip("\n") + "\n"  # remove final line ending
-    with open(CONFIG_PATH.setup_cfg, "w") as stream:
-        stream.write(content)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

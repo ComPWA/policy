@@ -6,6 +6,7 @@ import pytest
 
 from repoma._utilities import (
     copy_config,
+    format_config,
     get_precommit_repos,
     get_repo_url,
     open_config,
@@ -19,6 +20,80 @@ def test_copy_config():
     cfg_copy = copy_config(cfg)
     assert cfg_copy is not cfg
     assert cfg_copy == cfg
+
+
+@pytest.mark.parametrize(
+    ("unformatted", "expected"),
+    [
+        (  # replace tabs
+            """\
+            folders =
+            \tdocs,
+            \tsrc,
+            """,
+            """\
+            folders =
+                docs,
+                src,
+            """,
+        ),
+        (  # remove spaces before comments
+            """\
+            [metadata]
+            name = repo-maintenance    # comment
+            """,
+            """\
+            [metadata]
+            name = repo-maintenance  # comment
+            """,
+        ),
+        (  # remove trailing white-space
+            """\
+            ends with a tab\t
+            ends with some spaces    \n
+            """,
+            """\
+            ends with a tab
+            ends with some spaces
+            """,
+        ),
+        (  # end file with one and only one newline
+            """\
+            [metadata]
+            name = repo-maintenance
+
+
+            """,
+            """\
+            [metadata]
+            name = repo-maintenance
+            """,
+        ),
+        (  # only two whitelines
+            """\
+            [section1]
+            option1 = one
+
+
+            [section2]
+            option2 = two
+            """,
+            """\
+            [section1]
+            option1 = one
+
+            [section2]
+            option2 = two
+            """,
+        ),
+    ],
+)
+def test_format_config(unformatted: str, expected: str):
+    unformatted = dedent(unformatted)
+    formatted = io.StringIO()
+    format_config(input=io.StringIO(unformatted), output=formatted)
+    formatted.seek(0)
+    assert formatted.read() == dedent(expected)
 
 
 def test_get_repo_url():

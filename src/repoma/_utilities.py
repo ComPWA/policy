@@ -129,23 +129,38 @@ def __split_config(
 def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
     with open(output_path, "w") as stream:
         cfg.write(stream)
-    __format_config_file(output_path)
+    format_config(input=output_path, output=output_path)
 
 
-def __format_config_file(path: Union[Path, str]) -> None:
-    with open(path, "r") as stream:
-        content = stream.read()
+def format_config(
+    input: Union[Path, io.TextIOBase, str],  # noqa: A002
+    output: Union[Path, io.TextIOBase, str],
+) -> None:
+    if isinstance(input, (Path, str)):
+        with open(input, "r") as input_stream:
+            content = input_stream.read()
+    else:
+        content = input.read()
     indent_size = 4
+    # replace tabs
     content = content.replace("\t", indent_size * " ")
-    content = content.replace("\\\n", "\\\n" + indent_size * " ")
+    # remove spaces before comments
     while "  #" in content:
         content = content.replace("  #", " #")
-    while " \n" in content:
-        content = content.replace(" \n", "\n")
+    content = content.replace(" #", "  #")  # black has two spaces before a #
+    # remove trailing white-space
+    content = re.sub(r"([^\S\r\n]+)\n", r"\n", content)
+    # only two whitelines
+    while "\n\n\n" in content:
+        content = content.replace("\n\n\n", "\n\n")
+    # end file with one and only one newline
     content = content.strip()
     content += "\n"
-    with open(path, "w") as stream:
-        stream.write(content)
+    if isinstance(output, (Path, str)):
+        with open(output, "w") as output_stream:
+            output_stream.write(content)
+    else:
+        output.write(content)
 
 
 def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
@@ -166,6 +181,20 @@ def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
             f"Cannot create a {ConfigParser.__name__} from a {type(definition).__name__}"
         )
     return cfg
+
+
+def write_config(
+    cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]
+) -> None:
+    if isinstance(output, io.TextIOBase):
+        cfg.write(output)
+    elif isinstance(output, (Path, str)):
+        with open(output) as stream:
+            cfg.write(stream)
+    else:
+        raise TypeError(
+            f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"
+        )
 
 
 def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
