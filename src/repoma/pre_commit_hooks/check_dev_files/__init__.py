@@ -11,6 +11,7 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 from .check_labels import check_has_labels
 from .cspell_config import fix_cspell_config
 from .editor_config_hook import check_editor_config_hook
+from .flake8 import check_flake8_config
 from .github_templates import check_github_templates
 from .github_workflows import check_docs_workflow, check_milestone_workflow
 from .gitpod import check_gitpod_config
@@ -75,6 +76,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
         executor(check_has_labels)
     executor(fix_cspell_config)
     executor(fix_prettier_config, args.no_prettierrc)
+    executor(check_flake8_config)
     executor(check_github_templates)
     executor(check_gitpod_config)
     if is_python_repo:

@@ -151,10 +151,8 @@ def format_config(
     indent_size = 4
     # replace tabs
     content = content.replace("\t", indent_size * " ")
-    # remove spaces before comments
-    while "  #" in content:
-        content = content.replace("  #", " #")
-    content = content.replace(" #", "  #")  # black has two spaces before a #
+    # format spaces before comments (two spaces like black does)
+    content = re.sub(r"([^\s^\n])[^\S\r\n]+#\s*([^\s])", r"\1  # \2", content)
     # remove trailing white-space
     content = re.sub(r"([^\S\r\n]+)\n", r"\n", content)
     # only two whitelines
@@ -397,3 +395,18 @@ def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:
             Dumper=_IncreasedYamlIndent,
             default_flow_style=False,
         )
+
+
+def natural_sorting(text: str) -> List[Union[float, str]]:
+    # https://stackoverflow.com/a/5967539/13219025
+    return [
+        __attempt_number_cast(c)
+        for c in re.split(r"[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)", text)
+    ]
+
+
+def __attempt_number_cast(text: str) -> Union[float, str]:
+    try:
+        return float(text)
+    except ValueError:
+        return text
