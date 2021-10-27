@@ -1,5 +1,6 @@
 # Repository maintenance
 
+[![BSD 3-Clause license](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)
 [![GitPod](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ComPWA/repo-maintenance)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/ComPWA/repo-maintenance/main.svg)](https://results.pre-commit.ci/latest/github/ComPWA/repo-maintenance/main)
