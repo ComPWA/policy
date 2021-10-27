@@ -14,36 +14,27 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def check_has_labels(fix: bool) -> None:
+def check_has_labels() -> None:
     if os.path.exists(__LABELS_CONFIG_FILE):
-        message = (
+        os.remove(__LABELS_CONFIG_FILE)
+        raise PrecommitError(
             f'Repository contains a file "{__LABELS_CONFIG_FILE}" for the'
             " labels package (see https://pypi.org/project/labels). This file"
             " should not be there, because labels are maintained through the"
-            " https://github.com/ComPWA/meta repository."
+            " https://github.com/ComPWA/meta repository. It has been removed."
         )
-        if fix:
-            message += " It has been removed."
-            os.remove(__LABELS_CONFIG_FILE)
-        else:
-            message += " Please remove it."
     faulty_req_files = [
         str(file.absolute())
         for file in _get_requirement_files()
         if _check_has_labels_requirement(file)
     ]
     if faulty_req_files:
-        message = (
+        _remove_all_labels_requirement()
+        raise PrecommitError(
             "Repository lists the labels package"
             " (https://pypi.org/project/labels) as a developer requirement."
+            " Problems have been fixed, please re-stage files."
         )
-        if fix:
-            _remove_all_labels_requirement()
-            message += " Problems have been fixed, please re-stage files."
-        else:
-            message += ' Please remove "labels" from the following files:\n  '
-            message += "\n  ".join(faulty_req_files)
-        raise PrecommitError(message)
 
 
 def _check_has_labels_requirement(path: pathlib.Path) -> bool:

@@ -8,35 +8,25 @@ from repoma._utilities import CONFIG_PATH, copy_config
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 
-def check_tox_ini(fix: bool) -> None:
+def check_tox_ini() -> None:
     if not CONFIG_PATH.tox.exists():
         return
-    extract_sections(["flake8"], output_file=".flake8", fix=fix)
-    extract_sections(["pydocstyle"], output_file=".pydocstyle", fix=fix)
-    extract_sections(
-        ["coverage:run", "pytest"], output_file="pytest.ini", fix=fix
-    )
+    extract_sections(["flake8"], output_file=".flake8")
+    extract_sections(["pydocstyle"], output_file=".pydocstyle")
+    extract_sections(["coverage:run", "pytest"], output_file="pytest.ini")
 
 
-def extract_sections(sections: List[str], output_file: str, fix: bool) -> None:
+def extract_sections(sections: List[str], output_file: str) -> None:
     cfg = ConfigParser()
     cfg.read(CONFIG_PATH.tox)
     if any(map(cfg.has_section, sections)):
-        error_message = (
-            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}" '
+        old_cfg, extracted_cfg = __split_config(cfg, sections)
+        __write_config(old_cfg, CONFIG_PATH.tox)
+        __write_config(extracted_cfg, output_file)
+        raise PrecommitError(
+            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}"'
+            f' has been extracted to a "./{output_file}" config file.'
         )
-        if fix:
-            old_cfg, extracted_cfg = __split_config(cfg, sections)
-            __write_config(old_cfg, CONFIG_PATH.tox)
-            __write_config(extracted_cfg, output_file)
-            error_message += (
-                f'has been extracted to a "./{output_file}" config file.'
-            )
-        else:
-            error_message += (
-                f'should be defined in a separate "{output_file}" config file.'
-            )
-        raise PrecommitError(error_message)
 
 
 def __split_config(

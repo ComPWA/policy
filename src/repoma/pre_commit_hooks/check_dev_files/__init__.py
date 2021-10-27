@@ -47,12 +47,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
         help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
-        "--no-fix",
-        default=False,
-        action="store_true",
-        help="Fix the identified problems.",
-    )
-    parser.add_argument(
         "--no-prettierrc",
         default=False,
         action="store_true",
@@ -71,7 +65,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
         help="Add a script to pin developer requirements to a constraint file",
     )
     args = parser.parse_args(argv)
-    fix = not args.no_fix
     is_python_repo = not args.no_python
 
     executor = _HookExecutor()
@@ -79,7 +72,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
     executor(check_docs_workflow)
     executor(check_editor_config_hook)
     if not args.allow_labels:
-        executor(check_has_labels, fix)
+        executor(check_has_labels)
     executor(fix_cspell_config)
     executor(fix_prettier_config, args.no_prettierrc)
     executor(check_github_templates)
@@ -88,7 +81,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
         if args.pin_requirements:
             executor(check_constraints_folder)
         executor(fix_setup_cfg, args.ignore_author)
-        executor(check_tox_ini, fix)
+        executor(check_tox_ini)
     if executor.error_messages:
         print("\n---------------\n\n".join(executor.error_messages))
         return 1
