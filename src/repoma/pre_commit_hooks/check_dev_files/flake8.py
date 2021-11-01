@@ -32,12 +32,22 @@ __FLAKE8_REQUIREMENTS = [
 
 
 def check_flake8_config() -> None:
+    if not _is_flake8_installed():
+        return
     _extract_flake8_config()
     _check_config_exists()
     _format_flake8_config()
     _check_comments_on_separate_line()
     _check_option_order()
     _check_setup_cfg()
+
+
+def _is_flake8_installed() -> bool:
+    cfg = open_setup_cfg()
+    for _, value in cfg.items("options.extras_require"):
+        if "flake8" in value:
+            return True
+    return False
 
 
 def _extract_flake8_config() -> None:

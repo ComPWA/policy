@@ -69,6 +69,7 @@
         "colab",
         "commitlint",
         "conda",
+        "isort",
         "nargs",
         "nbcell",
         "nbformat",
