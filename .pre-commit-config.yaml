@@ -34,7 +34,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/psf/black
-    rev: 21.9b0
+    rev: 21.10b0
     hooks:
       - id: black
 
@@ -44,7 +44,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.55
+    rev: 0.0.56
     hooks:
       - id: check-dev-files
       - id: format-setup-cfg
@@ -98,7 +98,7 @@ repos:
       - id: pydocstyle
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.182
+    rev: v1.1.183
     hooks:
       - id: pyright
 
