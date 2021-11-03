@@ -22,23 +22,25 @@ import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
 
 
-class ConfigFilePaths(NamedTuple):
+class _ConfigFilePaths(NamedTuple):
     cspell: Path = Path(".cspell.json")
     editor_config: Path = Path(".editorconfig")
     flake8: Path = Path(".flake8")
     github_workflow_dir: Path = Path(".github/workflows")
     gitpod: Path = Path(".gitpod.yml")
+    pip_constraints: Path = Path(".constraints")
     pre_commit: Path = Path(".pre-commit-config.yaml")
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
     pydocstyle: Path = Path(".pydocstyle")
     pytest: Path = Path("pytest.ini")
+    repoma_src: Path = Path(__file__).parent.parent.absolute()
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 
 
-CONFIG_PATH = ConfigFilePaths()
+CONFIG_PATH = _ConfigFilePaths()
 
 REPOMA_DIR = os.path.dirname(repoma.__file__)
 __README_PATH = "README.md"

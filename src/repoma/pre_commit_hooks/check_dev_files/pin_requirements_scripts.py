@@ -1,8 +1,5 @@
 """Check if there is a ``pin_requirements.py`` script."""
 
-import os
-from pathlib import Path
-
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
@@ -13,13 +10,6 @@ from repoma._utilities import (
 )
 from repoma.pre_commit_hooks.errors import PrecommitError
 
-__CONSTRAINTS_DIR = ".constraints"
-__SCRIPT_NAME = "pin_requirements.py"
-__THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
-__EXPECTED_SCRIPT_PATH = os.path.abspath(
-    f"{__THIS_MODULE_DIR}/../../devtools/{__SCRIPT_NAME}"
-)
-
 
 def check_constraints_folder() -> None:
     update_pin_requirements_script()
@@ -28,40 +18,35 @@ def check_constraints_folder() -> None:
 
 
 def update_pin_requirements_script() -> None:
-    with open(__EXPECTED_SCRIPT_PATH) as stream:
+    script_name = "pin_requirements.py"
+    expected_script_path = CONFIG_PATH.repoma_src / "devtools" / script_name
+    with open(expected_script_path) as stream:
         expected_script = stream.read()
-    if not os.path.exists(f"{__CONSTRAINTS_DIR}/{__SCRIPT_NAME}"):
-        write_script(
-            content=expected_script,
-            path=f"{__CONSTRAINTS_DIR}/{__SCRIPT_NAME}",
-        )
+    script_path = CONFIG_PATH.pip_constraints / script_name
+    if not script_path.exists():
+        write_script(content=expected_script, path=script_path)
         raise PrecommitError(
-            f'This repository does not contain a "{__SCRIPT_NAME}" script.'
+            f'This repository does not contain a "{script_name}" script.'
             " Problem has been fixed"
         )
-    with open(f"{__CONSTRAINTS_DIR}/{__SCRIPT_NAME}") as stream:
+    with open(script_path) as stream:
         existing_script = stream.read()
     if existing_script != expected_script:
-        write_script(
-            content=expected_script,
-            path=f"{__CONSTRAINTS_DIR}/{__SCRIPT_NAME}",
-        )
-        raise PrecommitError(f'Updated "{__SCRIPT_NAME}" script')
+        write_script(content=expected_script, path=script_path)
+        raise PrecommitError(f'Updated "{script_name}" script')
 
 
 def remove_bash_script() -> None:
-    bash_script_name = f"{__CONSTRAINTS_DIR}/upgrade.sh"
-    if os.path.exists(bash_script_name):
-        os.remove(bash_script_name)
+    bash_script_name = CONFIG_PATH.pip_constraints / "upgrade.sh"
+    if bash_script_name.exists():
+        bash_script_name.unlink()
         raise PrecommitError(f'Removed deprecated "{bash_script_name}" script')
 
 
 def update_github_workflows() -> None:
     def upgrade_workflow(workflow_file: str) -> None:
-        expected_workflow_path = Path(
-            os.path.abspath(
-                f"{__THIS_MODULE_DIR}/../../workflows/{workflow_file}"
-            )
+        expected_workflow_path = (
+            CONFIG_PATH.repoma_src / "workflows" / workflow_file
         )
         yaml = YAML(typ="rt")
         yaml.preserve_quotes = True  # type: ignore[assignment]
