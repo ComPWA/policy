@@ -5,18 +5,18 @@ See `Constraints Files
 <https://github.com/jazzband/pip-tools>`_.
 """
 
+import os
 import re
 import subprocess
 import sys
 
-from repoma._utilities import CONFIG_PATH
-
 PYTHON_VERSION = ".".join(map(str, sys.version_info[:2]))
-OUTPUT_FILE = CONFIG_PATH.pip_constraints / f"py{PYTHON_VERSION}.txt"
+CONSTRAINTS_DIR = ".constraints"
+OUTPUT_FILE = f"{CONSTRAINTS_DIR}/py{PYTHON_VERSION}.txt"
 
 
 def upgrade_constraints_file() -> int:
-    CONFIG_PATH.pip_constraints.mkdir(exist_ok=True)
+    os.makedirs(CONSTRAINTS_DIR, exist_ok=True)
     pip_compile_command = " ".join(
         [
             "pip-compile",

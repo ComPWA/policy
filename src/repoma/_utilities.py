@@ -17,6 +17,7 @@ from typing import (
 )
 
 import yaml
+from ruamel.yaml import YAML
 
 import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
@@ -34,7 +35,7 @@ class _ConfigFilePaths(NamedTuple):
     prettier_ignore: Path = Path(".prettierignore")
     pydocstyle: Path = Path(".pydocstyle")
     pytest: Path = Path("pytest.ini")
-    repoma_src: Path = Path(__file__).parent.parent.absolute()
+    repoma_src: Path = Path(__file__).parent.absolute()
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
@@ -385,6 +386,15 @@ class _IncreasedYamlIndent(yaml.Dumper):
         super().write_line_break(data)
         if len(self.indents) == 1:
             super().write_line_break()
+
+
+def get_prettier_round_trip_yaml() -> YAML:
+    _yaml = YAML(typ="rt")
+    _yaml.preserve_quotes = True  # type: ignore[assignment]
+    _yaml.map_indent = 2  # type: ignore[assignment]
+    _yaml.indent = 4
+    _yaml.block_seq_indent = 2
+    return _yaml
 
 
 def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:

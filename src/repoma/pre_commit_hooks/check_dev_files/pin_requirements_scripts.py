@@ -1,10 +1,10 @@
 """Check if there is a ``pin_requirements.py`` script."""
 
-from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma._utilities import (
     CONFIG_PATH,
+    get_prettier_round_trip_yaml,
     get_supported_python_versions,
     write_script,
 )
@@ -48,8 +48,7 @@ def update_github_workflows() -> None:
         expected_workflow_path = (
             CONFIG_PATH.repoma_src / "workflows" / workflow_file
         )
-        yaml = YAML(typ="rt")
-        yaml.preserve_quotes = True  # type: ignore[assignment]
+        yaml = get_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)
         supported_python_versions = get_supported_python_versions()
         formatted_python_versions = list(

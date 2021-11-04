@@ -15,6 +15,7 @@ from .flake8 import check_flake8_config
 from .github_templates import check_github_templates
 from .github_workflows import check_docs_workflow, check_milestone_workflow
 from .gitpod import check_gitpod_config
+from .nbstripout import check_nbstripout
 from .pin_requirements_scripts import check_constraints_folder
 from .prettier_config import fix_prettier_config
 from .setup_cfg import fix_setup_cfg
@@ -79,6 +80,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
     executor(check_flake8_config)
     executor(check_github_templates)
     executor(check_gitpod_config)
+    executor(check_nbstripout)
     if is_python_repo:
         if args.pin_requirements:
             executor(check_constraints_folder)
