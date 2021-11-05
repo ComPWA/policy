@@ -2,9 +2,8 @@
 
 import io
 import re
-from configparser import ConfigParser
 from textwrap import dedent, indent
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from repoma._utilities import (
     CONFIG_PATH,
@@ -16,6 +15,10 @@ from repoma._utilities import (
 )
 from repoma.pre_commit_hooks.errors import PrecommitError
 
+if TYPE_CHECKING:
+    from configparser import ConfigParser
+    from typing import Optional
+
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [
     "flake8 >=4  # extend-select",
@@ -25,7 +28,8 @@ __FLAKE8_REQUIREMENTS = [
     "flake8-comprehensions",
     "flake8-pytest-style",
     "flake8-rst-docstrings",
-    "flake8-type-ignore",
+    'flake8-type-checking; python_version >="3.8.0"',
+    'flake8-type-ignore; python_version >="3.8.0"',
     "flake8-use-fstring",
     "pep8-naming",
 ]
@@ -40,6 +44,7 @@ def check_flake8_config() -> None:
     _check_comments_on_separate_line()
     _check_option_order()
     _check_setup_cfg()
+    _check_extend_select()
 
 
 def _is_flake8_installed() -> bool:
@@ -93,7 +98,7 @@ def _move_comments_before_line(content: str) -> str:
 
 
 def _check_comments_on_separate_line(
-    input: Optional[io.StringIO] = None,  # noqa: A002
+    input: "Optional[io.StringIO]" = None,  # noqa: A002
 ) -> None:
     if input is None:
         with open(CONFIG_PATH.flake8) as stream:
@@ -116,7 +121,7 @@ def _check_comments_on_separate_line(
             )
 
 
-def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
+def _check_option_order(cfg: "Optional[ConfigParser]" = None) -> None:
     if cfg is None:
         cfg = open_config(CONFIG_PATH.flake8)
     for section in cfg.sections():
@@ -132,7 +137,7 @@ def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
                 )
 
 
-def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
+def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
     if cfg is None:
         cfg = open_setup_cfg()
     extras_require = "options.extras_require"
@@ -168,3 +173,34 @@ def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
         packages.remove("")
     if not packages == __FLAKE8_REQUIREMENTS:
         raise PrecommitError(error_message)
+
+
+def _check_extend_select(cfg: "Optional[ConfigParser]" = None) -> None:
+    if cfg is None:
+        cfg = open_config(CONFIG_PATH.flake8)
+    option = "extend-select"
+    content = ""
+    if cfg.has_option("flake8", option):
+        content = cfg.get("flake8", option)
+    expected_values = [
+        "TC",
+    ]
+    missing_values = []
+    for value in expected_values:
+        if not re.search(fr"\b{value}\b", content):
+            missing_values.append(value)
+    if missing_values:
+        values = "\n".join(missing_values)
+        raise PrecommitError(
+            dedent(
+                f"""
+            Flake8 config is missing an option. Expecting:
+
+            [flake8]
+            {option} =
+                ...
+                {values}
+                ...
+            """
+            ).strip()
+        )

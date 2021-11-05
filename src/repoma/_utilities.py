@@ -4,23 +4,25 @@ import os
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, NamedTuple
 
 import yaml
 from ruamel.yaml import YAML
 
 import repoma
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Iterable,
+        List,
+        Optional,
+        Tuple,
+        Union,
+    )
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -111,9 +113,9 @@ def copy_config(cfg: ConfigParser) -> ConfigParser:
 
 
 def extract_config_section(
-    extract_from: Union[Path, str],
-    extract_to: Union[Path, str],
-    sections: List[str],
+    extract_from: "Union[Path, str]",
+    extract_to: "Union[Path, str]",
+    sections: "List[str]",
 ) -> None:
     cfg = open_config(extract_from)
     if any(map(cfg.has_section, sections)):
@@ -127,8 +129,8 @@ def extract_config_section(
 
 
 def __split_config(
-    cfg: ConfigParser, extracted_sections: List[str]
-) -> Tuple[ConfigParser, ConfigParser]:
+    cfg: ConfigParser, extracted_sections: "List[str]"
+) -> "Tuple[ConfigParser, ConfigParser]":
     old_config = copy_config(cfg)
     extracted_config = copy_config(cfg)
     for section in cfg.sections():
@@ -139,16 +141,16 @@ def __split_config(
     return old_config, extracted_config
 
 
-def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
+def __write_config(cfg: ConfigParser, output_path: "Union[Path, str]") -> None:
     with open(output_path, "w") as stream:
         cfg.write(stream)
     format_config(input=output_path, output=output_path)
 
 
 def format_config(
-    input: Union[Path, io.TextIOBase, str],  # noqa: A002
-    output: Union[Path, io.TextIOBase, str],
-    additional_rules: Optional[Iterable[Callable[[str], str]]] = None,
+    input: "Union[Path, io.TextIOBase, str]",  # noqa: A002
+    output: "Union[Path, io.TextIOBase, str]",
+    additional_rules: "Optional[Iterable[Callable[[str], str]]]" = None,
 ) -> None:
     content = read(input)
     indent_size = 4
@@ -170,7 +172,7 @@ def format_config(
     write(content, output=output)
 
 
-def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
+def read(input: "Union[Path, io.TextIOBase, str]") -> str:  # noqa: A002
     if isinstance(input, (Path, str)):
         with open(input, "r") as input_stream:
             return input_stream.read()
@@ -179,7 +181,7 @@ def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
     raise TypeError(f"Cannot read from {type(input).__name__}")
 
 
-def write(content: str, output: Union[Path, io.TextIOBase, str]) -> None:
+def write(content: str, output: "Union[Path, io.TextIOBase, str]") -> None:
     if isinstance(output, (Path, str)):
         with open(output, "w") as output_stream:
             output_stream.write(content)
@@ -189,7 +191,7 @@ def write(content: str, output: Union[Path, io.TextIOBase, str]) -> None:
         raise TypeError(f"Cannot write from {type(output).__name__}")
 
 
-def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
+def open_config(definition: "Union[Path, io.TextIOBase, str]") -> ConfigParser:
     cfg = ConfigParser()
     if isinstance(definition, io.TextIOBase):
         text = definition.read()
@@ -210,7 +212,7 @@ def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
 
 
 def write_config(
-    cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]
+    cfg: ConfigParser, output: "Union[Path, io.TextIOBase, str]"
 ) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
@@ -223,7 +225,7 @@ def write_config(
         )
 
 
-def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
+def find_precommit_hook(search_pattern: str) -> "Optional[Dict[str, Any]]":
     """Find repo definition from .pre-commit-config.yaml.
 
     >>> repo = find_precommit_hook(r".*pre-commit/mirrors-prettier")
@@ -241,7 +243,7 @@ def find_precommit_hook(search_pattern: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_precommit_repos() -> List[Dict[str, Any]]:
+def get_precommit_repos() -> "List[Dict[str, Any]]":
     if not CONFIG_PATH.pre_commit.exists():
         raise PrecommitError(
             "Are you sure this repository contains a"
@@ -257,7 +259,7 @@ def get_precommit_repos() -> List[Dict[str, Any]]:
     return repos
 
 
-def get_supported_python_versions() -> List[str]:
+def get_supported_python_versions() -> "List[str]":
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
@@ -368,7 +370,7 @@ def __dump_vscode_config(config: dict) -> None:
         stream.write("\n")
 
 
-def write_script(content: str, path: Union[Path, str]) -> None:
+def write_script(content: str, path: "Union[Path, str]") -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as stream:
         stream.write(content)
@@ -381,7 +383,7 @@ class _IncreasedYamlIndent(yaml.Dumper):
     ) -> None:
         return super().increase_indent(flow, False)
 
-    def write_line_break(self, data: Optional[str] = None) -> None:
+    def write_line_break(self, data: "Optional[str]" = None) -> None:
         """See https://stackoverflow.com/a/44284819."""
         super().write_line_break(data)
         if len(self.indents) == 1:
@@ -397,7 +399,7 @@ def get_prettier_round_trip_yaml() -> YAML:
     return _yaml
 
 
-def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:
+def write_yaml(definition: dict, output_path: "Union[Path, str]") -> None:
     """Write a `dict` to disk with standardized YAML formatting."""
     with open(output_path, "w") as stream:
         yaml.dump(
@@ -409,7 +411,7 @@ def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:
         )
 
 
-def natural_sorting(text: str) -> List[Union[float, str]]:
+def natural_sorting(text: str) -> "List[Union[float, str]]":
     # https://stackoverflow.com/a/5967539/13219025
     return [
         __attempt_number_cast(c)
@@ -417,7 +419,7 @@ def natural_sorting(text: str) -> List[Union[float, str]]:
     ]
 
 
-def __attempt_number_cast(text: str) -> Union[float, str]:
+def __attempt_number_cast(text: str) -> "Union[float, str]":
     try:
         return float(text)
     except ValueError:

@@ -107,7 +107,6 @@ def test_get_precommit_repos():
         "https://github.com/pre-commit/pre-commit-hooks",
         "https://github.com/psf/black",
         "https://github.com/pycqa/pydocstyle",
-        "https://github.com/pycqa/flake8",
     }
 
 

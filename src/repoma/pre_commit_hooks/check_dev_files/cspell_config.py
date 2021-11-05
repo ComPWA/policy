@@ -9,8 +9,7 @@ import json
 import os
 import textwrap
 from configparser import ConfigParser
-from pathlib import Path
-from typing import Any, Iterable, List, Sequence, Union
+from typing import TYPE_CHECKING
 
 import yaml
 
@@ -25,6 +24,10 @@ from repoma._utilities import (
     rename_config,
 )
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from typing import Any, Iterable, List, Sequence, Union
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -207,7 +210,7 @@ def _update_prettier_ignore() -> None:
 
 def __get_expected_content(
     config: dict, section: str, *, extend: bool = False
-) -> Any:
+) -> "Any":
     if section not in config:
         return __EXPECTED_CONFIG[section]
     section_content = config[section]
@@ -228,7 +231,7 @@ def __get_expected_content(
     )
 
 
-def __express_list_of_sections(sections: Sequence[str]) -> str:
+def __express_list_of_sections(sections: "Sequence[str]") -> str:
     """Convert list of sections into natural language.
 
     >>> __express_list_of_sections(["one"])
@@ -254,7 +257,7 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     return sentence
 
 
-def __get_config(path: Union[str, Path]) -> dict:
+def __get_config(path: "Union[str, Path]") -> dict:
     with open(path) as stream:
         return json.load(stream)
 
@@ -265,7 +268,7 @@ def __write_config(config: dict) -> None:
         stream.write("\n")
 
 
-def __sort_section(content: Iterable[str]) -> List[str]:
+def __sort_section(content: "Iterable[str]") -> "List[str]":
     """Sort a list section.
 
     >>> __sort_section({"one", "Two"})

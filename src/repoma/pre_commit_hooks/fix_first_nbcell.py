@@ -19,11 +19,14 @@ and starting its content with:
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING
 
 import nbformat
 
 from repoma._utilities import open_setup_cfg
+
+if TYPE_CHECKING:
+    from typing import Optional, Sequence
 
 __SETUP_CFG = open_setup_cfg()
 __PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]
@@ -90,7 +93,7 @@ def fix_first_cell(
     nbformat.write(notebook, filename)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: "Optional[Sequence[str]]" = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(

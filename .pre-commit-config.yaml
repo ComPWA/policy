@@ -3,6 +3,7 @@ ci:
   autoupdate_schedule: monthly
   skip:
     # local hooks
+    - flake8
     - mypy
     - pylint
     # hooks that don't work on pre-commit.ci
@@ -44,7 +45,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.58
+    rev: 0.0.67
     hooks:
       - id: check-dev-files
       - id: format-setup-cfg
@@ -63,22 +64,8 @@ repos:
             .*\.py
           )$
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 4.0.1
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-blind-except
-          - flake8-bugbear
-          - flake8-builtins
-          - flake8-comprehensions
-          - flake8-pytest-style
-          - flake8-rst-docstrings
-          - flake8-use-fstring
-          - pep8-naming
-
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.3
+    rev: 5.10.0
     hooks:
       - id: isort
 
@@ -98,7 +85,7 @@ repos:
       - id: pydocstyle
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.183
+    rev: v1.1.184
     hooks:
       - id: pyright
 
@@ -107,6 +94,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: flake8
+        name: flake8
+        entry: flake8
+        language: system
+        types:
+          - python
+
       - id: mypy
         name: mypy
         entry: mypy

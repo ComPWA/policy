@@ -6,9 +6,12 @@ diffs. The solution is to set the version to v4 and removes those cell ids.
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING
 
 import nbformat
+
+if TYPE_CHECKING:
+    from typing import Optional, Sequence
 
 
 def set_nbformat_version(filename: str) -> None:
@@ -26,7 +29,7 @@ def remove_cell_ids(filename: str) -> None:
     nbformat.write(notebook, filename)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: "Optional[Sequence[str]]" = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to fix.")
     args = parser.parse_args(argv)

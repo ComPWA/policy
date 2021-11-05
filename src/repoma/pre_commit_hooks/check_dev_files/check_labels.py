@@ -6,10 +6,13 @@ If it's still there remove it, because it has been superceded by the
 
 import os
 import pathlib
-from typing import List
+from typing import TYPE_CHECKING
 
 from repoma._utilities import CONFIG_PATH
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from typing import List
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
@@ -47,7 +50,7 @@ def _check_has_labels_requirement(path: pathlib.Path) -> bool:
     return False
 
 
-def _get_requirement_files() -> List[pathlib.Path]:
+def _get_requirement_files() -> "List[pathlib.Path]":
     return [
         *pathlib.Path(".").glob("**/requirements*.in"),
         *pathlib.Path(".").glob("**/requirements*.txt"),

@@ -1,6 +1,6 @@
 """Check the nbstripout hook in the pre-commit config."""
 
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from ruamel.yaml.scalarstring import LiteralScalarString
 
@@ -9,6 +9,9 @@ from repoma._utilities import (
     find_precommit_hook,
     get_prettier_round_trip_yaml,
 )
+
+if TYPE_CHECKING:
+    from typing import Optional
 
 # cspell:ignore nbconvert showmarkdowntxt
 __REPO_URL = "https://github.com/kynan/nbstripout"
@@ -59,7 +62,7 @@ def _update_extra_keys_argument() -> None:
     yaml.dump(config, CONFIG_PATH.pre_commit)
 
 
-def __find_hook_index(config: dict, repo_url: str) -> Optional[int]:
+def __find_hook_index(config: dict, repo_url: str) -> "Optional[int]":
     repos: list = config["repos"]
     for i, repo in enumerate(repos):
         if repo.get("repo") == repo_url:

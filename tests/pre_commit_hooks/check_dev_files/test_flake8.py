@@ -2,16 +2,21 @@
 import io
 from configparser import ConfigParser
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 import pytest
 
 from repoma.pre_commit_hooks.check_dev_files.flake8 import (
     _check_comments_on_separate_line,
+    _check_extend_select,
     _check_option_order,
     _check_setup_cfg,
     _move_comments_before_line,
 )
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from typing import Optional, Type
 
 
 def test_check_comments_on_separate_line():
@@ -38,7 +43,8 @@ def test_check_setup_cfg_correct():
             flake8-comprehensions
             flake8-pytest-style
             flake8-rst-docstrings
-            flake8-type-ignore
+            flake8-type-checking; python_version >="3.8.0"
+            flake8-type-ignore; python_version >="3.8.0"
             flake8-use-fstring
             pep8-naming
         """
@@ -158,3 +164,42 @@ def test_check_option_order_incorrect(content: str):
         match=r'Option "option" in section \[section\] is not sorted',
     ):
         _check_option_order(cfg)
+
+
+@pytest.mark.parametrize(
+    ("content", "error"),
+    [
+        (
+            """\
+            [flake8]
+            extend-select =
+                TC
+                TI100
+            """,
+            None,
+        ),
+        (
+            """\
+            [flake8]
+            extend-select =
+                b
+                a
+            """,
+            ValueError,
+        ),
+        ("", ValueError),
+    ],
+)
+def test_check_extend_select(
+    content: str, error: "Optional[Type[ValueError]]"
+):
+    content = dedent(content)
+    cfg = ConfigParser()
+    cfg.read_string(content)
+    if error is None:
+        _check_extend_select(cfg)
+    else:
+        with pytest.raises(
+            PrecommitError, match=r"^Flake8 config is missing an option"
+        ):
+            _check_extend_select(cfg)

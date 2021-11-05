@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from typing import Any, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING
 
 import attr
 
@@ -21,12 +21,17 @@ from .prettier_config import fix_prettier_config
 from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
 
+if TYPE_CHECKING:
+    from typing import Any, Callable, List, Optional, Sequence
+
 
 @attr.s(on_setattr=attr.setters.frozen)
 class _HookExecutor:
-    error_messages: List[str] = attr.ib(factory=list, init=False)
+    error_messages: "List[str]" = attr.ib(factory=list, init=False)
 
-    def __call__(self, function: Callable, *args: Any, **kwargs: Any) -> None:
+    def __call__(
+        self, function: "Callable", *args: "Any", **kwargs: "Any"
+    ) -> None:
         try:
             function(*args, **kwargs)
         except PrecommitError as exception:
@@ -34,7 +39,7 @@ class _HookExecutor:
             self.error_messages.append(error_message)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: R701
+def main(argv: "Optional[Sequence[str]]" = None) -> int:  # noqa: R701
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--ignore-author",

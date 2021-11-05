@@ -2,10 +2,13 @@
 
 import os
 import shutil
-from typing import List
+from typing import TYPE_CHECKING
 
 from repoma._utilities import REPOMA_DIR
 from repoma.pre_commit_hooks.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from typing import List
 
 __PR_TEMPLATE_PATH = ".github/pull_request_template.md"
 __ISSUE_TEMPLATE_PATH = ".github/ISSUE_TEMPLATE"
@@ -74,7 +77,7 @@ def __get_template_content(path: str) -> str:
         return stream.read()
 
 
-def _list_template_files(directory: str) -> List[str]:
+def _list_template_files(directory: str) -> "List[str]":
     template_files = []
     for _, __, files in os.walk(  # pyright: reportUnusedVariable=false
         directory
