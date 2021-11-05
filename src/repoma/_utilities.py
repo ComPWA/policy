@@ -243,6 +243,14 @@ def find_precommit_hook(search_pattern: str) -> "Optional[Dict[str, Any]]":
     return None
 
 
+def find_hook_index(config: dict, repo_url: str) -> "Optional[int]":
+    repos: list = config["repos"]
+    for i, repo in enumerate(repos):
+        if repo.get("repo") == repo_url:
+            return i
+    return None
+
+
 def get_precommit_repos() -> "List[Dict[str, Any]]":
     if not CONFIG_PATH.pre_commit.exists():
         raise PrecommitError(

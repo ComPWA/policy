@@ -18,6 +18,7 @@ from .gitpod import check_gitpod_config
 from .nbstripout import check_nbstripout
 from .pin_requirements_scripts import check_constraints_folder
 from .prettier_config import fix_prettier_config
+from .pyupgrade import check_pyupgrade_hook
 from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
 
@@ -86,6 +87,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:  # noqa: R701
     executor(check_github_templates)
     executor(check_gitpod_config)
     executor(check_nbstripout)
+    executor(check_pyupgrade_hook)
     if is_python_repo:
         if args.pin_requirements:
             executor(check_constraints_folder)

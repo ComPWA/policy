@@ -79,6 +79,7 @@
         "pydocstyle",
         "pylint",
         "pyright",
+        "pyupgrade",
         "repos",
         "reqs",
         "ruamel",
