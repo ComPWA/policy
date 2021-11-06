@@ -8,7 +8,7 @@ import pytest
 
 from repoma.pre_commit_hooks.check_dev_files.flake8 import (
     _check_comments_on_separate_line,
-    _check_extend_select,
+    _check_missing_options,
     _check_option_order,
     _check_setup_cfg,
     _move_comments_before_line,
@@ -43,7 +43,6 @@ def test_check_setup_cfg_correct():
             flake8-comprehensions
             flake8-pytest-style
             flake8-rst-docstrings
-            flake8-type-checking; python_version >="3.8.0"
             flake8-type-ignore; python_version >="3.8.0"
             flake8-use-fstring
             pep8-naming
@@ -101,7 +100,6 @@ def test_check_setup_cfg_incorrect(content: str):
             flake8-comprehensions
             flake8-pytest-style
             flake8-rst-docstrings
-            flake8-type-checking; python_version >="3.8.0"
             flake8-type-ignore; python_version >="3.8.0"
             flake8-use-fstring
             pep8-naming
@@ -228,10 +226,15 @@ def test_check_extend_select(
     content = dedent(content)
     cfg = ConfigParser()
     cfg.read_string(content)
+    execute_command = lambda: _check_missing_options(  # noqa: E731
+        cfg=cfg,
+        option="extend-select",
+        expected_values=["TC"],
+    )
     if error is None:
-        _check_extend_select(cfg)
+        execute_command()
     else:
         with pytest.raises(
             PrecommitError, match=r"^Flake8 config is missing an option"
         ):
-            _check_extend_select(cfg)
+            execute_command()

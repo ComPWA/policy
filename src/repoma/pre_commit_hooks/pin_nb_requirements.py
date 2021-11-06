@@ -106,7 +106,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     args = parser.parse_args(argv)
 
-    errors: List[PrecommitError] = []
+    errors: "List[PrecommitError]" = []
     for filename in args.filenames:
         try:
             check_pinned_requirements(filename)

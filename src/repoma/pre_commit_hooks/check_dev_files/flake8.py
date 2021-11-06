@@ -17,7 +17,7 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 
 if TYPE_CHECKING:
     from configparser import ConfigParser
-    from typing import Optional
+    from typing import Iterable, Optional
 
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [
@@ -28,7 +28,6 @@ __FLAKE8_REQUIREMENTS = [
     "flake8-comprehensions",
     "flake8-pytest-style",
     "flake8-rst-docstrings",
-    'flake8-type-checking; python_version >="3.8.0"',
     'flake8-type-ignore; python_version >="3.8.0"',
     "flake8-use-fstring",
     "pep8-naming",
@@ -44,7 +43,18 @@ def check_flake8_config() -> None:
     _check_comments_on_separate_line()
     _check_option_order()
     _check_setup_cfg()
-    _check_extend_select()
+    _check_missing_options(
+        option="extend-select",
+        expected_values=[
+            "TI100",
+        ],
+    )
+    _check_missing_options(
+        option="ignore",
+        expected_values=[
+            "TI1",
+        ],
+    )
 
 
 def _is_flake8_installed() -> bool:
@@ -176,16 +186,16 @@ def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
         raise PrecommitError(error_message)
 
 
-def _check_extend_select(cfg: "Optional[ConfigParser]" = None) -> None:
+def _check_missing_options(
+    option: str,
+    expected_values: "Iterable[str]",
+    cfg: "Optional[ConfigParser]" = None,
+) -> None:
     if cfg is None:
         cfg = open_config(CONFIG_PATH.flake8)
-    option = "extend-select"
     content = ""
     if cfg.has_option("flake8", option):
         content = cfg.get("flake8", option)
-    expected_values = [
-        "TC",
-    ]
     missing_values = []
     for value in expected_values:
         if not re.search(fr"\b{value}\b", content):
