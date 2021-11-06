@@ -36,6 +36,7 @@ class _ConfigFilePaths(NamedTuple):
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
     pydocstyle: Path = Path(".pydocstyle")
+    pyproject: Path = Path("pyproject.toml")
     pytest: Path = Path("pytest.ini")
     repoma_src: Path = Path(__file__).parent.absolute()
     setup_cfg: Path = Path("setup.cfg")
