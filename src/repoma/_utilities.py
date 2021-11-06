@@ -53,7 +53,7 @@ __README_PATH = "README.md"
 def add_badge(badge: str) -> None:
     if not os.path.exists(__README_PATH):
         raise PrecommitError(
-            f'This repository contains no "{__README_PATH}", so cannot add badge'
+            f"This repository contains no {__README_PATH}, so cannot add badge"
         )
     with open(__README_PATH) as stream:
         lines = stream.readlines()
@@ -61,7 +61,7 @@ def add_badge(badge: str) -> None:
     stripped_lines = set(map(lambda s: s.strip("<br>"), stripped_lines))
     stripped_lines = set(map(lambda s: s.strip("<br />"), stripped_lines))
     if badge not in stripped_lines:
-        error_message = f'"{__README_PATH}" is missing a badge:\n'
+        error_message = f"{__README_PATH} is missing a badge:\n"
         error_message += f"  {badge}\n"
         insert_position = 0
         for insert_position, line in enumerate(lines):  # noqa: B007
@@ -69,7 +69,7 @@ def add_badge(badge: str) -> None:
                 break
         if len(lines) == 0 or insert_position == len(lines) - 1:
             error_message += (
-                f'"{__README_PATH}" contains no title, so cannot add badge'
+                f"{__README_PATH} contains no title, so cannot add badge"
             )
             raise PrecommitError(error_message)
         lines.insert(insert_position + 1, f"\n{badge}")
@@ -82,7 +82,7 @@ def add_badge(badge: str) -> None:
 def remove_badge(badge_pattern: str) -> None:
     if not os.path.exists(__README_PATH):
         raise PrecommitError(
-            f'This repository contains no "{__README_PATH}", so cannot add badge'
+            f"This repository contains no {__README_PATH}, so cannot add badge"
         )
     with open(__README_PATH) as stream:
         lines = stream.readlines()
@@ -97,8 +97,7 @@ def remove_badge(badge_pattern: str) -> None:
     with open(__README_PATH, "w") as stream:
         stream.writelines(lines)
     raise PrecommitError(
-        f'A badge has been removed from "{__README_PATH}":\n\n'
-        f"  {badge_line}"
+        f"A badge has been removed from {__README_PATH}:\n\n  {badge_line}"
     )
 
 
@@ -175,7 +174,7 @@ def format_config(
 
 def read(input: "Union[Path, io.TextIOBase, str]") -> str:  # noqa: A002
     if isinstance(input, (Path, str)):
-        with open(input, "r") as input_stream:
+        with open(input) as input_stream:
             return input_stream.read()
     if isinstance(input, io.TextIOBase):
         return input.read()
@@ -207,7 +206,8 @@ def open_config(definition: "Union[Path, io.TextIOBase, str]") -> ConfigParser:
         cfg.read(path)
     else:
         raise TypeError(
-            f"Cannot create a {ConfigParser.__name__} from a {type(definition).__name__}"
+            f"Cannot create a {ConfigParser.__name__} from a"
+            f" {type(definition).__name__}"
         )
     return cfg
 
@@ -222,7 +222,8 @@ def write_config(
             cfg.write(stream)
     else:
         raise TypeError(
-            f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"
+            f"Cannot write a {ConfigParser.__name__} to a"
+            f" {type(output).__name__}"
         )
 
 

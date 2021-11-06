@@ -6,6 +6,7 @@ pre-commit hook
 """
 
 import os
+from textwrap import dedent
 
 import yaml
 
@@ -31,11 +32,15 @@ __EDITORCONFIG_HOOK = fR"""
 def check_editor_config_hook() -> None:
     if _has_editor_config() and not _has_precommit_hook():
         raise PrecommitError(
-            f"This repository has an ./{__EDITORCONFIG_FILE} file, but its"
-            f" ./{__PRECOMMIT_CONFIG_FILE} file contains no hook to enforce it."
-            " Please add the following hook:\n"
-            f"{__EDITORCONFIG_HOOK}\n"
-            "and run pre-commit autoupdate"
+            dedent(
+                f"""
+                This repository has an {__EDITORCONFIG_FILE} file, but its
+                {__PRECOMMIT_CONFIG_FILE} file contains no hook to enforce it.
+                Please add the following hook:
+                {__EDITORCONFIG_HOOK}
+                and run pre-commit autoupdate
+                """
+            ).strip()
         )
 
 

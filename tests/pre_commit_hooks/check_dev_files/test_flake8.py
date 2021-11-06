@@ -83,11 +83,43 @@ def test_check_setup_cfg_incorrect(content: str):
     content = dedent(content)
     cfg = ConfigParser()
     cfg.read_string(content)
-    with pytest.raises(
-        PrecommitError,
-        match=r"^Section \[options.extras_require\] in setup.cfg should look like this",
-    ):
+    with pytest.raises(PrecommitError) as error:
         _check_setup_cfg(cfg)
+    assert (
+        error.value.args[0]
+        == dedent(
+            """
+        Section [options.extras_require] in setup.cfg should look like this:
+
+        [options.extras_require]
+        ...
+        flake8 =
+            flake8 >=4  # extend-select
+            flake8-blind-except
+            flake8-bugbear
+            flake8-builtins
+            flake8-comprehensions
+            flake8-pytest-style
+            flake8-rst-docstrings
+            flake8-type-checking; python_version >="3.8.0"
+            flake8-type-ignore; python_version >="3.8.0"
+            flake8-use-fstring
+            pep8-naming
+        ...
+        lint =
+            %(flake8)s
+            ...
+        sty =
+            ...
+            %(lint)s
+            ...
+        dev =
+            ...
+            %(sty)s
+            ...
+        """
+        ).strip()
+    )
 
 
 @pytest.mark.parametrize(

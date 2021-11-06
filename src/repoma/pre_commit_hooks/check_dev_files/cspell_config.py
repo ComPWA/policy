@@ -33,7 +33,12 @@ __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
 # cspell:ignore pelling
 # pylint: disable=line-too-long
-__BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
+# fmt: off
+__BADGE = (
+    "[![Spelling"
+    " checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
+)
+# fmt: on
 __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
 __HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
@@ -79,7 +84,7 @@ def _remove_configuration() -> None:
             " and has been removed"
         )
     if CONFIG_PATH.editor_config.exists():
-        with open(CONFIG_PATH.editor_config, "r") as stream:
+        with open(CONFIG_PATH.editor_config) as stream:
             prettier_ignore_content = stream.readlines()
         expected_line = str(CONFIG_PATH.cspell) + "\n"
         if expected_line in set(prettier_ignore_content):
@@ -172,14 +177,18 @@ def _check_editor_config() -> None:
         )
     if not cfg.has_section(str(CONFIG_PATH.cspell)):
         raise PrecommitError(
-            f'./{CONFIG_PATH.editor_config} has no section "[{CONFIG_PATH.cspell}]"'
+            f"{CONFIG_PATH.editor_config} has no section"
+            f' "[{CONFIG_PATH.cspell}]"'
         )
     expected_options = {
         "indent_size": "4",
     }
     options = dict(cfg.items(str(CONFIG_PATH.cspell)))
     if options != expected_options:
-        error_message = f"./{CONFIG_PATH.editor_config} should have the following section:\n\n"
+        error_message = (
+            f"{CONFIG_PATH.editor_config} should have the following"
+            " section:\n\n"
+        )
         section_content = f"[{CONFIG_PATH.cspell}]\n"
         for option, value in expected_options.items():
             section_content += f"{option} = {value}\n"
@@ -197,7 +206,7 @@ def _update_prettier_ignore() -> None:
         with open(prettier_ignore_path, "w") as stream:
             stream.write(expected_line)
     else:
-        with open(prettier_ignore_path, "r") as stream:
+        with open(prettier_ignore_path) as stream:
             prettier_ignore_content = stream.readlines()
         if expected_line in set(prettier_ignore_content):
             return

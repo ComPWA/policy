@@ -56,7 +56,7 @@ def _check_pr_template() -> None:
         )
         __write_template(expected_content, __PR_TEMPLATE_PATH)
         raise PrecommitError(
-            f'This repository has no "{__PR_TEMPLATE_PATH}" file.'
+            f"This repository has no {__PR_TEMPLATE_PATH} file."
             " Problem has been fixed."
         )
     with open(__PR_TEMPLATE_PATH) as stream:
@@ -67,8 +67,8 @@ def _check_pr_template() -> None:
     if template_content != expected_content:
         __write_template(expected_content, path=__PR_TEMPLATE_PATH)
         raise PrecommitError(
-            f'PR template "{__PR_TEMPLATE_PATH}" does not contain expected content.'
-            " Problem has been fixed."
+            f"PR template {__PR_TEMPLATE_PATH} does not contain expected"
+            " content. Problem has been fixed."
         )
 
 

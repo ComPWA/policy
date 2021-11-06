@@ -17,7 +17,9 @@ from repoma.pre_commit_hooks.errors import PrecommitError
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
 
 # pylint: disable=line-too-long
+# fmt: off
 __BADGE = "[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)"
+# fmt: on
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
@@ -51,20 +53,19 @@ def _fix_config_content(no_prettierrc: bool) -> None:
         if CONFIG_PATH.prettier.exists():
             os.remove(CONFIG_PATH.prettier)
             raise PrecommitError(
-                f'Removed "./{CONFIG_PATH.prettier}" as requested by --no-prettierrc'
+                f"Removed {CONFIG_PATH.prettier} as requested by"
+                " --no-prettierrc"
             )
     else:
         if not CONFIG_PATH.prettier.exists():
             existing_content = ""
         else:
-            with open(CONFIG_PATH.prettier, "r") as stream:
+            with open(CONFIG_PATH.prettier) as stream:
                 existing_content = stream.read()
         if existing_content != __EXPECTED_CONFIG:
             with open(CONFIG_PATH.prettier, "w") as stream:
                 stream.write(__EXPECTED_CONFIG)
-            raise PrecommitError(
-                f'Updated "./{CONFIG_PATH.prettier}" config file'
-            )
+            raise PrecommitError(f"Updated {CONFIG_PATH.prettier} config file")
 
     wrong_config_paths = [  # https://prettier.io/docs/en/configuration.html
         ".prettierrc.json",

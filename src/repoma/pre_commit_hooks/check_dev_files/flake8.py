@@ -143,7 +143,8 @@ def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
     extras_require = "options.extras_require"
     if not cfg.has_section(extras_require):
         raise PrecommitError(
-            f"Please list flake8 under a section [{extras_require}] in setup.cfg"
+            f"Please list flake8 under a section [{extras_require}] in"
+            " setup.cfg"
         )
     requirements = indent("\n".join(__FLAKE8_REQUIREMENTS), 12 * " ")
     error_message = f"""\
@@ -165,7 +166,7 @@ def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
             %(sty)s
             ...
     """
-    error_message = dedent(error_message)
+    error_message = dedent(error_message).strip()
     if not cfg.has_option(extras_require, "flake8"):
         raise PrecommitError(error_message)
     packages = cfg.get(extras_require, "flake8").split("\n")

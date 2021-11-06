@@ -59,7 +59,10 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:  # noqa: R701
         "--no-prettierrc",
         default=False,
         action="store_true",
-        help="Remove the prettierrc, so that Prettier's default values are used.",
+        help=(
+            "Remove the prettierrc, so that Prettier's default values are"
+            " used."
+        ),
     )
     parser.add_argument(
         "--allow-labels",

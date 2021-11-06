@@ -60,8 +60,7 @@ def __check_requirements(filename: str, install_statement: str) -> None:
     requirements = install_statement.split(" ")
     if len(requirements) <= 4:
         raise PrecommitError(
-            "At least one dependency required in install cell of "
-            f'"{filename}"'
+            f'At least one dependency required in install cell of "{filename}"'
         )
     requirements = requirements[2:-2]
     for requirement in requirements:
@@ -93,7 +92,8 @@ def __check_metadata(filename: str, metadata: dict) -> None:
     expected_tag = "hide-cell"
     if tags is None or expected_tag not in tags:
         raise PrecommitError(
-            f'Install cell in notebook "{filename}" should have tag "{expected_tag}"'
+            f'Install cell in notebook "{filename}" should have tag'
+            f' "{expected_tag}"'
         )
     if "remove-cell" in tags:
         raise PrecommitError(

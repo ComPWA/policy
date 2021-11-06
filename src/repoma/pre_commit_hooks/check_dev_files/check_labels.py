@@ -41,7 +41,7 @@ def check_has_labels() -> None:
 
 
 def _check_has_labels_requirement(path: pathlib.Path) -> bool:
-    with open(path, "r") as stream:
+    with open(path) as stream:
         lines = stream.readlines()
     for line in lines:
         requirement = _get_package_name(line)
@@ -74,7 +74,7 @@ def _remove_all_labels_requirement() -> None:
 
 
 def _remove_labels_requirement(path: pathlib.Path) -> None:
-    with open(path, "r") as stream:
+    with open(path) as stream:
         original_lines = stream.readlines()
     with open(path, "w") as stream:
         for line in original_lines:
