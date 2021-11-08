@@ -73,6 +73,7 @@
         "nargs",
         "nbcell",
         "nbformat",
+        "nbqa",
         "noqa",
         "pandoc",
         "prettierrc",
