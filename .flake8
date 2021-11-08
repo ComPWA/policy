@@ -28,7 +28,6 @@ ignore =
     # https://github.com/psf/black#line-breaks--binary-operators
     W503
 extend-select =
-    TC
     TI100
 radon-max-cc = 8
 radon-no-assert = True
