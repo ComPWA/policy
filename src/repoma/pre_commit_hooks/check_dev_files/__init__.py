@@ -2,12 +2,9 @@
 
 import argparse
 import sys
-from typing import TYPE_CHECKING
+from typing import Optional, Sequence
 
-import attr
-
-from repoma.pre_commit_hooks.errors import PrecommitError
-
+from ._executor import Executor
 from .black import check_black_config
 from .check_labels import check_has_labels
 from .cspell_config import fix_cspell_config
@@ -23,25 +20,8 @@ from .pyupgrade import update_pyupgrade_hook
 from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
 
-if TYPE_CHECKING:
-    from typing import Any, Callable, List, Optional, Sequence
 
-
-@attr.s(on_setattr=attr.setters.frozen)
-class _HookExecutor:
-    error_messages: "List[str]" = attr.ib(factory=list, init=False)
-
-    def __call__(
-        self, function: "Callable", *args: "Any", **kwargs: "Any"
-    ) -> None:
-        try:
-            function(*args, **kwargs)
-        except PrecommitError as exception:
-            error_message = str("\n".join(exception.args))
-            self.error_messages.append(error_message)
-
-
-def main(argv: "Optional[Sequence[str]]" = None) -> int:  # noqa: R701
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--ignore-author",
@@ -79,7 +59,7 @@ def main(argv: "Optional[Sequence[str]]" = None) -> int:  # noqa: R701
     args = parser.parse_args(argv)
     is_python_repo = not args.no_python
 
-    executor = _HookExecutor()
+    executor = Executor()
     executor(check_milestone_workflow)
     executor(check_docs_workflow)
     executor(check_editor_config_hook)
