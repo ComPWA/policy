@@ -29,7 +29,7 @@ __EDITORCONFIG_HOOK = fR"""
 """
 
 
-def check_editor_config_hook() -> None:
+def main() -> None:
     if _has_editor_config() and not _has_precommit_hook():
         raise PrecommitError(
             dedent(

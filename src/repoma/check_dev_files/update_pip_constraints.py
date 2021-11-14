@@ -16,7 +16,7 @@ from repoma._utilities import (
 from repoma.errors import PrecommitError
 
 
-def update_workflows() -> None:
+def main() -> None:
     _remove_script("pin_requirements.py")
     _remove_script("upgrade.sh")
     _update_github_workflows()

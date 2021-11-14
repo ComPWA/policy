@@ -3,7 +3,7 @@
 from repoma._utilities import CONFIG_PATH, extract_config_section
 
 
-def check_tox_ini() -> None:
+def main() -> None:
     if not CONFIG_PATH.tox.exists():
         return
     extract_config_section(
