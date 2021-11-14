@@ -7,6 +7,7 @@ See Also:
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
@@ -17,9 +18,12 @@ from repoma.errors import PrecommitError
 
 
 def main() -> None:
-    _remove_script("pin_requirements.py")
-    _remove_script("upgrade.sh")
-    _update_github_workflows()
+    executor = Executor()
+    executor(_remove_script, "pin_requirements.py")
+    executor(_remove_script, "upgrade.sh")
+    executor(_update_github_workflows)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _remove_script(script_name: str) -> None:
@@ -54,5 +58,8 @@ def _update_github_workflows() -> None:
             yaml.dump(expected_data, workflow_path)
             raise PrecommitError(f'Updated "{workflow_path}" workflow')
 
+    executor = Executor()
     overwrite_workflow("requirements-cron.yml")
     overwrite_workflow("requirements-pr.yml")
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())

@@ -4,6 +4,7 @@ from typing import Tuple
 
 from ruamel.yaml import YAML
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     PrecommitConfig,
@@ -13,8 +14,11 @@ from repoma.errors import PrecommitError
 
 
 def main() -> None:
-    _update_main_pyupgrade_hook()
-    _update_nbqa_hook()
+    executor = Executor()
+    executor(_update_main_pyupgrade_hook)
+    executor(_update_nbqa_hook)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _update_main_pyupgrade_hook() -> None:
@@ -68,16 +72,17 @@ def _update_nbqa_hook() -> None:
             "--py36-plus",
         ],
     }
-    index = repo.get_hook_index(hook_id)
-    if index is None:
+    repo_index = precommit_config.get_repo_index(repo_url)
+    hook_index = repo.get_hook_index(hook_id)
+    if hook_index is None:
         config, yaml = load_round_trip_precommit_config()
-        config["repos"][index]["hooks"].append(expected_config)
+        config["repos"][repo_index]["hooks"].append(expected_config)
         yaml.dump(config, CONFIG_PATH.pre_commit)
         raise PrecommitError(f"Added {hook_id} to pre-commit config")
 
-    if repo.hooks[index].dict() != expected_config:
+    if repo.hooks[hook_index].dict() != expected_config:
         config, yaml = load_round_trip_precommit_config()
-        config["repos"][index]["hooks"][hook_id] = expected_config
+        config["repos"][repo_index]["hooks"][hook_index] = expected_config
         yaml.dump(config, CONFIG_PATH.pre_commit)
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
 

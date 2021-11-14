@@ -3,13 +3,17 @@
 import os
 import re
 
+from repoma._executor import Executor
 from repoma._utilities import CONFIG_PATH, REPOMA_DIR, write_script
 from repoma.errors import PrecommitError
 
 
 def main() -> None:
-    check_milestone_workflow()
-    check_docs_workflow()
+    executor = Executor()
+    executor(check_milestone_workflow)
+    executor(check_docs_workflow)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def check_milestone_workflow() -> None:
@@ -24,8 +28,11 @@ def check_milestone_workflow() -> None:
 
 def check_docs_workflow() -> None:
     if os.path.exists("./docs/") or os.path.exists("./doc/"):
-        _copy_workflow_file("ci-docs.yml")
-        _copy_workflow_file("linkcheck.yml")
+        executor = Executor()
+        executor(_copy_workflow_file, "ci-docs.yml")
+        executor(_copy_workflow_file, "linkcheck.yml")
+        if executor.error_messages:
+            raise PrecommitError(executor.merge_messages())
 
 
 def _copy_workflow_file(filename: str) -> None:

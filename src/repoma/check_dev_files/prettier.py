@@ -2,6 +2,7 @@
 
 import os
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
@@ -33,9 +34,12 @@ def main(no_prettierrc: bool) -> None:
     if repo is None:
         _remove_configuration()
     else:
-        _fix_config_content(no_prettierrc)
-        add_badge(__BADGE)
-        add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+        executor = Executor()
+        executor(_fix_config_content, no_prettierrc)
+        executor(add_badge, __BADGE)
+        executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
+        if executor.error_messages:
+            raise PrecommitError(executor.merge_messages())
 
 
 def _remove_configuration() -> None:

@@ -5,6 +5,7 @@ import re
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     extract_config_section,
@@ -37,24 +38,29 @@ __FLAKE8_REQUIREMENTS = [
 def main() -> None:
     if not _is_flake8_installed():
         return
-    _extract_flake8_config()
-    _check_config_exists()
-    _format_flake8_config()
-    _check_comments_on_separate_line()
-    _check_option_order()
-    _check_setup_cfg()
-    _check_missing_options(
+    executor = Executor()
+    executor(_extract_flake8_config)
+    executor(_check_config_exists)
+    executor(_format_flake8_config)
+    executor(_check_comments_on_separate_line)
+    executor(_check_option_order)
+    executor(_check_setup_cfg)
+    executor(
+        _check_missing_options,
         option="extend-select",
         expected_values=[
             "TI100",
         ],
     )
-    _check_missing_options(
+    executor(
+        _check_missing_options,
         option="ignore",
         expected_values=[
             "TI1",
         ],
     )
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _is_flake8_installed() -> bool:

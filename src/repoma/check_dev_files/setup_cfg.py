@@ -4,6 +4,7 @@ import os
 import textwrap
 from collections import defaultdict
 
+from repoma._executor import Executor
 from repoma._utilities import CONFIG_PATH, copy_config, open_setup_cfg
 from repoma.errors import PrecommitError
 from repoma.format_setup_cfg import write_formatted_setup_cfg
@@ -12,10 +13,13 @@ from repoma.format_setup_cfg import write_formatted_setup_cfg
 def main(ignore_author: bool) -> None:
     if not CONFIG_PATH.setup_cfg.exists():
         return
-    _check_required_options()
+    executor = Executor()
+    executor(_check_required_options)
     if not ignore_author:
-        _update_author_data()
-    _fix_long_description()
+        executor(_update_author_data)
+    executor(_fix_long_description)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _check_required_options() -> None:
