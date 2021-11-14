@@ -9,6 +9,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma._utilities import (
     CONFIG_PATH,
+    REPOMA_DIR,
     get_prettier_round_trip_yaml,
     get_supported_python_versions,
 )
@@ -31,7 +32,7 @@ def _remove_script(script_name: str) -> None:
 def _update_github_workflows() -> None:
     def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
-            CONFIG_PATH.repoma_src / "workflows" / workflow_file
+            REPOMA_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
         yaml = get_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)

@@ -3,10 +3,8 @@
 import os
 import re
 
-from repoma._utilities import CONFIG_PATH, write_script
+from repoma._utilities import CONFIG_PATH, REPOMA_DIR, write_script
 from repoma.errors import PrecommitError
-
-__THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def check_milestone_workflow() -> None:
@@ -26,8 +24,8 @@ def check_docs_workflow() -> None:
 
 
 def _copy_workflow_file(filename: str) -> None:
-    expected_workflow_path = os.path.abspath(
-        f"{__THIS_MODULE_DIR}/../../workflows/{filename}"
+    expected_workflow_path = (
+        REPOMA_DIR / CONFIG_PATH.github_workflow_dir / filename
     )
     with open(expected_workflow_path) as stream:
         expected_content = stream.read()

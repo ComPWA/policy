@@ -38,7 +38,6 @@ class _ConfigFilePaths(NamedTuple):
     pydocstyle: Path = Path(".pydocstyle")
     pyproject: Path = Path("pyproject.toml")
     pytest: Path = Path("pytest.ini")
-    repoma_src: Path = Path(__file__).parent.absolute()
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
@@ -46,7 +45,7 @@ class _ConfigFilePaths(NamedTuple):
 
 CONFIG_PATH = _ConfigFilePaths()
 
-REPOMA_DIR = Path(repoma.__file__).parent
+REPOMA_DIR = Path(repoma.__file__).parent.absolute()
 __README_PATH = "README.md"
 
 
