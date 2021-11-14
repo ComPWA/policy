@@ -80,7 +80,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(fix_setup_cfg, args.ignore_author)
         executor(check_tox_ini)
     if executor.error_messages:
-        print("\n---------------\n\n".join(executor.error_messages))
+        print(executor.merge_messages())
         return 1
     return 0
 
