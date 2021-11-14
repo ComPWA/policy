@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
@@ -55,13 +56,16 @@ def main() -> None:
     if repo is None:
         _remove_configuration()
     else:
-        _check_check_hook_options()
-        _fix_config_content()
-        _sort_config_entries()
-        _check_editor_config()
-        _update_prettier_ignore()
-        add_badge(__BADGE)
-        add_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+        executor = Executor()
+        executor(_check_check_hook_options)
+        executor(_fix_config_content)
+        executor(_sort_config_entries)
+        executor(_check_editor_config)
+        executor(_update_prettier_ignore)
+        executor(add_badge, __BADGE)
+        executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
+        if executor.error_messages:
+            raise PrecommitError(executor.merge_messages())
 
 
 def _check_hook_url() -> None:
@@ -97,8 +101,11 @@ def _remove_configuration() -> None:
                 f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editor_config}'
                 " is no longer required and has been removed"
             )
-    remove_badge(__BADGE_PATTERN)
-    remove_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    executor = Executor()
+    executor(remove_badge, __BADGE_PATTERN)
+    executor(remove_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _check_check_hook_options() -> None:

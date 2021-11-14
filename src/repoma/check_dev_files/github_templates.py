@@ -3,21 +3,22 @@
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import List
 
+from repoma._executor import Executor
 from repoma._utilities import REPOMA_DIR
 from repoma.errors import PrecommitError
-
-if TYPE_CHECKING:
-    from typing import List
 
 __PR_TEMPLATE_PATH = Path(".github/pull_request_template.md")
 __ISSUE_TEMPLATE_PATH = Path(".github/ISSUE_TEMPLATE")
 
 
 def main() -> None:
-    _check_pr_template()
-    _check_issue_templates()
+    executor = Executor()
+    executor(_check_pr_template)
+    executor(_check_issue_templates)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _check_issue_templates() -> None:
@@ -76,7 +77,7 @@ def __get_template_content(path: Path) -> str:
         return stream.read()
 
 
-def _list_template_files(directory: Path) -> "List[str]":
+def _list_template_files(directory: Path) -> List[str]:
     template_files = []
     for _, __, files in os.walk(  # pyright: reportUnusedVariable=false
         directory

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import toml
 
+from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     get_supported_python_versions,
@@ -21,10 +22,13 @@ def main() -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     config = _load_config()
-    _check_line_length(config)
-    _check_experimental_string_processing(config)
-    _check_option_ordering(config)
-    _check_target_versions(config)
+    executor = Executor()
+    executor(_check_line_length, config)
+    executor(_check_experimental_string_processing, config)
+    executor(_check_option_ordering, config)
+    executor(_check_target_versions, config)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _load_config(content: "Optional[str]" = None) -> dict:
