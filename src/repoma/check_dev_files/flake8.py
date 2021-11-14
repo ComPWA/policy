@@ -34,7 +34,7 @@ __FLAKE8_REQUIREMENTS = [
 ]
 
 
-def check_flake8_config() -> None:
+def main() -> None:
     if not _is_flake8_installed():
         return
     _extract_flake8_config()

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def check_has_labels() -> None:
+def main() -> None:
     if os.path.exists(__LABELS_CONFIG_FILE):
         os.remove(__LABELS_CONFIG_FILE)
         raise PrecommitError(

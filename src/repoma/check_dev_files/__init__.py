@@ -6,20 +6,22 @@ from typing import Optional, Sequence
 
 from repoma._executor import Executor
 
-from .black import check_black_config
-from .check_labels import check_has_labels
-from .cspell_config import fix_cspell_config
-from .editor_config_hook import check_editor_config_hook
-from .flake8 import check_flake8_config
-from .github_templates import check_github_templates
-from .github_workflows import check_docs_workflow, check_milestone_workflow
-from .gitpod import check_gitpod_config
-from .nbstripout import check_nbstripout
-from .prettier_config import fix_prettier_config
-from .pyupgrade import update_pyupgrade_hook
-from .setup_cfg import fix_setup_cfg
-from .tox_config import check_tox_ini
-from .update_requirements_workflows import update_workflows
+from . import (
+    black,
+    cspell,
+    editor_config,
+    flake8,
+    github_labels,
+    github_templates,
+    github_workflows,
+    gitpod,
+    nbstripout,
+    prettier,
+    pyupgrade,
+    setup_cfg,
+    tox,
+    update_pip_constraints,
+)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -61,24 +63,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     is_python_repo = not args.no_python
 
     executor = Executor()
-    executor(check_milestone_workflow)
-    executor(check_docs_workflow)
-    executor(check_editor_config_hook)
+    executor(black.main)
+    executor(cspell.main)
+    executor(editor_config.main)
+    executor(flake8.main)
     if not args.allow_labels:
-        executor(check_has_labels)
-    executor(fix_cspell_config)
-    executor(fix_prettier_config, args.no_prettierrc)
-    executor(check_black_config)
-    executor(check_flake8_config)
-    executor(check_github_templates)
-    executor(check_gitpod_config)
-    executor(check_nbstripout)
-    executor(update_pyupgrade_hook)
+        executor(github_labels.main)
+    executor(github_templates.main)
+    executor(github_workflows.main)
+    executor(gitpod.main)
+    executor(nbstripout.main)
+    executor(prettier.main, args.no_prettierrc)
+    executor(pyupgrade.main)
     if is_python_repo:
         if args.pin_requirements:
-            executor(update_workflows)
-        executor(fix_setup_cfg, args.ignore_author)
-        executor(check_tox_ini)
+            executor(update_pip_constraints.main)
+        executor(setup_cfg.main, args.ignore_author)
+        executor(tox.main)
     if executor.error_messages:
         print(executor.merge_messages())
         return 1

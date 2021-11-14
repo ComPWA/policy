@@ -12,7 +12,7 @@ from repoma._utilities import (
 from repoma.errors import PrecommitError
 
 
-def update_pyupgrade_hook() -> None:
+def main() -> None:
     _update_main_pyupgrade_hook()
     _update_nbqa_hook()
 

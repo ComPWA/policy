@@ -27,7 +27,7 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 
-def fix_prettier_config(no_prettierrc: bool) -> None:
+def main(no_prettierrc: bool) -> None:
     config = PrecommitConfig.load()
     repo = config.find_repo(r".*/mirrors-prettier")
     if repo is None:

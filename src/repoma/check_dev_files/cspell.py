@@ -47,7 +47,7 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def fix_cspell_config() -> None:
+def main() -> None:
     rename_config("cspell.json", str(CONFIG_PATH.cspell))
     _check_hook_url()
     config = PrecommitConfig.load()

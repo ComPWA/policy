@@ -15,7 +15,7 @@ __PR_TEMPLATE_PATH = Path(".github/pull_request_template.md")
 __ISSUE_TEMPLATE_PATH = Path(".github/ISSUE_TEMPLATE")
 
 
-def check_github_templates() -> None:
+def main() -> None:
     _check_pr_template()
     _check_issue_templates()
 

@@ -17,7 +17,7 @@ from repoma.errors import PrecommitError
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 
 
-def check_gitpod_config() -> None:
+def main() -> None:
     pin_dependencies = os.path.exists(__CONSTRAINTS_FILE)
     error_message = ""
     expected_config = _generate_gitpod_config(pin_dependencies)

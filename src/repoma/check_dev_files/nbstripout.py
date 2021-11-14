@@ -31,7 +31,7 @@ __EXTRA_KEYS_ARGUMENT = [
 ]
 
 
-def check_nbstripout() -> None:
+def main() -> None:
     repo = _get_nbstripout_precommit_repo()
     if repo is None:
         return

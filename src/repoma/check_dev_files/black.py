@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from typing import Optional
 
 
-def check_black_config() -> None:
+def main() -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     config = _load_config()

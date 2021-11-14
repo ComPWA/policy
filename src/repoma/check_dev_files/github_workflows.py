@@ -7,6 +7,11 @@ from repoma._utilities import CONFIG_PATH, REPOMA_DIR, write_script
 from repoma.errors import PrecommitError
 
 
+def main() -> None:
+    check_milestone_workflow()
+    check_docs_workflow()
+
+
 def check_milestone_workflow() -> None:
     """Add a GitHub Action that auto-closes milestones on a new release.
 
