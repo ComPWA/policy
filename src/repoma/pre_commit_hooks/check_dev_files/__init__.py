@@ -14,11 +14,11 @@ from .github_templates import check_github_templates
 from .github_workflows import check_docs_workflow, check_milestone_workflow
 from .gitpod import check_gitpod_config
 from .nbstripout import check_nbstripout
-from .pin_requirements_scripts import check_constraints_folder
 from .prettier_config import fix_prettier_config
 from .pyupgrade import update_pyupgrade_hook
 from .setup_cfg import fix_setup_cfg
 from .tox_config import check_tox_ini
+from .update_requirements_workflows import update_workflows
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -75,7 +75,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(update_pyupgrade_hook)
     if is_python_repo:
         if args.pin_requirements:
-            executor(check_constraints_folder)
+            executor(update_workflows)
         executor(fix_setup_cfg, args.ignore_author)
         executor(check_tox_ini)
     if executor.error_messages:
