@@ -1,5 +1,5 @@
 # pylint: disable=no-self-use
-from repoma.check_dev_files._executor import Executor
+from repoma._executor import Executor
 from repoma.errors import PrecommitError
 
 
