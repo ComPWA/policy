@@ -50,7 +50,7 @@ def _extract_extensions() -> dict:
 
 
 def _generate_gitpod_config(pin_dependencies: bool) -> dict:
-    with open(REPOMA_DIR / CONFIG_PATH.gitpod) as stream:
+    with open(REPOMA_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
     if pin_dependencies:

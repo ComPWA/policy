@@ -23,7 +23,7 @@ __BADGE = "[![code style: prettier](https://img.shields.io/badge/code_style-pret
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-with open(REPOMA_DIR / CONFIG_PATH.prettier) as __STREAM:
+with open(REPOMA_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 

@@ -43,7 +43,7 @@ __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
 __HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
-with open(REPOMA_DIR / CONFIG_PATH.cspell) as __STREAM:
+with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
