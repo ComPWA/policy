@@ -16,9 +16,9 @@ import yaml
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
+    PrecommitConfig,
     add_badge,
     add_vscode_extension_recommendation,
-    find_precommit_hook,
     remove_badge,
     remove_vscode_extension_recommendation,
     rename_config,
@@ -40,7 +40,7 @@ __BADGE = (
 )
 # fmt: on
 __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
-__HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
+__REPO_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
 with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
@@ -50,8 +50,9 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 def fix_cspell_config() -> None:
     rename_config("cspell.json", str(CONFIG_PATH.cspell))
     _check_hook_url()
-    precommit_hook = find_precommit_hook(__HOOK_URL)
-    if precommit_hook is None:
+    config = PrecommitConfig.load()
+    repo = config.find_repo(__REPO_URL)
+    if repo is None:
         _remove_configuration()
     else:
         _check_check_hook_options()
@@ -67,12 +68,13 @@ def _check_hook_url() -> None:
     old_url_patters = [
         r".*/mirrors-cspell",
     ]
+    config = PrecommitConfig.load()
     for pattern in old_url_patters:
-        old_url = find_precommit_hook(pattern)
+        old_url = config.find_repo(pattern)
         if old_url is not None:
             raise PrecommitError(
                 "Pre-commit hook for cspell should be updated."
-                f" Repo URL should be {__HOOK_URL}"
+                f" Repo URL should be {__REPO_URL}"
             )
 
 
@@ -100,18 +102,24 @@ def _remove_configuration() -> None:
 
 
 def _check_check_hook_options() -> None:
-    config = find_precommit_hook(__HOOK_URL)
-    assert config is not None
+    config = PrecommitConfig.load()
+    repo = config.find_repo(__REPO_URL)
+    if repo is None:
+        raise PrecommitError(
+            f"{CONFIG_PATH.pre_commit} is missing a repo: {__REPO_URL}"
+        )
     expected_yaml = f"""
-  - repo: {__HOOK_URL}
+  - repo: {__REPO_URL}
     rev: ...
     hooks:
       - id: cspell
     """
-    expected_config = yaml.safe_load(expected_yaml)[0]
+    repo_dict = repo.dict(skip_defaults=True)
+    expected_dict = yaml.safe_load(expected_yaml)[0]
     if (
-        list(config) != list(expected_config)
-        or config.get("hooks") != expected_config["hooks"]
+        list(repo_dict) != list(expected_dict)
+        or [h.dict(skip_defaults=True) for h in repo.hooks]
+        != expected_dict["hooks"]
     ):
         raise PrecommitError(
             "cSpell pre-commit hook should have the following form:\n"
@@ -197,8 +205,9 @@ def _check_editor_config() -> None:
 
 
 def _update_prettier_ignore() -> None:
-    prettier_hook = find_precommit_hook(__HOOK_URL)
-    if prettier_hook is None:
+    config = PrecommitConfig.load()
+    repo = config.find_repo(__REPO_URL)
+    if repo is None:
         return
     prettier_ignore_path = ".prettierignore"
     expected_line = str(CONFIG_PATH.cspell) + "\n"

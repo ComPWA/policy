@@ -1,74 +1,88 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
+from typing import Tuple
+
 from ruamel.yaml import YAML
 
 from repoma._utilities import (
     CONFIG_PATH,
-    find_hook_index,
-    get_prettier_round_trip_yaml,
+    PrecommitConfig,
+    create_prettier_round_trip_yaml,
 )
 from repoma.errors import PrecommitError
 
-__PYUPGRADE_URL = "https://github.com/asottile/pyupgrade"
-__EXPECTED_ARGS = [
-    "--py36-plus",
-]
-
 
 def update_pyupgrade_hook() -> None:
-    yaml = get_prettier_round_trip_yaml()
-    config = yaml.load(CONFIG_PATH.pre_commit)
-    _update_main_pyupgrade_hook(config, yaml)
-    _update_nbqa_hook(config, yaml)
+    _update_main_pyupgrade_hook()
+    _update_nbqa_hook()
 
 
-def _update_main_pyupgrade_hook(config: dict, yaml: YAML) -> None:
-    hook_index = find_hook_index(config, __PYUPGRADE_URL)
-    if hook_index is None:
+def _update_main_pyupgrade_hook() -> None:
+    repo_url = "https://github.com/asottile/pyupgrade"
+    hook_id = "pyupgrade"
+    expected_args = [
+        "--py36-plus",
+    ]
+    precommit_config = PrecommitConfig.load()
+    repo = precommit_config.find_repo(repo_url)
+    if repo is None:
+        raise PrecommitError(
+            f"{CONFIG_PATH.pre_commit} is missing a hook: {repo_url}"
+        )
+    index = repo.get_hook_index(hook_id)
+    if index is None:
+        config, yaml = load_round_trip_precommit_config()
         config["repos"].append(
             {
-                "repo": __PYUPGRADE_URL,
+                "repo": repo_url,
                 "rev": "v2.29.0",
                 "hooks": [
                     {
-                        "id": "pyupgrade",
-                        "args": __EXPECTED_ARGS,
+                        "id": hook_id,
+                        "args": expected_args,
                     }
                 ],
             }
         )
         yaml.dump(config, CONFIG_PATH.pre_commit)
-        raise PrecommitError("Added pyupgrade pre-commit hook")
-    if config["repos"][hook_index]["hooks"][0].get("args") == __EXPECTED_ARGS:
+        raise PrecommitError(f"Added {hook_id} pre-commit hook")
+    if repo.hooks[index].args == expected_args:
         return
-    config["repos"][hook_index]["hooks"]["args"] = __EXPECTED_ARGS
+    config, yaml = load_round_trip_precommit_config()
+    config["repos"][index]["hooks"]["args"] = expected_args
     yaml.dump(config, CONFIG_PATH.pre_commit)
-    raise PrecommitError("Updated args of pyupgrade pre-commit hook")
+    raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
 
 
-def _update_nbqa_hook(config: dict, yaml: YAML) -> None:
-    nbqa_index = find_hook_index(config, "https://github.com/nbQA-dev/nbQA")
-    if nbqa_index is None:
+def _update_nbqa_hook() -> None:
+    repo_url = "https://github.com/nbQA-dev/nbQA"
+    precommit_config = PrecommitConfig.load()
+    repo = precommit_config.find_repo(repo_url)
+    if repo is None:
         return
-    hooks = config["repos"][nbqa_index]["hooks"]
-    pyupgrade_index = None
-    for i, hook in enumerate(hooks):
-        if hook.get("id") == "nbqa-pyupgrade":
-            pyupgrade_index = i
+
+    hook_id = "nbqa-pyupgrade"
     expected_config = {
-        "id": "nbqa-pyupgrade",
+        "id": hook_id,
         "args": [
             "--py36-plus",
         ],
     }
-    if pyupgrade_index is None:
-        config["repos"][nbqa_index]["hooks"].append(expected_config)
+    index = repo.get_hook_index(hook_id)
+    if index is None:
+        config, yaml = load_round_trip_precommit_config()
+        config["repos"][index]["hooks"].append(expected_config)
         yaml.dump(config, CONFIG_PATH.pre_commit)
-        raise PrecommitError("Added nbqa-pyupgrade to pre-commit config")
-    if (
-        config["repos"][nbqa_index]["hooks"][pyupgrade_index]
-        != expected_config
-    ):
-        config["repos"][nbqa_index]["hooks"][pyupgrade_index] = expected_config
+        raise PrecommitError(f"Added {hook_id} to pre-commit config")
+
+    if repo.hooks[index].dict(skip_defaults=True) != expected_config:
+        config, yaml = load_round_trip_precommit_config()
+        config["repos"][index]["hooks"][hook_id] = expected_config
         yaml.dump(config, CONFIG_PATH.pre_commit)
-        raise PrecommitError("Updated args of pyupgrade pre-commit hook")
+        raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
+
+
+def load_round_trip_precommit_config() -> Tuple[dict, YAML]:
+    yaml = create_prettier_round_trip_yaml()
+    config = yaml.load(CONFIG_PATH.pre_commit)
+    return config, yaml

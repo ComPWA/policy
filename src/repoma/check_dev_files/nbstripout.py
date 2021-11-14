@@ -1,16 +1,20 @@
 """Check the nbstripout hook in the pre-commit config."""
 
+from typing import Optional
+
 from ruamel.yaml.scalarstring import LiteralScalarString
 
 from repoma._utilities import (
     CONFIG_PATH,
-    find_hook_index,
-    find_precommit_hook,
-    get_prettier_round_trip_yaml,
+    PrecommitConfig,
+    Repo,
+    create_prettier_round_trip_yaml,
 )
+from repoma.errors import PrecommitError
 
 # cspell:ignore nbconvert showmarkdowntxt
 __REPO_URL = "https://github.com/kynan/nbstripout"
+__HOOK_ID = "nbstripout"
 __EXTRA_KEYS_ARGUMENT = [
     "cell.metadata.code_folding",
     "metadata.celltoolbar",
@@ -28,31 +32,35 @@ __EXTRA_KEYS_ARGUMENT = [
 
 
 def check_nbstripout() -> None:
-    if not _has_nbstripout_hook():
+    repo = _get_nbstripout_precommit_repo()
+    if repo is None:
         return
-    _update_extra_keys_argument()
+    _update_extra_keys_argument(repo)
 
 
-def _has_nbstripout_hook() -> bool:
-    hook_def = find_precommit_hook(__REPO_URL)
-    return hook_def is not None
+def _get_nbstripout_precommit_repo() -> Optional[Repo]:
+    config = PrecommitConfig.load()
+    return config.find_repo(__REPO_URL)
 
 
-def _update_extra_keys_argument() -> None:
+def _update_extra_keys_argument(repo: Repo) -> None:
     """Add an argument to strip additional metadata.
 
     For more info see https://github.com/kynan/nbstripout#stripping-metadata.
     """
-    yaml = get_prettier_round_trip_yaml()
-    config = yaml.load(CONFIG_PATH.pre_commit)
-    index = find_hook_index(config, __REPO_URL)
+    index = repo.get_hook_index(__HOOK_ID)
     if index is None:
-        return
-    expected = [
+        raise PrecommitError(
+            f'The following repo is missing hook ID "{__HOOK_ID}":'
+            f" {__REPO_URL}"
+        )
+    expected_args = [
         "--extra-keys",
         LiteralScalarString("\n".join(__EXTRA_KEYS_ARGUMENT) + "\n"),
     ]
-    if config["repos"][index]["hooks"][0].get("args") == expected:
+    if repo.hooks[index].args == [str(s) for s in expected_args]:
         return
-    config["repos"][index]["hooks"][0]["args"] = expected
+    yaml = create_prettier_round_trip_yaml()
+    config = yaml.load(CONFIG_PATH.pre_commit)
+    config["repos"][index]["hooks"][0]["args"] = expected_args
     yaml.dump(config, CONFIG_PATH.pre_commit)

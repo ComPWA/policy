@@ -5,9 +5,9 @@ import os
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
+    PrecommitConfig,
     add_badge,
     add_vscode_extension_recommendation,
-    find_precommit_hook,
     remove_badge,
     remove_vscode_extension_recommendation,
 )
@@ -28,8 +28,9 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
 
 
 def fix_prettier_config(no_prettierrc: bool) -> None:
-    precommit_hook = find_precommit_hook(r".*/mirrors-prettier")
-    if precommit_hook is None:
+    config = PrecommitConfig.load()
+    repo = config.find_repo(r".*/mirrors-prettier")
+    if repo is None:
         _remove_configuration()
     else:
         _fix_config_content(no_prettierrc)

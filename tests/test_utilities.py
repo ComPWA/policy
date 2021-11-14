@@ -1,3 +1,4 @@
+# pylint: disable=no-self-use, redefined-outer-name
 import io
 from pathlib import Path
 from textwrap import dedent
@@ -5,14 +6,68 @@ from textwrap import dedent
 import pytest
 
 from repoma._utilities import (
+    PrecommitConfig,
     copy_config,
     format_config,
-    get_precommit_repos,
     get_repo_url,
     open_config,
     open_setup_cfg,
 )
 from repoma.errors import PrecommitError
+
+
+@pytest.fixture(scope="session")
+def dummy_config() -> PrecommitConfig:
+    this_dir = Path(__file__).parent
+    return PrecommitConfig.load(this_dir / "dummy-pre-commit-config.yml")
+
+
+class TestPrecommitConfig:
+    @pytest.fixture(scope="session")
+    def dummy_config(self) -> PrecommitConfig:
+        this_dir = Path(__file__).parent
+        return PrecommitConfig.load(this_dir / "dummy-pre-commit-config.yml")
+
+    def test_find_repo(self, dummy_config: PrecommitConfig):
+        repo = dummy_config.find_repo("non-existent")
+        assert repo is None
+        repo = dummy_config.find_repo("meta")
+        assert repo is not None
+        assert repo.repo == "meta"
+        assert len(repo.hooks) == 2
+        repo = dummy_config.find_repo("black")
+        assert repo is not None
+        assert repo.repo == "https://github.com/psf/black"
+
+    def test_get_repo_index(self, dummy_config: PrecommitConfig):
+        assert dummy_config.get_repo_index("non-existent") is None
+        assert dummy_config.get_repo_index("meta") == 0
+        assert dummy_config.get_repo_index("pre-commit-hooks") == 1
+        assert dummy_config.get_repo_index(r"^.*/pre-commit-hooks$") == 1
+        assert dummy_config.get_repo_index("https://github.com/psf/black") == 2
+
+    def test_load(self, dummy_config: PrecommitConfig):
+        assert dummy_config.ci.autoupdate_schedule == "monthly"
+        assert dummy_config.ci.skip == ["flake8", "mypy"]
+        assert len(dummy_config.repos) == 4
+
+    def test_load_default(self):
+        config = PrecommitConfig.load()
+        repo_names = {repo.repo for repo in config.repos}
+        assert repo_names >= {
+            "https://github.com/pre-commit/pre-commit-hooks",
+            "https://github.com/psf/black",
+            "https://github.com/pycqa/pydocstyle",
+        }
+
+
+class TestRepo:
+    def test_get_hook_index(self, dummy_config: PrecommitConfig):
+        repo = dummy_config.find_repo("local")
+        assert repo is not None
+        assert repo.get_hook_index("non-existent") is None
+        assert repo.get_hook_index("flake8") == 0
+        assert repo.get_hook_index("mypy") == 1
 
 
 def test_copy_config():
@@ -98,16 +153,6 @@ def test_format_config(unformatted: str, expected: str):
 
 def test_get_repo_url():
     assert get_repo_url() == "https://github.com/ComPWA/repo-maintenance"
-
-
-def test_get_precommit_repos():
-    repos = get_precommit_repos()
-    repo_names = {repo_def["repo"] for repo_def in repos}
-    assert repo_names >= {
-        "https://github.com/pre-commit/pre-commit-hooks",
-        "https://github.com/psf/black",
-        "https://github.com/pycqa/pydocstyle",
-    }
 
 
 def test_open_config_exception():
