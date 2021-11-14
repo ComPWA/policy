@@ -46,7 +46,7 @@ class _ConfigFilePaths(NamedTuple):
 
 CONFIG_PATH = _ConfigFilePaths()
 
-REPOMA_DIR = os.path.dirname(repoma.__file__)
+REPOMA_DIR = Path(repoma.__file__).parent
 __README_PATH = "README.md"
 
 

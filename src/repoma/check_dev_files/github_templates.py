@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from repoma._utilities import REPOMA_DIR
@@ -10,8 +11,8 @@ from repoma.errors import PrecommitError
 if TYPE_CHECKING:
     from typing import List
 
-__PR_TEMPLATE_PATH = ".github/pull_request_template.md"
-__ISSUE_TEMPLATE_PATH = ".github/ISSUE_TEMPLATE"
+__PR_TEMPLATE_PATH = Path(".github/pull_request_template.md")
+__ISSUE_TEMPLATE_PATH = Path(".github/ISSUE_TEMPLATE")
 
 
 def check_github_templates() -> None:
@@ -22,7 +23,7 @@ def check_github_templates() -> None:
 def _check_issue_templates() -> None:
     existing_templates = _list_template_files(__ISSUE_TEMPLATE_PATH)
     expected_templates = _list_template_files(
-        f"{REPOMA_DIR}/{__ISSUE_TEMPLATE_PATH}"
+        REPOMA_DIR / __ISSUE_TEMPLATE_PATH
     )
     error_message = ""
     if set(existing_templates) != set(expected_templates):
@@ -32,8 +33,8 @@ def _check_issue_templates() -> None:
             f"{__ISSUE_TEMPLATE_PATH} doesn't contain expected templates:\n"
         )
     for basename in expected_templates:
-        import_path = f"{REPOMA_DIR}/{__ISSUE_TEMPLATE_PATH}/{basename}"
-        export_path = f"{__ISSUE_TEMPLATE_PATH}/{basename}"
+        import_path = REPOMA_DIR / __ISSUE_TEMPLATE_PATH / basename
+        export_path = __ISSUE_TEMPLATE_PATH / basename
         expected_content = __get_template_content(import_path)
         existing_content = ""
         if os.path.exists(export_path):
@@ -52,7 +53,7 @@ def _check_pr_template() -> None:
     if not os.path.exists(__PR_TEMPLATE_PATH):
         os.makedirs(os.path.dirname(__PR_TEMPLATE_PATH), exist_ok=True)
         expected_content = __get_template_content(
-            f"{REPOMA_DIR}/{__PR_TEMPLATE_PATH}"
+            REPOMA_DIR / __PR_TEMPLATE_PATH
         )
         __write_template(expected_content, __PR_TEMPLATE_PATH)
         raise PrecommitError(
@@ -61,9 +62,7 @@ def _check_pr_template() -> None:
         )
     with open(__PR_TEMPLATE_PATH) as stream:
         template_content = stream.read()
-    expected_content = __get_template_content(
-        f"{REPOMA_DIR}/{__PR_TEMPLATE_PATH}"
-    )
+    expected_content = __get_template_content(REPOMA_DIR / __PR_TEMPLATE_PATH)
     if template_content != expected_content:
         __write_template(expected_content, path=__PR_TEMPLATE_PATH)
         raise PrecommitError(
@@ -72,12 +71,12 @@ def _check_pr_template() -> None:
         )
 
 
-def __get_template_content(path: str) -> str:
+def __get_template_content(path: Path) -> str:
     with open(path) as stream:
         return stream.read()
 
 
-def _list_template_files(directory: str) -> "List[str]":
+def _list_template_files(directory: Path) -> "List[str]":
     template_files = []
     for _, __, files in os.walk(  # pyright: reportUnusedVariable=false
         directory
@@ -86,6 +85,6 @@ def _list_template_files(directory: str) -> "List[str]":
     return template_files
 
 
-def __write_template(content: str, path: str) -> None:
+def __write_template(content: str, path: Path) -> None:
     with open(path, "w") as stream:
         stream.write(content)

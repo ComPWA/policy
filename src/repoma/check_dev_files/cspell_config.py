@@ -43,7 +43,7 @@ __BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
 __HOOK_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
-with open(f"{REPOMA_DIR}/{CONFIG_PATH.cspell}") as __STREAM:
+with open(REPOMA_DIR / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
@@ -92,7 +92,7 @@ def _remove_configuration() -> None:
             with open(CONFIG_PATH.editor_config, "w") as stream:
                 stream.writelines(prettier_ignore_content)
             raise PrecommitError(
-                f'"{CONFIG_PATH.cspell}" in "./{CONFIG_PATH.editor_config}"'
+                f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editor_config}'
                 " is no longer required and has been removed"
             )
     remove_badge(__BADGE_PATTERN)
@@ -140,7 +140,7 @@ def _fix_config_content() -> None:
     if fixed_sections:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
-        error_message += f' in "./{CONFIG_PATH.cspell}" has been updated.'
+        error_message += f" in {CONFIG_PATH.cspell} has been updated."
         raise PrecommitError(error_message)
 
 
@@ -160,7 +160,7 @@ def _sort_config_entries() -> None:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
         error_message += (
-            f' in "./{CONFIG_PATH.cspell}" has been sorted alphabetically.'
+            f" in {CONFIG_PATH.cspell} has been sorted alphabetically."
         )
         raise PrecommitError(error_message)
 
@@ -213,7 +213,7 @@ def _update_prettier_ignore() -> None:
         with open(prettier_ignore_path, "w+") as stream:
             stream.write(expected_line)
     raise PrecommitError(
-        f'Added "{CONFIG_PATH.cspell}" to "./{prettier_ignore_path}"'
+        f'Added "{CONFIG_PATH.cspell}" to {prettier_ignore_path}"'
     )
 
 
