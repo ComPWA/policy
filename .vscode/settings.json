@@ -61,7 +61,7 @@
     "**/tests/**/__init__.py": true,
     "*/.pydocstyle": true,
     ".constraints/*.txt": true,
-    "src/repoma/.github/**": true
+    "src/repoma/.github/ISSUE_TEMPLATE": true
   },
   "telemetry.enableCrashReporter": false,
   "telemetry.enableTelemetry": false
