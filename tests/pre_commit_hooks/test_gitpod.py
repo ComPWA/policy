@@ -1,6 +1,6 @@
 import pytest
 
-from repoma.pre_commit_hooks.check_dev_files.gitpod import (
+from repoma.check_dev_files.gitpod import (
     _extract_extensions,
     _generate_gitpod_config,
 )

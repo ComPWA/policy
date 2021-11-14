@@ -5,8 +5,8 @@ import textwrap
 from collections import defaultdict
 
 from repoma._utilities import CONFIG_PATH, copy_config, open_setup_cfg
-from repoma.pre_commit_hooks.errors import PrecommitError
-from repoma.pre_commit_hooks.format_setup_cfg import write_formatted_setup_cfg
+from repoma.errors import PrecommitError
+from repoma.format_setup_cfg import write_formatted_setup_cfg
 
 
 def fix_setup_cfg(ignore_author: bool) -> None:

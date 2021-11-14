@@ -10,7 +10,7 @@ from textwrap import dedent
 
 import yaml
 
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 __PRECOMMIT_CONFIG_FILE = ".pre-commit-config.yaml"
 __EDITORCONFIG_FILE = ".editorconfig"

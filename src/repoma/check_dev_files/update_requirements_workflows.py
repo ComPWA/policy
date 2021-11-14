@@ -12,7 +12,7 @@ from repoma._utilities import (
     get_prettier_round_trip_yaml,
     get_supported_python_versions,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 
 def update_workflows() -> None:

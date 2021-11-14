@@ -11,7 +11,7 @@ from repoma._utilities import (
     get_supported_python_versions,
     natural_sorting,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from typing import Optional

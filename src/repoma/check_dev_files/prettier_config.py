@@ -11,7 +11,7 @@ from repoma._utilities import (
     remove_badge,
     remove_vscode_extension_recommendation,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 # cspell:ignore esbenp
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
@@ -23,7 +23,7 @@ __BADGE = "[![code style: prettier](https://img.shields.io/badge/code_style-pret
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-with open(f"{REPOMA_DIR}/{CONFIG_PATH.prettier}") as __STREAM:
+with open(REPOMA_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 

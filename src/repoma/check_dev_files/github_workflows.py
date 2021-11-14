@@ -4,7 +4,7 @@ import os
 import re
 
 from repoma._utilities import CONFIG_PATH, write_script
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 __THIS_MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 

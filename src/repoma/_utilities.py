@@ -10,7 +10,7 @@ import yaml
 from ruamel.yaml import YAML
 
 import repoma
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from typing import (
@@ -46,7 +46,7 @@ class _ConfigFilePaths(NamedTuple):
 
 CONFIG_PATH = _ConfigFilePaths()
 
-REPOMA_DIR = os.path.dirname(repoma.__file__)
+REPOMA_DIR = Path(repoma.__file__).parent
 __README_PATH = "README.md"
 
 
