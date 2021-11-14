@@ -4,7 +4,8 @@ import argparse
 import sys
 from typing import Optional, Sequence
 
-from ._executor import Executor
+from repoma._executor import Executor
+
 from .black import check_black_config
 from .check_labels import check_has_labels
 from .cspell_config import fix_cspell_config
