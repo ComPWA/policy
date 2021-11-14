@@ -10,7 +10,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from repoma._utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
-    get_prettier_round_trip_yaml,
+    create_prettier_round_trip_yaml,
     get_supported_python_versions,
 )
 from repoma.errors import PrecommitError
@@ -34,7 +34,7 @@ def _update_github_workflows() -> None:
         expected_workflow_path = (
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
-        yaml = get_prettier_round_trip_yaml()
+        yaml = create_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)
         supported_python_versions = get_supported_python_versions()
         formatted_python_versions = list(

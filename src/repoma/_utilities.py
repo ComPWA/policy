@@ -1,28 +1,18 @@
+# pylint: disable=no-name-in-module
 import io
 import json
 import os
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import Callable, Iterable, List, NamedTuple, Optional, Tuple, Union
 
 import yaml
+from pydantic import BaseModel
 from ruamel.yaml import YAML
 
 import repoma
 from repoma.errors import PrecommitError
-
-if TYPE_CHECKING:
-    from typing import (
-        Any,
-        Callable,
-        Dict,
-        Iterable,
-        List,
-        Optional,
-        Tuple,
-        Union,
-    )
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -112,9 +102,9 @@ def copy_config(cfg: ConfigParser) -> ConfigParser:
 
 
 def extract_config_section(
-    extract_from: "Union[Path, str]",
-    extract_to: "Union[Path, str]",
-    sections: "List[str]",
+    extract_from: Union[Path, str],
+    extract_to: Union[Path, str],
+    sections: List[str],
 ) -> None:
     cfg = open_config(extract_from)
     if any(map(cfg.has_section, sections)):
@@ -128,8 +118,8 @@ def extract_config_section(
 
 
 def __split_config(
-    cfg: ConfigParser, extracted_sections: "List[str]"
-) -> "Tuple[ConfigParser, ConfigParser]":
+    cfg: ConfigParser, extracted_sections: List[str]
+) -> Tuple[ConfigParser, ConfigParser]:
     old_config = copy_config(cfg)
     extracted_config = copy_config(cfg)
     for section in cfg.sections():
@@ -140,16 +130,16 @@ def __split_config(
     return old_config, extracted_config
 
 
-def __write_config(cfg: ConfigParser, output_path: "Union[Path, str]") -> None:
+def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
     with open(output_path, "w") as stream:
         cfg.write(stream)
     format_config(input=output_path, output=output_path)
 
 
 def format_config(
-    input: "Union[Path, io.TextIOBase, str]",  # noqa: A002
-    output: "Union[Path, io.TextIOBase, str]",
-    additional_rules: "Optional[Iterable[Callable[[str], str]]]" = None,
+    input: Union[Path, io.TextIOBase, str],  # noqa: A002
+    output: Union[Path, io.TextIOBase, str],
+    additional_rules: Optional[Iterable[Callable[[str], str]]] = None,
 ) -> None:
     content = read(input)
     indent_size = 4
@@ -171,7 +161,7 @@ def format_config(
     write(content, output=output)
 
 
-def read(input: "Union[Path, io.TextIOBase, str]") -> str:  # noqa: A002
+def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
     if isinstance(input, (Path, str)):
         with open(input) as input_stream:
             return input_stream.read()
@@ -180,7 +170,7 @@ def read(input: "Union[Path, io.TextIOBase, str]") -> str:  # noqa: A002
     raise TypeError(f"Cannot read from {type(input).__name__}")
 
 
-def write(content: str, output: "Union[Path, io.TextIOBase, str]") -> None:
+def write(content: str, output: Union[Path, io.TextIOBase, str]) -> None:
     if isinstance(output, (Path, str)):
         with open(output, "w") as output_stream:
             output_stream.write(content)
@@ -190,7 +180,7 @@ def write(content: str, output: "Union[Path, io.TextIOBase, str]") -> None:
         raise TypeError(f"Cannot write from {type(output).__name__}")
 
 
-def open_config(definition: "Union[Path, io.TextIOBase, str]") -> ConfigParser:
+def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
     cfg = ConfigParser()
     if isinstance(definition, io.TextIOBase):
         text = definition.read()
@@ -212,7 +202,7 @@ def open_config(definition: "Union[Path, io.TextIOBase, str]") -> ConfigParser:
 
 
 def write_config(
-    cfg: ConfigParser, output: "Union[Path, io.TextIOBase, str]"
+    cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]
 ) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
@@ -226,49 +216,7 @@ def write_config(
         )
 
 
-def find_precommit_hook(search_pattern: str) -> "Optional[Dict[str, Any]]":
-    """Find repo definition from .pre-commit-config.yaml.
-
-    >>> repo = find_precommit_hook(r".*pre-commit/mirrors-prettier")
-    >>> repo["hooks"]
-    [{'id': 'prettier'}]
-    >>> find_precommit_hook("non-existent")
-    """
-    precommit_repos = get_precommit_repos()
-    for repo in precommit_repos:
-        url = repo.get("repo")
-        if url is None:
-            continue
-        if re.match(search_pattern, url):
-            return repo
-    return None
-
-
-def find_hook_index(config: dict, repo_url: str) -> "Optional[int]":
-    repos: list = config["repos"]
-    for i, repo in enumerate(repos):
-        if repo.get("repo") == repo_url:
-            return i
-    return None
-
-
-def get_precommit_repos() -> "List[Dict[str, Any]]":
-    if not CONFIG_PATH.pre_commit.exists():
-        raise PrecommitError(
-            "Are you sure this repository contains a"
-            f' "./{CONFIG_PATH.pre_commit}" file?'
-        )
-    with open(CONFIG_PATH.pre_commit) as stream:
-        config = yaml.load(stream, Loader=yaml.SafeLoader)
-    repos = config.get("repos")
-    if repos is None:
-        raise PrecommitError(
-            f'"./{CONFIG_PATH.pre_commit}" does not contain a "repos" section'
-        )
-    return repos
-
-
-def get_supported_python_versions() -> "List[str]":
+def get_supported_python_versions() -> List[str]:
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
@@ -379,7 +327,7 @@ def __dump_vscode_config(config: dict) -> None:
         stream.write("\n")
 
 
-def write_script(content: str, path: "Union[Path, str]") -> None:
+def write_script(content: str, path: Union[Path, str]) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as stream:
         stream.write(content)
@@ -392,14 +340,14 @@ class _IncreasedYamlIndent(yaml.Dumper):
     ) -> None:
         return super().increase_indent(flow, False)
 
-    def write_line_break(self, data: "Optional[str]" = None) -> None:
+    def write_line_break(self, data: Optional[str] = None) -> None:
         """See https://stackoverflow.com/a/44284819."""
         super().write_line_break(data)
         if len(self.indents) == 1:
             super().write_line_break()
 
 
-def get_prettier_round_trip_yaml() -> YAML:
+def create_prettier_round_trip_yaml() -> YAML:
     _yaml = YAML(typ="rt")
     _yaml.preserve_quotes = True  # type: ignore[assignment]
     _yaml.map_indent = 2  # type: ignore[assignment]
@@ -408,7 +356,7 @@ def get_prettier_round_trip_yaml() -> YAML:
     return _yaml
 
 
-def write_yaml(definition: dict, output_path: "Union[Path, str]") -> None:
+def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:
     """Write a `dict` to disk with standardized YAML formatting."""
     with open(output_path, "w") as stream:
         yaml.dump(
@@ -420,7 +368,7 @@ def write_yaml(definition: dict, output_path: "Union[Path, str]") -> None:
         )
 
 
-def natural_sorting(text: str) -> "List[Union[float, str]]":
+def natural_sorting(text: str) -> List[Union[float, str]]:
     # https://stackoverflow.com/a/5967539/13219025
     return [
         __attempt_number_cast(c)
@@ -428,8 +376,79 @@ def natural_sorting(text: str) -> "List[Union[float, str]]":
     ]
 
 
-def __attempt_number_cast(text: str) -> "Union[float, str]":
+def __attempt_number_cast(text: str) -> Union[float, str]:
     try:
         return float(text)
     except ValueError:
         return text
+
+
+class PrecommitCi(BaseModel):
+    """https://pre-commit.ci/#configuration."""
+
+    autofix_commit_msg: str = "[pre-commit.ci] auto fixes [...]"
+    autofix_prs: bool = True
+    autoupdate_commit_msg: str = "[pre-commit.ci] pre-commit autoupdate"
+    autoupdate_schedule: str = "weekly"
+    skip: List[str] = []
+    submodules: bool = False
+
+
+class Hook(BaseModel):
+    """https://pre-commit.com/#pre-commit-configyaml---hooks."""
+
+    id: str  # noqa: A003
+    args: List[str] = []
+    name: Optional[str] = None
+    files: Optional[str] = None
+    exclude: Optional[str] = None
+    types: Optional[List[str]] = None
+    alias: Optional[str] = None
+
+
+class Repo(BaseModel):
+    """https://pre-commit.com/#pre-commit-configyaml---repos."""
+
+    repo: str
+    rev: Optional[str] = None
+    hooks: List[Hook]
+
+    def get_hook_index(self, hook_id: str) -> Optional[int]:
+        for i, hook in enumerate(self.hooks):
+            if hook.id == hook_id:
+                return i
+        return None
+
+
+class PrecommitConfig(BaseModel):
+    """https://pre-commit.com/#pre-commit-configyaml---top-level."""
+
+    ci: PrecommitCi
+    repos: List[Repo]
+    files: str = ""
+    exclude: str = "^$"
+    fail_fast: bool = False
+
+    @classmethod
+    def load(
+        cls, path: Union[Path, str] = CONFIG_PATH.pre_commit
+    ) -> "PrecommitConfig":
+        if not os.path.exists(path):
+            raise PrecommitError(f"This repository contains no {path}")
+        with open(path) as stream:
+            definition = yaml.safe_load(stream)
+        return PrecommitConfig(**definition)
+
+    def find_repo(self, search_pattern: str) -> Optional[Repo]:
+        for repo in self.repos:
+            url = repo.repo
+            if re.search(search_pattern, url):
+                return repo
+        return None
+
+    def get_repo_index(self, search_pattern: str) -> Optional[int]:
+        for i, repo in enumerate(self.repos):
+            url = repo.repo
+            if re.search(search_pattern, url):
+                return i
+        return None
