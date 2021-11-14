@@ -1,6 +1,6 @@
 # pylint: disable=no-self-use
-from repoma.pre_commit_hooks.check_dev_files._executor import Executor
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.check_dev_files._executor import Executor
+from repoma.errors import PrecommitError
 
 
 class TestExecutor:

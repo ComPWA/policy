@@ -12,7 +12,7 @@ from repoma._utilities import (
     open_config,
     open_setup_cfg,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 
 def test_copy_config():

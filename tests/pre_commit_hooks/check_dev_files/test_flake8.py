@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from repoma.pre_commit_hooks.check_dev_files.flake8 import (
+from repoma.check_dev_files.flake8 import (
     _check_comments_on_separate_line,
     _check_missing_options,
     _check_option_order,
     _check_setup_cfg,
     _move_comments_before_line,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from typing import Optional, Type

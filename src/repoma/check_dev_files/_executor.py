@@ -2,7 +2,7 @@ from typing import Any, Callable, List
 
 import attr
 
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 
 @attr.s(on_setattr=attr.setters.frozen)

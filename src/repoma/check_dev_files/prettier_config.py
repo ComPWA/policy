@@ -11,7 +11,7 @@ from repoma._utilities import (
     remove_badge,
     remove_vscode_extension_recommendation,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 # cspell:ignore esbenp
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"

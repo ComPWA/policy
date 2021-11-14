@@ -10,7 +10,7 @@ import yaml
 from ruamel.yaml import YAML
 
 import repoma
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from typing import (

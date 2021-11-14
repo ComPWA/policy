@@ -7,7 +7,7 @@ from repoma._utilities import (
     find_hook_index,
     get_prettier_round_trip_yaml,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 __PYUPGRADE_URL = "https://github.com/asottile/pyupgrade"
 __EXPECTED_ARGS = [

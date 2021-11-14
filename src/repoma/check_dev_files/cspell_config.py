@@ -23,7 +23,7 @@ from repoma._utilities import (
     remove_vscode_extension_recommendation,
     rename_config,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from pathlib import Path

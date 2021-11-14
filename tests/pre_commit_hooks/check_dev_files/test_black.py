@@ -2,14 +2,14 @@ from textwrap import dedent
 
 import pytest
 
-from repoma.pre_commit_hooks.check_dev_files.black import (
+from repoma.check_dev_files.black import (
     _check_experimental_string_processing,
     _check_line_length,
     _check_option_ordering,
     _check_target_versions,
     _load_config,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 
 def test_check_line_length():

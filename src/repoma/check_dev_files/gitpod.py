@@ -12,7 +12,7 @@ from repoma._utilities import (
     get_repo_url,
     write_yaml,
 )
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 

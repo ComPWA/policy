@@ -5,7 +5,7 @@ import shutil
 from typing import TYPE_CHECKING
 
 from repoma._utilities import REPOMA_DIR
-from repoma.pre_commit_hooks.errors import PrecommitError
+from repoma.errors import PrecommitError
 
 if TYPE_CHECKING:
     from typing import List
