@@ -1,4 +1,6 @@
 # pylint: disable=no-self-use
+from textwrap import dedent
+
 from repoma._executor import Executor
 from repoma.errors import PrecommitError
 
@@ -10,7 +12,7 @@ class TestExecutor:
 
         def do_with_positional_args(some_list: list) -> None:
             list_content = ", ".join(some_list)
-            raise PrecommitError(f"List contains {list_content}")
+            raise PrecommitError(f"\nList contains {list_content}")
 
         def do_with_keyword_args(text: str) -> None:
             raise PrecommitError(f"Text is {text}")
@@ -26,7 +28,21 @@ class TestExecutor:
         executor(no_error)
         assert executor.error_messages == [
             "Function did not have arguments",
-            "List contains one, two, three",
+            "\nList contains one, two, three",
             "Text is given as positional argument",
             "Text is given as key-word argument",
         ]
+
+        merged_message = executor.merge_messages()
+        expected_message = dedent(
+            """
+            Function did not have arguments
+            --------------------
+            List contains one, two, three
+            --------------------
+            Text is given as positional argument
+            --------------------
+            Text is given as key-word argument
+            """
+        ).strip()
+        assert merged_message == expected_message

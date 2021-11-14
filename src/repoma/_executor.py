@@ -17,3 +17,7 @@ class Executor:
         except PrecommitError as exception:
             error_message = str("\n".join(exception.args))
             self.error_messages.append(error_message)
+
+    def merge_messages(self) -> str:
+        stripped_messages = map(lambda s: s.strip(), self.error_messages)
+        return "\n--------------------\n".join(stripped_messages)
