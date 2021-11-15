@@ -11,7 +11,6 @@ def test_extract_extensions():
         # cspell:disable
         "bungcip.better-toml",
         "christian-kohler.path-intellisense",
-        "codestream.codestream",
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
