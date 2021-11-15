@@ -59,7 +59,7 @@ def _update_github_workflows() -> None:
             raise PrecommitError(f'Updated "{workflow_path}" workflow')
 
     executor = Executor()
-    overwrite_workflow("requirements-cron.yml")
-    overwrite_workflow("requirements-pr.yml")
+    executor(overwrite_workflow, "requirements-cron.yml")
+    executor(overwrite_workflow, "requirements-pr.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
