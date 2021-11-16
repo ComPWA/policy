@@ -8,14 +8,11 @@ comply with the expected formatting.
 
 import argparse
 import sys
-from typing import TYPE_CHECKING
+from typing import List, Optional, Sequence
 
 import nbformat
 
 from .errors import PrecommitError
-
-if TYPE_CHECKING:
-    from typing import List, Optional, Sequence
 
 
 def check_pinned_requirements(filename: str) -> None:
@@ -101,12 +98,12 @@ def __check_metadata(filename: str, metadata: dict) -> None:
         )
 
 
-def main(argv: "Optional[Sequence[str]]" = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     args = parser.parse_args(argv)
 
-    errors: "List[PrecommitError]" = []
+    errors: List[PrecommitError] = []
     for filename in args.filenames:
         try:
             check_pinned_requirements(filename)

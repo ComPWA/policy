@@ -4,14 +4,11 @@ import argparse
 import io
 import re
 import sys
-from typing import TYPE_CHECKING
+from configparser import ConfigParser
+from pathlib import Path
+from typing import Optional, Sequence, Union
 
 from repoma._utilities import CONFIG_PATH, format_config, open_setup_cfg
-
-if TYPE_CHECKING:
-    from configparser import ConfigParser
-    from pathlib import Path
-    from typing import Optional, Sequence, Union
 
 
 def format_setup_cfg() -> None:
@@ -19,7 +16,7 @@ def format_setup_cfg() -> None:
     write_formatted_setup_cfg(cfg)
 
 
-def write_formatted_setup_cfg(cfg: "ConfigParser") -> None:
+def write_formatted_setup_cfg(cfg: ConfigParser) -> None:
     with open(CONFIG_PATH.setup_cfg, "w") as stream:
         cfg.write(stream)
     _format_setup_cfg(
@@ -29,8 +26,8 @@ def write_formatted_setup_cfg(cfg: "ConfigParser") -> None:
 
 
 def _format_setup_cfg(
-    input: "Union[Path, io.TextIOBase, str]",  # noqa: A002
-    output: "Union[Path, io.TextIOBase, str]",
+    input: Union[Path, io.TextIOBase, str],  # noqa: A002
+    output: Union[Path, io.TextIOBase, str],
 ) -> None:
     def format_version_constraints(content: str) -> str:
         content = re.sub(r"(>=?|<=?|==)\s+", r"\1", content)
@@ -47,7 +44,7 @@ def _format_setup_cfg(
     )
 
 
-def main(argv: "Optional[Sequence[str]]" = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(

@@ -2,8 +2,9 @@
 
 import io
 import re
+from configparser import ConfigParser
 from textwrap import dedent, indent
-from typing import TYPE_CHECKING
+from typing import Iterable, Optional
 
 from repoma._executor import Executor
 from repoma._utilities import (
@@ -15,10 +16,6 @@ from repoma._utilities import (
     open_setup_cfg,
 )
 from repoma.errors import PrecommitError
-
-if TYPE_CHECKING:
-    from configparser import ConfigParser
-    from typing import Iterable, Optional
 
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [
@@ -114,7 +111,7 @@ def _move_comments_before_line(content: str) -> str:
 
 
 def _check_comments_on_separate_line(
-    input: "Optional[io.StringIO]" = None,  # noqa: A002
+    input: Optional[io.StringIO] = None,  # noqa: A002
 ) -> None:
     if input is None:
         with open(CONFIG_PATH.flake8) as stream:
@@ -137,7 +134,7 @@ def _check_comments_on_separate_line(
             )
 
 
-def _check_option_order(cfg: "Optional[ConfigParser]" = None) -> None:
+def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
     if cfg is None:
         cfg = open_config(CONFIG_PATH.flake8)
     for section in cfg.sections():
@@ -153,7 +150,7 @@ def _check_option_order(cfg: "Optional[ConfigParser]" = None) -> None:
                 )
 
 
-def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
+def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
     if cfg is None:
         cfg = open_setup_cfg()
     extras_require = "options.extras_require"
@@ -194,8 +191,8 @@ def _check_setup_cfg(cfg: "Optional[ConfigParser]" = None) -> None:
 
 def _check_missing_options(
     option: str,
-    expected_values: "Iterable[str]",
-    cfg: "Optional[ConfigParser]" = None,
+    expected_values: Iterable[str],
+    cfg: Optional[ConfigParser] = None,
 ) -> None:
     if cfg is None:
         cfg = open_config(CONFIG_PATH.flake8)

@@ -2,7 +2,7 @@
 import io
 from configparser import ConfigParser
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import Optional, Type
 
 import pytest
 
@@ -14,9 +14,6 @@ from repoma.check_dev_files.flake8 import (
     _move_comments_before_line,
 )
 from repoma.errors import PrecommitError
-
-if TYPE_CHECKING:
-    from typing import Optional, Type
 
 
 def test_check_comments_on_separate_line():
@@ -220,9 +217,7 @@ def test_check_option_order_incorrect(content: str):
         ("", ValueError),
     ],
 )
-def test_check_extend_select(
-    content: str, error: "Optional[Type[ValueError]]"
-):
+def test_check_extend_select(content: str, error: Optional[Type[ValueError]]):
     content = dedent(content)
     cfg = ConfigParser()
     cfg.read_string(content)

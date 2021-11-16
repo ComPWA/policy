@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import Optional
 
 import toml
 
@@ -13,9 +13,6 @@ from repoma._utilities import (
     natural_sorting,
 )
 from repoma.errors import PrecommitError
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 
 def main() -> None:
@@ -31,7 +28,7 @@ def main() -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _load_config(content: "Optional[str]" = None) -> dict:
+def _load_config(content: Optional[str] = None) -> dict:
     if content is None:
         with open(CONFIG_PATH.pyproject) as stream:
             config = toml.load(stream, _dict=OrderedDict)
