@@ -24,7 +24,7 @@ class _ConfigFilePaths(NamedTuple):
     github_workflow_dir: Path = Path(".github/workflows")
     gitpod: Path = Path(".gitpod.yml")
     pip_constraints: Path = Path(".constraints")
-    pre_commit: Path = Path(".pre-commit-config.yaml")
+    precommit: Path = Path(".pre-commit-config.yaml")
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
     pydocstyle: Path = Path(".pydocstyle")
@@ -359,7 +359,7 @@ def create_prettier_round_trip_yaml() -> YAML:
 
 
 def load_round_trip_precommit_config(
-    path: Path = CONFIG_PATH.pre_commit,
+    path: Path = CONFIG_PATH.precommit,
 ) -> Tuple[dict, YAML]:
     yaml_parser = create_prettier_round_trip_yaml()
     config = yaml_parser.load(path)
@@ -441,7 +441,7 @@ class PrecommitConfig(BaseModel):
 
     @classmethod
     def load(
-        cls, path: Union[Path, str] = CONFIG_PATH.pre_commit
+        cls, path: Union[Path, str] = CONFIG_PATH.precommit
     ) -> "PrecommitConfig":
         if not os.path.exists(path):
             raise PrecommitError(f"This repository contains no {path}")

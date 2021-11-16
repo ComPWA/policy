@@ -66,7 +66,7 @@ def main() -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _update_cspell_repo_url(path: Path = CONFIG_PATH.pre_commit) -> None:
+def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
     old_url_patters = [
         r".*/mirrors-cspell(.git)?$",
     ]
@@ -114,7 +114,7 @@ def _check_check_hook_options() -> None:
     repo = config.find_repo(__REPO_URL)
     if repo is None:
         raise PrecommitError(
-            f"{CONFIG_PATH.pre_commit} is missing a repo: {__REPO_URL}"
+            f"{CONFIG_PATH.precommit} is missing a repo: {__REPO_URL}"
         )
     expected_yaml = f"""
   - repo: {__REPO_URL}

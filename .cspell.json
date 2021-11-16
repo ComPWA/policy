@@ -76,6 +76,7 @@
         "nbqa",
         "noqa",
         "pandoc",
+        "precommit",
         "prettierrc",
         "pydantic",
         "pydocstyle",

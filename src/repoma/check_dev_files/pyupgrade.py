@@ -28,7 +28,7 @@ def _update_main_pyupgrade_hook() -> None:
     repo = precommit_config.find_repo(repo_url)
     if repo is None:
         raise PrecommitError(
-            f"{CONFIG_PATH.pre_commit} is missing a hook: {repo_url}"
+            f"{CONFIG_PATH.precommit} is missing a hook: {repo_url}"
         )
     index = repo.get_hook_index(hook_id)
     if index is None:
@@ -45,13 +45,13 @@ def _update_main_pyupgrade_hook() -> None:
                 ],
             }
         )
-        yaml.dump(config, CONFIG_PATH.pre_commit)
+        yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Added {hook_id} pre-commit hook")
     if repo.hooks[index].args == expected_args:
         return
     config, yaml = load_round_trip_precommit_config()
     config["repos"][index]["hooks"]["args"] = expected_args
-    yaml.dump(config, CONFIG_PATH.pre_commit)
+    yaml.dump(config, CONFIG_PATH.precommit)
     raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
 
 
@@ -74,11 +74,11 @@ def _update_nbqa_hook() -> None:
     if hook_index is None:
         config, yaml = load_round_trip_precommit_config()
         config["repos"][repo_index]["hooks"].append(expected_config)
-        yaml.dump(config, CONFIG_PATH.pre_commit)
+        yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Added {hook_id} to pre-commit config")
 
     if repo.hooks[hook_index].dict(skip_defaults=True) != expected_config:
         config, yaml = load_round_trip_precommit_config()
         config["repos"][repo_index]["hooks"][hook_index] = expected_config
-        yaml.dump(config, CONFIG_PATH.pre_commit)
+        yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")

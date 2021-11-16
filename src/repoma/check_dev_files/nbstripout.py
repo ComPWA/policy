@@ -61,6 +61,6 @@ def _update_extra_keys_argument(repo: Repo) -> None:
     if repo.hooks[index].args == [str(s) for s in expected_args]:
         return
     yaml = create_prettier_round_trip_yaml()
-    config = yaml.load(CONFIG_PATH.pre_commit)
+    config = yaml.load(CONFIG_PATH.precommit)
     config["repos"][index]["hooks"][0]["args"] = expected_args
-    yaml.dump(config, CONFIG_PATH.pre_commit)
+    yaml.dump(config, CONFIG_PATH.precommit)
