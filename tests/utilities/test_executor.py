@@ -1,8 +1,8 @@
 # pylint: disable=no-self-use
 from textwrap import dedent
 
-from repoma._executor import Executor
 from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 
 class TestExecutor:

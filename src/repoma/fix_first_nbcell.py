@@ -23,7 +23,7 @@ from typing import Optional, Sequence
 
 import nbformat
 
-from repoma._utilities import open_setup_cfg
+from repoma.utilities import open_setup_cfg
 
 __SETUP_CFG = open_setup_cfg()
 __PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]

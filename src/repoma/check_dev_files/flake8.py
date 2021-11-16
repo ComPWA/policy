@@ -6,8 +6,8 @@ from configparser import ConfigParser
 from textwrap import dedent, indent
 from typing import Iterable, Optional
 
-from repoma._executor import Executor
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     extract_config_section,
     format_config,
@@ -15,7 +15,7 @@ from repoma._utilities import (
     open_config,
     open_setup_cfg,
 )
-from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [

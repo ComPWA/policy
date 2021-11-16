@@ -3,9 +3,9 @@
 import os
 import re
 
-from repoma._executor import Executor
-from repoma._utilities import CONFIG_PATH, REPOMA_DIR, write_script
 from repoma.errors import PrecommitError
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write_script
+from repoma.utilities.executor import Executor
 
 
 def main() -> None:

@@ -8,7 +8,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-from repoma._utilities import CONFIG_PATH, format_config, open_setup_cfg
+from repoma.utilities import CONFIG_PATH, format_config, open_setup_cfg
 
 
 def format_setup_cfg() -> None:

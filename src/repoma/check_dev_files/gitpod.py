@@ -5,14 +5,14 @@ import os
 
 import yaml
 
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
     add_badge,
     get_repo_url,
     write_yaml,
 )
-from repoma.errors import PrecommitError
 
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 

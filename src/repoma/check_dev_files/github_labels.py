@@ -8,8 +8,8 @@ import os
 import pathlib
 from typing import List
 
-from repoma._utilities import CONFIG_PATH
 from repoma.errors import PrecommitError
+from repoma.utilities import CONFIG_PATH
 
 __LABELS_CONFIG_FILE = "labels.toml"
 

@@ -6,13 +6,13 @@ from typing import Optional
 
 import toml
 
-from repoma._executor import Executor
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     get_supported_python_versions,
     natural_sorting,
 )
-from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 
 def main() -> None:

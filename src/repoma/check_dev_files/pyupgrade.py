@@ -1,13 +1,13 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
 
-from repoma._executor import Executor
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     PrecommitConfig,
     load_round_trip_precommit_config,
 )
-from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 
 def main() -> None:

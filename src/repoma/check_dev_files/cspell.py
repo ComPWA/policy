@@ -14,8 +14,8 @@ from typing import Any, Iterable, List, Sequence, Union
 
 import yaml
 
-from repoma._executor import Executor
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
     PrecommitConfig,
@@ -26,7 +26,7 @@ from repoma._utilities import (
     remove_vscode_extension_recommendation,
     rename_config,
 )
-from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 

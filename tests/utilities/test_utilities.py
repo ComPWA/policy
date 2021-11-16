@@ -5,7 +5,8 @@ from textwrap import dedent
 
 import pytest
 
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     PrecommitConfig,
     copy_config,
     format_config,
@@ -13,7 +14,6 @@ from repoma._utilities import (
     open_config,
     open_setup_cfg,
 )
-from repoma.errors import PrecommitError
 
 
 @pytest.fixture(scope="session")

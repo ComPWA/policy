@@ -4,7 +4,7 @@ import argparse
 import sys
 from typing import Optional, Sequence
 
-from repoma._executor import Executor
+from repoma.utilities.executor import Executor
 
 from . import (
     black,

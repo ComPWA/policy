@@ -5,9 +5,9 @@ import shutil
 from pathlib import Path
 from typing import List
 
-from repoma._executor import Executor
-from repoma._utilities import REPOMA_DIR
 from repoma.errors import PrecommitError
+from repoma.utilities import REPOMA_DIR
+from repoma.utilities.executor import Executor
 
 __PR_TEMPLATE_PATH = Path(".github/pull_request_template.md")
 __ISSUE_TEMPLATE_PATH = Path(".github/ISSUE_TEMPLATE")

@@ -7,14 +7,14 @@ See Also:
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
-from repoma._executor import Executor
-from repoma._utilities import (
+from repoma.errors import PrecommitError
+from repoma.utilities import (
     CONFIG_PATH,
     REPOMA_DIR,
     create_prettier_round_trip_yaml,
     get_supported_python_versions,
 )
-from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 
 def main() -> None:

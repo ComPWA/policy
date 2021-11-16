@@ -1,4 +1,6 @@
 # pylint: disable=no-name-in-module
+"""Collection of helper functions that are used by all sub-hooks."""
+
 import io
 import json
 import os

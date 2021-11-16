@@ -1,3 +1,5 @@
+"""Collect `.PrecommitError` instances from several executed functions."""
+
 from typing import Any, Callable, List
 
 import attr

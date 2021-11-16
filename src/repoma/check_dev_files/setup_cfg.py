@@ -4,10 +4,10 @@ import os
 import textwrap
 from collections import defaultdict
 
-from repoma._executor import Executor
-from repoma._utilities import CONFIG_PATH, copy_config, open_setup_cfg
 from repoma.errors import PrecommitError
 from repoma.format_setup_cfg import write_formatted_setup_cfg
+from repoma.utilities import CONFIG_PATH, copy_config, open_setup_cfg
+from repoma.utilities.executor import Executor
 
 
 def main(ignore_author: bool) -> None:
