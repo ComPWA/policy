@@ -6,8 +6,10 @@ from collections import defaultdict
 
 from repoma.errors import PrecommitError
 from repoma.format_setup_cfg import write_formatted_setup_cfg
-from repoma.utilities import CONFIG_PATH, copy_config, open_setup_cfg
+from repoma.utilities import CONFIG_PATH
+from repoma.utilities.cfg import copy_config
 from repoma.utilities.executor import Executor
+from repoma.utilities.setup_cfg import open_setup_cfg
 
 
 def main(ignore_author: bool) -> None:

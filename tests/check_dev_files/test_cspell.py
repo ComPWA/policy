@@ -6,7 +6,7 @@ import yaml
 
 from repoma.check_dev_files.cspell import _update_cspell_repo_url
 from repoma.errors import PrecommitError
-from repoma.utilities import PrecommitConfig
+from repoma.utilities.precommit import PrecommitConfig
 
 
 @pytest.fixture(scope="session")

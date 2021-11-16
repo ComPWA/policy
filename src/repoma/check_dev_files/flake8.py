@@ -7,15 +7,14 @@ from textwrap import dedent, indent
 from typing import Iterable, Optional
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
+from repoma.utilities import CONFIG_PATH, natural_sorting
+from repoma.utilities.cfg import (
     extract_config_section,
     format_config,
-    natural_sorting,
     open_config,
-    open_setup_cfg,
 )
 from repoma.utilities.executor import Executor
+from repoma.utilities.setup_cfg import open_setup_cfg
 
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [

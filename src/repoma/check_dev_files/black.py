@@ -7,12 +7,9 @@ from typing import Optional
 import toml
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
-    get_supported_python_versions,
-    natural_sorting,
-)
+from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
+from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
 def main() -> None:

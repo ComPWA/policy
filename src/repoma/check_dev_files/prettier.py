@@ -3,16 +3,14 @@
 import os
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
-    REPOMA_DIR,
-    PrecommitConfig,
-    add_badge,
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR
+from repoma.utilities.executor import Executor
+from repoma.utilities.precommit import PrecommitConfig
+from repoma.utilities.readme import add_badge, remove_badge
+from repoma.utilities.vscode import (
     add_vscode_extension_recommendation,
-    remove_badge,
     remove_vscode_extension_recommendation,
 )
-from repoma.utilities.executor import Executor
 
 # cspell:ignore esbenp
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"

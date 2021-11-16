@@ -2,12 +2,12 @@
 
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
+from repoma.utilities import CONFIG_PATH
+from repoma.utilities.executor import Executor
+from repoma.utilities.precommit import (
     PrecommitConfig,
     load_round_trip_precommit_config,
 )
-from repoma.utilities.executor import Executor
 
 
 def main() -> None:

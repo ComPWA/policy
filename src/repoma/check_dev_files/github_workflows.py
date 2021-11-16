@@ -4,7 +4,7 @@ import os
 import re
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write_script
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
 from repoma.utilities.executor import Executor
 
 
@@ -46,13 +46,13 @@ def _copy_workflow_file(filename: str) -> None:
 
     workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{filename}"
     if not os.path.exists(workflow_path):
-        write_script(expected_content, path=workflow_path)
+        write(expected_content, target=workflow_path)
         raise PrecommitError(f'Created "{workflow_path}" workflow')
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
-        write_script(expected_content, path=workflow_path)
+        write(expected_content, target=workflow_path)
         raise PrecommitError(f'Updated "{workflow_path}" workflow')
 
 

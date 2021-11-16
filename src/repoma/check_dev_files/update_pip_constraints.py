@@ -8,13 +8,10 @@ See Also:
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
-    REPOMA_DIR,
-    create_prettier_round_trip_yaml,
-    get_supported_python_versions,
-)
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR
 from repoma.utilities.executor import Executor
+from repoma.utilities.setup_cfg import get_supported_python_versions
+from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
 def main() -> None:

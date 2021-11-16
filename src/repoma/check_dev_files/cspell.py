@@ -15,18 +15,17 @@ from typing import Any, Iterable, List, Sequence, Union
 import yaml
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
-    REPOMA_DIR,
-    PrecommitConfig,
-    add_badge,
-    add_vscode_extension_recommendation,
-    load_round_trip_precommit_config,
-    remove_badge,
-    remove_vscode_extension_recommendation,
-    rename_config,
-)
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file
 from repoma.utilities.executor import Executor
+from repoma.utilities.precommit import (
+    PrecommitConfig,
+    load_round_trip_precommit_config,
+)
+from repoma.utilities.readme import add_badge, remove_badge
+from repoma.utilities.vscode import (
+    add_vscode_extension_recommendation,
+    remove_vscode_extension_recommendation,
+)
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -47,7 +46,7 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 
 
 def main() -> None:
-    rename_config("cspell.json", str(CONFIG_PATH.cspell))
+    rename_file("cspell.json", str(CONFIG_PATH.cspell))
     executor = Executor()
     executor(_update_cspell_repo_url)
     config = PrecommitConfig.load()

@@ -1,7 +1,8 @@
 """Check contents of a ``tox.ini`` file."""
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, extract_config_section
+from repoma.utilities import CONFIG_PATH
+from repoma.utilities.cfg import extract_config_section
 from repoma.utilities.executor import Executor
 
 

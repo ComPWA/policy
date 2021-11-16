@@ -5,12 +5,9 @@ from typing import Optional
 from ruamel.yaml.scalarstring import LiteralScalarString
 
 from repoma.errors import PrecommitError
-from repoma.utilities import (
-    CONFIG_PATH,
-    PrecommitConfig,
-    Repo,
-    create_prettier_round_trip_yaml,
-)
+from repoma.utilities import CONFIG_PATH
+from repoma.utilities.precommit import PrecommitConfig, Repo
+from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 # cspell:ignore nbconvert showmarkdowntxt
 __REPO_URL = "https://github.com/kynan/nbstripout"
