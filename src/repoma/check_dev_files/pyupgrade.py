@@ -1,14 +1,11 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
-from typing import Tuple
-
-from ruamel.yaml import YAML
 
 from repoma._executor import Executor
 from repoma._utilities import (
     CONFIG_PATH,
     PrecommitConfig,
-    create_prettier_round_trip_yaml,
+    load_round_trip_precommit_config,
 )
 from repoma.errors import PrecommitError
 
@@ -85,9 +82,3 @@ def _update_nbqa_hook() -> None:
         config["repos"][repo_index]["hooks"][hook_index] = expected_config
         yaml.dump(config, CONFIG_PATH.pre_commit)
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
-
-
-def load_round_trip_precommit_config() -> Tuple[dict, YAML]:
-    yaml = create_prettier_round_trip_yaml()
-    config = yaml.load(CONFIG_PATH.pre_commit)
-    return config, yaml

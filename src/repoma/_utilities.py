@@ -348,12 +348,20 @@ class _IncreasedYamlIndent(yaml.Dumper):
 
 
 def create_prettier_round_trip_yaml() -> YAML:
-    _yaml = YAML(typ="rt")
-    _yaml.preserve_quotes = True  # type: ignore[assignment]
-    _yaml.map_indent = 2  # type: ignore[assignment]
-    _yaml.indent = 4
-    _yaml.block_seq_indent = 2
-    return _yaml
+    yaml_parser = YAML(typ="rt")
+    yaml_parser.preserve_quotes = True  # type: ignore[assignment]
+    yaml_parser.map_indent = 2  # type: ignore[assignment]
+    yaml_parser.indent = 4
+    yaml_parser.block_seq_indent = 2
+    return yaml_parser
+
+
+def load_round_trip_precommit_config(
+    path: Path = CONFIG_PATH.pre_commit,
+) -> Tuple[dict, YAML]:
+    yaml_parser = create_prettier_round_trip_yaml()
+    config = yaml_parser.load(path)
+    return config, yaml_parser
 
 
 def write_yaml(definition: dict, output_path: Union[Path, str]) -> None:

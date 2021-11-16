@@ -21,6 +21,7 @@ from repoma._utilities import (
     PrecommitConfig,
     add_badge,
     add_vscode_extension_recommendation,
+    load_round_trip_precommit_config,
     remove_badge,
     remove_vscode_extension_recommendation,
     rename_config,
@@ -47,13 +48,13 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 
 def main() -> None:
     rename_config("cspell.json", str(CONFIG_PATH.cspell))
-    _check_hook_url()
+    executor = Executor()
+    executor(_update_cspell_repo_url)
     config = PrecommitConfig.load()
     repo = config.find_repo(__REPO_URL)
     if repo is None:
-        _remove_configuration()
+        executor(_remove_configuration)
     else:
-        executor = Executor()
         executor(_check_check_hook_options)
         executor(_fix_config_content)
         executor(_sort_config_entries)
@@ -61,22 +62,25 @@ def main() -> None:
         executor(_update_prettier_ignore)
         executor(add_badge, __BADGE)
         executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
-        if executor.error_messages:
-            raise PrecommitError(executor.merge_messages())
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
-def _check_hook_url() -> None:
+def _update_cspell_repo_url(path: Path = CONFIG_PATH.pre_commit) -> None:
     old_url_patters = [
-        r".*/mirrors-cspell",
+        r".*/mirrors-cspell(.git)?$",
     ]
-    config = PrecommitConfig.load()
+    config = PrecommitConfig.load(path)
     for pattern in old_url_patters:
-        old_url = config.find_repo(pattern)
-        if old_url is not None:
-            raise PrecommitError(
-                "Pre-commit hook for cspell should be updated."
-                f" Repo URL should be {__REPO_URL}"
-            )
+        repo_index = config.get_repo_index(pattern)
+        if repo_index is None:
+            continue
+        config_dict, yaml_parser = load_round_trip_precommit_config(path)
+        config_dict["repos"][repo_index]["repo"] = __REPO_URL
+        yaml_parser.dump(config_dict, path)
+        raise PrecommitError(
+            f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
+        )
 
 
 def _remove_configuration() -> None:
