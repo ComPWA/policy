@@ -423,8 +423,8 @@ class Repo(BaseModel):
 class PrecommitConfig(BaseModel):
     """https://pre-commit.com/#pre-commit-configyaml---top-level."""
 
-    ci: PrecommitCi
     repos: List[Repo]
+    ci: Optional[PrecommitCi] = None
     files: str = ""
     exclude: str = "^$"
     fail_fast: bool = False

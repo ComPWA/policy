@@ -47,6 +47,7 @@ class TestPrecommitConfig:
         assert dummy_config.get_repo_index("https://github.com/psf/black") == 2
 
     def test_load(self, dummy_config: PrecommitConfig):
+        assert dummy_config.ci is not None
         assert dummy_config.ci.autoupdate_schedule == "monthly"
         assert dummy_config.ci.skip == ["flake8", "mypy"]
         assert len(dummy_config.repos) == 4
