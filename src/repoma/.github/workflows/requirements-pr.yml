@@ -56,7 +56,7 @@ jobs:
       - uses: actions/download-artifact@v2
       - run: |
           [[ -f .pre-commit-config.yaml ]] && mv -f .pre-commit-config.yaml ..
-          [[ -d ../.constraints/ ]] && mv -f * ../.constraints/
+          [[ "$(ls)" != "" ]] && mv -f * ../.constraints/
         working-directory: artifact
       - run: git status -s
       - name: Commit and push changes
