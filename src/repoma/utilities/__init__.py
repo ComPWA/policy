@@ -47,7 +47,7 @@ def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
     if isinstance(target, str):
         target = Path(target)
     if isinstance(target, Path):
-        os.makedirs(os.path.dirname(target), exist_ok=True)
+        target.parent.mkdir(exist_ok=True)
         with open(target, "w") as output_stream:
             output_stream.write(content)
     elif isinstance(target, io.TextIOBase):
