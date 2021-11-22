@@ -42,6 +42,7 @@ def test_check_setup_cfg_correct():
             flake8-rst-docstrings
             flake8-type-ignore; python_version >="3.8.0"
             flake8-use-fstring
+            package-that-is-ignored
             pep8-naming
         """
     content = dedent(content)

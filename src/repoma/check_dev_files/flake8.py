@@ -184,7 +184,7 @@ def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
     packages = cfg.get(extras_require, "flake8").split("\n")
     if "" in packages:
         packages.remove("")
-    if not packages == __FLAKE8_REQUIREMENTS:
+    if not set(__FLAKE8_REQUIREMENTS) <= set(packages):
         raise PrecommitError(error_message)
 
 
