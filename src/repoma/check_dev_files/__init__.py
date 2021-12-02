@@ -76,6 +76,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(prettier.main, args.no_prettierrc)
     executor(pyupgrade.main)
     if is_python_repo:
+        executor(github_workflows.create_continuous_deployment)
         if args.pin_requirements:
             executor(update_pip_constraints.main)
         executor(setup_cfg.main, args.ignore_author)

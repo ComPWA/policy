@@ -16,6 +16,10 @@ def main() -> None:
         raise PrecommitError(executor.merge_messages())
 
 
+def create_continuous_deployment() -> None:
+    _copy_workflow_file("cd.yml")
+
+
 def check_milestone_workflow() -> None:
     """Add a GitHub Action that auto-closes milestones on a new release.
 
