@@ -5,6 +5,9 @@ See Also:
 - https://github.com/ComPWA/update-pre-commit
 """
 
+from pathlib import Path
+
+from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
@@ -41,22 +44,23 @@ def _update_github_workflows() -> None:
         formatted_python_versions = list(
             map(DoubleQuotedScalarString, supported_python_versions)
         )
-        jobs = list(expected_data["jobs"])
-        first_job = jobs[0]
-        expected_data["jobs"][first_job]["strategy"]["matrix"][
+        expected_data["jobs"]["pip-constraints"]["strategy"]["matrix"][
             "python-version"
         ] = formatted_python_versions
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
-            yaml.dump(expected_data, workflow_path)
-            raise PrecommitError(f'Created "{workflow_path}" workflow')
+            __update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
         if existing_data != expected_data:
-            yaml.dump(expected_data, workflow_path)
-            raise PrecommitError(f'Updated "{workflow_path}" workflow')
+            __update_workflow(yaml, expected_data, workflow_path)
 
     executor = Executor()
     executor(overwrite_workflow, "requirements-cron.yml")
     executor(overwrite_workflow, "requirements-pr.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
+
+
+def __update_workflow(yaml: YAML, config: dict, path: Path) -> None:
+    yaml.dump(config, path)
+    raise PrecommitError(f'Updated "{path}" workflow')
