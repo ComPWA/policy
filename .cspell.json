@@ -65,6 +65,7 @@
     ],
     "ignoreWords": [
         "autoupdate",
+        "bdist",
         "codecov",
         "colab",
         "commitlint",
@@ -75,17 +76,22 @@
         "nbformat",
         "nbqa",
         "noqa",
+        "noreply",
         "pandoc",
         "precommit",
+        "prereleased",
         "prettierrc",
         "pydantic",
         "pydocstyle",
         "pylint",
+        "PyPI",
         "pyright",
         "pyupgrade",
         "repos",
         "reqs",
         "ruamel",
+        "sdist",
+        "setuptools",
         "venv"
     ]
 }
