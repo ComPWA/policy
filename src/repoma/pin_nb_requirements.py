@@ -14,6 +14,8 @@ import nbformat
 
 from .errors import PrecommitError
 
+__PIP_INSTALL_STATEMENT = "%pip install -q "
+
 
 def check_pinned_requirements(filename: str) -> None:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
@@ -24,52 +26,56 @@ def check_pinned_requirements(filename: str) -> None:
         src_lines = source.split("\n")
         if len(src_lines) == 0:
             continue
-        if src_lines[0] != "%%sh":
+        src_lines = list(map(lambda s: s.strip("\\"), src_lines))
+        cell_content = "".join(src_lines)
+        if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
-        if len(src_lines) != 2:
-            raise PrecommitError(
-                f'Install cell in notebook "{filename}" has more than 2 lines'
-            )
-        install_statement = src_lines[1]
-        __check_install_statement(filename, install_statement)
-        __check_requirements(filename, install_statement)
+        __check_install_statement(filename, cell_content)
+        __check_requirements(filename, cell_content)
         __check_metadata(filename, cell["metadata"])
         return
     raise PrecommitError(
-        f'Notebook "{filename}" does not contain a pip install cell'
+        f'Notebook "{filename}" does not contain a pip install cell of the'
+        f" form {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
     )
 
 
 def __check_install_statement(filename: str, install_statement: str) -> None:
-    if not install_statement.startswith("pip install "):
+    if not install_statement.startswith(__PIP_INSTALL_STATEMENT):
         raise PrecommitError(
-            f'First shell cell in notebook  "{filename}"'
-            " does not run pip install"
+            f"First shell cell in notebook {filename} does not start with"
+            f" {__PIP_INSTALL_STATEMENT}"
         )
-    if not install_statement.endswith(" > /dev/null"):
+    if install_statement.endswith("/dev/null"):
         raise PrecommitError(
-            f'Install statement in notebook "{filename}" should end with'
-            ' " > /dev/null" in order to suppress stdout'
+            "Remove the /dev/null from the pip install statement in notebook"
+            f" {filename}"
         )
 
 
-def __check_requirements(filename: str, install_statement: str) -> None:
-    requirements = install_statement.split(" ")
-    if len(requirements) <= 4:
+def __check_requirements(  # noqa: R701
+    filename: str, install_statement: str
+) -> None:
+    package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
+    requirements = package_listing.split(" ")
+    if len(requirements) == 0:
         raise PrecommitError(
             f'At least one dependency required in install cell of "{filename}"'
         )
-    requirements = requirements[2:-2]
     for requirement in requirements:
         requirement = requirement.strip()
         if not requirement:
+            continue
+        if requirement.startswith("git+"):
             continue
         if "==" not in requirement:
             raise PrecommitError(
                 f'Install cell in notebook "{filename}" contains a'
                 f" requirement without == ({requirement})"
             )
-    requirements_lower = [r.lower() for r in requirements]
+    requirements_lower = [
+        r.lower() for r in requirements if not r.startswith("git+")
+    ]
     if sorted(requirements_lower) != requirements_lower:
         sorted_requirements = " ".join(sorted(requirements))
         raise PrecommitError(
