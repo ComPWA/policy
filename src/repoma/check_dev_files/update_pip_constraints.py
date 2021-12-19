@@ -51,6 +51,10 @@ def _update_github_workflows() -> None:
         if not workflow_path.exists():
             __update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
+        if workflow_file.endswith("-cron.yml"):
+            expected_data["on"]["schedule"] = existing_data.get("on", {}).get(
+                "schedule", expected_data["on"]["schedule"]
+            )
         if existing_data != expected_data:
             __update_workflow(yaml, expected_data, workflow_path)
 
