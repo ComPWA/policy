@@ -14,17 +14,18 @@ __REPO_URL = "https://github.com/kynan/nbstripout"
 __HOOK_ID = "nbstripout"
 __EXTRA_KEYS_ARGUMENT = [
     "cell.metadata.code_folding",
+    "cell.metadata.id",
     "metadata.celltoolbar",
+    "metadata.colab.name",
+    "metadata.colab.provenance",
     "metadata.interpreter",
-    # do not strip metadata.kernelspec for sphinx-book-theme launch buttons
-    "metadata.language_info",
     "metadata.notify_time",
     "metadata.toc",
-    "metadata.varInspector",
     "metadata.toc-autonumbering",
     "metadata.toc-showcode",
     "metadata.toc-showmarkdowntxt",
     "metadata.toc-showtags",
+    "metadata.varInspector",
 ]
 
 
