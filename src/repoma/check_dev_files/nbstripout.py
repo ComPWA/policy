@@ -1,6 +1,6 @@
 """Check the nbstripout hook in the pre-commit config."""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from ruamel.yaml.scalarstring import LiteralScalarString
 
@@ -35,18 +35,20 @@ __EXTRA_KEYS_ARGUMENT = [
 
 
 def main() -> None:
-    repo = _get_nbstripout_precommit_repo()
-    if repo is None:
+    index, repo = _get_nbstripout_precommit_repo()
+    if repo is None or index is None:
         return
-    _update_extra_keys_argument(repo)
+    _update_extra_keys_argument(index, repo)
 
 
-def _get_nbstripout_precommit_repo() -> Optional[Repo]:
+def _get_nbstripout_precommit_repo() -> Tuple[Optional[int], Optional[Repo]]:
     config = PrecommitConfig.load()
-    return config.find_repo(__REPO_URL)
+    repo = config.find_repo(__REPO_URL)
+    index = config.get_repo_index(__REPO_URL)
+    return index, repo
 
 
-def _update_extra_keys_argument(repo: Repo) -> None:
+def _update_extra_keys_argument(repo_index: int, repo: Repo) -> None:
     """Add an argument to strip additional metadata.
 
     For more info see https://github.com/kynan/nbstripout#stripping-metadata.
@@ -65,5 +67,5 @@ def _update_extra_keys_argument(repo: Repo) -> None:
         return
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(CONFIG_PATH.precommit)
-    config["repos"][index]["hooks"][0]["args"] = expected_args
+    config["repos"][repo_index]["hooks"][index]["args"] = expected_args
     yaml.dump(config, CONFIG_PATH.precommit)
