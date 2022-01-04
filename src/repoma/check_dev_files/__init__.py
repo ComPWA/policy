@@ -63,10 +63,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     is_python_repo = not args.no_python
 
     executor = Executor()
-    executor(black.main)
     executor(cspell.main)
     executor(editor_config.main)
-    executor(flake8.main)
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
@@ -74,11 +72,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(gitpod.main)
     executor(nbstripout.main)
     executor(prettier.main, args.no_prettierrc)
-    executor(pyupgrade.main)
     if is_python_repo:
+        executor(black.main)
+        executor(flake8.main)
         executor(github_workflows.create_continuous_deployment)
         if args.pin_requirements:
             executor(update_pip_constraints.main)
+        executor(pyupgrade.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     if executor.error_messages:
