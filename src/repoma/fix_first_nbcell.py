@@ -57,11 +57,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(
-        "--replace",
-        action="store_true",
-        help="Replace first cell instead of prepending a new cell.",
-    )
-    parser.add_argument(
         "--install-cell",
         action="store_true",
         help="Add notebook cell with pip install statement.",
@@ -74,7 +69,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             new_content=__CONFIG_CELL_CONTENT.strip("\n"),
             new_metadata=__CONFIG_CELL_METADATA,
             cell_id=0,
-            replace=args.replace,
         )
         if args.install_cell:
             _update_cell(
@@ -82,7 +76,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 new_content=__INSTALL_CELL_CONTENT.strip("\n"),
                 new_metadata=__INSTALL_CELL_METADATA,
                 cell_id=1,
-                replace=args.replace,
             )
     return 0
 
@@ -92,7 +85,6 @@ def _update_cell(
     new_content: str,
     new_metadata: dict,
     cell_id: int,
-    replace: bool = False,
 ) -> None:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     exiting_cell = notebook["cells"][cell_id]
@@ -108,12 +100,13 @@ def _update_cell(
             and "cell" in first_line
         ):
             return
+
     new_cell = nbformat.v4.new_code_cell(
         new_content,
         metadata=new_metadata,
     )
     del new_cell["id"]  # following nbformat_minor = 4
-    if replace:
+    if exiting_cell["cell_type"] == "code":
         notebook["cells"][cell_id] = new_cell
     else:
         notebook["cells"].insert(cell_id, new_cell)
