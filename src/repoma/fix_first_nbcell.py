@@ -44,6 +44,7 @@ __CONFIG_CELL_METADATA: dict = {
 }
 
 __INSTALL_CELL_CONTENT = f"""
+# WARNING: advised to install a specific version, e.g. {__PACKAGE_NAME}[doc]==0.1.2
 %pip install -q {__PACKAGE_NAME}[doc] graphviz
 """
 __INSTALL_CELL_METADATA: dict = {
