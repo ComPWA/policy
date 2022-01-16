@@ -28,8 +28,6 @@ from repoma.utilities.setup_cfg import open_setup_cfg
 __SETUP_CFG = open_setup_cfg()
 __PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]
 __DEFAULT_CONTENT = """
-%%capture
-%config Completer.use_jedi = False
 %config InlineBackend.figure_formats = ['svg']
 import os
 
