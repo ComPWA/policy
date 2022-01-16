@@ -43,9 +43,10 @@ __CONFIG_CELL_METADATA: dict = {
     "tags": ["remove-cell"],
 }
 
+__EXTRAS_REQUIRE = "[doc]"
 __INSTALL_CELL_CONTENT = f"""
-# WARNING: advised to install a specific version, e.g. {__PACKAGE_NAME}[doc]==0.1.2
-%pip install -q {__PACKAGE_NAME}[doc] graphviz
+# WARNING: advised to install a specific version, e.g. {__PACKAGE_NAME}{__EXTRAS_REQUIRE}==0.1.2
+%pip install -q {__PACKAGE_NAME}{__EXTRAS_REQUIRE} graphviz
 """
 __INSTALL_CELL_METADATA: dict = {
     **__CONFIG_CELL_METADATA,
@@ -62,6 +63,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Add notebook cell with pip install statement.",
     )
+    parser.add_argument(
+        "--extras-require",
+        default="",
+        help="Comma-separated list of optional dependencies, e.g. doc,viz",
+        type=str,
+    )
+    parser.add_argument(
+        "--additional-packages",
+        default="",
+        help=(
+            "Comma-separated list of packages that should be installed"
+            " with pip"
+        ),
+        type=str,
+    )
     args = parser.parse_args(argv)
 
     for filename in args.filenames:
@@ -72,9 +88,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             cell_id=0,
         )
         if args.install_cell:
+            cell_content = __INSTALL_CELL_CONTENT.strip("\n")
+            if args.extras_require:
+                cell_content = cell_content.replace(__EXTRAS_REQUIRE, "")
+                extras = args.extras_require.strip()
+                cell_content += f"[{extras}]"
+            if args.additional_packages:
+                cell_content = cell_content.replace(__EXTRAS_REQUIRE, "")
+                packages = map(lambda s: s.strip(), args.additional_packages)
+                cell_content += " " + " ".join(packages)
             _update_cell(
                 filename,
-                new_content=__INSTALL_CELL_CONTENT.strip("\n"),
+                new_content=cell_content,
                 new_metadata=__INSTALL_CELL_METADATA,
                 cell_id=1,
             )
