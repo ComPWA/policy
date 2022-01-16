@@ -58,7 +58,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(
-        "--install-cell",
+        "--add-install-cell",
         action="store_true",
         help="Add notebook cell with pip install statement.",
     )
@@ -86,13 +86,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             new_metadata=__CONFIG_CELL_METADATA,
             cell_id=0,
         )
-        if args.install_cell:
+        if args.add_install_cell:
             cell_content = __INSTALL_CELL_CONTENT.strip("\n")
             if args.extras_require:
                 extras = args.extras_require.strip()
                 cell_content += f"[{extras}]"
             if args.additional_packages:
-                packages = map(lambda s: s.strip(), args.additional_packages)
+                packages = map(
+                    lambda s: s.strip(), args.additional_packages.split(",")
+                )
                 cell_content += " " + " ".join(packages)
             _update_cell(
                 filename,
