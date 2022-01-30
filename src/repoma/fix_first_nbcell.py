@@ -19,6 +19,7 @@ and starting its content with:
 
 import argparse
 import sys
+from textwrap import dedent
 from typing import Optional, Sequence
 
 import nbformat
@@ -77,6 +78,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         type=str,
     )
+    parser.add_argument(
+        "--no-autolink-concat",
+        default="",
+        help=(
+            # pylint: disable=line-too-long
+            "Do not add a cell with a autolink-concat directive. See"
+            " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
+        ),
+        type=str,
+    )
     args = parser.parse_args(argv)
 
     for filename in args.filenames:
@@ -102,6 +113,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 new_metadata=__INSTALL_CELL_METADATA,
                 cell_id=1,
             )
+        _insert_autolink_concat(filename)
     return 0
 
 
@@ -126,6 +138,31 @@ def _update_cell(
         notebook["cells"].insert(cell_id, new_cell)
     nbformat.validate(notebook)
     nbformat.write(notebook, filename)
+
+
+def _insert_autolink_concat(filename: str) -> None:
+    if _skip_notebook(
+        filename, ignore_statement="<!-- no autolink-concat -->"
+    ):
+        return
+    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    expected_cell_content = """
+    ```{autolink-concat}
+    ```
+    """
+    expected_cell_content = dedent(expected_cell_content).strip()
+    for cell_id, cell in enumerate(notebook["cells"]):
+        if cell["cell_type"] != "markdown":
+            continue
+        cell_content: str = cell["source"]
+        if cell_content == expected_cell_content:
+            return
+        new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
+        del new_cell["id"]  # following nbformat_minor = 4
+        notebook["cells"].insert(cell_id, new_cell)
+        nbformat.validate(notebook)
+        nbformat.write(notebook, filename)
+        return
 
 
 def _skip_notebook(
