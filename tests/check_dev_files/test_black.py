@@ -3,7 +3,7 @@ from textwrap import dedent
 import pytest
 
 from repoma.check_dev_files.black import (
-    _check_experimental_string_processing,
+    _check_activate_preview,
     _check_line_length,
     _check_option_ordering,
     _check_target_versions,
@@ -42,16 +42,16 @@ def test_check_line_length():
         dedent(
             """
         [tool.config]
-        experimental-string-processing = false
+        preview = false
         """
         ).strip(),
     ],
 )
-def test_check_experimental_string_processing(toml_content: str):
+def test_check_activate_preview(toml_content: str):
     toml_content = """[tool.black]"""
     config = _load_config(toml_content)
     with pytest.raises(PrecommitError) as error:
-        _check_experimental_string_processing(config)
+        _check_activate_preview(config)
     assert (
         error.value.args[0]
         == dedent(
@@ -59,7 +59,7 @@ def test_check_experimental_string_processing(toml_content: str):
             An option in pyproject.toml is wrong or missing. Should be:
 
             [tool.black]
-            experimental-string-processing = true
+            preview = true
             """
         ).strip()
     )
@@ -107,14 +107,14 @@ def test_load_config_from_string():
     toml_content = dedent(
         R"""
         [tool.black]
-        experimental-string-processing = true
+        preview = true
         include = '\.pyi?$'
         line-length = 79
         """
     ).strip()
     config = _load_config(toml_content)
     assert config == {
-        "experimental-string-processing": True,
+        "preview": True,
         "include": R"\.pyi?$",
         "line-length": 79,
     }
@@ -124,8 +124,8 @@ def test_check_option_ordering():
     toml_content = dedent(
         R"""
         [tool.black]
+        preview = true
         line-length = 79
-        experimental-string-processing = true
         """
     ).strip()
     config = _load_config(toml_content)
@@ -138,8 +138,8 @@ def test_check_option_ordering():
             Options in pyproject.toml should be alphabetically sorted:
 
             [tool.black]
-            experimental-string-processing = ...
             line-length = ...
+            preview = ...
             """
         ).strip()
     )

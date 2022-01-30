@@ -41,6 +41,7 @@ class Hook(BaseModel):
     id: str  # noqa: A003
     args: List[str] = []
     name: Optional[str] = None
+    additional_dependencies: List[str] = []
     files: Optional[str] = None
     exclude: Optional[str] = None
     types: Optional[List[str]] = None

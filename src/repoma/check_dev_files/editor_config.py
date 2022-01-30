@@ -17,7 +17,7 @@ __EDITORCONFIG_FILE = ".editorconfig"
 __EDITORCONFIG_URL = (
     "https://github.com/editorconfig-checker/editorconfig-checker.python"
 )
-__EDITORCONFIG_HOOK = fR"""
+__EDITORCONFIG_HOOK = Rf"""
   - repo: {__EDITORCONFIG_URL}
     rev: ""
     hooks:

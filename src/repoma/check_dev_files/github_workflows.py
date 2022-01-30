@@ -68,7 +68,7 @@ def _remove_constraint_pinning(content: str) -> str:
     'pip install .[dev]'
     """
     return re.sub(
-        pattern=fr"-c {CONFIG_PATH.pip_constraints}/py3\.\d\.txt\s*",
+        pattern=rf"-c {CONFIG_PATH.pip_constraints}/py3\.\d\.txt\s*",
         repl="",
         string=content,
     )
