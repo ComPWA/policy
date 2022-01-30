@@ -111,21 +111,10 @@ def _update_cell(
     new_metadata: dict,
     cell_id: int,
 ) -> None:
+    if _skip_notebook(filename):
+        return
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     exiting_cell = notebook["cells"][cell_id]
-    if exiting_cell["cell_type"] == "markdown":
-        old_cell_content: str = exiting_cell["source"]
-        old_cell_content = old_cell_content.lower()
-        first_line = old_cell_content.split("\n")[0]
-        first_line = first_line.strip()
-        if (
-            first_line.startswith("<!--")
-            and first_line.endswith("-->")
-            and "ignore" in first_line
-            and "cell" in first_line
-        ):
-            return
-
     new_cell = nbformat.v4.new_code_cell(
         new_content,
         metadata=new_metadata,
@@ -137,6 +126,19 @@ def _update_cell(
         notebook["cells"].insert(cell_id, new_cell)
     nbformat.validate(notebook)
     nbformat.write(notebook, filename)
+
+
+def _skip_notebook(
+    filename: str, ignore_statement: str = "<!-- ignore first cell -->"
+) -> bool:
+    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    for cell in notebook["cells"]:
+        if cell["cell_type"] != "markdown":
+            continue
+        cell_content: str = cell["source"]
+        if ignore_statement in cell_content.lower():
+            return True
+    return False
 
 
 if __name__ == "__main__":
