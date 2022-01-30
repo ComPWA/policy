@@ -18,7 +18,7 @@ def main() -> None:
     config = _load_config()
     executor = Executor()
     executor(_check_line_length, config)
-    executor(_check_experimental_string_processing, config)
+    executor(_check_activate_preview, config)
     executor(_check_option_ordering, config)
     executor(_check_target_versions, config)
     if executor.error_messages:
@@ -34,8 +34,8 @@ def _load_config(content: Optional[str] = None) -> dict:
     return config.get("tool", {}).get("black")
 
 
-def _check_experimental_string_processing(config: dict) -> None:
-    expected_option = "experimental-string-processing"
+def _check_activate_preview(config: dict) -> None:
+    expected_option = "preview"
     if config.get(expected_option) is not True:
         raise PrecommitError(
             dedent(
