@@ -200,7 +200,7 @@ def _check_missing_options(
         content = cfg.get("flake8", option)
     missing_values = []
     for value in expected_values:
-        if not re.search(fr"\b{value}\b", content):
+        if not re.search(rf"\b{value}\b", content):
             missing_values.append(value)
     if missing_values:
         values = "\n".join(missing_values)
