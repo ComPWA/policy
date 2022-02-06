@@ -184,7 +184,10 @@ def _insert_autolink_concat(
             return
         new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
         del new_cell["id"]  # following nbformat_minor = 4
-        notebook["cells"].insert(cell_id, new_cell)
+        if cell_content.startswith("```{autolink-concat}"):
+            notebook["cells"][cell_id] = new_cell
+        else:
+            notebook["cells"].insert(cell_id, new_cell)
         nbformat.validate(notebook)
         nbformat.write(notebook, filename)
         return
