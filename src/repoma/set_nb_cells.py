@@ -21,7 +21,7 @@ and writing the following `Markdown comment
 import argparse
 import sys
 from textwrap import dedent
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence
 
 import nbformat
 
@@ -116,27 +116,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             cell_id += 1
         if not args.no_config_cell:
+            config_cell_content = __CONFIG_CELL_CONTENT
+            if "ipython" in args.additional_packages.lower():
+                config_cell_content = config_cell_content.replace(
+                    "import os",
+                    "import os\n\nfrom IPython.display import display  # noqa:"
+                    " F401",
+                )
             _update_cell(
                 filename,
-                new_content=__CONFIG_CELL_CONTENT.strip("\n"),
+                new_content=config_cell_content.strip("\n"),
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
-            cell_id += 1
-            if "ipython" in args.additional_packages.lower():
-                _update_cell(
-                    filename,
-                    new_content=(
-                        "from IPython.display import display  # noqa: F401"
-                    ),
-                    new_metadata={
-                        **__CONFIG_CELL_METADATA,
-                        "tags": ["hide-cell"],
-                    },
-                    cell_id=cell_id,
-                )
-                cell_id += 1
-        _insert_autolink_concat(filename)
+        imports = []
+        if "ipython" in args.additional_packages.lower():
+            imports.append("from IPython.display import display")
+        _insert_autolink_concat(filename, imports)
     return 0
 
 
@@ -163,7 +159,9 @@ def _update_cell(
     nbformat.write(notebook, filename)
 
 
-def _insert_autolink_concat(filename: str) -> None:
+def _insert_autolink_concat(
+    filename: str, imports: Optional[List[str]] = None
+) -> None:
     if _skip_notebook(
         filename, ignore_statement="<!-- no autolink-concat -->"
     ):
@@ -173,7 +171,11 @@ def _insert_autolink_concat(filename: str) -> None:
     ```{autolink-concat}
     ```
     """
-    expected_cell_content = dedent(expected_cell_content).strip()
+    expected_cell_content = dedent(expected_cell_content)
+    if imports is not None:
+        preface = "```{autolink-preface}\n" + "\n".join(imports) + "\n```"
+        expected_cell_content += preface
+    expected_cell_content = expected_cell_content.strip()
     for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "markdown":
             continue
