@@ -21,7 +21,7 @@ and writing the following `Markdown comment
 import argparse
 import sys
 from textwrap import dedent
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 import nbformat
 
@@ -129,10 +129,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
-        imports = []
-        if "ipython" in args.additional_packages.lower():
-            imports.append("from IPython.display import display")
-        _insert_autolink_concat(filename, imports)
+        _insert_autolink_concat(filename)
     return 0
 
 
@@ -159,9 +156,7 @@ def _update_cell(
     nbformat.write(notebook, filename)
 
 
-def _insert_autolink_concat(
-    filename: str, imports: Optional[List[str]] = None
-) -> None:
+def _insert_autolink_concat(filename: str) -> None:
     if _skip_notebook(
         filename, ignore_statement="<!-- no autolink-concat -->"
     ):
@@ -171,11 +166,7 @@ def _insert_autolink_concat(
     ```{autolink-concat}
     ```
     """
-    expected_cell_content = dedent(expected_cell_content)
-    if imports is not None:
-        preface = "```{autolink-preface}\n" + "\n".join(imports) + "\n```"
-        expected_cell_content += preface
-    expected_cell_content = expected_cell_content.strip()
+    expected_cell_content = dedent(expected_cell_content).strip()
     for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "markdown":
             continue
@@ -184,10 +175,7 @@ def _insert_autolink_concat(
             return
         new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
         del new_cell["id"]  # following nbformat_minor = 4
-        if cell_content.startswith("```{autolink-concat}"):
-            notebook["cells"][cell_id] = new_cell
-        else:
-            notebook["cells"].insert(cell_id, new_cell)
+        notebook["cells"].insert(cell_id, new_cell)
         nbformat.validate(notebook)
         nbformat.write(notebook, filename)
         return
