@@ -34,6 +34,8 @@ __CONFIG_CELL_CONTENT = """
 %config InlineBackend.figure_formats = ['svg']
 import os
 
+from IPython.display import display
+
 STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
 """
 __CONFIG_CELL_METADATA: dict = {
