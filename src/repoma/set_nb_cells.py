@@ -34,8 +34,6 @@ __CONFIG_CELL_CONTENT = """
 %config InlineBackend.figure_formats = ['svg']
 import os
 
-from IPython.display import display
-
 STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
 """
 __CONFIG_CELL_METADATA: dict = {
@@ -91,6 +89,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         type=str,
     )
+    parser.add_argument(
+        "--no-config-cell",
+        action="store_true",
+        help="Do not add configuration cell.",
+    )
     args = parser.parse_args(argv)
 
     for filename in args.filenames:
@@ -112,12 +115,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 cell_id=cell_id,
             )
             cell_id += 1
-        _update_cell(
-            filename,
-            new_content=__CONFIG_CELL_CONTENT.strip("\n"),
-            new_metadata=__CONFIG_CELL_METADATA,
-            cell_id=cell_id,
-        )
+        if not args.no_config_cell:
+            config_cell_content = __CONFIG_CELL_CONTENT
+            if "ipython" in args.additional_packages.lower():
+                config_cell_content = config_cell_content.replace(
+                    "import os",
+                    "import os\n\nfrom IPython.display import display",
+                )
+            _update_cell(
+                filename,
+                new_content=config_cell_content.strip("\n"),
+                new_metadata=__CONFIG_CELL_METADATA,
+                cell_id=cell_id,
+            )
         _insert_autolink_concat(filename)
     return 0
 
