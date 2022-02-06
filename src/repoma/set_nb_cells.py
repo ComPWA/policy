@@ -1,4 +1,4 @@
-"""Add install statements to first cell in a Jupyter notebook.
+"""Add or update standard cells in a Jupyter notebook.
 
 Notebook servers like Google Colaboratory and Deepnote do not install a package
 automatically, so this has to be done through a code cell. At the same time,
@@ -10,11 +10,12 @@ is because the Sphinx configuration can't set this externally.
 
 Notebooks can be ignored by making the first cell a `Markdown cell
 <https://jupyter-notebook.readthedocs.io/en/latest/examples/Notebook/Working%20With%20Markdown%20Cells.html>`_
-and starting its content with:
+and writing the following `Markdown comment
+<https://www.markdownguide.org/hacks/#comments>`_:
 
 .. code-block:: markdown
 
-    <!-- ignore first cell -->
+    <!-- no-set-nb-cells -->
 """
 
 import argparse
@@ -166,7 +167,7 @@ def _insert_autolink_concat(filename: str) -> None:
 
 
 def _skip_notebook(
-    filename: str, ignore_statement: str = "<!-- ignore first cell -->"
+    filename: str, ignore_statement: str = "<!-- no-set-nb-cells -->"
 ) -> bool:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     for cell in notebook["cells"]:
