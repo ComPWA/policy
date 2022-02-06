@@ -116,19 +116,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             cell_id += 1
         if not args.no_config_cell:
-            config_cell_content = __CONFIG_CELL_CONTENT
-            if "ipython" in args.additional_packages.lower():
-                config_cell_content = config_cell_content.replace(
-                    "import os",
-                    "import os\n\nfrom IPython.display import display  # noqa:"
-                    " F401",
-                )
             _update_cell(
                 filename,
-                new_content=config_cell_content.strip("\n"),
+                new_content=__CONFIG_CELL_CONTENT.strip("\n"),
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
+            cell_id += 1
+            if "ipython" in args.additional_packages.lower():
+                _update_cell(
+                    filename,
+                    new_content=(
+                        "from IPython.display import display  # noqa: F401"
+                    ),
+                    new_metadata={
+                        **__CONFIG_CELL_METADATA,
+                        "tags": ["hide-cell"],
+                    },
+                    cell_id=cell_id,
+                )
+                cell_id += 1
         _insert_autolink_concat(filename)
     return 0
 
