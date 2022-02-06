@@ -92,12 +92,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     for filename in args.filenames:
-        _update_cell(
-            filename,
-            new_content=__CONFIG_CELL_CONTENT.strip("\n"),
-            new_metadata=__CONFIG_CELL_METADATA,
-            cell_id=0,
-        )
+        cell_id = 0
         if args.add_install_cell:
             cell_content = __INSTALL_CELL_CONTENT.strip("\n")
             if args.extras_require:
@@ -112,8 +107,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 filename,
                 new_content=cell_content,
                 new_metadata=__INSTALL_CELL_METADATA,
-                cell_id=1,
+                cell_id=cell_id,
             )
+            cell_id += 1
+        _update_cell(
+            filename,
+            new_content=__CONFIG_CELL_CONTENT.strip("\n"),
+            new_metadata=__CONFIG_CELL_METADATA,
+            cell_id=cell_id,
+        )
         _insert_autolink_concat(filename)
     return 0
 
