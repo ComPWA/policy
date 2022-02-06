@@ -120,7 +120,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if "ipython" in args.additional_packages.lower():
                 config_cell_content = config_cell_content.replace(
                     "import os",
-                    "import os\n\nfrom IPython.display import display",
+                    "import os\n\nfrom IPython.display import display  # noqa:"
+                    " F401",
                 )
             _update_cell(
                 filename,
