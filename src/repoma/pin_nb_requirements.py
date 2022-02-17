@@ -66,7 +66,7 @@ def __check_requirements(  # noqa: R701
         requirement = requirement.strip()
         if not requirement:
             continue
-        if requirement.startswith("git+"):
+        if "git+" in requirement:
             continue
         if "==" not in requirement:
             raise PrecommitError(
