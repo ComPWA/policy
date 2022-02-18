@@ -91,16 +91,12 @@ def __check_metadata(filename: str, metadata: dict) -> None:
         raise PrecommitError(
             f'Install cell in notebook "{filename}" is not hidden'
         )
-    tags = metadata.get("tags")
-    expected_tag = "hide-cell"
-    if tags is None or expected_tag not in tags:
+    tags = set(metadata.get("tags", []))
+    expected_tags = {"hide-input", "remove-output"}
+    if expected_tags != tags:
         raise PrecommitError(
-            f'Install cell in notebook "{filename}" should have tag'
-            f' "{expected_tag}"'
-        )
-    if "remove-cell" in tags:
-        raise PrecommitError(
-            f'Install cell in notebook "{filename}" has tag "remove-cell"'
+            f'Install cell in notebook "{filename}" should have tags'
+            f" {sorted(expected_tags)}"
         )
 
 
