@@ -17,11 +17,11 @@ from repoma.utilities.setup_cfg import get_supported_python_versions
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main() -> None:
+def main(cron_frequency: str) -> None:
     executor = Executor()
     executor(_remove_script, "pin_requirements.py")
     executor(_remove_script, "upgrade.sh")
-    executor(_update_github_workflows)
+    executor(_update_github_workflows, cron_frequency)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -33,7 +33,7 @@ def _remove_script(script_name: str) -> None:
         raise PrecommitError(f'Removed deprecated "{bash_script_name}" script')
 
 
-def _update_github_workflows() -> None:
+def _update_github_workflows(cron_frequency: str) -> None:
     def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
@@ -48,18 +48,24 @@ def _update_github_workflows() -> None:
             "python-version"
         ] = formatted_python_versions
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
+        if "-cron-" in str(workflow_file):
+            workflow_path = workflow_path.parent / "requirements-cron.yml"
         if not workflow_path.exists():
             __update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
-        if workflow_file.endswith("-cron.yml"):
-            expected_data["on"]["schedule"] = existing_data.get("on", {}).get(
-                "schedule", expected_data["on"]["schedule"]
-            )
         if existing_data != expected_data:
             __update_workflow(yaml, expected_data, workflow_path)
 
     executor = Executor()
-    executor(overwrite_workflow, "requirements-cron.yml")
+    if cron_frequency == "biweekly":
+        executor(overwrite_workflow, "requirements-cron-biweekly.yml")
+    elif cron_frequency == "bimonthly":
+        executor(overwrite_workflow, "requirements-cron-bimonthly.yml")
+    else:
+        raise NotImplementedError(
+            "Cannot create an upgrade cron jon for frequency"
+            f' "{cron_frequency}"'
+        )
     executor(overwrite_workflow, "requirements-pr.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())

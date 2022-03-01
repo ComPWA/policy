@@ -55,9 +55,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument(
         "--pin-requirements",
-        default=False,
-        action="store_true",
-        help="Add a script to pin developer requirements to a constraint file",
+        choices=["no", "biweekly", "bimonthly"],
+        default="no",
+        help=(
+            "Add a script to pin developer requirements to a constraint file."
+            " Argument is the frequency of the cron job"
+        ),
+        type=str,
     )
     args = parser.parse_args(argv)
     is_python_repo = not args.no_python
@@ -76,8 +80,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(black.main)
         executor(flake8.main)
         executor(github_workflows.create_continuous_deployment)
-        if args.pin_requirements:
-            executor(update_pip_constraints.main)
+        if args.pin_requirements != "no":
+            executor(
+                update_pip_constraints.main,
+                cron_frequency=args.pin_requirements,
+            )
         executor(pyupgrade.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
