@@ -91,6 +91,7 @@ def test_check_target_versions():
                 'py37',
                 'py38',
                 'py39',
+                'py310',
             ]
             """
         ).strip()

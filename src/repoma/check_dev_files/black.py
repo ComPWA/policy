@@ -89,10 +89,9 @@ def _check_target_versions(config: dict) -> None:
     target_versions = config.get("target-version", [])
     supported_python_versions = get_supported_python_versions()
     expected_target_versions = sorted(
-        map(lambda s: "py" + s.replace(".", ""), supported_python_versions)
+        map(lambda s: "py" + s.replace(".", ""), supported_python_versions),
+        key=natural_sorting,
     )
-    if "py310" in expected_target_versions:
-        expected_target_versions.remove("py310")
     if target_versions != expected_target_versions:
         error_message = dedent(
             """
