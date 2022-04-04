@@ -2,9 +2,6 @@
   "[bibtex]": {
     "editor.formatOnSave": false
   },
-  "[ipynb]": {
-    "editor.formatOnSave": false
-  },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -37,12 +34,13 @@
     "**/.tox/**": true
   },
   "git.rebaseWhenSync": true,
-  "githubPullRequests.telemetry.enabled": false,
-  "gitlens.advanced.telemetry.enabled": false,
+  "github-actions.workflows.pinned.workflows": [
+    ".github/workflows/ci-tests.yml",
+    ".github/workflows/ci-style.yml"
+  ],
   "python.analysis.autoImportCompletions": false,
   "python.analysis.diagnosticMode": "workspace",
   "python.formatting.provider": "black",
-  "python.languageServer": "Pylance",
   "python.linting.banditEnabled": false,
   "python.linting.enabled": true,
   "python.linting.flake8Enabled": true,
@@ -51,8 +49,6 @@
   "python.linting.pylamaEnabled": false,
   "python.linting.pylintCategorySeverity.refactor": "Information",
   "python.linting.pylintEnabled": true,
-  "python.linting.pylintUseMinimalCheckers": false,
-  "python.testing.nosetestsEnabled": false,
   "python.testing.pytestArgs": ["--color=no", "--no-cov", "-vv"],
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
@@ -63,6 +59,5 @@
     ".constraints/*.txt": true,
     "src/repoma/.github/ISSUE_TEMPLATE": true
   },
-  "telemetry.enableCrashReporter": false,
-  "telemetry.enableTelemetry": false
+  "telemetry.telemetryLevel": "off"
 }

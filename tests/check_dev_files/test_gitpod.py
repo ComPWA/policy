@@ -11,6 +11,7 @@ def test_extract_extensions():
         # cspell:disable
         "bungcip.better-toml",
         "christian-kohler.path-intellisense",
+        "cschleiden.vscode-github-actions",
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
