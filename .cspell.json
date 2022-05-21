@@ -97,6 +97,7 @@
         "PyPI",
         "pyright",
         "pyupgrade",
+        "redeboer",
         "repos",
         "reqs",
         "ruamel",
