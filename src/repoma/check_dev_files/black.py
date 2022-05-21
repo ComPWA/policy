@@ -89,7 +89,7 @@ def _check_target_versions(config: dict) -> None:
     target_versions = config.get("target-version", [])
     supported_python_versions = get_supported_python_versions()
     expected_target_versions = sorted(
-        map(lambda s: "py" + s.replace(".", ""), supported_python_versions),
+        ("py" + s.replace(".", "") for s in supported_python_versions),
         key=natural_sorting,
     )
     if target_versions != expected_target_versions:

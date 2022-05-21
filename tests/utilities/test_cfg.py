@@ -63,7 +63,7 @@ def test_copy_config():
             name = repo-maintenance
             """,
         ),
-        (  # only two whitelines
+        (  # only two linebreaks
             """\
             [section1]
             option1 = one

@@ -1,6 +1,6 @@
 """Check whether the repository (still) contains a ``labels.toml`` file.
 
-If it's still there remove it, because it has been superceded by the
+If it's still there remove it, because it has been superseded by the
 `github.com/ComPWA/meta <https://github.com/ComPWA/meta>`_ repository.
 """
 

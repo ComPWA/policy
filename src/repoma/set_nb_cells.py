@@ -104,9 +104,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 extras = args.extras_require.strip()
                 cell_content += f"[{extras}]"
             if args.additional_packages:
-                packages = map(
-                    lambda s: s.strip(), args.additional_packages.split(",")
-                )
+                packages = [
+                    s.strip() for s in args.additional_packages.split(",")
+                ]
                 cell_content += " " + " ".join(packages)
             _update_cell(
                 filename,

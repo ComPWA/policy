@@ -21,5 +21,5 @@ class Executor:
             self.error_messages.append(error_message)
 
     def merge_messages(self) -> str:
-        stripped_messages = map(lambda s: s.strip(), self.error_messages)
+        stripped_messages = (s.strip() for s in self.error_messages)
         return "\n--------------------\n".join(stripped_messages)

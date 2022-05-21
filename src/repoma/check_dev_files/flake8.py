@@ -118,8 +118,7 @@ def _check_comments_on_separate_line(
     else:
         lines = input.readlines()
     for line in lines:
-        split_line = line.split("#")
-        split_line = list(map(lambda s: s.strip(), split_line))
+        split_line = [s.strip() for s in line.split("#")]
         if len(split_line) == 1:
             continue
         before_comment = split_line[0]

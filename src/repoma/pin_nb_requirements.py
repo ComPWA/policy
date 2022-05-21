@@ -26,8 +26,7 @@ def check_pinned_requirements(filename: str) -> None:
         src_lines = source.split("\n")
         if len(src_lines) == 0:
             continue
-        src_lines = list(map(lambda s: s.strip("\\"), src_lines))
-        cell_content = "".join(src_lines)
+        cell_content = "".join(s.strip("\\") for s in src_lines)
         if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
         __check_install_statement(filename, cell_content)

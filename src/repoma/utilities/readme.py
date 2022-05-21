@@ -8,16 +8,16 @@ from repoma.errors import PrecommitError
 __README_PATH = "README.md"
 
 
-def add_badge(badge: str) -> None:
+def add_badge(badge: str) -> None:  # noqa: R701
     if not os.path.exists(__README_PATH):
         raise PrecommitError(
             f"This repository contains no {__README_PATH}, so cannot add badge"
         )
     with open(__README_PATH) as stream:
         lines = stream.readlines()
-    stripped_lines = set(map(lambda s: s.strip("\n"), lines))
-    stripped_lines = set(map(lambda s: s.strip("<br>"), stripped_lines))
-    stripped_lines = set(map(lambda s: s.strip("<br />"), stripped_lines))
+    stripped_lines = {s.strip("\n") for s in lines}
+    stripped_lines = {s.strip("<br>") for s in stripped_lines}
+    stripped_lines = {s.strip("<br />") for s in stripped_lines}
     if badge not in stripped_lines:
         error_message = f"{__README_PATH} is missing a badge:\n"
         error_message += f"  {badge}\n"

@@ -12,7 +12,7 @@ from repoma.utilities.vscode import (
     remove_vscode_extension_recommendation,
 )
 
-# cspell:ignore esbenp
+# cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
 
 # pylint: disable=line-too-long

@@ -70,7 +70,7 @@ def format_config(
     content = re.sub(r"([^\s^\n])[^\S\r\n]+#\s*([^\s])", r"\1  # \2", content)
     # remove trailing white-space
     content = re.sub(r"([^\S\r\n]+)\n", r"\n", content)
-    # only two whitelines
+    # only two white-lines
     while "\n\n\n" in content:
         content = content.replace("\n\n\n", "\n\n")
     # end file with one and only one newline

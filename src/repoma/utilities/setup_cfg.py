@@ -22,8 +22,7 @@ def get_supported_python_versions() -> List[str]:
             " See https://pypi.org/classifiers."
         )
     raw = cfg.get("metadata", "classifiers")
-    lines = raw.split("\n")
-    lines = list(map(lambda s: s.strip(), lines))
+    lines = [s.strip() for s in raw.split("\n")]
     identifier = "Programming Language :: Python :: 3."
     classifiers = list(filter(lambda s: s.startswith(identifier), lines))
     if not classifiers:
@@ -32,7 +31,7 @@ def get_supported_python_versions() -> List[str]:
             f' "{identifier}*"'
         )
     prefix = identifier[:-2]
-    return list(map(lambda s: s.replace(prefix, ""), classifiers))
+    return [s.replace(prefix, "") for s in classifiers]
 
 
 def get_repo_url() -> str:
