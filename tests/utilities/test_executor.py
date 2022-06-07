@@ -1,4 +1,3 @@
-# pylint: disable=no-self-use
 from textwrap import dedent
 
 from repoma.errors import PrecommitError
