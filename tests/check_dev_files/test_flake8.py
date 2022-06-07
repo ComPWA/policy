@@ -1,6 +1,7 @@
 # cspell:ignore fstring
 import io
 from configparser import ConfigParser
+from functools import partial
 from textwrap import dedent
 from typing import Optional, Type
 
@@ -222,7 +223,8 @@ def test_check_extend_select(content: str, error: Optional[Type[ValueError]]):
     content = dedent(content)
     cfg = ConfigParser()
     cfg.read_string(content)
-    execute_command = lambda: _check_missing_options(  # noqa: E731
+    execute_command = partial(
+        _check_missing_options,
         cfg=cfg,
         option="extend-select",
         expected_values=["TC"],
