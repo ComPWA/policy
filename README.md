@@ -9,17 +9,15 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort)
 
-This repository is to standardize the developer environment of Python packages
-by the [ComPWA organization](https://github.com/ComPWA). The maintenance is
-performed through [pre-commit](https://pre-commit.com).
+This repository is to standardize the developer environment of Python packages by the
+[ComPWA organization](https://github.com/ComPWA). The maintenance is performed through
+[pre-commit](https://pre-commit.com).
 
-See also the
-[develop](https://compwa-org.readthedocs.io/en/stable/develop.html) page.
+See also the [develop](https://compwa-org.readthedocs.io/en/stable/develop.html) page.
 
 ## Usage
 
-Add a `.pre-commit-config.yaml` file to your repository with the following
-content:
+Add a `.pre-commit-config.yaml` file to your repository with the following content:
 
 ```yaml
 repos:
@@ -33,5 +31,5 @@ repos:
       - id: set-nb-cells
 ```
 
-then run `pre-commit autoupdate`. This example lists all available hooks
-(listed here as `id`s) ― you can remove some of them.
+then run `pre-commit autoupdate`. This example lists all available hooks (listed here as
+`id`s) ― you can remove some of them.
