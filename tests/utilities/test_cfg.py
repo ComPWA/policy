@@ -96,9 +96,7 @@ def test_get_repo_url():
 
 def test_open_config_exception():
     path = "non-existent.cfg"
-    with pytest.raises(
-        PrecommitError, match=rf'^Config file "{path}" does not exist$'
-    ):
+    with pytest.raises(PrecommitError, match=rf'^Config file "{path}" does not exist$'):
         open_config(path)
 
 

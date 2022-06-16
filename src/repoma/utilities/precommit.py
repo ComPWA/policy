@@ -72,9 +72,7 @@ class PrecommitConfig(BaseModel):
     fail_fast: bool = False
 
     @classmethod
-    def load(
-        cls, path: Union[Path, str] = CONFIG_PATH.precommit
-    ) -> "PrecommitConfig":
+    def load(cls, path: Union[Path, str] = CONFIG_PATH.precommit) -> "PrecommitConfig":
         if not os.path.exists(path):
             raise PrecommitError(f"This repository contains no {path}")
         with open(path) as stream:

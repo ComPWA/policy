@@ -27,8 +27,7 @@ def get_supported_python_versions() -> List[str]:
     classifiers = list(filter(lambda s: s.startswith(identifier), lines))
     if not classifiers:
         raise PrecommitError(
-            "setup.cfg does not have any classifiers of the form"
-            f' "{identifier}*"'
+            f'setup.cfg does not have any classifiers of the form "{identifier}*"'
         )
     prefix = identifier[:-2]
     return [s.replace(prefix, "") for s in classifiers]
@@ -52,9 +51,7 @@ def get_repo_url() -> str:
         )
         raise PrecommitError(error_message)
     project_url_lines = project_urls_def.split("\n")
-    project_url_lines = list(
-        filter(lambda line: line.strip(), project_url_lines)
-    )
+    project_url_lines = list(filter(lambda line: line.strip(), project_url_lines))
     project_urls = {}
     for line in project_url_lines:
         url_type, url, *_ = tuple(line.split("="))

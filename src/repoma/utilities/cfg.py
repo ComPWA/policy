@@ -103,9 +103,7 @@ def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
     return cfg
 
 
-def write_config(
-    cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]
-) -> None:
+def write_config(cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
     elif isinstance(output, (Path, str)):
@@ -113,6 +111,5 @@ def write_config(
             cfg.write(stream)
     else:
         raise TypeError(
-            f"Cannot write a {ConfigParser.__name__} to a"
-            f" {type(output).__name__}"
+            f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"
         )

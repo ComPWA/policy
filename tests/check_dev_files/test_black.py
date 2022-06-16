@@ -7,7 +7,8 @@ from repoma.check_dev_files.black import (
     _check_line_length,
     _check_option_ordering,
     _check_target_versions,
-    _load_config,
+    _load_black_config,
+    _load_nbqa_black_config,
 )
 from repoma.errors import PrecommitError
 
@@ -16,22 +17,15 @@ def test_check_line_length():
     toml_content = dedent(
         """
         [tool.black]
-        line-length = 88
+        line-length = 79
         """
     ).strip()
-    config = _load_config(toml_content)
+    config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_line_length(config)
     assert (
         error.value.args[0]
-        == dedent(
-            """
-            Black line-length in pyproject.toml in pyproject.toml should be:
-
-            [tool.black]
-            line-length = 79
-            """
-        ).strip()
+        == "pyproject.toml should not specify a line-length (default to 88)."
     )
 
 
@@ -49,7 +43,7 @@ def test_check_line_length():
 )
 def test_check_activate_preview(toml_content: str):
     toml_content = """[tool.black]"""
-    config = _load_config(toml_content)
+    config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_activate_preview(config)
     assert (
@@ -76,7 +70,7 @@ def test_check_target_versions():
         ]
         """
     ).strip()
-    config = _load_config(toml_content)
+    config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_target_versions(config)
     assert (
@@ -99,8 +93,8 @@ def test_check_target_versions():
 
 
 def test_load_config_from_pyproject():
-    config = _load_config()
-    assert config["line-length"] == 79
+    config = _load_black_config()
+    assert config["preview"] is True
     assert "exclude" in config
 
 
@@ -110,15 +104,29 @@ def test_load_config_from_string():
         [tool.black]
         preview = true
         include = '\.pyi?$'
-        line-length = 79
+        line-length = 88
         """
     ).strip()
-    config = _load_config(toml_content)
+    config = _load_black_config(toml_content)
     assert config == {
         "preview": True,
         "include": R"\.pyi?$",
-        "line-length": 79,
+        "line-length": 88,
     }
+
+
+def test_load_nbqa_black_config():
+    # cspell:ignore addopts
+    toml_content = dedent(
+        R"""
+        [tool.nbqa.addopts]
+        black = [
+            "--line-length=85",
+        ]
+        """
+    ).strip()
+    config = _load_nbqa_black_config(toml_content)
+    assert config == ["--line-length=85"]
 
 
 def test_check_option_ordering():
@@ -126,10 +134,10 @@ def test_check_option_ordering():
         R"""
         [tool.black]
         preview = true
-        line-length = 79
+        line-length = 88
         """
     ).strip()
-    config = _load_config(toml_content)
+    config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_option_ordering(config)
     assert (

@@ -62,9 +62,7 @@ def _update_author_data() -> None:
     new_cfg.set("metadata", "author_email", "compwa-admin@ep1.rub.de")
     if new_cfg != old_cfg:
         write_formatted_setup_cfg(new_cfg)
-        raise PrecommitError(
-            f"Updated author info in ./{CONFIG_PATH.setup_cfg}"
-        )
+        raise PrecommitError(f"Updated author info in ./{CONFIG_PATH.setup_cfg}")
 
 
 def _fix_long_description() -> None:
@@ -72,9 +70,7 @@ def _fix_long_description() -> None:
         old_cfg = open_setup_cfg()
         new_cfg = copy_config(old_cfg)
         new_cfg.set("metadata", "long_description", "file: README.md")
-        new_cfg.set(
-            "metadata", "long_description_content_type", "text/markdown"
-        )
+        new_cfg.set("metadata", "long_description_content_type", "text/markdown")
         if new_cfg != old_cfg:
             write_formatted_setup_cfg(new_cfg)
             raise PrecommitError(

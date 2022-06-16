@@ -51,8 +51,7 @@ def _update_extra_keys_argument(repo_index: int, repo: Repo) -> None:
     index = repo.get_hook_index(__HOOK_ID)
     if index is None:
         raise PrecommitError(
-            f'The following repo is missing hook ID "{__HOOK_ID}":'
-            f" {__REPO_URL}"
+            f'The following repo is missing hook ID "{__HOOK_ID}": {__REPO_URL}'
         )
     expected_args = [
         "--extra-keys",

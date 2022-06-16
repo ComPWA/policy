@@ -23,7 +23,6 @@ exclude = '''
 )/
 '''
 include = '\.pyi?$'
-line-length = 79
 preview = true
 target-version = [
     'py36',
@@ -35,5 +34,7 @@ target-version = [
 
 [tool.isort]
 profile = "black"
-src_paths = ["src", "tests"]
-line_length = 79
+src_paths = [
+    "src",
+    "tests",
+]

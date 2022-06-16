@@ -26,9 +26,7 @@ def add_badge(badge: str) -> None:  # noqa: R701
             if line.startswith("#"):  # find first Markdown section
                 break
         if len(lines) == 0 or insert_position == len(lines) - 1:
-            error_message += (
-                f"{__README_PATH} contains no title, so cannot add badge"
-            )
+            error_message += f"{__README_PATH} contains no title, so cannot add badge"
             raise PrecommitError(error_message)
         lines.insert(insert_position + 1, f"\n{badge}")
         with open(__README_PATH, "w") as stream:

@@ -9,9 +9,7 @@ from ruamel.yaml import YAML
 
 class _IncreasedYamlIndent(yaml.Dumper):
     # pylint: disable=too-many-ancestors
-    def increase_indent(
-        self, flow: bool = False, indentless: bool = False
-    ) -> None:
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
         return super().increase_indent(flow, False)
 
     def write_line_break(self, data: Optional[str] = None) -> None:

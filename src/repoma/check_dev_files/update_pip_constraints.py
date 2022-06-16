@@ -63,8 +63,7 @@ def _update_github_workflows(cron_frequency: str) -> None:
         executor(overwrite_workflow, "requirements-cron-bimonthly.yml")
     else:
         raise NotImplementedError(
-            "Cannot create an upgrade cron jon for frequency"
-            f' "{cron_frequency}"'
+            f'Cannot create an upgrade cron jon for frequency "{cron_frequency}"'
         )
     executor(overwrite_workflow, "requirements-pr.yml")
     if executor.error_messages:

@@ -73,10 +73,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--additional-packages",
         default="",
-        help=(
-            "Comma-separated list of packages that should be installed"
-            " with pip"
-        ),
+        help="Comma-separated list of packages that should be installed with pip",
         type=str,
     )
     parser.add_argument(
@@ -104,9 +101,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 extras = args.extras_require.strip()
                 cell_content += f"[{extras}]"
             if args.additional_packages:
-                packages = [
-                    s.strip() for s in args.additional_packages.split(",")
-                ]
+                packages = [s.strip() for s in args.additional_packages.split(",")]
                 cell_content += " " + " ".join(packages)
             _update_cell(
                 filename,
@@ -120,8 +115,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if "ipython" in args.additional_packages.lower():
                 config_cell_content = config_cell_content.replace(
                     "import os",
-                    "import os\n\nfrom IPython.display import display  # noqa:"
-                    " F401",
+                    "import os\n\nfrom IPython.display import display  # noqa: F401",
                 )
             _update_cell(
                 filename,
@@ -157,9 +151,7 @@ def _update_cell(
 
 
 def _insert_autolink_concat(filename: str) -> None:
-    if _skip_notebook(
-        filename, ignore_statement="<!-- no autolink-concat -->"
-    ):
+    if _skip_notebook(filename, ignore_statement="<!-- no autolink-concat -->"):
         return
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     expected_cell_content = """

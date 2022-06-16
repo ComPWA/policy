@@ -44,8 +44,7 @@ def _remove_configuration() -> None:
     if CONFIG_PATH.prettier.exists():
         os.remove(CONFIG_PATH.prettier)
         raise PrecommitError(
-            f'"{CONFIG_PATH.prettier}" is no longer required'
-            " and has been removed"
+            f'"{CONFIG_PATH.prettier}" is no longer required and has been removed'
         )
     remove_badge(__BADGE_PATTERN)
     remove_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
@@ -56,8 +55,7 @@ def _fix_config_content(no_prettierrc: bool) -> None:
         if CONFIG_PATH.prettier.exists():
             os.remove(CONFIG_PATH.prettier)
             raise PrecommitError(
-                f"Removed {CONFIG_PATH.prettier} as requested by"
-                " --no-prettierrc"
+                f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
             )
     else:
         if not CONFIG_PATH.prettier.exists():

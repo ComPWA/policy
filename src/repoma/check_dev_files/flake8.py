@@ -8,11 +8,7 @@ from typing import Iterable, Optional
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
-from repoma.utilities.cfg import (
-    extract_config_section,
-    format_config,
-    open_config,
-)
+from repoma.utilities.cfg import extract_config_section, format_config, open_config
 from repoma.utilities.executor import Executor
 from repoma.utilities.setup_cfg import open_setup_cfg
 
@@ -140,9 +136,7 @@ def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
             values = content.split("\n")
             if "" in values:
                 values.remove("")
-            if values != sorted(
-                values, key=lambda s: natural_sorting(s.lower())
-            ):
+            if values != sorted(values, key=lambda s: natural_sorting(s.lower())):
                 raise PrecommitError(
                     f'Option "{option}" in section [{section}] is not sorted'
                 )
@@ -154,8 +148,7 @@ def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
     extras_require = "options.extras_require"
     if not cfg.has_section(extras_require):
         raise PrecommitError(
-            f"Please list flake8 under a section [{extras_require}] in"
-            " setup.cfg"
+            f"Please list flake8 under a section [{extras_require}] in setup.cfg"
         )
     requirements = indent("\n".join(__FLAKE8_REQUIREMENTS), 12 * " ")
     error_message = f"""\

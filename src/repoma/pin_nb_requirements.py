@@ -52,9 +52,7 @@ def __check_install_statement(filename: str, install_statement: str) -> None:
         )
 
 
-def __check_requirements(  # noqa: R701
-    filename: str, install_statement: str
-) -> None:
+def __check_requirements(filename: str, install_statement: str) -> None:  # noqa: R701
     package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
     requirements = package_listing.split(" ")
     if len(requirements) == 0:
@@ -72,9 +70,7 @@ def __check_requirements(  # noqa: R701
                 f'Install cell in notebook "{filename}" contains a'
                 f" requirement without == ({requirement})"
             )
-    requirements_lower = [
-        r.lower() for r in requirements if not r.startswith("git+")
-    ]
+    requirements_lower = [r.lower() for r in requirements if not r.startswith("git+")]
     if sorted(requirements_lower) != requirements_lower:
         sorted_requirements = " ".join(sorted(requirements))
         raise PrecommitError(
@@ -87,9 +83,7 @@ def __check_requirements(  # noqa: R701
 def __check_metadata(filename: str, metadata: dict) -> None:
     source_hidden = metadata.get("jupyter", {}).get("source_hidden")
     if not source_hidden:
-        raise PrecommitError(
-            f'Install cell in notebook "{filename}" is not hidden'
-        )
+        raise PrecommitError(f'Install cell in notebook "{filename}" is not hidden')
     tags = set(metadata.get("tags", []))
     expected_tags = {"remove-cell"}
     if expected_tags != tags:

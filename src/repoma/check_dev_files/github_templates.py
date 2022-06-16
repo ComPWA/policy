@@ -23,16 +23,12 @@ def main() -> None:
 
 def _check_issue_templates() -> None:
     existing_templates = _list_template_files(__ISSUE_TEMPLATE_PATH)
-    expected_templates = _list_template_files(
-        REPOMA_DIR / __ISSUE_TEMPLATE_PATH
-    )
+    expected_templates = _list_template_files(REPOMA_DIR / __ISSUE_TEMPLATE_PATH)
     error_message = ""
     if set(existing_templates) != set(expected_templates):
         shutil.rmtree(__ISSUE_TEMPLATE_PATH, ignore_errors=True)
         os.makedirs(__ISSUE_TEMPLATE_PATH, exist_ok=True)
-        error_message = (
-            f"{__ISSUE_TEMPLATE_PATH} doesn't contain expected templates:\n"
-        )
+        error_message = f"{__ISSUE_TEMPLATE_PATH} doesn't contain expected templates:\n"
     for basename in expected_templates:
         import_path = REPOMA_DIR / __ISSUE_TEMPLATE_PATH / basename
         export_path = __ISSUE_TEMPLATE_PATH / basename
@@ -53,13 +49,10 @@ def _check_issue_templates() -> None:
 def _check_pr_template() -> None:
     if not os.path.exists(__PR_TEMPLATE_PATH):
         os.makedirs(os.path.dirname(__PR_TEMPLATE_PATH), exist_ok=True)
-        expected_content = __get_template_content(
-            REPOMA_DIR / __PR_TEMPLATE_PATH
-        )
+        expected_content = __get_template_content(REPOMA_DIR / __PR_TEMPLATE_PATH)
         __write_template(expected_content, __PR_TEMPLATE_PATH)
         raise PrecommitError(
-            f"This repository has no {__PR_TEMPLATE_PATH} file."
-            " Problem has been fixed."
+            f"This repository has no {__PR_TEMPLATE_PATH} file. Problem has been fixed."
         )
     with open(__PR_TEMPLATE_PATH) as stream:
         template_content = stream.read()
@@ -79,9 +72,7 @@ def __get_template_content(path: Path) -> str:
 
 def _list_template_files(directory: Path) -> List[str]:
     template_files = []
-    for _, __, files in os.walk(  # pyright: reportUnusedVariable=false
-        directory
-    ):
+    for _, __, files in os.walk(directory):  # pyright: reportUnusedVariable=false
         template_files.extend(files)
     return template_files
 

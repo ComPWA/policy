@@ -4,10 +4,7 @@
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import (
-    PrecommitConfig,
-    load_round_trip_precommit_config,
-)
+from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
 from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
@@ -28,9 +25,7 @@ def _update_main_pyupgrade_hook() -> None:
     precommit_config = PrecommitConfig.load()
     repo = precommit_config.find_repo(repo_url)
     if repo is None:
-        raise PrecommitError(
-            f"{CONFIG_PATH.precommit} is missing a hook: {repo_url}"
-        )
+        raise PrecommitError(f"{CONFIG_PATH.precommit} is missing a hook: {repo_url}")
     index = repo.get_hook_index(hook_id)
     if index is None:
         config, yaml = load_round_trip_precommit_config()

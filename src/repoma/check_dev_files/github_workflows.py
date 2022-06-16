@@ -41,9 +41,7 @@ def check_docs_workflow() -> None:
 
 
 def _copy_workflow_file(filename: str) -> None:
-    expected_workflow_path = (
-        REPOMA_DIR / CONFIG_PATH.github_workflow_dir / filename
-    )
+    expected_workflow_path = REPOMA_DIR / CONFIG_PATH.github_workflow_dir / filename
     with open(expected_workflow_path) as stream:
         expected_content = stream.read()
     if not CONFIG_PATH.pip_constraints.exists():

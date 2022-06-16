@@ -1,4 +1,5 @@
 """Check :file:`pyproject.toml` black config."""
+from __future__ import annotations
 
 from collections import OrderedDict
 from textwrap import dedent
@@ -9,17 +10,14 @@ import toml
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import (
-    PrecommitConfig,
-    load_round_trip_precommit_config,
-)
+from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
 from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
 def main() -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
-    config = _load_config()
+    config = _load_black_config()
     executor = Executor()
     executor(_check_line_length, config)
     executor(_check_activate_preview, config)
@@ -30,13 +28,9 @@ def main() -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _load_config(content: Optional[str] = None) -> dict:
-    if content is None:
-        with open(CONFIG_PATH.pyproject) as stream:
-            config = toml.load(stream, _dict=OrderedDict)
-    else:
-        config = toml.loads(content, _dict=OrderedDict)
-    return config.get("tool", {}).get("black")
+def _load_black_config(content: Optional[str] = None) -> dict:
+    config = _load_pyproject_toml(content)
+    return config.get("tool", {}).get("black", {})
 
 
 def _check_activate_preview(config: dict) -> None:
@@ -55,17 +49,9 @@ def _check_activate_preview(config: dict) -> None:
 
 
 def _check_line_length(config: dict) -> None:
-    expected_line_length = 79
-    if config.get("line-length") != expected_line_length:
+    if config.get("line-length") is not None:
         raise PrecommitError(
-            dedent(
-                f"""
-            Black line-length in pyproject.toml in pyproject.toml should be:
-
-            [tool.black]
-            line-length = {expected_line_length}
-            """
-            ).strip()
+            "pyproject.toml should not specify a line-length (default to 88)."
         )
 
 
@@ -134,3 +120,31 @@ def _update_nbqa_hook() -> None:
         config["repos"][repo_index]["hooks"][hook_index] = expected_config
         yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
+    nbqa_config = _load_nbqa_black_config()
+    if nbqa_config != ["--line-length=85"]:
+        error_message = dedent(
+            """
+            Configuration of nbqa-black in pyproject.toml should be as follows:
+
+            [tool.nbqa.addopts]
+            black = [
+                "--line-length=85",
+            ]
+
+            This is to ensure that code blocks render nicely in the sphinx-book-theme.
+            """
+        ).strip()
+        raise PrecommitError(error_message)
+
+
+def _load_nbqa_black_config(content: Optional[str] = None) -> list[str]:
+    # cspell:ignore addopts
+    config = _load_pyproject_toml(content)
+    return config.get("tool", {}).get("nbqa", {}).get("addopts", {}).get("black", {})
+
+
+def _load_pyproject_toml(content: Optional[str] = None) -> dict:
+    if content is None:
+        with open(CONFIG_PATH.pyproject) as stream:
+            return toml.load(stream, _dict=OrderedDict)
+    return toml.loads(content, _dict=OrderedDict)

@@ -17,10 +17,7 @@ import yaml
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import (
-    PrecommitConfig,
-    load_round_trip_precommit_config,
-)
+from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
 from repoma.utilities.readme import add_badge, remove_badge
 from repoma.utilities.vscode import (
     add_vscode_extension_recommendation,
@@ -86,8 +83,7 @@ def _remove_configuration() -> None:
     if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)
         raise PrecommitError(
-            f'"{CONFIG_PATH.cspell}" is no longer required'
-            " and has been removed"
+            f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
         )
     if CONFIG_PATH.editor_config.exists():
         with open(CONFIG_PATH.editor_config) as stream:
@@ -112,9 +108,7 @@ def _check_check_hook_options() -> None:
     config = PrecommitConfig.load()
     repo = config.find_repo(__REPO_URL)
     if repo is None:
-        raise PrecommitError(
-            f"{CONFIG_PATH.precommit} is missing a repo: {__REPO_URL}"
-        )
+        raise PrecommitError(f"{CONFIG_PATH.precommit} is missing a repo: {__REPO_URL}")
     expected_yaml = f"""
   - repo: {__REPO_URL}
     rev: ...
@@ -125,12 +119,10 @@ def _check_check_hook_options() -> None:
     expected_dict = yaml.safe_load(expected_yaml)[0]
     if (
         list(repo_dict) != list(expected_dict)
-        or [h.dict(skip_defaults=True) for h in repo.hooks]
-        != expected_dict["hooks"]
+        or [h.dict(skip_defaults=True) for h in repo.hooks] != expected_dict["hooks"]
     ):
         raise PrecommitError(
-            "cSpell pre-commit hook should have the following form:\n"
-            + expected_yaml
+            "cSpell pre-commit hook should have the following form:\n" + expected_yaml
         )
 
 
@@ -174,9 +166,7 @@ def _sort_config_entries() -> None:
     if fixed_sections:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
-        error_message += (
-            f" in {CONFIG_PATH.cspell} has been sorted alphabetically."
-        )
+        error_message += f" in {CONFIG_PATH.cspell} has been sorted alphabetically."
         raise PrecommitError(error_message)
 
 
@@ -192,8 +182,7 @@ def _check_editor_config() -> None:
         )
     if not cfg.has_section(str(CONFIG_PATH.cspell)):
         raise PrecommitError(
-            f"{CONFIG_PATH.editor_config} has no section"
-            f' "[{CONFIG_PATH.cspell}]"'
+            f'{CONFIG_PATH.editor_config} has no section "[{CONFIG_PATH.cspell}]"'
         )
     expected_options = {
         "indent_size": "4",
@@ -201,8 +190,7 @@ def _check_editor_config() -> None:
     options = dict(cfg.items(str(CONFIG_PATH.cspell)))
     if options != expected_options:
         error_message = (
-            f"{CONFIG_PATH.editor_config} should have the following"
-            " section:\n\n"
+            f"{CONFIG_PATH.editor_config} should have the following section:\n\n"
         )
         section_content = f"[{CONFIG_PATH.cspell}]\n"
         for option, value in expected_options.items():
@@ -228,14 +216,10 @@ def _update_prettier_ignore() -> None:
             return
         with open(prettier_ignore_path, "w+") as stream:
             stream.write(expected_line)
-    raise PrecommitError(
-        f'Added "{CONFIG_PATH.cspell}" to {prettier_ignore_path}"'
-    )
+    raise PrecommitError(f'Added "{CONFIG_PATH.cspell}" to {prettier_ignore_path}"')
 
 
-def __get_expected_content(
-    config: dict, section: str, *, extend: bool = False
-) -> Any:
+def __get_expected_content(config: dict, section: str, *, extend: bool = False) -> Any:
     if section not in config:
         return __EXPECTED_CONFIG[section]
     section_content = config[section]
