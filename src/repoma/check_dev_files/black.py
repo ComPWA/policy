@@ -1,9 +1,7 @@
 """Check :file:`pyproject.toml` black config."""
-from __future__ import annotations
-
 from collections import OrderedDict
 from textwrap import dedent
-from typing import Optional
+from typing import List, Optional
 
 import toml
 
@@ -137,7 +135,7 @@ def _update_nbqa_hook() -> None:
         raise PrecommitError(error_message)
 
 
-def _load_nbqa_black_config(content: Optional[str] = None) -> list[str]:
+def _load_nbqa_black_config(content: Optional[str] = None) -> List[str]:
     # cspell:ignore addopts
     config = _load_pyproject_toml(content)
     return config.get("tool", {}).get("nbqa", {}).get("addopts", {}).get("black", {})
