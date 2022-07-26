@@ -57,6 +57,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
+        "--no-cd",
+        default=False,
+        action="store_true",
+        help="Do not update `cd.yml` workflow",
+    )
+    parser.add_argument(
         "--pin-requirements",
         choices=["no", "biweekly", "bimonthly"],
         default="no",
@@ -82,7 +88,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if is_python_repo:
         executor(black.main)
         executor(flake8.main)
-        executor(github_workflows.create_continuous_deployment)
+        if not args.no_cd:
+            executor(github_workflows.create_continuous_deployment)
         if args.pin_requirements != "no":
             executor(
                 update_pip_constraints.main,
