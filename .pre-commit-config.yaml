@@ -52,7 +52,7 @@ repos:
       - id: format-setup-cfg
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v6.0.0
+    rev: v6.5.0
     hooks:
       - id: cspell
 
@@ -71,7 +71,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.31.1
+    rev: v0.32.1
     hooks:
       - id: markdownlint
 
@@ -86,12 +86,12 @@ repos:
       - id: pydocstyle
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.257
+    rev: v1.1.264
     hooks:
       - id: pyright
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.34.0
+    rev: v2.37.3
     hooks:
       - id: pyupgrade
         args:
