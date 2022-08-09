@@ -3,4 +3,4 @@ from repoma.utilities import CONFIG_PATH, update_file
 
 
 def main() -> None:
-    update_file(CONFIG_PATH.release_drafter_config, in_template_folder=True)
+    update_file(CONFIG_PATH.commitlint, in_template_folder=True)
