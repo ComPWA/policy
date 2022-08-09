@@ -4,6 +4,7 @@ import io
 import os
 import re
 from pathlib import Path
+from shutil import copyfile
 from typing import List, NamedTuple, Union
 
 import repoma
@@ -26,6 +27,8 @@ class _ConfigFilePaths(NamedTuple):
     pytest: Path = Path("pytest.ini")
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
+    release_drafter_config: Path = Path(".github/release-drafter.yml")
+    release_drafter_workflow: Path = Path(".github/workflows/release-drafter.yml")
     readme: Path = Path("README.md")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 
@@ -70,6 +73,26 @@ def natural_sorting(text: str) -> List[Union[float, str]]:
         __attempt_number_cast(c)
         for c in re.split(r"[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)", text)
     ]
+
+
+def update_file(relative_path: Path, in_template_folder: bool = False) -> None:
+    if in_template_folder:
+        template_dir = REPOMA_DIR / ".template"
+    else:
+        template_dir = REPOMA_DIR
+    template_path = template_dir / relative_path
+    if not os.path.exists(relative_path):
+        copyfile(template_path, relative_path)
+        raise PrecommitError(
+            f"{relative_path} is missing, so created a new one. Please commit it."
+        )
+    with open(template_path) as f:
+        expected_content = f.read()
+    with open(relative_path) as f:
+        existing_content = f.read()
+    if expected_content != existing_content:
+        copyfile(template_path, relative_path)
+        raise PrecommitError(f"{relative_path} has been updated.")
 
 
 def __attempt_number_cast(text: str) -> Union[float, str]:
