@@ -46,9 +46,11 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.134
+    rev: 0.0.136
     hooks:
       - id: check-dev-files
+        args:
+          - --allow-labels
       - id: format-setup-cfg
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
@@ -86,7 +88,7 @@ repos:
       - id: pydocstyle
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.264
+    rev: v1.1.266
     hooks:
       - id: pyright
 

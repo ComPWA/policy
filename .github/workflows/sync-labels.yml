@@ -1,0 +1,39 @@
+# cspell:disable
+name: Labels
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  style:
+    name: Sync labels
+    runs-on: ubuntu-20.04
+    env:
+      LABELS_USERNAME: "${{ secrets.LABELS_USERNAME }}"
+      LABELS_TOKEN: "${{ secrets.LABELS_TOKEN }}"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install labels
+      - name: Sync general issue labels
+        run: |
+          labels sync -o ComPWA -r ampform
+          labels sync -o ComPWA -r compwa-org
+          labels sync -o ComPWA -r RUB-EP1-AG
+          labels sync -o ComPWA -r qrules
+          labels sync -o ComPWA -r repo-maintenance
+          labels sync -o ComPWA -r sphinxcontrib-hep-pdgref
+          labels sync -o ComPWA -r tensorwaves
+      - name: Sync issue labels for physics repositories
+        run: |
+          labels sync --filename labels-physics.toml -o ComPWA -r PWA-pages
