@@ -6,13 +6,13 @@ references:
   - epic/*
 
 categories:
-  - title: 💡 New features
-    label: 💡 Feature
-  - title: ⚠️ Interface
+  - title: ✨ New features
+    label: ✨ Feature
+  - title: ⚠️ API changes
     label: ⚠️ Interface
   - title: 🐛 Bug fixes
     label: Bug
-  - title: 🔨 Internal maintenance
+  - title: 🔨 Maintenance and upkeep
     label: 🔨 Maintenance
   - title: 📝 Documentation
     label: 📝 Docs
