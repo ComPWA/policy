@@ -1,7 +1,7 @@
 """Check whether the repository (still) contains a ``labels.toml`` file.
 
-If it's still there remove it, because it has been superseded by the
-`github.com/ComPWA/meta <https://github.com/ComPWA/meta>`_ repository.
+If it's still there remove it, because it is now managed through
+https://github.com/ComPWA/repo-maintenance.
 """
 
 import os
@@ -20,8 +20,8 @@ def main() -> None:
         raise PrecommitError(
             f'Repository contains a file "{__LABELS_CONFIG_FILE}" for the'
             " labels package (see https://pypi.org/project/labels). This file"
-            " should not be there, because labels are maintained through the"
-            " https://github.com/ComPWA/meta repository. It has been removed."
+            " should not be there, because labels are maintained through"
+            " https://github.com/ComPWA/repo-maintenance. It has been removed."
         )
     faulty_req_files = [
         str(file.absolute())
