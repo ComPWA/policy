@@ -8,14 +8,18 @@ references:
 categories:
   - title: ✨ New features
     label: ✨ Feature
+  - title: ⚠️ Enhancements and optimizations
+    label: ⚙️ Enhancement
   - title: ⚠️ API changes
     label: ⚠️ Interface
+  - title: ⚠️ Changes that may affect behavior
+    label: ❗ Behavior
   - title: 🐛 Bug fixes
-    label: Bug
-  - title: 🔨 Maintenance and upkeep
-    label: 🔨 Maintenance
+    label: 🐛 Bug
   - title: 📝 Documentation
     label: 📝 Docs
+  - title: 🔨 Maintenance
+    label: 🔨 Maintenance
   - title: 🖱️ Developer Experience
     label: 🖱️ DX
 
