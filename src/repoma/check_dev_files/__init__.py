@@ -19,6 +19,7 @@ from . import (
     nbstripout,
     prettier,
     pyupgrade,
+    release_drafter,
     setup_cfg,
     tox,
     update_pip_constraints,
@@ -98,6 +99,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 cron_frequency=args.pin_requirements,
             )
         executor(pyupgrade.main)
+        executor(release_drafter.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     if executor.error_messages:
