@@ -100,13 +100,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(flake8.main)
         if not args.no_cd:
             executor(github_workflows.create_continuous_deployment)
+            executor(release_drafter.main)
         if args.pin_requirements != "no":
             executor(
                 update_pip_constraints.main,
                 cron_frequency=args.pin_requirements,
             )
         executor(pyupgrade.main)
-        executor(release_drafter.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     if executor.error_messages:
