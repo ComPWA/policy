@@ -8,9 +8,10 @@ from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
 from repoma.utilities.executor import Executor
 
 
-def main(no_docs: bool) -> None:
+def main(no_docs: bool, no_cd: bool) -> None:
     executor = Executor()
-    executor(check_milestone_workflow)
+    if not no_cd:
+        executor(check_milestone_workflow)
     if not no_docs:
         executor(check_docs_workflow)
     if executor.error_messages:

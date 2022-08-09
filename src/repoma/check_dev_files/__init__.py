@@ -90,7 +90,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.no_docs)
+    executor(github_workflows.main, args.no_docs, args.no_cd)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
