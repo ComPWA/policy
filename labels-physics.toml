@@ -1,21 +1,21 @@
 # cspell:disable
-[Bug]
-color = "d93f0b"
-name = "Bug"
-description = "Something isn't working"
-
 [Epic]
 color = "3E4B9E"
 name = "Epic"
-description = "Collection of issues, managed by ZenHub"
+description = "Collection of issues"
+
+["⚙️ Enhancement"]
+color = "C2E0C6"
+name = "⚙️ Enhancement"
+description = "Improvements and optimizations of existing features"
 
 ["⚠️ Interface"]
-color = "BFDADC"
+color = "F9D0C4"
 name = "⚠️ Interface"
-description = "Changes to the interface"
+description = "Breaking changes to the API"
 
 ["⚪ Duplicate"]
-color = "cfd3d7"
+color = "CFD3D7"
 name = "⚪ Duplicate"
 description = "This issue or pull request already exists"
 
@@ -24,8 +24,18 @@ color = "88506B"
 name = "❔ Question"
 description = "Discuss this matter in the team"
 
+["❗ Behavior"]
+color = "F9D0C4"
+name = "❗ Behavior"
+description = "Changes that may affect the framework output"
+
+["🐛 Bug"]
+color = "D93F0B"
+name = "🐛 Bug"
+description = "Something isn't working"
+
 ["💡 Feature"]
-color = "c2e0c6"
+color = "C2E0C6"
 name = "💡 Feature"
 description = "New feature added to the package"
 
@@ -50,16 +60,16 @@ name = "📖 Theory"
 description = "About PWA theory"
 
 ["📝 Docs"]
-color = "bfd4f2"
+color = "BFD4F2"
 name = "📝 Docs"
 description = "Improvements or additions to documentation"
 
 ["🔨 Maintenance"]
 color = "FFCD8F"
 name = "🔨 Maintenance"
-description = "Refactoring that doesn't affect the interface"
+description = "Maintenance and upkeep improvements"
 
 ["🖱️ DX"]
-color = "fef2c0"
+color = "FEF2C0"
 name = "🖱️ DX"
 description = "Improvements to the Developer Experience"
