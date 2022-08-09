@@ -78,6 +78,7 @@
         "indentless",
         "isort",
         "linkcheck",
+        "MAINT",
         "nargs",
         "nbcell",
         "nbformat",
