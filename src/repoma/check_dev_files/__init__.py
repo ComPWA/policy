@@ -8,6 +8,7 @@ from repoma.utilities.executor import Executor
 
 from . import (
     black,
+    commitlint,
     cspell,
     editor_config,
     flake8,
@@ -76,6 +77,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     is_python_repo = not args.no_python
 
     executor = Executor()
+    executor(commitlint.main)
     executor(cspell.main)
     executor(editor_config.main)
     if not args.allow_labels:

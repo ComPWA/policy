@@ -12,6 +12,7 @@ from repoma.errors import PrecommitError
 
 class _ConfigFilePaths(NamedTuple):
     cspell: Path = Path(".cspell.json")
+    commitlint: Path = Path("commitlint.config.js")
     editor_config: Path = Path(".editorconfig")
     flake8: Path = Path(".flake8")
     github_workflow_dir: Path = Path(".github/workflows")

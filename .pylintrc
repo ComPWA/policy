@@ -2,6 +2,10 @@
 #   pylint --generate-rcfile > .pylintrc_new
 # and compare the output
 
+[BASIC]
+good-names-rgxs=
+    ^[a-z]\d*$,  # e.g. x, y, m1, m2 (physics symbols)
+
 [MASTER]
 ignore-patterns=
     .*\.pyi
