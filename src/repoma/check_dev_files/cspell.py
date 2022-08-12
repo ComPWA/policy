@@ -283,4 +283,4 @@ def __sort_section(content: Iterable[str]) -> List[str]:
     >>> __sort_section({"one", "Two"})
     ['one', 'Two']
     """
-    return sorted(content, key=lambda s: s.lower())
+    return sorted(content, key=lambda s: s.lower() if isinstance(s, str) else s)
