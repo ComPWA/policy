@@ -19,6 +19,8 @@ __PIP_INSTALL_STATEMENT = "%pip install -q "
 
 def check_pinned_requirements(filename: str) -> None:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    if not __has_python_kernel(notebook):
+        return
     for cell in notebook["cells"]:
         if cell["cell_type"] != "code":
             continue
@@ -37,6 +39,14 @@ def check_pinned_requirements(filename: str) -> None:
         f'Notebook "{filename}" does not contain a pip install cell of the'
         f" form {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
     )
+
+
+def __has_python_kernel(notebook: dict) -> bool:
+    # cspell:ignore kernelspec
+    metadata = notebook.get("metadata", {})
+    kernel_specification = metadata.get("kernelspec", {})
+    kernel_language = kernel_specification.get("language", "")
+    return "python" in kernel_language
 
 
 def __check_install_statement(filename: str, install_statement: str) -> None:
