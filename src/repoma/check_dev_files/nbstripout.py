@@ -26,6 +26,7 @@ __EXTRA_KEYS_ARGUMENT = [
     "metadata.toc-showmarkdowntxt",
     "metadata.toc-showtags",
     "metadata.varInspector",
+    "metadata.vscode",
 ]
 
 
