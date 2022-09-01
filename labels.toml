@@ -43,6 +43,11 @@ color = "F4EAEF"
 name = "💫 Good first issue"
 description = "Good for newcomers"
 
+["📋 Task"]
+color = "1D76DB"
+name = "📋 Task"
+description = "Task for the to-do list"
+
 ["📝 Docs"]
 color = "BFD4F2"
 name = "📝 Docs"
