@@ -75,10 +75,10 @@ def __check_requirements(filename: str, install_statement: str) -> None:  # noqa
             continue
         if "git+" in requirement:
             continue
-        if "==" not in requirement:
+        if not any(equal_sign in requirement for equal_sign in ["==", "~="]):
             raise PrecommitError(
                 f'Install cell in notebook "{filename}" contains a'
-                f" requirement without == ({requirement})"
+                f" requirement without == or ~= ({requirement})"
             )
     requirements_lower = [r.lower() for r in requirements if not r.startswith("git+")]
     if sorted(requirements_lower) != requirements_lower:
