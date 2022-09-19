@@ -59,6 +59,8 @@ def _update_github_workflows(cron_frequency: str) -> None:
     executor = Executor()
     if cron_frequency == "biweekly":
         executor(overwrite_workflow, "requirements-cron-biweekly.yml")
+    elif cron_frequency == "monthly":
+        executor(overwrite_workflow, "requirements-cron-monthly.yml")
     elif cron_frequency == "bimonthly":
         executor(overwrite_workflow, "requirements-cron-bimonthly.yml")
     else:

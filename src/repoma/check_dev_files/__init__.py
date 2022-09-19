@@ -72,7 +72,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument(
         "--pin-requirements",
-        choices=["no", "biweekly", "bimonthly"],
+        choices=["no", "biweekly", "monthly", "bimonthly"],
         default="no",
         help=(
             "Add a script to pin developer requirements to a constraint file."
