@@ -23,6 +23,7 @@ jobs:
       - name: Sync general issue labels
         run: |
           labels sync -o ComPWA -r ampform
+          labels sync -o ComPWA -r benchmarks
           labels sync -o ComPWA -r compwa-org
           labels sync -o ComPWA -r RUB-EP1-AG
           labels sync -o ComPWA -r qrules
