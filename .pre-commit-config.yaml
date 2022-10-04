@@ -46,7 +46,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.144
+    rev: 0.0.145
     hooks:
       - id: check-dev-files
         args:
@@ -54,12 +54,12 @@ repos:
       - id: format-setup-cfg
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v6.8.1
+    rev: v6.12.0
     hooks:
       - id: cspell
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 2.4.0
+    rev: 2.6.1
     hooks:
       - id: editorconfig-checker
         exclude: >
@@ -88,12 +88,12 @@ repos:
       - id: pydocstyle
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.269
+    rev: v1.1.273
     hooks:
       - id: pyright
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.3
+    rev: v2.38.2
     hooks:
       - id: pyupgrade
         args:
