@@ -27,8 +27,6 @@ class _ConfigFilePaths(NamedTuple):
     pytest: Path = Path("pytest.ini")
     setup_cfg: Path = Path("setup.cfg")
     tox: Path = Path("tox.ini")
-    release_drafter_config: Path = Path(".github/release-drafter.yml")
-    release_drafter_workflow: Path = Path(".github/workflows/release-drafter.yml")
     readme: Path = Path("README.md")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 
