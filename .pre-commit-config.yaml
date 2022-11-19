@@ -46,7 +46,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/ComPWA/repo-maintenance
-    rev: 0.0.151
+    rev: 0.0.153
     hooks:
       - id: check-dev-files
         args:
