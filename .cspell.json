@@ -111,6 +111,7 @@
         "setuptools",
         "showcode",
         "showtags",
+        "unittests",
         "venv"
     ]
 }

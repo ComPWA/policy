@@ -12,13 +12,9 @@ jobs:
       LABELS_USERNAME: "${{ secrets.LABELS_USERNAME }}"
       LABELS_TOKEN: "${{ secrets.LABELS_TOKEN }}"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          cache: pip
-          cache-dependency-path: |
-            .constraints/py3.*.txt
-            setup.cfg
           python-version: "3.7"
       - name: Install dependencies
         run: |
