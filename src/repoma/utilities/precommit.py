@@ -39,13 +39,17 @@ class Hook(BaseModel):
     """https://pre-commit.com/#pre-commit-configyaml---hooks."""
 
     id: str  # noqa: A003
-    args: List[str] = []
     name: Optional[str] = None
+    entry: Optional[str] = None  # noqa: A003
+    alias: Optional[str] = None
     additional_dependencies: List[str] = []
+    args: List[str] = []
     files: Optional[str] = None
     exclude: Optional[str] = None
     types: Optional[List[str]] = None
-    alias: Optional[str] = None
+    language: Optional[str] = None
+    always_run: Optional[bool] = None
+    pass_filenames: Optional[bool] = None
 
 
 class Repo(BaseModel):
