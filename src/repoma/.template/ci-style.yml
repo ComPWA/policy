@@ -35,14 +35,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[sty]
       - name: Run non-local pre-commit hooks
-        run: |-
-          pre-commit run check-dev-files -a --color always
-          pre-commit run flake8 -a --color always
-          pre-commit run format-setup-cfg -a --color always
-          pre-commit run mypy -a --color always
-          pre-commit run pylint -a --color always
-          pre-commit run repoma-self-check -a --color always
+        run: |
+          {{ WILL BE FILLED OUT BY PRE-COMMIT }}
       - name: Run pre-commit hooks that don't work on pre-commit.ci
-        run: |-
-          pre-commit run editorconfig-checker -a --color always
-          pre-commit run pyright -a --color always
+        run: |
+          {{ WILL BE FILLED OUT BY PRE-COMMIT }}

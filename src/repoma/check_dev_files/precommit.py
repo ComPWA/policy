@@ -1,7 +1,7 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
 from io import StringIO
 from textwrap import dedent, indent
-from typing import Iterable, Set
+from typing import Iterable, List, Set
 
 import yaml
 
@@ -24,7 +24,7 @@ def main() -> None:
 def _check_local_hooks(config: PrecommitConfig) -> None:
     if config.ci is None:
         return
-    local_hook_ids = [h.id for r in config.repos for h in r.hooks if r.repo == "local"]
+    local_hook_ids = get_local_hooks(config)
     if len(local_hook_ids) == 0:
         return
     skipped_hooks = __get_precommit_ci_skips(config)
@@ -43,8 +43,7 @@ def _check_local_hooks(config: PrecommitConfig) -> None:
 def _check_non_functional_hooks(config: PrecommitConfig) -> None:
     if config.ci is None:
         return
-    existing_hook_ids = {h.id for r in config.repos for h in r.hooks if r.repo}
-    non_functional_hooks = existing_hook_ids & __NON_FUNCTIONAL_HOOKS
+    non_functional_hooks = get_non_functional_hooks(config)
     skipped_hooks = __get_precommit_ci_skips(config)
     missing_hooks = set(non_functional_hooks) - skipped_hooks
     if missing_hooks:
@@ -71,3 +70,17 @@ def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:
     if config.ci.skip is None:
         return set()
     return set(config.ci.skip)
+
+
+def get_local_hooks(config: PrecommitConfig) -> List[str]:
+    return [h.id for r in config.repos for h in r.hooks if r.repo == "local"]
+
+
+def get_non_functional_hooks(config: PrecommitConfig) -> List[str]:
+    return [
+        hook.id
+        for repo in config.repos
+        for hook in repo.hooks
+        if repo.repo
+        if hook.id in __NON_FUNCTIONAL_HOOKS
+    ]
