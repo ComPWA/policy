@@ -17,6 +17,7 @@ from . import (
     github_workflows,
     gitpod,
     nbstripout,
+    precommit,
     prettier,
     pyupgrade,
     setup_cfg,
@@ -93,6 +94,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
+    executor(precommit.main)
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
         executor(black.main)

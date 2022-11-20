@@ -31,7 +31,7 @@ class PrecommitCi(BaseModel):
     autofix_prs: bool = True
     autoupdate_commit_msg: str = "[pre-commit.ci] pre-commit autoupdate"
     autoupdate_schedule: str = "weekly"
-    skip: List[str] = []
+    skip: Optional[List[str]] = None
     submodules: bool = False
 
 

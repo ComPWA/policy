@@ -1,0 +1,73 @@
+"""Check content of :code:`.pre-commit-config.yaml` and related files."""
+from io import StringIO
+from textwrap import dedent, indent
+from typing import Iterable, Set
+
+import yaml
+
+from repoma.errors import PrecommitError
+from repoma.utilities import CONFIG_PATH
+from repoma.utilities.precommit import PrecommitConfig
+
+__NON_FUNCTIONAL_HOOKS = {
+    "editorconfig-checker",
+    "pyright",
+}
+
+
+def main() -> None:
+    cfg = PrecommitConfig.load()
+    _check_local_hooks(cfg)
+    _check_non_functional_hooks(cfg)
+
+
+def _check_local_hooks(config: PrecommitConfig) -> None:
+    if config.ci is None:
+        return
+    local_hook_ids = [h.id for r in config.repos for h in r.hooks if r.repo == "local"]
+    if len(local_hook_ids) == 0:
+        return
+    skipped_hooks = __get_precommit_ci_skips(config)
+    missing_hooks = set(local_hook_ids) - skipped_hooks
+    if missing_hooks:
+        msg = f"""
+        The ci section in {CONFIG_PATH.precommit} should skip local hooks. These local
+        hooks are missing: {', '.join(sorted(missing_hooks))}.
+        Please add at least the following entries to {CONFIG_PATH.precommit}:
+        """
+        msg = dedent(msg).replace("\n", " ")
+        expected_content = __dump_expected_skips(local_hook_ids)
+        raise PrecommitError(msg + "\n\n" + expected_content)
+
+
+def _check_non_functional_hooks(config: PrecommitConfig) -> None:
+    if config.ci is None:
+        return
+    existing_hook_ids = {h.id for r in config.repos for h in r.hooks if r.repo}
+    non_functional_hooks = existing_hook_ids & __NON_FUNCTIONAL_HOOKS
+    skipped_hooks = __get_precommit_ci_skips(config)
+    missing_hooks = set(non_functional_hooks) - skipped_hooks
+    if missing_hooks:
+        msg = f"""
+        The ci section in {CONFIG_PATH.precommit} should skip a few hooks that don't
+        work on pre-commit.ci. The following hooks are not listed:
+        {', '.join(sorted(missing_hooks))}. Please add at least the following entries
+        to {CONFIG_PATH.precommit}:
+        """
+        msg = dedent(msg).replace("\n", " ")
+        expected_content = __dump_expected_skips(non_functional_hooks)
+        raise PrecommitError(msg + "\n\n" + expected_content)
+
+
+def __dump_expected_skips(hooks: Iterable[str]) -> str:
+    stream = StringIO()
+    yaml.dump({"ci": {"skip": sorted(hooks)}}, stream, sort_keys=False)
+    return indent(stream.getvalue(), prefix="  ")
+
+
+def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:
+    if config.ci is None:
+        raise ValueError("Pre-commit config does not contain a ci section")
+    if config.ci.skip is None:
+        return set()
+    return set(config.ci.skip)
