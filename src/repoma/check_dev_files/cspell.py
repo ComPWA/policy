@@ -4,11 +4,8 @@ See `cSpell
 <https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell>`_.
 """
 
-import itertools
 import json
 import os
-import textwrap
-from configparser import ConfigParser
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence, Union
 
@@ -54,8 +51,6 @@ def main() -> None:
         executor(_check_check_hook_options)
         executor(_fix_config_content)
         executor(_sort_config_entries)
-        executor(_check_editor_config)
-        executor(_update_prettier_ignore)
         executor(add_badge, __BADGE)
         executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
     if executor.error_messages:
@@ -170,55 +165,6 @@ def _sort_config_entries() -> None:
         raise PrecommitError(error_message)
 
 
-def _check_editor_config() -> None:
-    if not CONFIG_PATH.editor_config.exists():
-        return
-    cfg = ConfigParser()
-    with open(CONFIG_PATH.editor_config) as stream:
-        # https://stackoverflow.com/a/24501036/13219025
-        cfg.read_file(
-            itertools.chain(["[global]"], stream),
-            source=str(CONFIG_PATH.editor_config),
-        )
-    if not cfg.has_section(str(CONFIG_PATH.cspell)):
-        raise PrecommitError(
-            f'{CONFIG_PATH.editor_config} has no section "[{CONFIG_PATH.cspell}]"'
-        )
-    expected_options = {
-        "indent_size": "4",
-    }
-    options = dict(cfg.items(str(CONFIG_PATH.cspell)))
-    if options != expected_options:
-        error_message = (
-            f"{CONFIG_PATH.editor_config} should have the following section:\n\n"
-        )
-        section_content = f"[{CONFIG_PATH.cspell}]\n"
-        for option, value in expected_options.items():
-            section_content += f"{option} = {value}\n"
-        section_content = textwrap.indent(section_content, prefix="  ")
-        raise PrecommitError(error_message + section_content)
-
-
-def _update_prettier_ignore() -> None:
-    config = PrecommitConfig.load()
-    repo = config.find_repo(__REPO_URL)
-    if repo is None:
-        return
-    prettier_ignore_path = ".prettierignore"
-    expected_line = str(CONFIG_PATH.cspell) + "\n"
-    if not os.path.exists(prettier_ignore_path):
-        with open(prettier_ignore_path, "w") as stream:
-            stream.write(expected_line)
-    else:
-        with open(prettier_ignore_path) as stream:
-            prettier_ignore_content = stream.readlines()
-        if expected_line in set(prettier_ignore_content):
-            return
-        with open(prettier_ignore_path, "w+") as stream:
-            stream.write(expected_line)
-    raise PrecommitError(f'Added "{CONFIG_PATH.cspell}" to {prettier_ignore_path}"')
-
-
 def __get_expected_content(config: dict, section: str, *, extend: bool = False) -> Any:
     if section not in config:
         return __EXPECTED_CONFIG[section]
@@ -230,6 +176,8 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
         return expected_section_content
     if isinstance(expected_section_content, list):
         if not extend:
+            if section == "ignoreWords":
+                return sorted(expected_section_content)
             return __sort_section(expected_section_content)
         expected_section_content_set = set(expected_section_content)
         expected_section_content_set.update(section_content)
@@ -273,7 +221,7 @@ def __get_config(path: Union[str, Path]) -> dict:
 
 def __write_config(config: dict) -> None:
     with open(CONFIG_PATH.cspell, "w") as stream:
-        json.dump(config, stream, indent=4, ensure_ascii=False)
+        json.dump(config, stream, indent=2, ensure_ascii=False)
         stream.write("\n")
 
 
