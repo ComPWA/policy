@@ -1,6 +1,7 @@
 """Check the configuration for `Prettier <https://prettier.io>`_."""
 
 import os
+from typing import Iterable, List
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
@@ -36,6 +37,7 @@ def main(no_prettierrc: bool) -> None:
         executor(_fix_config_content, no_prettierrc)
         executor(add_badge, __BADGE)
         executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
+        executor(_update_prettier_ignore)
         if executor.error_messages:
             raise PrecommitError(executor.merge_messages())
 
@@ -81,3 +83,53 @@ def _fix_config_content(no_prettierrc: bool) -> None:
             raise PrecommitError(
                 f'Removed "{path}": "{CONFIG_PATH.prettier}" should suffice'
             )
+
+
+def _update_prettier_ignore() -> None:
+    __remove_forbidden_paths()
+    __insert_expected_paths()
+
+
+def __remove_forbidden_paths() -> None:
+    if not os.path.exists(CONFIG_PATH.prettier_ignore):
+        return
+    existing = __get_existing_lines()
+    forbidden = {
+        ".cspell.json",
+        "cspell.config.yaml",
+        "cspell.json",
+    }
+    expected = [s for s in existing if s.split("#")[0].strip() not in forbidden]
+    if existing != expected:
+        __write_lines(expected)
+        raise PrecommitError(
+            f"Removed forbidden paths from {CONFIG_PATH.prettier_ignore}"
+        )
+
+
+def __insert_expected_paths() -> None:
+    existing = __get_existing_lines()
+    obligatory = [
+        "LICENSE",
+    ]
+    obligatory = [p for p in obligatory if os.path.exists(p)]
+    expected = sorted(set(existing + obligatory) - {""}) + [""]
+    if expected == [""] and os.path.exists(CONFIG_PATH.prettier_ignore):
+        os.remove(CONFIG_PATH.prettier_ignore)
+        raise PrecommitError(f"{CONFIG_PATH.prettier_ignore} is not needed")
+    if existing != expected:
+        __write_lines(expected)
+        raise PrecommitError(f"Added paths to {CONFIG_PATH.prettier_ignore}")
+
+
+def __get_existing_lines() -> List[str]:
+    if not os.path.exists(CONFIG_PATH.prettier_ignore):
+        return []
+    with open(CONFIG_PATH.prettier_ignore) as f:
+        return f.read().split("\n")
+
+
+def __write_lines(lines: Iterable[str]) -> None:
+    content = "\n".join(sorted(set(lines) - {""})) + "\n"
+    with open(CONFIG_PATH.prettier_ignore, "w") as f:
+        f.write(content)
