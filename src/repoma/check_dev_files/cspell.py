@@ -14,7 +14,12 @@ import yaml
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
+from repoma.utilities.precommit import (
+    PrecommitConfig,
+    Repo,
+    fromdict,
+    load_round_trip_precommit_config,
+)
 from repoma.utilities.readme import add_badge, remove_badge
 from repoma.utilities.vscode import (
     add_vscode_extension_recommendation,
@@ -101,8 +106,8 @@ def _remove_configuration() -> None:
 
 def _check_check_hook_options() -> None:
     config = PrecommitConfig.load()
-    repo = config.find_repo(__REPO_URL)
-    if repo is None:
+    existing = config.find_repo(__REPO_URL)
+    if existing is None:
         raise PrecommitError(f"{CONFIG_PATH.precommit} is missing a repo: {__REPO_URL}")
     expected_yaml = f"""
   - repo: {__REPO_URL}
@@ -110,12 +115,9 @@ def _check_check_hook_options() -> None:
     hooks:
       - id: cspell
     """
-    repo_dict = repo.dict(skip_defaults=True)
-    expected_dict = yaml.safe_load(expected_yaml)[0]
-    if (
-        list(repo_dict) != list(expected_dict)
-        or [h.dict(skip_defaults=True) for h in repo.hooks] != expected_dict["hooks"]
-    ):
+    expected = fromdict(yaml.safe_load(expected_yaml)[0], Repo)
+    existing.rev = expected.rev
+    if existing != expected:
         raise PrecommitError(
             "cSpell pre-commit hook should have the following form:\n" + expected_yaml
         )
@@ -153,7 +155,7 @@ def _sort_config_entries() -> None:
     for section, section_content in config.items():
         if not isinstance(section_content, list):
             continue
-        sorted_section_content = __sort_section(section_content)
+        sorted_section_content = __sort_section(section_content, section)
         if section_content == sorted_section_content:
             continue
         fixed_sections.append('"' + section + '"')
@@ -176,12 +178,10 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
         return expected_section_content
     if isinstance(expected_section_content, list):
         if not extend:
-            if section == "ignoreWords":
-                return sorted(expected_section_content)
-            return __sort_section(expected_section_content)
+            return __sort_section(expected_section_content, section)
         expected_section_content_set = set(expected_section_content)
         expected_section_content_set.update(section_content)
-        return __sort_section(expected_section_content_set)
+        return __sort_section(expected_section_content_set, section)
     raise NotImplementedError(
         "No implementation for section content of type"
         f' {section_content.__class__.__name__} (section: "{section}"'
@@ -225,10 +225,14 @@ def __write_config(config: dict) -> None:
         stream.write("\n")
 
 
-def __sort_section(content: Iterable[str]) -> List[str]:
+def __sort_section(content: Iterable[str], section_name: str) -> List[str]:
     """Sort a list section.
 
-    >>> __sort_section({"one", "Two"})
+    >>> __sort_section({"one", "Two"}, section_name="words")
     ['one', 'Two']
+    >>> __sort_section({"one", "Two"}, section_name="ignoreWords")
+    ['Two', 'one']
     """
+    if section_name == "ignoreWords":
+        return sorted(content)
     return sorted(content, key=lambda s: s.lower() if isinstance(s, str) else s)

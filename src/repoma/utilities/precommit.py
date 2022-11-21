@@ -4,10 +4,11 @@
 import os.path
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
 
+import attrs
 import yaml
-from pydantic import BaseModel
+from attrs import define
 from ruamel.yaml import YAML
 
 from repoma.errors import PrecommitError
@@ -24,7 +25,8 @@ def load_round_trip_precommit_config(
     return config, yaml_parser
 
 
-class PrecommitCi(BaseModel):
+@define
+class PrecommitCi:
     """https://pre-commit.ci/#configuration."""
 
     autofix_commit_msg: str = "[pre-commit.ci] auto fixes [...]"
@@ -35,29 +37,33 @@ class PrecommitCi(BaseModel):
     submodules: bool = False
 
 
-class Hook(BaseModel):
+@define
+class Hook:
     """https://pre-commit.com/#pre-commit-configyaml---hooks."""
 
     id: str  # noqa: A003
     name: Optional[str] = None
-    entry: Optional[str] = None  # noqa: A003
+    description: Optional[str] = None
+    entry: Optional[str] = None
     alias: Optional[str] = None
     additional_dependencies: List[str] = []
     args: List[str] = []
     files: Optional[str] = None
     exclude: Optional[str] = None
     types: Optional[List[str]] = None
+    require_serial: bool = False
     language: Optional[str] = None
     always_run: Optional[bool] = None
     pass_filenames: Optional[bool] = None
 
 
-class Repo(BaseModel):
+@define
+class Repo:
     """https://pre-commit.com/#pre-commit-configyaml---repos."""
 
     repo: str
-    rev: Optional[str] = None
     hooks: List[Hook]
+    rev: Optional[str] = None
 
     def get_hook_index(self, hook_id: str) -> Optional[int]:
         for i, hook in enumerate(self.hooks):
@@ -66,7 +72,8 @@ class Repo(BaseModel):
         return None
 
 
-class PrecommitConfig(BaseModel):
+@define
+class PrecommitConfig:
     """https://pre-commit.com/#pre-commit-configyaml---top-level."""
 
     repos: List[Repo]
@@ -81,7 +88,7 @@ class PrecommitConfig(BaseModel):
             raise PrecommitError(f"This repository contains no {path}")
         with open(path) as stream:
             definition = yaml.safe_load(stream)
-        return PrecommitConfig(**definition)
+        return fromdict(definition, PrecommitConfig)
 
     def find_repo(self, search_pattern: str) -> Optional[Repo]:
         for repo in self.repos:
@@ -96,3 +103,34 @@ class PrecommitConfig(BaseModel):
             if re.search(search_pattern, url):
                 return i
         return None
+
+
+_T = TypeVar("_T", Hook, PrecommitCi, PrecommitConfig, Repo)
+
+
+def asdict(inst: Any) -> dict:
+    return attrs.asdict(
+        inst,
+        recurse=True,
+        filter=lambda a, v: a.init and a.default != v,
+    )
+
+
+def fromdict(definition: dict, typ: Type[_T]) -> _T:
+    if typ in {Hook, PrecommitCi}:
+        return typ(**definition)  # type: ignore[return-value]
+    if typ is Repo:
+        definition = {
+            **definition,
+            "hooks": [fromdict(i, Hook) for i in definition["hooks"]],
+        }
+        return Repo(**definition)  # type: ignore[return-value]
+    if typ is PrecommitConfig:
+        definition = {
+            **definition,
+            "repos": [fromdict(i, Repo) for i in definition["repos"]],
+        }
+        if "ci" in definition:
+            definition["ci"] = fromdict(definition["ci"], PrecommitCi)
+        return PrecommitConfig(**definition)  # type: ignore[return-value]
+    raise NotImplementedError(f"No implementation for type {typ.__name__}")

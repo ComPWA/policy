@@ -8,7 +8,7 @@ import yaml
 
 from repoma.errors import PrecommitError
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import Hook, PrecommitConfig
+from repoma.utilities.precommit import Hook, PrecommitConfig, asdict, fromdict
 
 __HOOK_DEFINITION_FILE = ".pre-commit-hooks.yaml"
 __IGNORE_KEYS = {"args"}
@@ -45,7 +45,7 @@ def _check_hook_definition(hook: Hook) -> None:
 
 
 def _to_dict(hook: Hook) -> dict:
-    hook_dict = hook.dict(skip_defaults=True)
+    hook_dict = asdict(hook)
     return {k: v for k, v in hook_dict.items() if k not in __IGNORE_KEYS}
 
 
@@ -53,7 +53,7 @@ def _to_dict(hook: Hook) -> dict:
 def _load_precommit_hook_definitions() -> Dict[str, Hook]:
     with open(__HOOK_DEFINITION_FILE) as f:
         hook_definitions = yaml.load(f, Loader=yaml.SafeLoader)
-    hooks = [Hook(**h) for h in hook_definitions]
+    hooks = [fromdict(h, Hook) for h in hook_definitions]
     hook_ids = [h.id for h in hooks]
     if len(hook_ids) != len(set(hook_ids)):
         raise PrecommitError(f"{__HOOK_DEFINITION_FILE} contains duplicate IDs")

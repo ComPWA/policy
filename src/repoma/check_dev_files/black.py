@@ -8,7 +8,12 @@ import toml
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
+from repoma.utilities.precommit import (
+    Hook,
+    PrecommitConfig,
+    asdict,
+    load_round_trip_precommit_config,
+)
 from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
@@ -99,23 +104,21 @@ def _update_nbqa_hook() -> None:
         return
 
     hook_id = "nbqa-black"
-    expected_config = {
-        "id": hook_id,
-        "additional_dependencies": [
-            "black>=22.1.0",
-        ],
-    }
+    expected = Hook(
+        hook_id,
+        additional_dependencies=["black>=22.1.0"],
+    )
     repo_index = precommit_config.get_repo_index(repo_url)
     hook_index = repo.get_hook_index(hook_id)
     if hook_index is None:
         config, yaml = load_round_trip_precommit_config()
-        config["repos"][repo_index]["hooks"].append(expected_config)
+        config["repos"][repo_index]["hooks"].append(asdict(expected))
         yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Added {hook_id} to pre-commit config")
 
-    if repo.hooks[hook_index].dict(skip_defaults=True) != expected_config:
+    if repo.hooks[hook_index] != expected:
         config, yaml = load_round_trip_precommit_config()
-        config["repos"][repo_index]["hooks"][hook_index] = expected_config
+        config["repos"][repo_index]["hooks"][hook_index] = asdict(expected)
         yaml.dump(config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
     nbqa_config = _load_nbqa_black_config()

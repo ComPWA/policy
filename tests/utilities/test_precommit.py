@@ -3,7 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from repoma.utilities.precommit import PrecommitConfig
+from repoma.utilities.precommit import (
+    Hook,
+    PrecommitCi,
+    PrecommitConfig,
+    Repo,
+    fromdict,
+)
 
 
 @pytest.fixture(scope="session")
@@ -59,3 +65,21 @@ class TestRepo:
         assert repo.get_hook_index("non-existent") is None
         assert repo.get_hook_index("flake8") == 0
         assert repo.get_hook_index("mypy") == 1
+
+
+def test_fromdict():
+    hook_def = {"id": "test"}
+    hook = Hook(id="test")
+    assert fromdict(hook_def, Hook) == hook
+
+    repo_def = {"repo": "url", "hooks": [hook_def]}
+    repo = Repo(repo="url", hooks=[hook])
+    assert fromdict(repo_def, Repo) == repo
+
+    ci_def = {"autofix_prs": False}
+    ci = PrecommitCi(autofix_prs=False)  # pylint: disable=invalid-name
+    assert fromdict(ci_def, PrecommitCi) == ci
+
+    config_def = {"repos": [repo_def], "ci": ci_def}
+    config = PrecommitConfig(repos=[repo], ci=ci)
+    assert fromdict(config_def, PrecommitConfig) == config
