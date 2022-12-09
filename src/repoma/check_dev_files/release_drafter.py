@@ -34,7 +34,8 @@ def _get_expected_config(repo_name: str, repo_title: str) -> Dict[str, Any]:
     if os.path.exists(CONFIG_PATH.readthedocs):
         config[key] = config[key].replace("<<REPO_NAME>>", repo_name)
     else:
-        config[key] = "$CHANGES"
+        lines = config[key].split("\n")
+        config[key] = "\n".join(lines[2:])
     return config
 
 
