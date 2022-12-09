@@ -49,7 +49,7 @@ repos:
         args:
           - --allow-labels
           - --repo-name=repo-maintenance
-          - --repo-title='ComPWA Repository Maintenance'
+          - --repo-title=ComPWA Repository Maintenance
 
       - id: format-setup-cfg
         name: Format setup.cfg

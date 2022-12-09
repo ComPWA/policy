@@ -1,4 +1,4 @@
-name-template: "'ComPWA Repository Maintenance' $NEXT_PATCH_VERSION"
+name-template: ComPWA Repository Maintenance $NEXT_PATCH_VERSION
 tag-template: $NEXT_PATCH_VERSION
 
 references:
