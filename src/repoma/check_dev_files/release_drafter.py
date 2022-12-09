@@ -31,11 +31,10 @@ def _get_expected_config(repo_name: str, repo_title: str) -> Dict[str, Any]:
     key = "name-template"
     config[key] = config[key].replace("<<REPO_TITLE>>", repo_title)
     key = "template"
-    if os.path.exists(CONFIG_PATH.readthedocs):
-        config[key] = config[key].replace("<<REPO_NAME>>", repo_name)
-    else:
-        lines = config[key].split("\n")
-        config[key] = "\n".join(lines[2:])
+    lines = config[key].split("\n")
+    if not os.path.exists(CONFIG_PATH.readthedocs):
+        lines = lines[2:]
+    config[key] = "\n".join(lines).replace("<<REPO_NAME>>", repo_name)
     return config
 
 
