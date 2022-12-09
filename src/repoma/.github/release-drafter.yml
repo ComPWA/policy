@@ -1,4 +1,4 @@
-name-template: "'ComPWA Repository Maintenance' $NEXT_PATCH_VERSION"
+name-template: <<REPO_TITLE>> $NEXT_PATCH_VERSION
 tag-template: $NEXT_PATCH_VERSION
 
 references:
@@ -31,5 +31,7 @@ replacers:
 
 sort-direction: ascending
 
-template: |-
+template: |
+  _See all documentation for this version [here](https://<<REPO_NAME>>.rtfd.io/en/$NEXT_PATCH_VERSION)._
+
   $CHANGES
