@@ -20,6 +20,7 @@ from . import (
     precommit,
     prettier,
     pyupgrade,
+    release_drafter,
     setup_cfg,
     tox,
     update_pip_constraints,
@@ -80,8 +81,28 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         type=str,
     )
+    parser.add_argument(
+        "--repo-name",
+        required=True,
+        type=str,
+        help=(
+            "Name of the repository. This can usually be found in the URL of the"
+            " repository on GitHub or GitLab"
+        ),
+    )
+    parser.add_argument(
+        "--repo-title",
+        default="",
+        type=str,
+        help=(
+            "Title or full name of the repository. If not provided, this falls back to"
+            " the repo-name."
+        ),
+    )
     args = parser.parse_args(argv)
     is_python_repo = not args.no_python
+    if not args.repo_title:
+        args.repo_title = args.repo_name
 
     executor = Executor()
     executor(commitlint.main)
@@ -101,6 +122,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(flake8.main)
         if not args.no_cd:
             executor(github_workflows.create_continuous_deployment)
+            executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
                 update_pip_constraints.main,

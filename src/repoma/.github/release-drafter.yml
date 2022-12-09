@@ -1,4 +1,4 @@
-name-template: "'ComPWA Repository Maintenance' $NEXT_PATCH_VERSION"
+name-template: <<REPO_TITLE>> $NEXT_PATCH_VERSION
 tag-template: $NEXT_PATCH_VERSION
 
 references:
@@ -31,5 +31,9 @@ replacers:
 
 sort-direction: ascending
 
-template: |-
+template: |
+  _See all documentation for this version [here](https://<<REPO_NAME>>.rtfd.io/en/$NEXT_PATCH_VERSION)._
+
   $CHANGES
+
+  _The full changelog as commits can be found [here](https://github.com/ComPWA/ampform/compare/$PREVIOUS_TAG...$NEXT_PATCH_VERSION)._
