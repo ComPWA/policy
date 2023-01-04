@@ -99,7 +99,9 @@ def __remove_forbidden_paths() -> None:
         "cspell.config.yaml",
         "cspell.json",
     }
-    expected = [s for s in existing if s.split("#")[0].strip() not in forbidden]
+    expected = [
+        s for s in existing if s.split("#", maxsplit=1)[0].strip() not in forbidden
+    ]
     if existing != expected:
         __write_lines(expected)
         raise PrecommitError(
@@ -124,7 +126,7 @@ def __insert_expected_paths() -> None:
 
 def __get_existing_lines() -> List[str]:
     if not os.path.exists(CONFIG_PATH.prettier_ignore):
-        return []
+        return [""]
     with open(CONFIG_PATH.prettier_ignore) as f:
         return f.read().split("\n")
 

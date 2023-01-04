@@ -83,6 +83,7 @@
     "indentless",
     "isort",
     "linkcheck",
+    "maxsplit",
     "nargs",
     "nbcell",
     "nbformat",
