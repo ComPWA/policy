@@ -8,7 +8,7 @@ on:
 jobs:
   is-even-week:
     name: Check week number is even
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Determine if week number is even
         run: |
@@ -28,7 +28,7 @@ jobs:
     name: Update pip constraints files
     needs: is-even-week
     if: needs.is-even-week.outputs.is-even-week != 0
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -43,14 +43,14 @@ jobs:
     name: pre-commit autoupdate
     needs: is-even-week
     if: needs.is-even-week.outputs.is-even-week != 0
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: ComPWA/update-pre-commit@main
 
   push:
     name: Create PR
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - pip-constraints
       - pre-commit

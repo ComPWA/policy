@@ -6,7 +6,7 @@ on:
 
 jobs:
   update-milestone:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # cspell:ignore mhutchie
       - uses: mhutchie/update-milestone-on-release@master
