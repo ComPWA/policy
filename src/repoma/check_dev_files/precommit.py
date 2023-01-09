@@ -17,8 +17,23 @@ __NON_FUNCTIONAL_HOOKS = {
 
 def main() -> None:
     cfg = PrecommitConfig.load()
+    _check_single_hook_sorting(cfg)
     _check_local_hooks(cfg)
     _check_non_functional_hooks(cfg)
+
+
+def _check_single_hook_sorting(config: PrecommitConfig) -> None:
+    if config.ci is None:
+        return
+    single_hook_repos = [r for r in config.repos if len(r.hooks) == 1]
+    expected_repo_order = sorted(
+        (r for r in single_hook_repos),
+        key=lambda r: r.hooks[0].id,
+    )
+    if single_hook_repos != expected_repo_order:
+        msg = "Pre-commit hooks are not sorted. Should be as follows:\n\n  "
+        msg += "\n  ".join(f"{r.hooks[0].id:20s} {r.repo}" for r in expected_repo_order)
+        raise PrecommitError(msg)
 
 
 def _check_local_hooks(config: PrecommitConfig) -> None:
