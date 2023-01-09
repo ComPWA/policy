@@ -17,9 +17,22 @@ __NON_FUNCTIONAL_HOOKS = {
 
 def main() -> None:
     cfg = PrecommitConfig.load()
+    _check_plural_hooks_first(cfg)
     _check_single_hook_sorting(cfg)
     _check_local_hooks(cfg)
     _check_non_functional_hooks(cfg)
+
+
+def _check_plural_hooks_first(config: PrecommitConfig) -> None:
+    if config.ci is None:
+        return
+    plural_hook_repos = [r for r in config.repos if len(r.hooks) > 1]
+    n_plural_repos = len(plural_hook_repos)
+    if config.repos[:n_plural_repos] != plural_hook_repos:
+        raise PrecommitError(
+            "Please bundle repos with multiple hooks at the top of the pre-commit"
+            " config"
+        )
 
 
 def _check_single_hook_sorting(config: PrecommitConfig) -> None:
