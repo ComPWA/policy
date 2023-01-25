@@ -8,20 +8,24 @@ See Also:
 from pathlib import Path
 
 from ruamel.yaml.main import YAML
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
 from repoma.utilities.executor import Executor
-from repoma.utilities.setup_cfg import get_supported_python_versions
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
+
+__CRON_SCHEDULES = {
+    "biweekly": "0 2 * * 1",
+    "monthly": "0 3 7 */1 *",
+    "bimonthly": "0 3 7 */2 *",
+}
 
 
 def main(cron_frequency: str) -> None:
     executor = Executor()
     executor(_remove_script, "pin_requirements.py")
     executor(_remove_script, "upgrade.sh")
-    executor(_update_github_workflows, cron_frequency)
+    executor(_update_requirement_workflow, cron_frequency)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -33,23 +37,15 @@ def _remove_script(script_name: str) -> None:
         raise PrecommitError(f'Removed deprecated "{bash_script_name}" script')
 
 
-def _update_github_workflows(cron_frequency: str) -> None:
-    def overwrite_workflow(workflow_file: str) -> None:
+def _update_requirement_workflow(frequency: str) -> None:
+    def overwrite_workflow(workflow_file: str, cron_schedule: str) -> None:
         expected_workflow_path = (
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
         yaml = create_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)
-        supported_python_versions = get_supported_python_versions()
-        formatted_python_versions = list(
-            map(DoubleQuotedScalarString, supported_python_versions)
-        )
-        expected_data["jobs"]["pip-constraints"]["strategy"]["matrix"][
-            "python-version"
-        ] = formatted_python_versions
+        expected_data["on"]["schedule"][0]["cron"] = cron_schedule
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
-        if "-cron-" in str(workflow_file):
-            workflow_path = workflow_path.parent / "requirements-cron.yml"
         if not workflow_path.exists():
             __update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
@@ -57,17 +53,9 @@ def _update_github_workflows(cron_frequency: str) -> None:
             __update_workflow(yaml, expected_data, workflow_path)
 
     executor = Executor()
-    if cron_frequency == "biweekly":
-        executor(overwrite_workflow, "requirements-cron-biweekly.yml")
-    elif cron_frequency == "monthly":
-        executor(overwrite_workflow, "requirements-cron-monthly.yml")
-    elif cron_frequency == "bimonthly":
-        executor(overwrite_workflow, "requirements-cron-bimonthly.yml")
-    else:
-        raise NotImplementedError(
-            f'Cannot create an upgrade cron jon for frequency "{cron_frequency}"'
-        )
-    executor(overwrite_workflow, "requirements-pr.yml")
+    executor(overwrite_workflow, "requirements.yml", _to_cron_schedule(frequency))
+    executor(_remove_workflow, "requirements-cron.yml")
+    executor(_remove_workflow, "requirements-pr.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -75,3 +63,17 @@ def _update_github_workflows(cron_frequency: str) -> None:
 def __update_workflow(yaml: YAML, config: dict, path: Path) -> None:
     yaml.dump(config, path)
     raise PrecommitError(f'Updated "{path}" workflow')
+
+
+def _remove_workflow(filename: str) -> None:
+    path = CONFIG_PATH.github_workflow_dir / filename
+    if path.exists():
+        path.unlink()
+        raise PrecommitError(f'Removed deprecated "{filename}" workflow')
+
+
+def _to_cron_schedule(frequency: str) -> str:
+    schedule = __CRON_SCHEDULES.get(frequency)
+    if schedule is None:
+        raise PrecommitError(f'No cron schedule defined for frequency "{frequency}"')
+    return schedule
