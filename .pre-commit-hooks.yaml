@@ -20,8 +20,7 @@
 
 - id: pin-nb-requirements
   name: Check whether notebook contains a pip install line
-  description:
-    Specify which packages to install specifically in order to run this notebook.
+  description: Specify which packages to install specifically in order to run this notebook.
   entry: pin-nb-requirements
   language: python
   types:
