@@ -43,7 +43,7 @@ def _get_ci_workflow(path: Path) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     # Configure `doc` job
-    if not os.path.exists("doc"):
+    if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
     elif not os.path.exists(CONFIG_PATH.readthedocs):
         del config["jobs"]["doc"]["with"]
