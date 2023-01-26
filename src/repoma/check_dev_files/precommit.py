@@ -10,7 +10,6 @@ from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import PrecommitConfig
 
 __NON_FUNCTIONAL_HOOKS = {
-    "editorconfig-checker",
     "pyright",
 }
 
