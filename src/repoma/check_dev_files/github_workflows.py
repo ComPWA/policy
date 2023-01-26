@@ -40,6 +40,7 @@ def _update_ci_workflow() -> None:
     executor(remove_workflow, "ci-style.yml")
     executor(remove_workflow, "ci-tests.yml")
     executor(remove_workflow, "linkcheck.yml")
+    executor(_copy_workflow_file, "clean-cache.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
