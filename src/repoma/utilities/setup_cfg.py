@@ -25,7 +25,7 @@ def get_supported_python_versions() -> List[str]:
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
-    ['3.6', '3.7', '3.8', '3.9', '3.10']
+    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
     """
     cfg = open_setup_cfg()
     if not cfg.has_option("metadata", "classifiers"):
