@@ -45,7 +45,7 @@ def _get_ci_workflow(path: Path) -> Tuple[YAML, dict]:
     # Configure `doc` job
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
-    elif not os.path.exists(CONFIG_PATH.readthedocs):
+    elif os.path.exists(CONFIG_PATH.readthedocs):
         del config["jobs"]["doc"]["with"]
     # Configure `pytest` job
     if not os.path.exists("tests"):
