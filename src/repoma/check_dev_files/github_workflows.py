@@ -2,7 +2,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 from ruamel.yaml.main import YAML
 
@@ -13,12 +13,24 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(no_pypi: bool) -> None:
+def main(apt_packages: str, no_pypi: bool) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi)
-    executor(_update_ci_workflow)
+    executor(_update_ci_workflow, _format_apt_list(apt_packages))
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
+
+
+def _format_apt_list(apt_packages: str) -> List[str]:
+    """Create a list of APT packages from a string argument.
+
+    >>> _format_apt_list('a c , test,b')
+    ['a', 'b', 'c', 'test']
+    """
+    apt_packages = apt_packages.replace(",", " ")
+    while "  " in apt_packages:
+        apt_packages = apt_packages.replace("  ", " ")
+    return sorted(apt_packages.split(" "))
 
 
 def _update_cd_workflow(no_pypi: bool) -> None:
@@ -43,10 +55,11 @@ def _update_cd_workflow(no_pypi: bool) -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _update_ci_workflow() -> None:
+def _update_ci_workflow(apt_packages: List[str]) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
-            path=REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml"
+            REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
+            apt_packages,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not workflow_path.exists():
@@ -66,14 +79,17 @@ def _update_ci_workflow() -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _get_ci_workflow(path: Path) -> Tuple[YAML, dict]:
+def _get_ci_workflow(path: Path, apt_packages: List[str]) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     # Configure `doc` job
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
-    elif os.path.exists(CONFIG_PATH.readthedocs):
-        del config["jobs"]["doc"]["with"]
+    else:
+        if apt_packages:
+            config["jobs"]["doc"]["with"]["apt-packages"] = apt_packages
+        if os.path.exists(CONFIG_PATH.readthedocs):
+            del config["jobs"]["doc"]["with"]
     # Configure `pytest` job
     if not os.path.exists("tests"):
         del config["jobs"]["pytest"]

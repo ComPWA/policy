@@ -30,6 +30,16 @@ from . import (
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
+        "--doc-apt-packages",
+        default="",
+        required=False,
+        help=(
+            "Comma- or space-separated list of APT packages that are required to build"
+            " documentation"
+        ),
+        type=str,
+    )
+    parser.add_argument(
         "--ignore-author",
         default=False,
         action="store_true",
@@ -105,7 +115,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.no_pypi)
+    executor(github_workflows.main, args.doc_apt_packages, args.no_pypi)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
