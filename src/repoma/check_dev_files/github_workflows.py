@@ -23,20 +23,25 @@ def main(no_cd: bool) -> None:
 
 
 def _update_ci_workflow() -> None:
-    yaml, expected_data = _get_ci_workflow(
-        path=REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml"
-    )
-    workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
-    if not workflow_path.exists():
-        update_workflow(yaml, expected_data, workflow_path)
-    existing_data = yaml.load(workflow_path)
-    if existing_data != expected_data:
-        update_workflow(yaml, expected_data, workflow_path)
+    def update() -> None:
+        yaml, expected_data = _get_ci_workflow(
+            path=REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml"
+        )
+        workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
+        if not workflow_path.exists():
+            update_workflow(yaml, expected_data, workflow_path)
+        existing_data = yaml.load(workflow_path)
+        if existing_data != expected_data:
+            update_workflow(yaml, expected_data, workflow_path)
 
-    remove_workflow("ci-docs.yml")
-    remove_workflow("ci-style.yml")
-    remove_workflow("ci-tests.yml")
-    remove_workflow("linkcheck.yml")
+    executor = Executor()
+    executor(update)
+    executor(remove_workflow, "ci-docs.yml")
+    executor(remove_workflow, "ci-style.yml")
+    executor(remove_workflow, "ci-tests.yml")
+    executor(remove_workflow, "linkcheck.yml")
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
 def _get_ci_workflow(path: Path) -> Tuple[YAML, dict]:
