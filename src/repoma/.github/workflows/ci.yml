@@ -23,12 +23,10 @@ jobs:
     uses: ComPWA/actions/.github/workflows/ci-docs.yml@dev
     with:
       gh-pages: true
-
   pytest:
     uses: ComPWA/actions/.github/workflows/pytest.yml@dev
     with:
       coverage-target: REPLACE_ME
       macos-python-version: "3.7"
-
   style:
     uses: ComPWA/actions/.github/workflows/pre-commit.yml@dev
