@@ -86,10 +86,13 @@ def _get_ci_workflow(path: Path, apt_packages: List[str]) -> Tuple[YAML, dict]:
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
     else:
+        with_section = config["jobs"]["doc"]["with"]
         if apt_packages:
-            config["jobs"]["doc"]["with"]["apt-packages"] = apt_packages
+            with_section["apt-packages"] = apt_packages
         if not os.path.exists(CONFIG_PATH.readthedocs):
-            config["jobs"]["doc"]["with"]["gh-pages"] = True
+            with_section["gh-pages"] = True
+        if with_section == {}:
+            del with_section
     # Configure `pytest` job
     if not os.path.exists("tests"):
         del config["jobs"]["pytest"]

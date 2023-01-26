@@ -21,6 +21,7 @@ on:
 jobs:
   doc:
     uses: ComPWA/actions/.github/workflows/ci-docs.yml@dev
+    with: {}
   pytest:
     uses: ComPWA/actions/.github/workflows/pytest.yml@dev
     with:
