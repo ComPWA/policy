@@ -88,7 +88,7 @@ def _get_ci_workflow(path: Path, apt_packages: List[str]) -> Tuple[YAML, dict]:
     else:
         with_section = config["jobs"]["doc"]["with"]
         if apt_packages:
-            with_section["apt-packages"] = apt_packages
+            with_section["apt-packages"] = " ".join(apt_packages)
         if not os.path.exists(CONFIG_PATH.readthedocs):
             with_section["gh-pages"] = True
         if with_section == {}:
