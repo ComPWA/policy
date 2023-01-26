@@ -13,11 +13,32 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(no_cd: bool) -> None:
+def main(no_pypi: bool) -> None:
     executor = Executor()
+    executor(_update_cd_workflow, no_pypi)
     executor(_update_ci_workflow)
-    if not no_cd:
-        executor(_check_milestone_workflow)
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
+
+
+def _update_cd_workflow(no_pypi: bool) -> None:
+    def update() -> None:
+        yaml = create_prettier_round_trip_yaml()
+        cd = "cd.yml"  # pylint: disable=invalid-name
+        expected_data = yaml.load(REPOMA_DIR / CONFIG_PATH.github_workflow_dir / cd)
+        if no_pypi or not os.path.exists(CONFIG_PATH.setup_cfg):
+            del expected_data["jobs"]["pypi"]
+
+        workflow_path = CONFIG_PATH.github_workflow_dir / cd
+        if not workflow_path.exists():
+            update_workflow(yaml, expected_data, workflow_path)
+        existing_data = yaml.load(workflow_path)
+        if existing_data != expected_data:
+            update_workflow(yaml, expected_data, workflow_path)
+
+    executor = Executor()
+    executor(update)
+    executor(remove_workflow, "milestone.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -63,20 +84,6 @@ def _get_ci_workflow(path: Path) -> Tuple[YAML, dict]:
     if not os.path.exists(CONFIG_PATH.precommit):
         del config["jobs"]["style"]
     return yaml, config
-
-
-def create_continuous_deployment() -> None:
-    _copy_workflow_file("cd.yml")
-
-
-def _check_milestone_workflow() -> None:
-    """Add a GitHub Action that auto-closes milestones on a new release.
-
-    See `github.com/mhutchie/update-milestone-on-release
-    <https://github.com/mhutchie/update-milestone-on-release>`_.
-    """
-    # cspell:ignore mhutchie
-    _copy_workflow_file("milestone.yml")
 
 
 def _copy_workflow_file(filename: str) -> None:

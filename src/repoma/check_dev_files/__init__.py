@@ -60,10 +60,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
-        "--no-cd",
+        "--no-pypi",
         default=False,
         action="store_true",
-        help="Do not update `cd.yml` workflow",
+        help="Do not publish package to PyPI",
     )
     parser.add_argument(
         "--pin-requirements",
@@ -105,7 +105,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.no_cd)
+    executor(github_workflows.main, args.no_pypi)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
@@ -114,9 +114,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if is_python_repo:
         executor(black.main)
         executor(flake8.main)
-        if not args.no_cd:
-            executor(github_workflows.create_continuous_deployment)
-            executor(release_drafter.main, args.repo_name, args.repo_title)
+        executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
                 update_pip_constraints.main,
