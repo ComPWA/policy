@@ -13,10 +13,10 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(apt_packages: str, no_pypi: bool) -> None:
+def main(apt_packages: str, no_macos: bool, no_pypi: bool) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi)
-    executor(_update_ci_workflow, _format_apt_list(apt_packages))
+    executor(_update_ci_workflow, _format_apt_list(apt_packages), no_macos)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -55,11 +55,12 @@ def _update_cd_workflow(no_pypi: bool) -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _update_ci_workflow(apt_packages: List[str]) -> None:
+def _update_ci_workflow(apt_packages: List[str], no_macos: bool) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             apt_packages,
+            no_macos,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not workflow_path.exists():
@@ -79,7 +80,9 @@ def _update_ci_workflow(apt_packages: List[str]) -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _get_ci_workflow(path: Path, apt_packages: List[str]) -> Tuple[YAML, dict]:
+def _get_ci_workflow(  # noqa: R701
+    path: Path, apt_packages: List[str], no_macos: bool
+) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     # Configure `doc` job
@@ -96,9 +99,17 @@ def _get_ci_workflow(path: Path, apt_packages: List[str]) -> Tuple[YAML, dict]:
     # Configure `pytest` job
     if not os.path.exists("tests"):
         del config["jobs"]["pytest"]
-    elif os.path.exists(CONFIG_PATH.codecov):
-        package_name = get_pypi_name().replace("-", "_")
-        config["jobs"]["pytest"]["with"]["coverage-target"] = package_name
+    else:
+        with_section = config["jobs"]["pytest"]["with"]
+        if os.path.exists(CONFIG_PATH.codecov):
+            package_name = get_pypi_name().replace("-", "_")
+            with_section["coverage-target"] = package_name
+        else:
+            del with_section["coverage-target"]
+        if no_macos:
+            del with_section["macos-python-version"]
+        if with_section == {}:
+            del with_section
     # Configure `style` job
     if not os.path.exists(CONFIG_PATH.precommit):
         del config["jobs"]["style"]

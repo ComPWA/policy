@@ -70,6 +70,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
+        "--no-macos",
+        default=False,
+        action="store_true",
+        help="Do not run test job on macOS",
+    )
+    parser.add_argument(
         "--no-pypi",
         default=False,
         action="store_true",
@@ -115,7 +121,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.doc_apt_packages, args.no_pypi)
+    executor(github_workflows.main, args.doc_apt_packages, args.no_macos, args.no_pypi)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
