@@ -12,6 +12,7 @@ from repoma.errors import PrecommitError
 
 
 class _ConfigFilePaths(NamedTuple):
+    codecov: Path = Path("codecov.yml")
     cspell: Path = Path(".cspell.json")
     commitlint: Path = Path("commitlint.config.js")
     editor_config: Path = Path(".editorconfig")

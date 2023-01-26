@@ -42,12 +42,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
-        "--no-docs",
-        default=False,
-        action="store_true",
-        help="Do not replace the ci-docs and linkcheck workflows.",
-    )
-    parser.add_argument(
         "--no-gitpod",
         default=False,
         action="store_true",
@@ -111,7 +105,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.no_docs, args.no_cd)
+    executor(github_workflows.main, args.no_cd)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)

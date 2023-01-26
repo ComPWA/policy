@@ -5,10 +5,7 @@ See Also:
 - https://github.com/ComPWA/update-pre-commit
 """
 
-from pathlib import Path
-
-from ruamel.yaml.main import YAML
-
+from repoma.check_dev_files.github_workflows import remove_workflow, update_workflow
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
 from repoma.utilities.executor import Executor
@@ -47,29 +44,17 @@ def _update_requirement_workflow(frequency: str) -> None:
         expected_data["on"]["schedule"][0]["cron"] = cron_schedule
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
-            __update_workflow(yaml, expected_data, workflow_path)
+            update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
         if existing_data != expected_data:
-            __update_workflow(yaml, expected_data, workflow_path)
+            update_workflow(yaml, expected_data, workflow_path)
 
     executor = Executor()
     executor(overwrite_workflow, "requirements.yml", _to_cron_schedule(frequency))
-    executor(_remove_workflow, "requirements-cron.yml")
-    executor(_remove_workflow, "requirements-pr.yml")
+    executor(remove_workflow, "requirements-cron.yml")
+    executor(remove_workflow, "requirements-pr.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
-
-
-def __update_workflow(yaml: YAML, config: dict, path: Path) -> None:
-    yaml.dump(config, path)
-    raise PrecommitError(f'Updated "{path}" workflow')
-
-
-def _remove_workflow(filename: str) -> None:
-    path = CONFIG_PATH.github_workflow_dir / filename
-    if path.exists():
-        path.unlink()
-        raise PrecommitError(f'Removed deprecated "{filename}" workflow')
 
 
 def _to_cron_schedule(frequency: str) -> str:
