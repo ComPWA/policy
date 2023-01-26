@@ -47,7 +47,6 @@ repos:
         pass_filenames: false
         args:
           - --allow-labels
-          - --no-macos
           - --no-pypi
           - --repo-name=repo-maintenance
           - --repo-title=ComPWA Repository Maintenance

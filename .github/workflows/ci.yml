@@ -23,5 +23,6 @@ jobs:
     uses: ComPWA/actions/.github/workflows/pytest.yml@dev
     with:
       coverage-target: repo_maintenance
+      macos-python-version: "3.7"
   style:
     uses: ComPWA/actions/.github/workflows/pre-commit.yml@dev
