@@ -99,10 +99,8 @@ def _get_ci_workflow(  # pylint: disable=too-many-branches  # noqa: R701
         if os.path.exists(CONFIG_PATH.codecov):
             package_name = get_pypi_name().replace("-", "_")
             with_section["coverage-target"] = package_name
-        else:
-            del with_section["coverage-target"]
-        if no_macos:
-            del with_section["macos-python-version"]
+        if not no_macos:
+            with_section["macos-python-version"] = "3.7"
         if with_section == {}:
             del with_section
     # Configure `style` job
