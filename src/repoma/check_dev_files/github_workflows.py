@@ -10,6 +10,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
 from repoma.utilities.executor import Executor
+from repoma.utilities.precommit import PrecommitConfig
 from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -119,6 +120,10 @@ def _get_ci_workflow(  # noqa: R701
     # Configure `style` job
     if not os.path.exists(CONFIG_PATH.precommit):
         del config["jobs"]["style"]
+    else:
+        cfg = PrecommitConfig.load()
+        if cfg.ci is not None and cfg.ci.skip is None:
+            del config["jobs"]["style"]
     return yaml, config
 
 
