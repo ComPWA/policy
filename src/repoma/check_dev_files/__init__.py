@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence
 
 from repoma.utilities.executor import Executor
 
@@ -29,6 +29,13 @@ from . import (
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument(
+        "--ci-test-extras",
+        default="",
+        required=False,
+        help="Comma-separated list of extras that are required for running tests on CI",
+        type=str,
+    )
     parser.add_argument(
         "--doc-apt-packages",
         default="",
@@ -121,7 +128,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
-    executor(github_workflows.main, args.doc_apt_packages, args.no_macos, args.no_pypi)
+    executor(
+        github_workflows.main,
+        doc_apt_packages=_to_list(args.doc_apt_packages),
+        no_macos=args.no_macos,
+        no_pypi=args.no_pypi,
+        test_extras=_to_list(args.ci_test_extras),
+    )
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
@@ -143,6 +156,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(executor.merge_messages())
         return 1
     return 0
+
+
+def _to_list(arg: str) -> List[str]:
+    """Create a comma-separated list from a string argument.
+
+    >>> _to_list('a c , test,b')
+    ['a', 'b', 'c', 'test']
+    >>> _to_list(' ')
+    []
+    >>> _to_list('')
+    []
+    """
+    space_separated = arg.replace(",", " ")
+    while "  " in space_separated:
+        space_separated = space_separated.replace("  ", " ")
+    if space_separated in {"", " "}:
+        return []
+    return sorted(space_separated.split(" "))
 
 
 if __name__ == "__main__":

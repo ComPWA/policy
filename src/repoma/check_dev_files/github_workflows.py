@@ -13,24 +13,14 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(apt_packages: str, no_macos: bool, no_pypi: bool) -> None:
+def main(
+    doc_apt_packages: List[str], no_macos: bool, no_pypi: bool, test_extras: List[str]
+) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi)
-    executor(_update_ci_workflow, _format_apt_list(apt_packages), no_macos)
+    executor(_update_ci_workflow, doc_apt_packages, no_macos, test_extras)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
-
-
-def _format_apt_list(apt_packages: str) -> List[str]:
-    """Create a list of APT packages from a string argument.
-
-    >>> _format_apt_list('a c , test,b')
-    ['a', 'b', 'c', 'test']
-    """
-    apt_packages = apt_packages.replace(",", " ")
-    while "  " in apt_packages:
-        apt_packages = apt_packages.replace("  ", " ")
-    return sorted(apt_packages.split(" "))
 
 
 def _update_cd_workflow(no_pypi: bool) -> None:
@@ -55,12 +45,15 @@ def _update_cd_workflow(no_pypi: bool) -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _update_ci_workflow(apt_packages: List[str], no_macos: bool) -> None:
+def _update_ci_workflow(
+    doc_apt_packages: List[str], no_macos: bool, test_extras: List[str]
+) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
-            apt_packages,
+            doc_apt_packages,
             no_macos,
+            test_extras,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not workflow_path.exists():
@@ -80,8 +73,8 @@ def _update_ci_workflow(apt_packages: List[str], no_macos: bool) -> None:
         raise PrecommitError(executor.merge_messages())
 
 
-def _get_ci_workflow(  # noqa: R701
-    path: Path, apt_packages: List[str], no_macos: bool
+def _get_ci_workflow(  # pylint: disable=too-many-branches  # noqa: R701
+    path: Path, doc_apt_packages: List[str], no_macos: bool, test_extras: List[str]
 ) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
@@ -90,8 +83,8 @@ def _get_ci_workflow(  # noqa: R701
         del config["jobs"]["doc"]
     else:
         with_section = config["jobs"]["doc"]["with"]
-        if apt_packages:
-            with_section["apt-packages"] = " ".join(apt_packages)
+        if doc_apt_packages:
+            with_section["apt-packages"] = " ".join(doc_apt_packages)
         if not os.path.exists(CONFIG_PATH.readthedocs):
             with_section["gh-pages"] = True
         if with_section == {}:
@@ -101,6 +94,8 @@ def _get_ci_workflow(  # noqa: R701
         del config["jobs"]["pytest"]
     else:
         with_section = config["jobs"]["pytest"]["with"]
+        if test_extras:
+            with_section["additional-extras"] = ",".join(test_extras)
         if os.path.exists(CONFIG_PATH.codecov):
             package_name = get_pypi_name().replace("-", "_")
             with_section["coverage-target"] = package_name
