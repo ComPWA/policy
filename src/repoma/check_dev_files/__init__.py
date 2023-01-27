@@ -30,6 +30,13 @@ from . import (
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
+        "--ci-skipped-tests",
+        default="",
+        required=False,
+        help="Avoid running CI test on the following Python versions",
+        type=str,
+    )
+    parser.add_argument(
         "--ci-test-extras",
         default="",
         required=False,
@@ -133,6 +140,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         doc_apt_packages=_to_list(args.doc_apt_packages),
         no_macos=args.no_macos,
         no_pypi=args.no_pypi,
+        skip_tests=_to_list(args.ci_skipped_tests),
         test_extras=_to_list(args.ci_test_extras),
     )
     if not args.no_gitpod:

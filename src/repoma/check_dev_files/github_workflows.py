@@ -15,11 +15,15 @@ from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
 def main(
-    doc_apt_packages: List[str], no_macos: bool, no_pypi: bool, test_extras: List[str]
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    no_pypi: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
 ) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi)
-    executor(_update_ci_workflow, doc_apt_packages, no_macos, test_extras)
+    executor(_update_ci_workflow, doc_apt_packages, no_macos, skip_tests, test_extras)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -47,13 +51,17 @@ def _update_cd_workflow(no_pypi: bool) -> None:
 
 
 def _update_ci_workflow(
-    doc_apt_packages: List[str], no_macos: bool, test_extras: List[str]
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
 ) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             doc_apt_packages,
             no_macos,
+            skip_tests,
             test_extras,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
@@ -75,7 +83,11 @@ def _update_ci_workflow(
 
 
 def _get_ci_workflow(  # noqa: R701
-    path: Path, doc_apt_packages: List[str], no_macos: bool, test_extras: List[str]
+    path: Path,
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
 ) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
@@ -101,6 +113,8 @@ def _get_ci_workflow(  # noqa: R701
             with_section["coverage-target"] = package_name
         if not no_macos:
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
+        if skip_tests:
+            with_section["skipped-python-versions"] = " ".join(skip_tests)
         __update_with_section(config, job_name="pytest")
     # Configure `style` job
     if not os.path.exists(CONFIG_PATH.precommit):
