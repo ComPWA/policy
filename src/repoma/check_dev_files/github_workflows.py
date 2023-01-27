@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 from ruamel.yaml.main import YAML
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
@@ -73,7 +74,7 @@ def _update_ci_workflow(
         raise PrecommitError(executor.merge_messages())
 
 
-def _get_ci_workflow(  # pylint: disable=too-many-branches  # noqa: R701
+def _get_ci_workflow(  # noqa: R701
     path: Path, doc_apt_packages: List[str], no_macos: bool, test_extras: List[str]
 ) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
@@ -87,8 +88,7 @@ def _get_ci_workflow(  # pylint: disable=too-many-branches  # noqa: R701
             with_section["apt-packages"] = " ".join(doc_apt_packages)
         if not os.path.exists(CONFIG_PATH.readthedocs):
             with_section["gh-pages"] = True
-        if with_section == {}:
-            del with_section
+        __update_with_section(config, job_name="doc")
     # Configure `pytest` job
     if not os.path.exists("tests"):
         del config["jobs"]["pytest"]
@@ -100,13 +100,21 @@ def _get_ci_workflow(  # pylint: disable=too-many-branches  # noqa: R701
             package_name = get_pypi_name().replace("-", "_")
             with_section["coverage-target"] = package_name
         if not no_macos:
-            with_section["macos-python-version"] = "3.7"
-        if with_section == {}:
-            del with_section
+            with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
+        __update_with_section(config, job_name="pytest")
     # Configure `style` job
     if not os.path.exists(CONFIG_PATH.precommit):
         del config["jobs"]["style"]
     return yaml, config
+
+
+def __update_with_section(config: dict, job_name: str) -> None:
+    with_section = config["jobs"][job_name]["with"]
+    if with_section:
+        sorted_section = {k: with_section[k] for k in sorted(with_section)}
+        config["jobs"][job_name]["with"] = sorted_section
+    else:
+        del with_section
 
 
 def _copy_workflow_file(filename: str) -> None:
