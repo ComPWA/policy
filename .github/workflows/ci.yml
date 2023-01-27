@@ -17,6 +17,11 @@ on:
       - main
       - epic/*
   workflow_dispatch:
+    inputs:
+      specific-pip-packages:
+        description: Run CI with specific pip packages
+        required: false
+        type: string
 
 jobs:
   pytest:
@@ -24,5 +29,6 @@ jobs:
     with:
       coverage-target: repo_maintenance
       macos-python-version: "3.7"
+      specific-pip-packages: ${{ inputs.specific-pip-packages }}
   style:
     uses: ComPWA/actions/.github/workflows/pre-commit.yml@dev
