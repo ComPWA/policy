@@ -109,7 +109,7 @@ def _get_ci_workflow(  # noqa: R701
         if test_extras:
             with_section["additional-extras"] = ",".join(test_extras)
         if os.path.exists(CONFIG_PATH.codecov):
-            package_name = get_pypi_name().replace("-", "_")
+            package_name = get_pypi_name().replace("-", "_").lower()
             with_section["coverage-target"] = package_name
         if not no_macos:
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
