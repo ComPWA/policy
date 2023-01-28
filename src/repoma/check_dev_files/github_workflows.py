@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
@@ -83,7 +84,7 @@ def _update_ci_workflow(
         raise PrecommitError(executor.merge_messages())
 
 
-def _get_ci_workflow(  # noqa: R701
+def _get_ci_workflow(
     path: Path,
     doc_apt_packages: List[str],
     no_macos: bool,
@@ -92,17 +93,36 @@ def _get_ci_workflow(  # noqa: R701
 ) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
-    # Configure `doc` job
+    __update_doc_section(config, doc_apt_packages)
+    __update_pytest_section(config, no_macos, skip_tests, test_extras)
+    __update_style_section(config)
+    return yaml, config
+
+
+def __update_doc_section(config: CommentedMap, apt_packages: List[str]) -> None:
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
     else:
         with_section = config["jobs"]["doc"]["with"]
-        if doc_apt_packages:
-            with_section["apt-packages"] = " ".join(doc_apt_packages)
+        if apt_packages:
+            with_section["apt-packages"] = " ".join(apt_packages)
         if not os.path.exists(CONFIG_PATH.readthedocs):
             with_section["gh-pages"] = True
         __update_with_section(config, job_name="doc")
-    # Configure `pytest` job
+
+
+def __update_style_section(config: CommentedMap) -> None:
+    if not os.path.exists(CONFIG_PATH.precommit):
+        del config["jobs"]["style"]
+    else:
+        cfg = PrecommitConfig.load()
+        if cfg.ci is not None and cfg.ci.skip is None:
+            del config["jobs"]["style"]
+
+
+def __update_pytest_section(
+    config: CommentedMap, no_macos: bool, skip_tests: List[str], test_extras: List[str]
+) -> None:
     if not os.path.exists("tests"):
         del config["jobs"]["pytest"]
     else:
@@ -117,14 +137,6 @@ def _get_ci_workflow(  # noqa: R701
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
         __update_with_section(config, job_name="pytest")
-    # Configure `style` job
-    if not os.path.exists(CONFIG_PATH.precommit):
-        del config["jobs"]["style"]
-    else:
-        cfg = PrecommitConfig.load()
-        if cfg.ci is not None and cfg.ci.skip is None:
-            del config["jobs"]["style"]
-    return yaml, config
 
 
 def __update_with_section(config: dict, job_name: str) -> None:

@@ -38,10 +38,6 @@
   },
   "flake8.importStrategy": "fromEnvironment",
   "git.rebaseWhenSync": true,
-  "github-actions.workflows.pinned.workflows": [
-    ".github/workflows/ci-tests.yml",
-    ".github/workflows/ci-style.yml"
-  ],
   "isort.check": true,
   "isort.importStrategy": "fromEnvironment",
   "pylint.importStrategy": "fromEnvironment",
