@@ -32,67 +32,67 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--ci-skipped-tests",
         default="",
-        required=False,
         help="Avoid running CI test on the following Python versions",
+        required=False,
         type=str,
     )
     parser.add_argument(
         "--ci-test-extras",
         default="",
-        required=False,
         help="Comma-separated list of extras that are required for running tests on CI",
+        required=False,
         type=str,
     )
     parser.add_argument(
         "--doc-apt-packages",
         default="",
-        required=False,
         help=(
             "Comma- or space-separated list of APT packages that are required to build"
             " documentation"
         ),
+        required=False,
         type=str,
     )
     parser.add_argument(
         "--ignore-author",
-        default=False,
         action="store_true",
+        default=False,
         help="Do not update author info in setup.cfg.",
     )
     parser.add_argument(
         "--no-python",
-        default=False,
         action="store_true",
+        default=False,
         help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
         "--no-gitpod",
-        default=False,
         action="store_true",
+        default=False,
         help="Do not create a GitPod config file",
     )
     parser.add_argument(
         "--no-prettierrc",
-        default=False,
         action="store_true",
+        default=False,
         help="Remove the prettierrc, so that Prettier's default values are used.",
     )
     parser.add_argument(
         "--allow-labels",
-        default=False,
         action="store_true",
+        default=False,
         help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
         "--no-macos",
-        default=False,
         action="store_true",
+        default=False,
         help="Do not run test job on macOS",
     )
     parser.add_argument(
         "--no-pypi",
-        default=False,
         action="store_true",
+        default=False,
         help="Do not publish package to PyPI",
     )
     parser.add_argument(
@@ -107,21 +107,21 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     parser.add_argument(
         "--repo-name",
-        required=True,
-        type=str,
         help=(
             "Name of the repository. This can usually be found in the URL of the"
             " repository on GitHub or GitLab"
         ),
+        required=True,
+        type=str,
     )
     parser.add_argument(
         "--repo-title",
         default="",
-        type=str,
         help=(
             "Title or full name of the repository. If not provided, this falls back to"
             " the repo-name."
         ),
+        type=str,
     )
     args = parser.parse_args(argv)
     is_python_repo = not args.no_python
