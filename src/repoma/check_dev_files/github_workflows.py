@@ -123,7 +123,8 @@ def __update_style_section(config: CommentedMap) -> None:
 def __update_pytest_section(
     config: CommentedMap, no_macos: bool, skip_tests: List[str], test_extras: List[str]
 ) -> None:
-    if not os.path.exists("tests"):
+    test_dir = "tests"
+    if not os.path.exists(test_dir):
         del config["jobs"]["pytest"]
     else:
         with_section = config["jobs"]["pytest"]["with"]
@@ -136,6 +137,9 @@ def __update_pytest_section(
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
+        output_path = f"{test_dir}/output/"
+        if os.path.exists(output_path):
+            with_section["test-output-path"] = output_path
         __update_with_section(config, job_name="pytest")
 
 
