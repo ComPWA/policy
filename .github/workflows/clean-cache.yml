@@ -8,20 +8,7 @@ on:
 
 jobs:
   cleanup:
-    env:
-      REPO: ${{ github.repository }}
-      REF: refs/pull/${{ github.event.inputs.pr-number || github.event.number }}/merge
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     name: Remove PR caches
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - run: gh extension install actions/gh-actions-cache
-      - name: Delete caches of latest PR
-        run: |
-          set +e
-          echo "Deleting caches..."
-          for CACHE_KEY in $(gh actions-cache list -R $REPO -B $REF | cut -f 1); do
-            gh actions-cache delete $CACHE_KEY -R $REPO -B $REF --confirm
-          done
-          echo "Done"
+      - uses: ComPWA/actions/clean-caches@v1
