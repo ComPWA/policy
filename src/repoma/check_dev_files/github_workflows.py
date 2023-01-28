@@ -77,7 +77,7 @@ def _update_ci_workflow(
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not expected_data.get("jobs"):
-            if workflow_path.exists() and not allow_deprecated:
+            if workflow_path.exists():
                 workflow_path.unlink()
                 raise PrecommitError("Removed redundant CI workflows")
         else:
