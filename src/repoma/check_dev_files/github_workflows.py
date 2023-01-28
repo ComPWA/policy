@@ -76,11 +76,16 @@ def _update_ci_workflow(
             test_extras,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
-        if not workflow_path.exists():
-            update_workflow(yaml, expected_data, workflow_path)
-        existing_data = yaml.load(workflow_path)
-        if existing_data != expected_data:
-            update_workflow(yaml, expected_data, workflow_path)
+        if not expected_data.get("jobs"):
+            if workflow_path.exists() and not allow_deprecated:
+                workflow_path.unlink()
+                raise PrecommitError("Removed redundant CI workflows")
+        else:
+            if not workflow_path.exists():
+                update_workflow(yaml, expected_data, workflow_path)
+            existing_data = yaml.load(workflow_path)
+            if existing_data != expected_data:
+                update_workflow(yaml, expected_data, workflow_path)
 
     executor = Executor()
     executor(update)
