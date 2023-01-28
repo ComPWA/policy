@@ -64,7 +64,7 @@
     ".github/workflows/ci.yml": true,
     "src/repoma/.github/ISSUE_TEMPLATE": true,
     "src/repoma/.github/pull_request_template.md": true,
-    "src/repoma/.github/workflows/clean-cache.yml": true,
+    "src/repoma/.github/workflows/clean-caches.yml": true,
     "src/repoma/.github/workflows/pr-linting.yml": true,
     "src/repoma/.github/workflows/release-drafter.yml": true,
     "src/repoma/.template/.cspell.json": true,
