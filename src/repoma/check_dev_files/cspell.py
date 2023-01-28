@@ -225,7 +225,7 @@ def __write_config(config: dict) -> None:
         stream.write("\n")
 
 
-def __sort_section(content: Iterable[str], section_name: str) -> List[str]:
+def __sort_section(content: Iterable[Any], section_name: str) -> List[str]:
     """Sort a list section.
 
     >>> __sort_section({"one", "Two"}, section_name="words")
@@ -233,6 +233,13 @@ def __sort_section(content: Iterable[str], section_name: str) -> List[str]:
     >>> __sort_section({"one", "Two"}, section_name="ignoreWords")
     ['Two', 'one']
     """
+    if section_name == "dictionaryDefinitions":
+
+        def sort_key(value: Any) -> str:
+            name = value.get("name", "")
+            return name.lower()
+
+        return sorted(content, key=sort_key)
     if section_name == "ignoreWords":
         return sorted(content)
     return sorted(content, key=lambda s: s.lower() if isinstance(s, str) else s)
