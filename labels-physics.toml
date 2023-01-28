@@ -34,9 +34,9 @@ color = "D93F0B"
 name = "🐛 Bug"
 description = "Something isn't working"
 
-["💡 Feature"]
+["✨ Feature"]
 color = "C2E0C6"
-name = "💡 Feature"
+name = "✨ Feature"
 description = "New feature added to the package"
 
 ["💫 Good first issue"]
