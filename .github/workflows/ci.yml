@@ -27,7 +27,7 @@ jobs:
   pytest:
     uses: ComPWA/actions/.github/workflows/pytest.yml@v1
     with:
-      coverage-target: repo_maintenance
+      coverage-target: repoma
       macos-python-version: "3.7"
       specific-pip-packages: ${{ inputs.specific-pip-packages }}
   style:

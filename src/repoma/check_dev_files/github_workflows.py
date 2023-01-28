@@ -146,8 +146,7 @@ def __update_pytest_section(
         if test_extras:
             with_section["additional-extras"] = ",".join(test_extras)
         if os.path.exists(CONFIG_PATH.codecov):
-            package_name = get_pypi_name().replace("-", "_").lower()
-            with_section["coverage-target"] = package_name
+            with_section["coverage-target"] = __get_package_name()
         if not no_macos:
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
         if skip_tests:
@@ -165,6 +164,14 @@ def __update_with_section(config: dict, job_name: str) -> None:
         config["jobs"][job_name]["with"] = sorted_section
     else:
         del with_section
+
+
+def __get_package_name() -> str:
+    package_name = get_pypi_name().replace("-", "_").lower()
+    if os.path.exists(f"src/{package_name}/"):
+        return package_name
+    src_dirs = os.listdir("src/")
+    return sorted(src_dirs)[0]
 
 
 def _copy_workflow_file(filename: str) -> None:
