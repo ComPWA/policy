@@ -16,7 +16,8 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(
+def main(  # pylint: disable=too-many-arguments
+    allow_deprecated: bool,
     doc_apt_packages: List[str],
     no_macos: bool,
     no_pypi: bool,
@@ -25,7 +26,14 @@ def main(
 ) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi)
-    executor(_update_ci_workflow, doc_apt_packages, no_macos, skip_tests, test_extras)
+    executor(
+        _update_ci_workflow,
+        allow_deprecated,
+        doc_apt_packages,
+        no_macos,
+        skip_tests,
+        test_extras,
+    )
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
@@ -53,6 +61,7 @@ def _update_cd_workflow(no_pypi: bool) -> None:
 
 
 def _update_ci_workflow(
+    allow_deprecated: bool,
     doc_apt_packages: List[str],
     no_macos: bool,
     skip_tests: List[str],
@@ -75,10 +84,11 @@ def _update_ci_workflow(
 
     executor = Executor()
     executor(update)
-    executor(remove_workflow, "ci-docs.yml")
-    executor(remove_workflow, "ci-style.yml")
-    executor(remove_workflow, "ci-tests.yml")
-    executor(remove_workflow, "linkcheck.yml")
+    if not allow_deprecated:
+        executor(remove_workflow, "ci-docs.yml")
+        executor(remove_workflow, "ci-style.yml")
+        executor(remove_workflow, "ci-tests.yml")
+        executor(remove_workflow, "linkcheck.yml")
     executor(_copy_workflow_file, "clean-cache.yml")
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())

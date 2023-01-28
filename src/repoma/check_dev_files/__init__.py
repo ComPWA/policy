@@ -30,6 +30,12 @@ from . import (
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
+        "--allow-deprecated-workflows",
+        action="store_true",
+        default=False,
+        help="Allow deprecated CI workflows, such as ci-docs.yml.",
+    )
+    parser.add_argument(
         "--ci-skipped-tests",
         default="",
         help="Avoid running CI test on the following Python versions",
@@ -137,6 +143,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(github_templates.main)
     executor(
         github_workflows.main,
+        allow_deprecated=args.allow_deprecated_workflows,
         doc_apt_packages=_to_list(args.doc_apt_packages),
         no_macos=args.no_macos,
         no_pypi=args.no_pypi,
