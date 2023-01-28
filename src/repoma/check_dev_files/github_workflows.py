@@ -1,112 +1,177 @@
 """Check :file:`.github/workflows` folder content."""
-
 import os
 import re
-from typing import Iterable, List
+from pathlib import Path
+from typing import List, Tuple
 
-from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.main import YAML
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
+from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
-from .precommit import get_local_hooks, get_non_functional_hooks
 
-__STYLE_WORKFLOW = "ci-style.yml"
-
-
-def main(no_docs: bool, no_cd: bool) -> None:
+def main(  # pylint: disable=too-many-arguments
+    allow_deprecated: bool,
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    no_pypi: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
+) -> None:
     executor = Executor()
-    if not no_cd:
-        executor(_check_milestone_workflow)
-    if not no_docs:
-        executor(_check_docs_workflow)
-    if os.path.exists(CONFIG_PATH.precommit):
-        executor(_check_style_workflow)
+    executor(_update_cd_workflow, no_pypi)
+    executor(
+        _update_ci_workflow,
+        allow_deprecated,
+        doc_apt_packages,
+        no_macos,
+        skip_tests,
+        test_extras,
+    )
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
 
 
-def create_continuous_deployment() -> None:
-    _copy_workflow_file("cd.yml")
+def _update_cd_workflow(no_pypi: bool) -> None:
+    def update() -> None:
+        yaml = create_prettier_round_trip_yaml()
+        cd = "cd.yml"  # pylint: disable=invalid-name
+        expected_data = yaml.load(REPOMA_DIR / CONFIG_PATH.github_workflow_dir / cd)
+        if no_pypi or not os.path.exists(CONFIG_PATH.setup_cfg):
+            del expected_data["jobs"]["pypi"]
+
+        workflow_path = CONFIG_PATH.github_workflow_dir / cd
+        if not workflow_path.exists():
+            update_workflow(yaml, expected_data, workflow_path)
+        existing_data = yaml.load(workflow_path)
+        if existing_data != expected_data:
+            update_workflow(yaml, expected_data, workflow_path)
+
+    executor = Executor()
+    executor(update)
+    executor(remove_workflow, "milestone.yml")
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
-def _check_milestone_workflow() -> None:
-    """Add a GitHub Action that auto-closes milestones on a new release.
+def _update_ci_workflow(
+    allow_deprecated: bool,
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
+) -> None:
+    def update() -> None:
+        yaml, expected_data = _get_ci_workflow(
+            REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
+            doc_apt_packages,
+            no_macos,
+            skip_tests,
+            test_extras,
+        )
+        workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
+        if not expected_data.get("jobs"):
+            if workflow_path.exists():
+                workflow_path.unlink()
+                raise PrecommitError("Removed redundant CI workflows")
+        else:
+            if not workflow_path.exists():
+                update_workflow(yaml, expected_data, workflow_path)
+            existing_data = yaml.load(workflow_path)
+            if existing_data != expected_data:
+                update_workflow(yaml, expected_data, workflow_path)
 
-    See `github.com/mhutchie/update-milestone-on-release
-    <https://github.com/mhutchie/update-milestone-on-release>`_.
-    """
-    # cspell:ignore mhutchie
-    _copy_workflow_file("milestone.yml")
+    executor = Executor()
+    executor(update)
+    if not allow_deprecated:
+        executor(remove_workflow, "ci-docs.yml")
+        executor(remove_workflow, "ci-style.yml")
+        executor(remove_workflow, "ci-tests.yml")
+        executor(remove_workflow, "linkcheck.yml")
+    executor(_copy_workflow_file, "clean-cache.yml")
+    if executor.error_messages:
+        raise PrecommitError(executor.merge_messages())
 
 
-def _check_docs_workflow() -> None:
-    if os.path.exists("./docs/") or os.path.exists("./doc/"):
-        executor = Executor()
-        executor(_copy_workflow_file, "ci-docs.yml")
-        executor(_copy_workflow_file, "linkcheck.yml")
-        if executor.error_messages:
-            raise PrecommitError(executor.merge_messages())
-
-
-def _check_style_workflow() -> None:
-    precommit = PrecommitConfig.load()
-    if precommit.ci is not None and precommit.ci.skip is None:
-        return
+def _get_ci_workflow(
+    path: Path,
+    doc_apt_packages: List[str],
+    no_macos: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
+) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
-    expected = __get_expected_style_workflow(precommit, yaml)
-    output_path = CONFIG_PATH.github_workflow_dir / __STYLE_WORKFLOW
-    if not os.path.exists(output_path):
-        yaml.dump(expected, output_path)
-        raise PrecommitError(f"Created {output_path}")
-    existing = yaml.load(output_path)
-    if existing != expected:
-        yaml.dump(expected, output_path)
-        raise PrecommitError(f"Updated {output_path}")
+    config = yaml.load(path)
+    __update_doc_section(config, doc_apt_packages)
+    __update_pytest_section(config, no_macos, skip_tests, test_extras)
+    __update_style_section(config)
+    return yaml, config
 
 
-def __get_expected_style_workflow(  # noqa: R701
-    precommit: PrecommitConfig, yaml: YAML
-) -> dict:
-    workflow = yaml.load(REPOMA_DIR / ".template" / __STYLE_WORKFLOW)
-    steps: List[dict] = workflow["jobs"]["style"]["steps"]
-    local_hooks = get_local_hooks(precommit)
-    non_functional_hooks = get_non_functional_hooks(precommit)
-    if "mypy" not in set(local_hooks):
-        paths: List[str] = steps[1]["with"]["path"].split("\n")
-        paths.pop(0)
-        steps[1]["with"]["path"] = "\n".join(paths)
-    constraint_file = CONFIG_PATH.pip_constraints / "py3.8.txt"
-    if os.path.exists(constraint_file):
-        cmd: str = steps[3]["run"]
-        steps[3]["run"] = cmd.replace("-e .[sty]", f"-c {constraint_file} -e .[sty]")
-    if local_hooks:
-        steps[4]["run"] = __to_commands(local_hooks)
-    if non_functional_hooks:
-        steps[5]["run"] = __to_commands(non_functional_hooks)
-    if not local_hooks or not non_functional_hooks:
-        if not local_hooks and not non_functional_hooks:
-            steps.pop(4)
-            steps.pop(5)
-        elif not local_hooks:
-            steps.pop(4)
-        elif not non_functional_hooks:
-            steps.pop(5)
-    return workflow
+def __update_doc_section(config: CommentedMap, apt_packages: List[str]) -> None:
+    if not os.path.exists("docs/"):
+        del config["jobs"]["doc"]
+    else:
+        with_section = config["jobs"]["doc"]["with"]
+        if apt_packages:
+            with_section["apt-packages"] = " ".join(apt_packages)
+        if not os.path.exists(CONFIG_PATH.readthedocs):
+            with_section["gh-pages"] = True
+        __update_with_section(config, job_name="doc")
 
 
-def __to_commands(hook_ids: Iterable[str]) -> str:
-    """Create pre-commit commands.
+def __update_style_section(config: CommentedMap) -> None:
+    if not os.path.exists(CONFIG_PATH.precommit):
+        del config["jobs"]["style"]
+    else:
+        cfg = PrecommitConfig.load()
+        if cfg.ci is not None and cfg.ci.skip is None:
+            del config["jobs"]["style"]
 
-    >>> print(__to_commands(["pyright", "mypy"]))
-    pre-commit run mypy -a --color always
-    pre-commit run pyright -a --color always
-    """
-    commands = [f"pre-commit run {h} -a --color always" for h in sorted(hook_ids)]
-    return "\n".join(commands)
+
+def __update_pytest_section(
+    config: CommentedMap, no_macos: bool, skip_tests: List[str], test_extras: List[str]
+) -> None:
+    test_dir = "tests"
+    if not os.path.exists(test_dir):
+        del config["jobs"]["pytest"]
+    else:
+        with_section = config["jobs"]["pytest"]["with"]
+        if test_extras:
+            with_section["additional-extras"] = ",".join(test_extras)
+        if os.path.exists(CONFIG_PATH.codecov):
+            with_section["coverage-target"] = __get_package_name()
+        if not no_macos:
+            with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
+        if skip_tests:
+            with_section["skipped-python-versions"] = " ".join(skip_tests)
+        output_path = f"{test_dir}/output/"
+        if os.path.exists(output_path):
+            with_section["test-output-path"] = output_path
+        __update_with_section(config, job_name="pytest")
+
+
+def __update_with_section(config: dict, job_name: str) -> None:
+    with_section = config["jobs"][job_name]["with"]
+    if with_section:
+        sorted_section = {k: with_section[k] for k in sorted(with_section)}
+        config["jobs"][job_name]["with"] = sorted_section
+    else:
+        del with_section
+
+
+def __get_package_name() -> str:
+    package_name = get_pypi_name().replace("-", "_").lower()
+    if os.path.exists(f"src/{package_name}/"):
+        return package_name
+    src_dirs = os.listdir("src/")
+    return sorted(src_dirs)[0]
 
 
 def _copy_workflow_file(filename: str) -> None:
@@ -140,3 +205,15 @@ def __remove_constraint_pinning(content: str) -> str:
         repl="",
         string=content,
     )
+
+
+def remove_workflow(filename: str) -> None:
+    path = CONFIG_PATH.github_workflow_dir / filename
+    if path.exists():
+        path.unlink()
+        raise PrecommitError(f'Removed deprecated "{filename}" workflow')
+
+
+def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
+    yaml.dump(config, path)
+    raise PrecommitError(f'Updated "{path}" workflow')

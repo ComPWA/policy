@@ -9,8 +9,10 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import PrecommitConfig
 
-__NON_FUNCTIONAL_HOOKS = {
+__NON_SKIPPED_HOOKS = {
     "editorconfig-checker",
+}
+__SKIPPED_HOOKS = {
     "pyright",
 }
 
@@ -20,7 +22,7 @@ def main() -> None:
     _check_plural_hooks_first(cfg)
     _check_single_hook_sorting(cfg)
     _check_local_hooks(cfg)
-    _check_non_functional_hooks(cfg)
+    _check_skipped_hooks(cfg)
 
 
 def _check_plural_hooks_first(config: PrecommitConfig) -> None:
@@ -68,7 +70,7 @@ def _check_local_hooks(config: PrecommitConfig) -> None:
         raise PrecommitError(msg + "\n\n" + expected_content)
 
 
-def _check_non_functional_hooks(config: PrecommitConfig) -> None:
+def _check_skipped_hooks(config: PrecommitConfig) -> None:
     if config.ci is None:
         return
     non_functional_hooks = get_non_functional_hooks(config)
@@ -81,9 +83,18 @@ def _check_non_functional_hooks(config: PrecommitConfig) -> None:
         {', '.join(sorted(missing_hooks))}. Please add at least the following entries
         to {CONFIG_PATH.precommit}:
         """
-        msg = dedent(msg).replace("\n", " ")
+        msg = dedent(msg)
         expected_content = __dump_expected_skips(non_functional_hooks)
         raise PrecommitError(msg + "\n\n" + expected_content)
+    hooks_to_execute = __NON_SKIPPED_HOOKS & skipped_hooks
+    if hooks_to_execute:
+        msg = f"""
+        Please remove the following hooks from the ci.skip section of {CONFIG_PATH.precommit}:
+
+            {', '.join(sorted(hooks_to_execute))}
+        """
+        msg = dedent(msg)
+        raise PrecommitError(msg)
 
 
 def __dump_expected_skips(hooks: Iterable[str]) -> str:
@@ -110,5 +121,5 @@ def get_non_functional_hooks(config: PrecommitConfig) -> List[str]:
         for repo in config.repos
         for hook in repo.hooks
         if repo.repo
-        if hook.id in __NON_FUNCTIONAL_HOOKS
+        if hook.id in __SKIPPED_HOOKS
     ]

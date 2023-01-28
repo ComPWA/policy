@@ -9,6 +9,18 @@ from . import CONFIG_PATH
 from .cfg import open_config
 
 
+def get_pypi_name() -> str:
+    """Extract package name for PyPI from `setup.cfg`.
+
+    >>> get_pypi_name()
+    'repo-maintenance'
+    """
+    cfg = open_setup_cfg()
+    if not cfg.has_option("metadata", "name"):
+        raise PrecommitError(f"No package name defined in {CONFIG_PATH.setup_cfg}")
+    return cfg.get("metadata", "name")
+
+
 def get_supported_python_versions() -> List[str]:
     """Extract supported Python versions from package classifiers.
 

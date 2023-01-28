@@ -38,10 +38,6 @@
   },
   "flake8.importStrategy": "fromEnvironment",
   "git.rebaseWhenSync": true,
-  "github-actions.workflows.pinned.workflows": [
-    ".github/workflows/ci-tests.yml",
-    ".github/workflows/ci-style.yml"
-  ],
   "isort.check": true,
   "isort.importStrategy": "fromEnvironment",
   "pylint.importStrategy": "fromEnvironment",
@@ -64,12 +60,22 @@
     "**/tests/**/__init__.py": true,
     "*/.pydocstyle": true,
     ".constraints/*.txt": true,
+    ".github/workflows/cd.yml": true,
+    ".github/workflows/ci.yml": true,
     "src/repoma/.github/ISSUE_TEMPLATE": true,
+    "src/repoma/.github/pull_request_template.md": true,
+    "src/repoma/.github/workflows/clean-cache.yml": true,
+    "src/repoma/.github/workflows/pr-linting.yml": true,
     "src/repoma/.github/workflows/release-drafter.yml": true,
     "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
     "src/repoma/.template/.prettierrc": true,
     "src/repoma/.template/commitlint.config.js": true
   },
-  "telemetry.telemetryLevel": "off"
+  "telemetry.telemetryLevel": "off",
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": [
+      ".github/workflows/update-dependencies.yml"
+    ]
+  }
 }

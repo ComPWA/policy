@@ -10,7 +10,6 @@ ci:
     - pylint
     - repoma-self-check
     # hooks that don't work on pre-commit.ci
-    - editorconfig-checker
     - pyright
 
 repos:
@@ -48,6 +47,7 @@ repos:
         pass_filenames: false
         args:
           - --allow-labels
+          - --no-pypi
           - --repo-name=repo-maintenance
           - --repo-title=ComPWA Repository Maintenance
 

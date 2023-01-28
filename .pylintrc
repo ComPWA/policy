@@ -20,6 +20,7 @@ disable=
   no-member,  # mypy and pyright
   redefined-builtin, # flake8-built
   too-few-public-methods, # data containers (attrs) and interface classes
+  too-many-branches, # already handled by flake8
   unspecified-encoding, # http://pylint.pycqa.org/en/latest/whatsnew/2.10.html
   unused-import, # https://www.flake8rules.com/rules/F401
 
