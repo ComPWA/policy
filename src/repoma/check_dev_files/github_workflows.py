@@ -168,10 +168,14 @@ def __update_with_section(config: dict, job_name: str) -> None:
 
 
 def __get_package_name() -> str:
-    package_name = get_pypi_name().replace("-", "_").lower()
+    pypi_name = get_pypi_name()
+    package_name = pypi_name.replace("-", "_").lower()
     if os.path.exists(f"src/{package_name}/"):
         return package_name
     src_dirs = os.listdir("src/")
+    candidate_dirs = [s for s in src_dirs if s.startswith(pypi_name[0].lower())]
+    if candidate_dirs:
+        return sorted(candidate_dirs)[0]
     return sorted(src_dirs)[0]
 
 
