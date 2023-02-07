@@ -221,4 +221,5 @@ def remove_workflow(filename: str) -> None:
 
 def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
     yaml.dump(config, path)
-    raise PrecommitError(f'Updated "{path}" workflow')
+    verb = "Updated" if path.exists() else "Created"
+    raise PrecommitError(f'{verb} "{path}" workflow')
