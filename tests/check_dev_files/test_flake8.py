@@ -92,14 +92,14 @@ def test_check_setup_cfg_incorrect(content: str):
         [options.extras_require]
         ...
         flake8 =
-            flake8 >=4  # extend-select
+            flake8 >=4
             flake8-blind-except
             flake8-bugbear
             flake8-builtins
             flake8-comprehensions
             flake8-pytest-style
             flake8-rst-docstrings
-            flake8-type-ignore; python_version >="3.8.0"
+            flake8-type-ignore
             flake8-use-fstring
             pep8-naming
         ...
