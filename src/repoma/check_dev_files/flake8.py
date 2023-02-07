@@ -14,14 +14,14 @@ from repoma.utilities.setup_cfg import open_setup_cfg
 
 # cspell:ignore fstring
 __FLAKE8_REQUIREMENTS = [
-    "flake8 >=4  # extend-select",
+    "flake8 >=4",
     "flake8-blind-except",
     "flake8-bugbear",
     "flake8-builtins",
     "flake8-comprehensions",
     "flake8-pytest-style",
     "flake8-rst-docstrings",
-    'flake8-type-ignore; python_version >="3.8.0"',
+    "flake8-type-ignore",
     "flake8-use-fstring",
     "pep8-naming",
 ]
@@ -176,6 +176,8 @@ def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
     packages = cfg.get(extras_require, "flake8").split("\n")
     if "" in packages:
         packages.remove("")
+    packages = [p.split(";")[0].strip() for p in packages]
+    packages = [p.split("#")[0].strip() for p in packages]
     if not set(__FLAKE8_REQUIREMENTS) <= set(packages):
         raise PrecommitError(error_message)
 
