@@ -1,6 +1,7 @@
 """Configuration for working with TOML files."""
 
 import os
+import shutil
 from textwrap import dedent
 
 from ruamel.yaml.comments import CommentedSeq
@@ -15,8 +16,13 @@ from repoma.utilities.vscode import (
 )
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
+__INCORRECT_TAPLO_CONFIG_PATHS = [
+    "taplo.toml",
+]
 __TRIGGER_FILES = [
+    ".taplo.toml",
     "pyproject.toml",
+    *__INCORRECT_TAPLO_CONFIG_PATHS,
 ]
 
 
@@ -24,10 +30,20 @@ def main() -> None:
     if not any(os.path.exists(f) for f in __TRIGGER_FILES):
         return
     executor = Executor()
+    executor(_rename_taplo_config)
     executor(_update_precommit_config)
     executor(_update_vscode_extensions)
     if executor.error_messages:
         raise PrecommitError(executor.merge_messages())
+
+
+def _rename_taplo_config() -> None:
+    correct_path = ".taplo.toml"
+    for path in __INCORRECT_TAPLO_CONFIG_PATHS:
+        if not os.path.exists(path):
+            continue
+        shutil.move(path, correct_path)
+        raise PrecommitError(f"Renamed {path} to {correct_path}")
 
 
 def _update_precommit_config() -> None:
