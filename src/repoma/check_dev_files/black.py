@@ -78,8 +78,7 @@ def _check_target_versions(config: dict) -> None:
     target_versions = config.get("target-version", [])
     supported_python_versions = get_supported_python_versions()
     expected_target_versions = sorted(
-        ("py" + s.replace(".", "") for s in supported_python_versions),
-        key=natural_sorting,
+        "py" + s.replace(".", "") for s in supported_python_versions
     )
     if target_versions != expected_target_versions:
         error_message = dedent(

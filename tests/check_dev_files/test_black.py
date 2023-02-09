@@ -81,12 +81,12 @@ def test_check_target_versions():
 
             [tool.black]
             target-version = [
+                'py310',
+                'py311',
                 'py36',
                 'py37',
                 'py38',
                 'py39',
-                'py310',
-                'py311',
             ]
             """
         ).strip()
