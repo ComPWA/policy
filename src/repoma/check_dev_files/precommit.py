@@ -1,19 +1,20 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
-from io import StringIO
-from textwrap import dedent, indent
-from typing import Iterable, List, Set
+from textwrap import dedent
+from typing import List, Set
 
-import yaml
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import PrecommitConfig
+from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 __NON_SKIPPED_HOOKS = {
     "editorconfig-checker",
 }
 __SKIPPED_HOOKS = {
     "pyright",
+    "taplo",
 }
 
 
@@ -21,7 +22,6 @@ def main() -> None:
     cfg = PrecommitConfig.load()
     _check_plural_hooks_first(cfg)
     _check_single_hook_sorting(cfg)
-    _check_local_hooks(cfg)
     _check_skipped_hooks(cfg)
 
 
@@ -51,42 +51,35 @@ def _check_single_hook_sorting(config: PrecommitConfig) -> None:
         raise PrecommitError(msg)
 
 
-def _check_local_hooks(config: PrecommitConfig) -> None:
-    if config.ci is None:
-        return
-    local_hook_ids = get_local_hooks(config)
-    if len(local_hook_ids) == 0:
-        return
-    skipped_hooks = __get_precommit_ci_skips(config)
-    missing_hooks = set(local_hook_ids) - skipped_hooks
-    if missing_hooks:
-        msg = f"""
-        The ci section in {CONFIG_PATH.precommit} should skip local hooks. These local
-        hooks are missing: {', '.join(sorted(missing_hooks))}.
-        Please add at least the following entries to {CONFIG_PATH.precommit}:
-        """
-        msg = dedent(msg).replace("\n", " ")
-        expected_content = __dump_expected_skips(local_hook_ids)
-        raise PrecommitError(msg + "\n\n" + expected_content)
-
-
 def _check_skipped_hooks(config: PrecommitConfig) -> None:
     if config.ci is None:
         return
+    local_hooks = get_local_hooks(config)
     non_functional_hooks = get_non_functional_hooks(config)
-    skipped_hooks = __get_precommit_ci_skips(config)
-    missing_hooks = set(non_functional_hooks) - skipped_hooks
-    if missing_hooks:
+    expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
+    if not expected_skips:
+        return
+    existing_skips = __get_precommit_ci_skips(config)
+    missing_skips = set(expected_skips) - existing_skips
+    if missing_skips:
+        yaml = create_prettier_round_trip_yaml()
+        contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
+        ci_section: CommentedMap = contents["ci"]
+        if "skip" in ci_section.ca.items:
+            del ci_section.ca.items["skip"]
+        skips = CommentedSeq(sorted(expected_skips))
+        ci_section["skip"] = skips
+        contents.yaml_set_comment_before_after_key("repos", before="\n")
+        yaml.dump(contents, CONFIG_PATH.precommit)
         msg = f"""
-        The ci section in {CONFIG_PATH.precommit} should skip a few hooks that don't
-        work on pre-commit.ci. The following hooks are not listed:
-        {', '.join(sorted(missing_hooks))}. Please add at least the following entries
-        to {CONFIG_PATH.precommit}:
+        The following hooks don't work on pre-commit.ci and have been added to the
+        `ci.skip` section of {CONFIG_PATH.precommit}:
         """
         msg = dedent(msg)
-        expected_content = __dump_expected_skips(non_functional_hooks)
-        raise PrecommitError(msg + "\n\n" + expected_content)
-    hooks_to_execute = __NON_SKIPPED_HOOKS & skipped_hooks
+        sep = "\n    - "
+        msg += sep + sep.join(sorted(missing_skips))
+        raise PrecommitError(msg)
+    hooks_to_execute = __NON_SKIPPED_HOOKS & existing_skips
     if hooks_to_execute:
         msg = f"""
         Please remove the following hooks from the ci.skip section of {CONFIG_PATH.precommit}:
@@ -95,12 +88,6 @@ def _check_skipped_hooks(config: PrecommitConfig) -> None:
         """
         msg = dedent(msg)
         raise PrecommitError(msg)
-
-
-def __dump_expected_skips(hooks: Iterable[str]) -> str:
-    stream = StringIO()
-    yaml.dump({"ci": {"skip": sorted(hooks)}}, stream, sort_keys=False)
-    return indent(stream.getvalue(), prefix="  ")
 
 
 def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:

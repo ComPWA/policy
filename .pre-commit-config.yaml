@@ -2,15 +2,14 @@ ci:
   autoupdate_commit_msg: "MAINT: autoupdate pre-commit hooks"
   autoupdate_schedule: monthly
   skip:
-    # local hooks
     - check-dev-files
     - flake8
     - format-setup-cfg
     - mypy
     - pylint
-    - repoma-self-check
-    # hooks that don't work on pre-commit.ci
     - pyright
+    - repoma-self-check
+    - taplo
 
 repos:
   - repo: meta
