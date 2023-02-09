@@ -31,6 +31,7 @@ class _ConfigFilePaths(NamedTuple):
     release_drafter_config: Path = Path(".github/release-drafter.yml")
     release_drafter_workflow: Path = Path(".github/workflows/release-drafter.yml")
     setup_cfg: Path = Path("setup.cfg")
+    taplo: Path = Path(".taplo.toml")
     tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 

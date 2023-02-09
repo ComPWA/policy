@@ -2,12 +2,14 @@
 
 import os
 import shutil
+from pathlib import Path
 from textwrap import dedent
+from typing import List, Union
 
 from ruamel.yaml.comments import CommentedSeq
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
 from repoma.utilities.vscode import (
@@ -19,9 +21,9 @@ from repoma.utilities.yaml import create_prettier_round_trip_yaml
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     "taplo.toml",
 ]
-__TRIGGER_FILES = [
-    ".taplo.toml",
+__TRIGGER_FILES: List[Union[Path, str]] = [
     "pyproject.toml",
+    CONFIG_PATH.taplo,
     *__INCORRECT_TAPLO_CONFIG_PATHS,
 ]
 
@@ -31,6 +33,7 @@ def main() -> None:
         return
     executor = Executor()
     executor(_rename_taplo_config)
+    executor(_update_taplo_config)
     executor(_update_precommit_config)
     executor(_update_vscode_extensions)
     if executor.error_messages:
@@ -38,12 +41,26 @@ def main() -> None:
 
 
 def _rename_taplo_config() -> None:
-    correct_path = ".taplo.toml"
     for path in __INCORRECT_TAPLO_CONFIG_PATHS:
         if not os.path.exists(path):
             continue
-        shutil.move(path, correct_path)
-        raise PrecommitError(f"Renamed {path} to {correct_path}")
+        shutil.move(path, CONFIG_PATH.taplo)
+        raise PrecommitError(f"Renamed {path} to {CONFIG_PATH.taplo}")
+
+
+def _update_taplo_config() -> None:
+    template_path = REPOMA_DIR / ".template" / CONFIG_PATH.taplo
+    if not CONFIG_PATH.taplo.exists():
+        shutil.copyfile(template_path, CONFIG_PATH.taplo)
+        raise PrecommitError(f"Added {CONFIG_PATH.taplo} config for TOML formatting")
+    with open(template_path) as f:
+        expected_content = f.read()
+    with open(CONFIG_PATH.taplo) as f:
+        existing_content = f.read()
+    if existing_content != expected_content:
+        with open(CONFIG_PATH.prettier, "w") as stream:
+            stream.write(expected_content)
+        raise PrecommitError(f"Updated {CONFIG_PATH.prettier} config file")
 
 
 def _update_precommit_config() -> None:
@@ -65,7 +82,6 @@ def _update_precommit_config() -> None:
     repo_idx = len(repos) - 1
     repos.yaml_set_comment_before_after_key(repo_idx, before="\n")
     yaml.dump(config, CONFIG_PATH.precommit)
-    # cspell:ignore taplo
     msg = f"""
     Added Taplo TOML formatter as a pre-commit hook. Please run
 

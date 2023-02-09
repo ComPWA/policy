@@ -70,6 +70,7 @@
     "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
     "src/repoma/.template/.prettierrc": true,
+    "src/repoma/.template/.taplo.toml": true,
     "src/repoma/.template/commitlint.config.js": true
   },
   "telemetry.telemetryLevel": "off",
