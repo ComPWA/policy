@@ -20,7 +20,7 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
         config["recommendations"] = sorted(recommended_extensions)
         __dump_vscode_config(config)
         raise PrecommitError(
-            f'Added VSCode extension recommendation "{extension_name}"'
+            f'Added VS Code extension recommendation "{extension_name}"'
         )
 
 
@@ -35,7 +35,7 @@ def remove_vscode_extension_recommendation(extension_name: str) -> None:
         config["recommendations"] = sorted(recommended_extensions)
         __dump_vscode_config(config)
         raise PrecommitError(
-            f'Removed VSCode extension recommendation "{extension_name}"'
+            f'Removed VS Code extension recommendation "{extension_name}"'
         )
 
 
