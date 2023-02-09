@@ -22,6 +22,7 @@ from . import (
     pyupgrade,
     release_drafter,
     setup_cfg,
+    toml,
     tox,
     update_pip_constraints,
 )
@@ -167,6 +168,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pyupgrade.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
+    executor(toml.main)
     if executor.error_messages:
         print(executor.merge_messages())
         return 1
