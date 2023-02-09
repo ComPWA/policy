@@ -34,4 +34,5 @@ jobs:
       specific-pip-packages: ${{ inputs.specific-pip-packages }}
   style:
     if: inputs.specific-pip-packages == ''
+    secrets: inherit
     uses: ComPWA/actions/.github/workflows/pre-commit.yml@v1
