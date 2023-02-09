@@ -21,6 +21,5 @@
     "travisillig.vscode-json-stable-stringify",
     "tyriar.sort-lines",
     "yzhang.markdown-all-in-one"
-  ],
-  "unwantedRecommendations": ["dbaeumer.vscode-eslint"]
+  ]
 }
