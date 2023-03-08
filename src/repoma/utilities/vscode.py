@@ -17,10 +17,10 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
     recommended_extensions = config.get("recommendations", [])
     if extension_name not in set(recommended_extensions):
         recommended_extensions.append(extension_name)
-        config["recommendations"] = recommended_extensions
+        config["recommendations"] = sorted(recommended_extensions)
         __dump_vscode_config(config)
         raise PrecommitError(
-            f'Added VSCode extension recommendation "{extension_name}"'
+            f'Added VS Code extension recommendation "{extension_name}"'
         )
 
 
@@ -32,10 +32,10 @@ def remove_vscode_extension_recommendation(extension_name: str) -> None:
     recommended_extensions = list(config.get("recommendations", []))
     if extension_name in recommended_extensions:
         recommended_extensions.remove(extension_name)
-        config["recommendations"] = recommended_extensions
+        config["recommendations"] = sorted(recommended_extensions)
         __dump_vscode_config(config)
         raise PrecommitError(
-            f'Removed VSCode extension recommendation "{extension_name}"'
+            f'Removed VS Code extension recommendation "{extension_name}"'
         )
 
 

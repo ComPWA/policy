@@ -13,8 +13,8 @@ from repoma.errors import PrecommitError
 
 class _ConfigFilePaths(NamedTuple):
     codecov: Path = Path("codecov.yml")
-    cspell: Path = Path(".cspell.json")
     commitlint: Path = Path("commitlint.config.js")
+    cspell: Path = Path(".cspell.json")
     editor_config: Path = Path(".editorconfig")
     flake8: Path = Path(".flake8")
     github_workflow_dir: Path = Path(".github/workflows")
@@ -26,12 +26,13 @@ class _ConfigFilePaths(NamedTuple):
     pydocstyle: Path = Path(".pydocstyle")
     pyproject: Path = Path("pyproject.toml")
     pytest: Path = Path("pytest.ini")
-    setup_cfg: Path = Path("setup.cfg")
-    tox: Path = Path("tox.ini")
+    readme: Path = Path("README.md")
+    readthedocs: Path = Path(".readthedocs.yml")
     release_drafter_config: Path = Path(".github/release-drafter.yml")
     release_drafter_workflow: Path = Path(".github/workflows/release-drafter.yml")
-    readthedocs: Path = Path(".readthedocs.yml")
-    readme: Path = Path("README.md")
+    setup_cfg: Path = Path("setup.cfg")
+    taplo: Path = Path(".taplo.toml")
+    tox: Path = Path("tox.ini")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 
 
