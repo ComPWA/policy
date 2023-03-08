@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "setuptools_scm",
     "setuptools>=36.2.1", # environment markers
+    "setuptools_scm",
     "wheel",
 ]
 
