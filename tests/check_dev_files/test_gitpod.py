@@ -24,7 +24,6 @@ def test_extract_extensions():
         "stkb.rewrap",
         "streetsidesoftware.code-spell-checker",
         "tamasfe.even-better-toml",
-        "travisillig.vscode-json-stable-stringify",
         "tyriar.sort-lines",
         "yzhang.markdown-all-in-one",
         # cspell:enable

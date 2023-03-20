@@ -7,6 +7,18 @@ from repoma.errors import PrecommitError
 from . import CONFIG_PATH
 
 
+def remove_unwanted_recommendations() -> None:
+    if not CONFIG_PATH.vscode_extensions.exists():
+        return
+    with open(CONFIG_PATH.vscode_extensions) as stream:
+        config = json.load(stream)
+    key = "unwantedRecommendations"
+    unwanted_recommendations = config.pop(key, None)
+    if unwanted_recommendations is not None:
+        __dump_vscode_config(config)
+        raise PrecommitError(f'Removed VS Code extension setting "{key}"')
+
+
 def add_vscode_extension_recommendation(extension_name: str) -> None:
     if not CONFIG_PATH.vscode_extensions.exists():
         CONFIG_PATH.vscode_extensions.parent.mkdir(exist_ok=True)
