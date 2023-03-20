@@ -26,9 +26,17 @@ def _update_extensions() -> None:
 
 def _update_settings() -> None:
     executor = Executor()
+    executor(_remove_outdated_settings)
     executor(_update_doc_settings)
     executor(_update_pytest_settings)
     executor.finalize()
+
+
+def _remove_outdated_settings() -> None:
+    outdated_settings = [
+        "telemetry.telemetryLevel",
+    ]
+    vscode.remove_settings(outdated_settings)
 
 
 def _update_doc_settings() -> None:

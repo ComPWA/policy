@@ -74,7 +74,6 @@
     "src/repoma/.template/.taplo.toml": true,
     "src/repoma/.template/commitlint.config.js": true
   },
-  "telemetry.telemetryLevel": "off",
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": [
       ".github/workflows/update-dependencies.yml"

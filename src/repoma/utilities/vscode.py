@@ -2,18 +2,30 @@
 
 import json
 from pathlib import Path
+from typing import Iterable
 
 from repoma.errors import PrecommitError
 
 from . import CONFIG_PATH
 
 
+def remove_settings(keys: Iterable[str]) -> None:
+    removed_keys = set(keys)
+    settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
+    new_settings = {k: v for k, v in settings.items() if k not in removed_keys}
+    _update_settings(settings, new=new_settings)
+
+
 def set_setting(values: dict) -> None:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new_settings = {**settings, **values}
-    if settings != new_settings:
-        __dump_config(new_settings, CONFIG_PATH.vscode_settings)
-        raise PrecommitError("Updated VS Code settings")
+    _update_settings(settings, new={**settings, **values})
+
+
+def _update_settings(old: dict, new: dict) -> None:
+    if old == new:
+        return
+    __dump_config(new, CONFIG_PATH.vscode_settings)
+    raise PrecommitError("Updated VS Code settings")
 
 
 def remove_unwanted_recommendations() -> None:
