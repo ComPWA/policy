@@ -23,8 +23,7 @@ def main(cron_frequency: str) -> None:
     executor(_remove_script, "pin_requirements.py")
     executor(_remove_script, "upgrade.sh")
     executor(_update_requirement_workflow, cron_frequency)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _remove_script(script_name: str) -> None:
@@ -53,8 +52,7 @@ def _update_requirement_workflow(frequency: str) -> None:
     executor(overwrite_workflow, "requirements.yml", _to_cron_schedule(frequency))
     executor(remove_workflow, "requirements-cron.yml")
     executor(remove_workflow, "requirements-pr.yml")
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _to_cron_schedule(frequency: str) -> str:

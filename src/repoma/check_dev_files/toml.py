@@ -36,8 +36,7 @@ def main() -> None:
     executor(_update_taplo_config)
     executor(_update_precommit_config)
     executor(_update_vscode_extensions)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _rename_taplo_config() -> None:
@@ -97,5 +96,4 @@ def _update_vscode_extensions() -> None:
     executor = Executor()
     executor(add_vscode_extension_recommendation, "tamasfe.even-better-toml")
     executor(remove_vscode_extension_recommendation, "bungcip.better-toml")
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()

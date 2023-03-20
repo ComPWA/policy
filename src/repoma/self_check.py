@@ -21,10 +21,7 @@ def main() -> int:
     for repo in local_repos:
         for hook in repo.hooks:
             executor(_check_hook_definition, hook)
-    if executor.error_messages:
-        print(executor.merge_messages())
-        return 1
-    return 0
+    return executor.finalize(exception=False)
 
 
 def _check_hook_definition(hook: Hook) -> None:

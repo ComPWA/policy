@@ -17,8 +17,7 @@ def main() -> None:
     executor = Executor()
     executor(_check_pr_template)
     executor(_check_issue_templates)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _check_issue_templates() -> None:

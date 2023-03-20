@@ -20,6 +20,15 @@ class Executor:
             error_message = str("\n".join(exception.args))
             self.error_messages.append(error_message)
 
+    def finalize(self, exception: bool = True) -> int:
+        error_msg = self.merge_messages()
+        if error_msg:
+            if exception:
+                raise PrecommitError(error_msg)
+            print(error_msg)
+            return 1
+        return 0
+
     def merge_messages(self) -> str:
         stripped_messages = (s.strip() for s in self.error_messages)
         return "\n--------------------\n".join(stripped_messages)
