@@ -1,6 +1,5 @@
 """Check contents of a ``tox.ini`` file."""
 
-from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.cfg import extract_config_section
 from repoma.utilities.executor import Executor
@@ -28,5 +27,4 @@ def main() -> None:
         extract_to=CONFIG_PATH.pytest,
         sections=["coverage:run", "pytest"],
     )
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()

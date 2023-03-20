@@ -27,8 +27,7 @@ def main() -> None:
     executor(_check_option_ordering, config)
     executor(_check_target_versions, config)
     executor(_update_nbqa_hook)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _load_black_config(content: Optional[str] = None) -> dict:

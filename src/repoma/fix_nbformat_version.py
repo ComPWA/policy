@@ -30,10 +30,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(set_nbformat_version, filename)
         executor(remove_cell_ids, filename)
         executor(check_svg_output_cells, filename)
-    if executor.error_messages:
-        print(executor.merge_messages())
-        return 1
-    return 0
+    return executor.finalize(exception=False)
 
 
 def set_nbformat_version(filename: str) -> None:

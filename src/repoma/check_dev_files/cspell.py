@@ -58,8 +58,7 @@ def main() -> None:
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
         executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
@@ -100,8 +99,7 @@ def _remove_configuration() -> None:
     executor = Executor()
     executor(remove_badge, __BADGE_PATTERN)
     executor(remove_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _check_check_hook_options() -> None:

@@ -51,8 +51,7 @@ def main() -> None:
             "TI1",
         ],
     )
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _is_flake8_installed() -> bool:

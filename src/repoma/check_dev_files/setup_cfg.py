@@ -20,8 +20,7 @@ def main(ignore_author: bool) -> None:
     if not ignore_author:
         executor(_update_author_data)
     executor(_fix_long_description)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _check_required_options() -> None:

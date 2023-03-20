@@ -38,8 +38,7 @@ def main(no_prettierrc: bool) -> None:
         executor(add_badge, __BADGE)
         executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
         executor(_update_prettier_ignore)
-        if executor.error_messages:
-            raise PrecommitError(executor.merge_messages())
+        executor.finalize()
 
 
 def _remove_configuration() -> None:

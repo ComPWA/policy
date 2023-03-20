@@ -169,10 +169,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     executor(toml.main)
-    if executor.error_messages:
-        print(executor.merge_messages())
-        return 1
-    return 0
+    return executor.finalize(exception=False)
 
 
 def _to_list(arg: str) -> List[str]:
