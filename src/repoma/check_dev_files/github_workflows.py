@@ -34,8 +34,7 @@ def main(  # pylint: disable=too-many-arguments
         skip_tests,
         test_extras,
     )
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _update_cd_workflow(no_pypi: bool) -> None:
@@ -56,8 +55,7 @@ def _update_cd_workflow(no_pypi: bool) -> None:
     executor = Executor()
     executor(update)
     executor(remove_workflow, "milestone.yml")
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _update_ci_workflow(
@@ -96,8 +94,7 @@ def _update_ci_workflow(
         executor(remove_workflow, "linkcheck.yml")
     executor(_copy_workflow_file, "clean-caches.yml")
     executor(remove_workflow, "clean-cache.yml")
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _get_ci_workflow(

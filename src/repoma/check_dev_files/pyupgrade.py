@@ -17,8 +17,7 @@ def main() -> None:
     executor = Executor()
     executor(_update_main_pyupgrade_hook)
     executor(_update_nbqa_hook)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor.finalize()
 
 
 def _update_main_pyupgrade_hook() -> None:

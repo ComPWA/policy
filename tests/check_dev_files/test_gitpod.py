@@ -6,7 +6,6 @@ from repoma.check_dev_files.gitpod import _extract_extensions, _generate_gitpod_
 def test_extract_extensions():
     assert _extract_extensions() == [
         # cspell:disable
-        "bungcip.better-toml",
         "christian-kohler.path-intellisense",
         "cschleiden.vscode-github-actions",
         "davidanson.vscode-markdownlint",
@@ -24,7 +23,7 @@ def test_extract_extensions():
         "ryanluker.vscode-coverage-gutters",
         "stkb.rewrap",
         "streetsidesoftware.code-spell-checker",
-        "travisillig.vscode-json-stable-stringify",
+        "tamasfe.even-better-toml",
         "tyriar.sort-lines",
         "yzhang.markdown-all-in-one",
         # cspell:enable

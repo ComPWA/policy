@@ -23,11 +23,11 @@
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "cSpell.enabled": true,
   "coverage-gutters.coverageFileNames": ["coverage.xml"],
   "coverage-gutters.coverageReportFileName": "**/htmlcov/index.html",
   "coverage-gutters.showGutterCoverage": false,
   "coverage-gutters.showLineCoverage": true,
+  "cSpell.enabled": true,
   "editor.formatOnSave": true,
   "editor.rulers": [88],
   "files.watcherExclude": {
@@ -43,6 +43,7 @@
   "pylint.importStrategy": "fromEnvironment",
   "python.analysis.autoImportCompletions": false,
   "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.inlayHints.pytestParameters": true,
   "python.analysis.typeCheckingMode": "strict",
   "python.formatting.provider": "black",
   "python.linting.banditEnabled": false,
@@ -70,9 +71,9 @@
     "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
     "src/repoma/.template/.prettierrc": true,
+    "src/repoma/.template/.taplo.toml": true,
     "src/repoma/.template/commitlint.config.js": true
   },
-  "telemetry.telemetryLevel": "off",
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": [
       ".github/workflows/update-dependencies.yml"

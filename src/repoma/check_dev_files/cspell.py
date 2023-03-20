@@ -12,7 +12,7 @@ from typing import Any, Iterable, List, Sequence, Union
 import yaml
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     PrecommitConfig,
@@ -21,10 +21,6 @@ from repoma.utilities.precommit import (
     load_round_trip_precommit_config,
 )
 from repoma.utilities.readme import add_badge, remove_badge
-from repoma.utilities.vscode import (
-    add_vscode_extension_recommendation,
-    remove_vscode_extension_recommendation,
-)
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -57,9 +53,8 @@ def main() -> None:
         executor(_fix_config_content)
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
-        executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+        executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
+    executor.finalize()
 
 
 def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
@@ -99,9 +94,8 @@ def _remove_configuration() -> None:
             )
     executor = Executor()
     executor(remove_badge, __BADGE_PATTERN)
-    executor(remove_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    if executor.error_messages:
-        raise PrecommitError(executor.merge_messages())
+    executor(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
+    executor.finalize()
 
 
 def _check_check_hook_options() -> None:
