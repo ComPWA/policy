@@ -25,6 +25,7 @@ from . import (
     toml,
     tox,
     update_pip_constraints,
+    vscode,
 )
 
 
@@ -169,6 +170,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     executor(toml.main)
+    executor(vscode.main)
     return executor.finalize(exception=False)
 
 
