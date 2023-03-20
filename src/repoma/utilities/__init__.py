@@ -33,11 +33,11 @@ class _ConfigFilePaths(NamedTuple):
     setup_cfg: Path = Path("setup.cfg")
     taplo: Path = Path(".taplo.toml")
     tox: Path = Path("tox.ini")
+    vscode_settings: Path = Path(".vscode/settings.json")
     vscode_extensions: Path = Path(".vscode/extensions.json")
 
 
 CONFIG_PATH = _ConfigFilePaths()
-
 REPOMA_DIR = Path(repoma.__file__).parent.absolute()
 
 
