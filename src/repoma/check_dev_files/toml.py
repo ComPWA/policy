@@ -9,13 +9,9 @@ from typing import List, Union
 from ruamel.yaml.comments import CommentedSeq
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
-from repoma.utilities.vscode import (
-    add_vscode_extension_recommendation,
-    remove_vscode_extension_recommendation,
-)
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
@@ -94,6 +90,6 @@ def _update_precommit_config() -> None:
 def _update_vscode_extensions() -> None:
     # cspell:ignore bungcip tamasfe
     executor = Executor()
-    executor(add_vscode_extension_recommendation, "tamasfe.even-better-toml")
-    executor(remove_vscode_extension_recommendation, "bungcip.better-toml")
+    executor(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
+    executor(vscode.remove_extension_recommendation, "bungcip.better-toml")
     executor.finalize()

@@ -20,7 +20,7 @@ def remove_unwanted_recommendations() -> None:
         raise PrecommitError(f'Removed VS Code extension setting "{key}"')
 
 
-def add_vscode_extension_recommendation(extension_name: str) -> None:
+def add_extension_recommendation(extension_name: str) -> None:
     if not CONFIG_PATH.vscode_extensions.exists():
         CONFIG_PATH.vscode_extensions.parent.mkdir(exist_ok=True)
         config = {}
@@ -37,7 +37,7 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
         )
 
 
-def remove_vscode_extension_recommendation(extension_name: str) -> None:
+def remove_extension_recommendation(extension_name: str) -> None:
     if not CONFIG_PATH.vscode_extensions.exists():
         return
     with open(CONFIG_PATH.vscode_extensions) as stream:

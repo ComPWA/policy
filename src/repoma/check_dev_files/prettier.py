@@ -4,14 +4,10 @@ import os
 from typing import Iterable, List
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
 from repoma.utilities.readme import add_badge, remove_badge
-from repoma.utilities.vscode import (
-    add_vscode_extension_recommendation,
-    remove_vscode_extension_recommendation,
-)
 
 # cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
@@ -36,7 +32,7 @@ def main(no_prettierrc: bool) -> None:
         executor = Executor()
         executor(_fix_config_content, no_prettierrc)
         executor(add_badge, __BADGE)
-        executor(add_vscode_extension_recommendation, __VSCODE_EXTENSION_NAME)
+        executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
         executor(_update_prettier_ignore)
         executor.finalize()
 
@@ -48,7 +44,7 @@ def _remove_configuration() -> None:
             f'"{CONFIG_PATH.prettier}" is no longer required and has been removed'
         )
     remove_badge(__BADGE_PATTERN)
-    remove_vscode_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
 
 def _fix_config_content(no_prettierrc: bool) -> None:
