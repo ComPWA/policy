@@ -1,6 +1,7 @@
 """Helper functions for modifying a VSCode configuration."""
 
 import json
+from pathlib import Path
 
 from repoma.errors import PrecommitError
 
@@ -15,7 +16,7 @@ def remove_unwanted_recommendations() -> None:
     key = "unwantedRecommendations"
     unwanted_recommendations = config.pop(key, None)
     if unwanted_recommendations is not None:
-        __dump_vscode_config(config)
+        __dump_config(config, CONFIG_PATH.vscode_extensions)
         raise PrecommitError(f'Removed VS Code extension setting "{key}"')
 
 
@@ -30,7 +31,7 @@ def add_vscode_extension_recommendation(extension_name: str) -> None:
     if extension_name not in set(recommended_extensions):
         recommended_extensions.append(extension_name)
         config["recommendations"] = sorted(recommended_extensions)
-        __dump_vscode_config(config)
+        __dump_config(config, CONFIG_PATH.vscode_extensions)
         raise PrecommitError(
             f'Added VS Code extension recommendation "{extension_name}"'
         )
@@ -45,13 +46,13 @@ def remove_vscode_extension_recommendation(extension_name: str) -> None:
     if extension_name in recommended_extensions:
         recommended_extensions.remove(extension_name)
         config["recommendations"] = sorted(recommended_extensions)
-        __dump_vscode_config(config)
+        __dump_config(config, CONFIG_PATH.vscode_extensions)
         raise PrecommitError(
             f'Removed VS Code extension recommendation "{extension_name}"'
         )
 
 
-def __dump_vscode_config(config: dict) -> None:
-    with open(CONFIG_PATH.vscode_extensions, "w") as stream:
+def __dump_config(config: dict, path: Path) -> None:
+    with open(path, "w") as stream:
         json.dump(config, stream, indent=2, sort_keys=True)
         stream.write("\n")
