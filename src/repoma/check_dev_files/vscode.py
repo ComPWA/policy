@@ -26,7 +26,20 @@ def _update_extensions() -> None:
 
 def _update_settings() -> None:
     executor = Executor()
-    _update_pytest_settings()
+    executor(_update_doc_settings)
+    executor(_update_pytest_settings)
+    executor.finalize()
+
+
+def _update_doc_settings() -> None:
+    if not os.path.exists("docs/"):
+        return
+    settings = {
+        "livePreview.defaultPreviewPath": "docs/_build/html",
+    }
+    executor = Executor()
+    executor(vscode.set_setting, settings)
+    executor(vscode.add_extension_recommendation, "ms-vscode.live-server")
     executor.finalize()
 
 
