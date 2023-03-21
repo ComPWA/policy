@@ -7,11 +7,11 @@ def test_extract_extensions():
     assert _extract_extensions() == [
         # cspell:disable
         "christian-kohler.path-intellisense",
-        "cschleiden.vscode-github-actions",
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
         "esbenp.prettier-vscode",
+        "github.vscode-github-actions",
         "github.vscode-pull-request-github",
         "ms-python.flake8",
         "ms-python.isort",
