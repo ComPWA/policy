@@ -53,9 +53,9 @@ def _update_taplo_config() -> None:
     with open(CONFIG_PATH.taplo) as f:
         existing_content = f.read()
     if existing_content != expected_content:
-        with open(CONFIG_PATH.prettier, "w") as stream:
+        with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_content)
-        raise PrecommitError(f"Updated {CONFIG_PATH.prettier} config file")
+        raise PrecommitError(f"Updated {CONFIG_PATH.taplo} config file")
 
 
 def _update_precommit_config() -> None:
