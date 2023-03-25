@@ -155,6 +155,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(nbstripout.main)
+    executor(toml.main)  # has to run before pre-commit
     executor(precommit.main)
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
@@ -169,7 +170,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pyupgrade.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
-    executor(toml.main)
     executor(vscode.main)
     return executor.finalize(exception=False)
 
