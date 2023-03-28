@@ -80,16 +80,16 @@ def _remove_configuration() -> None:
         raise PrecommitError(
             f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
         )
-    if CONFIG_PATH.editor_config.exists():
-        with open(CONFIG_PATH.editor_config) as stream:
+    if CONFIG_PATH.editorconfig.exists():
+        with open(CONFIG_PATH.editorconfig) as stream:
             prettier_ignore_content = stream.readlines()
         expected_line = str(CONFIG_PATH.cspell) + "\n"
         if expected_line in set(prettier_ignore_content):
             prettier_ignore_content.remove(expected_line)
-            with open(CONFIG_PATH.editor_config, "w") as stream:
+            with open(CONFIG_PATH.editorconfig, "w") as stream:
                 stream.writelines(prettier_ignore_content)
             raise PrecommitError(
-                f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editor_config}'
+                f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editorconfig}'
                 " is no longer required and has been removed"
             )
     executor = Executor()

@@ -10,7 +10,7 @@ from . import (
     black,
     commitlint,
     cspell,
-    editor_config,
+    editorconfig,
     flake8,
     github_labels,
     github_templates,
@@ -139,7 +139,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor = Executor()
     executor(commitlint.main)
     executor(cspell.main)
-    executor(editor_config.main)
+    executor(editorconfig.main)
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)

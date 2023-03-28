@@ -15,7 +15,7 @@ class _ConfigFilePaths(NamedTuple):
     codecov: Path = Path("codecov.yml")
     commitlint: Path = Path("commitlint.config.js")
     cspell: Path = Path(".cspell.json")
-    editor_config: Path = Path(".editorconfig")
+    editorconfig: Path = Path(".editorconfig")
     flake8: Path = Path(".flake8")
     github_workflow_dir: Path = Path(".github/workflows")
     gitpod: Path = Path(".gitpod.yml")

@@ -10,6 +10,7 @@ import attrs
 import yaml
 from attrs import define
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from repoma.errors import PrecommitError
 
@@ -19,10 +20,22 @@ from .yaml import create_prettier_round_trip_yaml
 
 def load_round_trip_precommit_config(
     path: Path = CONFIG_PATH.precommit,
-) -> Tuple[dict, YAML]:
+) -> Tuple[CommentedMap, YAML]:
     yaml_parser = create_prettier_round_trip_yaml()
     config = yaml_parser.load(path)
     return config, yaml_parser
+
+
+def find_repo(
+    config: CommentedMap, search_pattern: str
+) -> Optional[Tuple[int, CommentedMap]]:
+    """Find pre-commit hook definition and its index in pre-commit config."""
+    repos: CommentedSeq = config.get("repos", [])
+    for i, repo in enumerate(repos):
+        url: str = repo.get("repo", "")
+        if re.search(search_pattern, url):
+            return i, repo
+    return None
 
 
 @define
