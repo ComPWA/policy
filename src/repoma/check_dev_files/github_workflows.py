@@ -45,12 +45,11 @@ def main(  # pylint: disable=too-many-arguments
 def _update_cd_workflow(no_pypi: bool) -> None:
     def update() -> None:
         yaml = create_prettier_round_trip_yaml()
-        cd = "cd.yml"  # pylint: disable=invalid-name
-        expected_data = yaml.load(REPOMA_DIR / CONFIG_PATH.github_workflow_dir / cd)
+        workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
+        expected_data = yaml.load(REPOMA_DIR / workflow_path)
         if no_pypi or not os.path.exists(CONFIG_PATH.setup_cfg):
             del expected_data["jobs"]["pypi"]
 
-        workflow_path = CONFIG_PATH.github_workflow_dir / cd
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
@@ -232,6 +231,7 @@ def remove_workflow(filename: str) -> None:
 
 
 def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
+    path.parent.mkdir(exist_ok=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
     raise PrecommitError(f'{verb} "{path}" workflow')
