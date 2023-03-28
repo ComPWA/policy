@@ -9,12 +9,13 @@ from functools import lru_cache
 from textwrap import dedent
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from ruamel.yaml.scalarstring import FoldedScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, FoldedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
 
+__EDITORCONFIG_HOOK_ID = "editorconfig-checker"
 __EDITORCONFIG_URL = (
     "https://github.com/editorconfig-checker/editorconfig-checker.python"
 )
@@ -33,9 +34,12 @@ def _update_precommit_config() -> None:
     repos: CommentedSeq = existing_config.get("repos", [])
     idx_and_repo = find_repo(existing_config, __EDITORCONFIG_URL)
     if idx_and_repo is None:
-        repos.append(expected_hook)
-        idx = len(repos) - 1
-        repos.yaml_set_comment_before_after_key(idx, before="\n")
+        idx = __determine_expected_index(existing_config)
+        repos.insert(idx, expected_hook)
+        repos.yaml_set_comment_before_after_key(
+            idx if idx + 1 == len(repos) else idx + 1,
+            before="\n",
+        )
         yaml.dump(existing_config, CONFIG_PATH.precommit)
         raise PrecommitError(f"Added editorconfig hook to {CONFIG_PATH.precommit}")
     idx, existing_hook = idx_and_repo
@@ -58,17 +62,26 @@ def __get_expected_hook_definition() -> CommentedMap:
     """
     excludes = dedent(excludes).strip()
     hook = {
-        "id": "editorconfig-checker",
+        "id": __EDITORCONFIG_HOOK_ID,
         "name": "editorconfig",
         "alias": "ec",
         "exclude": FoldedScalarString(excludes),
     }
     dct = {
         "repo": __EDITORCONFIG_URL,
-        "rev": "",
+        "rev": DoubleQuotedScalarString(""),
         "hooks": [CommentedMap(hook)],
     }
     return CommentedMap(dct)
+
+
+def __determine_expected_index(config: CommentedMap) -> int:
+    repos: CommentedSeq = config["repos"]
+    for i, repo_def in enumerate(repos):
+        hook_id: str = repo_def["hooks"][0]["id"]
+        if __EDITORCONFIG_HOOK_ID.lower() <= hook_id.lower():
+            return i
+    return len(repos)
 
 
 def __is_equivalent(expected: CommentedMap, existing: CommentedMap) -> bool:
