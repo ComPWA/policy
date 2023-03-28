@@ -30,7 +30,7 @@ __EDITORCONFIG_HOOK = Rf"""
 
 
 def main() -> None:
-    if _has_editor_config() and not _has_precommit_hook():
+    if _has_editorconfig() and not _has_precommit_hook():
         raise PrecommitError(
             dedent(
                 f"""
@@ -44,7 +44,7 @@ def main() -> None:
         )
 
 
-def _has_editor_config() -> bool:
+def _has_editorconfig() -> bool:
     if not os.path.exists(__EDITORCONFIG_FILE):
         return False
     return True
