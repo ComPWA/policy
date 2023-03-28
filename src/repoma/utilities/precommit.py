@@ -10,6 +10,7 @@ import attrs
 import yaml
 from attrs import define
 from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
 
@@ -19,7 +20,7 @@ from .yaml import create_prettier_round_trip_yaml
 
 def load_round_trip_precommit_config(
     path: Path = CONFIG_PATH.precommit,
-) -> Tuple[dict, YAML]:
+) -> Tuple[CommentedMap, YAML]:
     yaml_parser = create_prettier_round_trip_yaml()
     config = yaml_parser.load(path)
     return config, yaml_parser
