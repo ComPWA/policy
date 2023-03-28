@@ -87,6 +87,7 @@ repos:
     hooks:
       - id: editorconfig-checker
         name: editorconfig
+        alias: ec
         exclude: >-
           (?x)^(
             .*\.py

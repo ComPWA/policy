@@ -60,6 +60,7 @@ def __get_expected_hook_definition() -> CommentedMap:
     hook = {
         "id": "editorconfig-checker",
         "name": "editorconfig",
+        "alias": "ec",
         "exclude": FoldedScalarString(excludes),
     }
     dct = {
