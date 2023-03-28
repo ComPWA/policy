@@ -231,6 +231,8 @@ def remove_workflow(filename: str) -> None:
 
 
 def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
+    path.parent.mkdir(exist_ok=True)
+    path.touch(exist_ok=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
     raise PrecommitError(f'{verb} "{path}" workflow')
