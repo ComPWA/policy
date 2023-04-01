@@ -104,6 +104,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Do not publish package to PyPI",
     )
     parser.add_argument(
+        "--no-version-branches",
+        action="store_true",
+        default=False,
+        help="Do not push to matching major/minor version branches upon tagging",
+    )
+    parser.add_argument(
         "--pin-requirements",
         choices=["no", "biweekly", "monthly", "bimonthly"],
         default="no",
@@ -149,6 +155,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         doc_apt_packages=_to_list(args.doc_apt_packages),
         no_macos=args.no_macos,
         no_pypi=args.no_pypi,
+        no_version_branches=args.no_version_branches,
         skip_tests=_to_list(args.ci_skipped_tests),
         test_extras=_to_list(args.ci_test_extras),
     )
