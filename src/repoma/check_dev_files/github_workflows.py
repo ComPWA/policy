@@ -25,11 +25,12 @@ def main(  # pylint: disable=too-many-arguments
     doc_apt_packages: List[str],
     no_macos: bool,
     no_pypi: bool,
+    no_version_branches: bool,
     skip_tests: List[str],
     test_extras: List[str],
 ) -> None:
     executor = Executor()
-    executor(_update_cd_workflow, no_pypi)
+    executor(_update_cd_workflow, no_pypi, no_version_branches)
     executor(
         _update_ci_workflow,
         allow_deprecated,
@@ -42,14 +43,15 @@ def main(  # pylint: disable=too-many-arguments
     executor.finalize()
 
 
-def _update_cd_workflow(no_pypi: bool) -> None:
+def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
     def update() -> None:
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(REPOMA_DIR / workflow_path)
         if no_pypi or not os.path.exists(CONFIG_PATH.setup_cfg):
             del expected_data["jobs"]["pypi"]
-
+        if no_version_branches:
+            del expected_data["jobs"]["push"]
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
