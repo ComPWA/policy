@@ -55,6 +55,9 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
+        for name, job_def in existing_data["jobs"].items():
+            if name not in expected_data["jobs"]:
+                expected_data["jobs"][name] = job_def
         if existing_data != expected_data:
             update_workflow(yaml, expected_data, workflow_path)
 
