@@ -63,5 +63,9 @@ def _update_extra_keys_argument(repo_index: int, repo: Repo) -> None:
         return
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(CONFIG_PATH.precommit)
-    config["repos"][repo_index]["hooks"][index]["args"] = expected_args
+    repos = config["repos"]
+    hooks = repos[repo_index]["hooks"][index]
+    hooks["args"] = expected_args
+    if repo_index != len(repos):
+        repos.yaml_set_comment_before_after_key(repo_index + 1, before="\n")
     yaml.dump(config, CONFIG_PATH.precommit)
