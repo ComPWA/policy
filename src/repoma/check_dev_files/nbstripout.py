@@ -15,6 +15,7 @@ __HOOK_ID = "nbstripout"
 __EXTRA_KEYS_ARGUMENT = [
     "cell.metadata.code_folding",
     "cell.metadata.id",
+    "cell.metadata.user_expressions",
     "metadata.celltoolbar",
     "metadata.colab.name",
     "metadata.colab.provenance",
