@@ -14,12 +14,10 @@ from repoma.errors import PrecommitError
 
 
 def test_check_line_length():
-    toml_content = dedent(
-        """
+    toml_content = dedent("""
         [tool.black]
         line-length = 79
-        """
-    ).strip()
+        """).strip()
     config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_line_length(config)
@@ -33,12 +31,10 @@ def test_check_line_length():
     "toml_content",
     [
         """[tool.black]""",
-        dedent(
-            """
+        dedent("""
         [tool.config]
         preview = false
-        """
-        ).strip(),
+        """).strip(),
     ],
 )
 def test_check_activate_preview(toml_content: str):
@@ -46,37 +42,27 @@ def test_check_activate_preview(toml_content: str):
     config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_activate_preview(config)
-    assert (
-        error.value.args[0]
-        == dedent(
-            """
+    assert error.value.args[0] == dedent("""
             An option in pyproject.toml is wrong or missing. Should be:
 
             [tool.black]
             preview = true
-            """
-        ).strip()
-    )
+            """).strip()
 
 
 def test_check_target_versions():
-    toml_content = dedent(
-        """
+    toml_content = dedent("""
         [tool.black]
         target-version = [
             'py36',
             'py37',
             'py310',
         ]
-        """
-    ).strip()
+        """).strip()
     config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_target_versions(config)
-    assert (
-        error.value.args[0]
-        == dedent(
-            """
+    assert error.value.args[0] == dedent("""
             Black target versions in pyproject.toml should be as follows:
 
             [tool.black]
@@ -88,9 +74,7 @@ def test_check_target_versions():
                 'py38',
                 'py39',
             ]
-            """
-        ).strip()
-    )
+            """).strip()
 
 
 def test_load_config_from_pyproject():
@@ -100,14 +84,12 @@ def test_load_config_from_pyproject():
 
 
 def test_load_config_from_string():
-    toml_content = dedent(
-        R"""
+    toml_content = dedent(R"""
         [tool.black]
         preview = true
         include = '\.pyi?$'
         line-length = 88
-        """
-    ).strip()
+        """).strip()
     config = _load_black_config(toml_content)
     assert config == {
         "preview": True,
@@ -118,38 +100,29 @@ def test_load_config_from_string():
 
 def test_load_nbqa_black_config():
     # cspell:ignore addopts
-    toml_content = dedent(
-        R"""
+    toml_content = dedent(R"""
         [tool.nbqa.addopts]
         black = [
             "--line-length=85",
         ]
-        """
-    ).strip()
+        """).strip()
     config = _load_nbqa_black_config(toml_content)
     assert config == ["--line-length=85"]
 
 
 def test_check_option_ordering():
-    toml_content = dedent(
-        R"""
+    toml_content = dedent(R"""
         [tool.black]
         preview = true
         line-length = 88
-        """
-    ).strip()
+        """).strip()
     config = _load_black_config(toml_content)
     with pytest.raises(PrecommitError) as error:
         _check_option_ordering(config)
-    assert (
-        error.value.args[0]
-        == dedent(
-            """
+    assert error.value.args[0] == dedent("""
             Options in pyproject.toml should be alphabetically sorted:
 
             [tool.black]
             line-length = ...
             preview = ...
-            """
-        ).strip()
-    )
+            """).strip()
