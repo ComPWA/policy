@@ -58,12 +58,19 @@ def _check_skipped_hooks(config: PrecommitConfig) -> None:
     non_functional_hooks = get_non_functional_hooks(config)
     expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
     if not expected_skips:
+        if config.ci.skip is not None:
+            yaml = create_prettier_round_trip_yaml()
+            contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
+            del contents["ci"]["skip"]
+            contents.yaml_set_comment_before_after_key("repos", before="\n")
+            yaml.dump(contents, CONFIG_PATH.precommit)
+            raise PrecommitError(f"No need for a ci.skip in {CONFIG_PATH.precommit}")
         return
     existing_skips = __get_precommit_ci_skips(config)
     missing_skips = set(expected_skips) - existing_skips
     if missing_skips:
         yaml = create_prettier_round_trip_yaml()
-        contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
+        contents = yaml.load(CONFIG_PATH.precommit)
         ci_section: CommentedMap = contents["ci"]
         if "skip" in ci_section.ca.items:
             del ci_section.ca.items["skip"]
