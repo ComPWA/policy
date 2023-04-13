@@ -16,6 +16,7 @@ from repoma.utilities.setup_cfg import get_pypi_name
 from repoma.utilities.vscode import (
     add_extension_recommendation,
     remove_extension_recommendation,
+    set_setting,
 )
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -225,6 +226,12 @@ def _recommend_vscode_extension() -> None:
     executor = Executor()
     executor(remove_extension_recommendation, "cschleiden.vscode-github-actions")
     executor(add_extension_recommendation, "github.vscode-github-actions")
+    ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
+    if ci_workflow.exists():
+        action_settings = {
+            "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
+        }
+        set_setting(action_settings)
     executor.finalize()
 
 
