@@ -68,7 +68,7 @@ repos:
       - id: autoflake
 
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - id: black
 
@@ -78,7 +78,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v6.30.1
+    rev: v6.31.0
     hooks:
       - id: cspell
 
@@ -146,7 +146,7 @@ repos:
           - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.299
+    rev: v1.1.303
     hooks:
       - id: pyright
 

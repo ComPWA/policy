@@ -197,9 +197,7 @@ def _check_missing_options(
             missing_values.append(value)
     if missing_values:
         values = "\n".join(missing_values)
-        raise PrecommitError(
-            dedent(
-                f"""
+        raise PrecommitError(dedent(f"""
             Flake8 config is missing an option. Expecting:
 
             [flake8]
@@ -207,6 +205,4 @@ def _check_missing_options(
                 ...
                 {values}
                 ...
-            """
-            ).strip()
-        )
+            """).strip())

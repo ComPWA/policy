@@ -18,11 +18,9 @@ from repoma.errors import PrecommitError
 
 
 def test_check_comments_on_separate_line():
-    stream = io.StringIO(
-        """
+    stream = io.StringIO("""
         ignore = # some comment
-        """
-    )
+        """)
     with pytest.raises(
         PrecommitError,
         match=r"^Please move the comment on the following line.*",
@@ -83,10 +81,7 @@ def test_check_setup_cfg_incorrect(content: str):
     cfg.read_string(content)
     with pytest.raises(PrecommitError) as error:
         _check_setup_cfg(cfg)
-    assert (
-        error.value.args[0]
-        == dedent(
-            """
+    assert error.value.args[0] == dedent("""
         Section [options.extras_require] in setup.cfg should look like this:
 
         [options.extras_require]
@@ -114,9 +109,7 @@ def test_check_setup_cfg_incorrect(content: str):
             ...
             %(sty)s
             ...
-        """
-        ).strip()
-    )
+        """).strip()
 
 
 @pytest.mark.parametrize(

@@ -38,16 +38,12 @@ def _load_black_config(content: Optional[str] = None) -> dict:
 def _check_activate_preview(config: dict) -> None:
     expected_option = "preview"
     if config.get(expected_option) is not True:
-        raise PrecommitError(
-            dedent(
-                f"""
+        raise PrecommitError(dedent(f"""
             An option in pyproject.toml is wrong or missing. Should be:
 
             [tool.black]
             {expected_option} = true
-            """
-            ).strip()
-        )
+            """).strip())
 
 
 def _check_line_length(config: dict) -> None:
@@ -61,13 +57,11 @@ def _check_option_ordering(config: dict) -> None:
     options = list(config)
     sorted_options = sorted(config, key=natural_sorting)
     if sorted_options != options:
-        error_message = dedent(
-            """
+        error_message = dedent("""
             Options in pyproject.toml should be alphabetically sorted:
 
             [tool.black]
-            """
-        ).strip()
+            """).strip()
         for option in sorted_options:
             error_message += f"\n{option} = ..."
         raise PrecommitError(error_message)
@@ -80,14 +74,12 @@ def _check_target_versions(config: dict) -> None:
         "py" + s.replace(".", "") for s in supported_python_versions
     )
     if target_versions != expected_target_versions:
-        error_message = dedent(
-            """
+        error_message = dedent("""
             Black target versions in pyproject.toml should be as follows:
 
             [tool.black]
             target-version = [
-            """
-        ).strip()
+            """).strip()
         for version in expected_target_versions:
             error_message += f"\n    '{version}',"
         error_message += "\n]"
@@ -121,8 +113,7 @@ def _update_nbqa_hook() -> None:
         raise PrecommitError(f"Updated args of {hook_id} pre-commit hook")
     nbqa_config = _load_nbqa_black_config()
     if nbqa_config != ["--line-length=85"]:
-        error_message = dedent(
-            """
+        error_message = dedent("""
             Configuration of nbqa-black in pyproject.toml should be as follows:
 
             [tool.nbqa.addopts]
@@ -131,8 +122,7 @@ def _update_nbqa_hook() -> None:
             ]
 
             This is to ensure that code blocks render nicely in the sphinx-book-theme.
-            """
-        ).strip()
+            """).strip()
         raise PrecommitError(error_message)
 
 

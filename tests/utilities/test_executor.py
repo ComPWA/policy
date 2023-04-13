@@ -33,8 +33,7 @@ class TestExecutor:
         ]
 
         merged_message = executor.merge_messages()
-        expected_message = dedent(
-            """
+        expected_message = dedent("""
             Function did not have arguments
             --------------------
             List contains one, two, three
@@ -42,6 +41,5 @@ class TestExecutor:
             Text is given as positional argument
             --------------------
             Text is given as key-word argument
-            """
-        ).strip()
+            """).strip()
         assert merged_message == expected_message
