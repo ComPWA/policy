@@ -146,12 +146,12 @@ repos:
           - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.305
+    rev: v1.1.307
     hooks:
       - id: pyright
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.2
+    rev: v3.4.0
     hooks:
       - id: pyupgrade
         args:
