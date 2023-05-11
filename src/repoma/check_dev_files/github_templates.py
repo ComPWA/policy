@@ -71,7 +71,7 @@ def __get_template_content(path: Path) -> str:
 
 def _list_template_files(directory: Path) -> List[str]:
     template_files = []
-    for _, __, files in os.walk(directory):  # pyright: reportUnusedVariable=false
+    for _, __, files in os.walk(directory):  # pyright: ignore[reportUnusedVariable]
         template_files.extend(files)
     return template_files
 
