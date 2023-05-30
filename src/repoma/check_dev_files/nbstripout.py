@@ -13,6 +13,7 @@ from repoma.utilities.yaml import create_prettier_round_trip_yaml
 __REPO_URL = "https://github.com/kynan/nbstripout"
 __HOOK_ID = "nbstripout"
 __EXTRA_KEYS_ARGUMENT = [
+    "cell.metadata.attachments",
     "cell.metadata.code_folding",
     "cell.metadata.id",
     "cell.metadata.user_expressions",
