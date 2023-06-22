@@ -156,7 +156,7 @@ def __update_pytest_section(
         if os.path.exists(CONFIG_PATH.codecov):
             with_section["coverage-target"] = __get_package_name()
         if not no_macos:
-            with_section["macos-python-version"] = DoubleQuotedScalarString("3.7")
+            with_section["macos-python-version"] = DoubleQuotedScalarString("3.9")
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
         output_path = f"{test_dir}/output/"
