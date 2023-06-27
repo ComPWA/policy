@@ -1,9 +1,6 @@
 """Check :file:`pyproject.toml` black config."""
-from collections import OrderedDict
 from textwrap import dedent
 from typing import List, Optional
-
-import toml
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
@@ -14,6 +11,7 @@ from repoma.utilities.precommit import (
     asdict,
     load_round_trip_precommit_config,
 )
+from repoma.utilities.pyproject import load_pyproject
 from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
@@ -31,7 +29,7 @@ def main() -> None:
 
 
 def _load_black_config(content: Optional[str] = None) -> dict:
-    config = _load_pyproject_toml(content)
+    config = load_pyproject(content)
     return config.get("tool", {}).get("black", {})
 
 
@@ -128,12 +126,5 @@ def _update_nbqa_hook() -> None:
 
 def _load_nbqa_black_config(content: Optional[str] = None) -> List[str]:
     # cspell:ignore addopts
-    config = _load_pyproject_toml(content)
+    config = load_pyproject(content)
     return config.get("tool", {}).get("nbqa", {}).get("addopts", {}).get("black", {})
-
-
-def _load_pyproject_toml(content: Optional[str] = None) -> dict:
-    if content is None:
-        with open(CONFIG_PATH.pyproject) as stream:
-            return toml.load(stream, _dict=OrderedDict)
-    return toml.loads(content, _dict=OrderedDict)
