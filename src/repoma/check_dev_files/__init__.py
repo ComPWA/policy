@@ -159,8 +159,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         skip_tests=_to_list(args.ci_skipped_tests),
         test_extras=_to_list(args.ci_test_extras),
     )
-    if not args.no_gitpod:
-        executor(gitpod.main)
     executor(nbstripout.main)
     executor(toml.main)  # has to run before pre-commit
     executor(precommit.main)
@@ -178,6 +176,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     executor(vscode.main)
+    if not args.no_gitpod:
+        executor(gitpod.main)
     return executor.finalize(exception=False)
 
 
