@@ -11,6 +11,7 @@ import yaml
 from attrs import define
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.scalarstring import PlainScalarString
 
 from repoma.errors import PrecommitError
 
@@ -36,6 +37,59 @@ def find_repo(
         if re.search(search_pattern, url):
             return i, repo
     return None
+
+
+def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
+    """Update the repo definition in :code:`.pre-commit-config.yaml`.
+
+    If the repository is not yet listed under the :code:`repos` key, a new entry will
+    be automatically inserted. If the repository exists, but the definition is not the
+    same as expected, the entry in the YAML config will be updated.
+    """
+    if not CONFIG_PATH.precommit.exists():
+        return
+    config, yaml_parser = load_round_trip_precommit_config()
+    repos: CommentedSeq = config.get("repos", [])
+    repo_url: str = expected_repo_def["repo"]
+    idx_and_repo = find_repo(config, repo_url)
+    hook_id: str = expected_repo_def["hooks"][0]["id"]
+    if idx_and_repo is None:
+        idx = _determine_expected_repo_index(config, hook_id)
+        repos.insert(idx, expected_repo_def)
+        repos.yaml_set_comment_before_after_key(
+            idx if idx + 1 == len(repos) else idx + 1,
+            before="\n",
+        )
+        yaml_parser.dump(config, CONFIG_PATH.precommit)
+        msg = f"Added {hook_id} hook to {CONFIG_PATH.precommit}"
+        raise PrecommitError(msg)
+    idx, existing_hook = idx_and_repo
+    if not _is_equivalent_repo(existing_hook, expected_repo_def):
+        existing_rev = existing_hook.get("rev")
+        if existing_rev is not None:
+            expected_repo_def["rev"] = PlainScalarString(existing_rev)
+        repos[idx] = expected_repo_def
+        repos.yaml_set_comment_before_after_key(idx + 1, before="\n")
+        yaml_parser.dump(config, CONFIG_PATH.precommit)
+        msg = f"Updated {hook_id} hook in {CONFIG_PATH.precommit}"
+        raise PrecommitError(msg)
+
+
+def _determine_expected_repo_index(config: CommentedMap, hook_id: str) -> int:
+    repos: CommentedSeq = config["repos"]
+    for i, repo_def in enumerate(repos):
+        if hook_id.lower() <= repo_def["hooks"][0]["id"].lower():
+            return i
+    return len(repos)
+
+
+def _is_equivalent_repo(expected: CommentedMap, existing: CommentedMap) -> bool:
+    def remove_rev(config: CommentedMap) -> dict:
+        config_copy = dict(config)
+        config_copy.pop("rev", None)
+        return config_copy
+
+    return remove_rev(expected) == remove_rev(existing)
 
 
 @define
