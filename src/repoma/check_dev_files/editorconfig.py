@@ -8,7 +8,7 @@ pre-commit hook
 from textwrap import dedent
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString, FoldedScalarString
+from ruamel.yaml.scalarstring import FoldedScalarString
 
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import update_single_hook_precommit_repo
@@ -27,7 +27,6 @@ def _update_precommit_config() -> None:
     """).strip()
     expected_hook = CommentedMap(
         repo="https://github.com/editorconfig-checker/editorconfig-checker.python",
-        rev=DoubleQuotedScalarString(""),
         hooks=[
             CommentedMap(
                 id="editorconfig-checker",

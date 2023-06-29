@@ -4,6 +4,7 @@
 import os.path
 import re
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
 
 import attrs
@@ -11,7 +12,7 @@ import yaml
 from attrs import define
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from ruamel.yaml.scalarstring import PlainScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, PlainScalarString
 
 from repoma.errors import PrecommitError
 
@@ -54,6 +55,8 @@ def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
     idx_and_repo = find_repo(config, repo_url)
     hook_id: str = expected_repo_def["hooks"][0]["id"]
     if idx_and_repo is None:
+        if "rev" not in expected_repo_def:
+            expected_repo_def.insert(1, "rev", DoubleQuotedScalarString(""))
         idx = _determine_expected_repo_index(config, hook_id)
         repos.insert(idx, expected_repo_def)
         repos.yaml_set_comment_before_after_key(
@@ -61,13 +64,19 @@ def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
             before="\n",
         )
         yaml_parser.dump(config, CONFIG_PATH.precommit)
-        msg = f"Added {hook_id} hook to {CONFIG_PATH.precommit}"
+        msg = dedent(f"""
+        Added {hook_id} hook to {CONFIG_PATH.precommit}. Please run
+
+            pre-commit autoupdate --repo {repo_url}
+
+        to update to the latest release of this pre-commit repository.
+        """).strip()
         raise PrecommitError(msg)
     idx, existing_hook = idx_and_repo
     if not _is_equivalent_repo(existing_hook, expected_repo_def):
         existing_rev = existing_hook.get("rev")
         if existing_rev is not None:
-            expected_repo_def["rev"] = PlainScalarString(existing_rev)
+            expected_repo_def.insert(1, "rev", PlainScalarString(existing_rev))
         repos[idx] = expected_repo_def
         repos.yaml_set_comment_before_after_key(idx + 1, before="\n")
         yaml_parser.dump(config, CONFIG_PATH.precommit)

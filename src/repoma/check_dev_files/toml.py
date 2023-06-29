@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import List, Union
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
@@ -60,7 +59,6 @@ def _update_taplo_config() -> None:
 def _update_precommit_repo() -> None:
     expected_hook = CommentedMap(
         repo="https://github.com/ComPWA/mirrors-taplo",
-        rev=DoubleQuotedScalarString(""),
         hooks=[CommentedMap(id="taplo")],
     )
     update_single_hook_precommit_repo(expected_hook)

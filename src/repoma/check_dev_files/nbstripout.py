@@ -2,7 +2,7 @@
 
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import (
@@ -41,7 +41,6 @@ def main() -> None:
     ]
     expected_hook = CommentedMap(
         repo=repo_url,
-        rev=DoubleQuotedScalarString(""),
         hooks=[
             CommentedMap(
                 id="nbstripout",

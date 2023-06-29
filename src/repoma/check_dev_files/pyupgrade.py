@@ -1,7 +1,6 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
@@ -26,7 +25,6 @@ def main() -> None:
 def _update_precommit_repo() -> None:
     expected_hook = CommentedMap(
         repo="https://github.com/asottile/pyupgrade",
-        rev=DoubleQuotedScalarString(""),
         hooks=[
             CommentedMap(
                 id="pyupgrade",
