@@ -1,14 +1,14 @@
 """Tools for loading and inspecting :code:`pyproject.toml`."""
-from collections import OrderedDict
 from typing import Optional
 
-import toml
+import tomlkit
+from tomlkit.toml_document import TOMLDocument
 
 from repoma.utilities import CONFIG_PATH
 
 
-def load_pyproject(content: Optional[str] = None) -> dict:
+def load_pyproject(content: Optional[str] = None) -> TOMLDocument:
     if content is None:
         with open(CONFIG_PATH.pyproject) as stream:
-            return toml.load(stream, _dict=OrderedDict)
-    return toml.loads(content, _dict=OrderedDict)
+            return tomlkit.loads(stream.read())
+    return tomlkit.loads(content)
