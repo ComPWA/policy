@@ -2,6 +2,8 @@
 from textwrap import dedent
 from typing import List, Optional
 
+from ruamel.yaml.comments import CommentedMap
+
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
@@ -10,6 +12,7 @@ from repoma.utilities.precommit import (
     PrecommitConfig,
     asdict,
     load_round_trip_precommit_config,
+    update_single_hook_precommit_repo,
 )
 from repoma.utilities.pyproject import load_pyproject
 from repoma.utilities.setup_cfg import get_supported_python_versions
@@ -24,6 +27,7 @@ def main() -> None:
     executor(_check_activate_preview, config)
     executor(_check_option_ordering, config)
     executor(_check_target_versions, config)
+    executor(_update_precommit_repo)
     executor(_update_nbqa_hook)
     executor.finalize()
 
@@ -82,6 +86,14 @@ def _check_target_versions(config: dict) -> None:
             error_message += f"\n    '{version}',"
         error_message += "\n]"
         raise PrecommitError(error_message)
+
+
+def _update_precommit_repo() -> None:
+    expected_hook = CommentedMap(
+        repo="https://github.com/psf/black",
+        hooks=[CommentedMap(id="black")],
+    )
+    update_single_hook_precommit_repo(expected_hook)
 
 
 def _update_nbqa_hook() -> None:
