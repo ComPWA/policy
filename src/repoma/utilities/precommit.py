@@ -87,6 +87,9 @@ def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
 def _determine_expected_repo_index(config: CommentedMap, hook_id: str) -> int:
     repos: CommentedSeq = config["repos"]
     for i, repo_def in enumerate(repos):
+        hooks: CommentedSeq = repo_def["hooks"]
+        if len(hooks) != 1:
+            continue
         if hook_id.lower() <= repo_def["hooks"][0]["id"].lower():
             return i
     return len(repos)
