@@ -35,7 +35,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 def set_nbformat_version(filename: str) -> None:
     notebook = open_notebook(filename)
-    if notebook["nbformat_minor"] != 4:
+    if notebook["nbformat_minor"] != 4:  # noqa: PLR2004
         notebook["nbformat_minor"] = 4
         nbformat.write(notebook, filename)
 

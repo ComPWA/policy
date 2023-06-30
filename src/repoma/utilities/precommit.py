@@ -9,7 +9,7 @@ from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
 
 import attrs
 import yaml
-from attrs import define
+from attrs import define, field
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, PlainScalarString
@@ -175,8 +175,8 @@ class Hook:
     description: Optional[str] = None
     entry: Optional[str] = None
     alias: Optional[str] = None
-    additional_dependencies: List[str] = []
-    args: List[str] = []
+    additional_dependencies: List[str] = field(factory=list)
+    args: List[str] = field(factory=list)
     files: Optional[str] = None
     exclude: Optional[str] = None
     types: Optional[List[str]] = None

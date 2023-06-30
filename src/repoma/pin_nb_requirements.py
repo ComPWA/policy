@@ -122,7 +122,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if errors:
         for error in errors:
             error_msg = "\n ".join(error.args)
-            print(error_msg)
+            print(error_msg)  # noqa: T201
         return 1
     return 0
 

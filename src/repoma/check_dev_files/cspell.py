@@ -190,7 +190,7 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     else:
         sentence += "s "
         sentence += ", ".join(sections[:-1])
-        if len(sections) > 2:
+        if len(sections) > 2:  # noqa: PLR2004
             sentence += ","
         sentence += " and " + sections[-1]
     return sentence
