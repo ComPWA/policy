@@ -20,6 +20,7 @@ from . import (
     nbstripout,
     precommit,
     prettier,
+    pyright,
     pytest,
     pyupgrade,
     release_drafter,
@@ -174,6 +175,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         executor(mypy.main)
         executor(pytest.main)
+        executor(pyright.main)
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)

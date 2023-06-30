@@ -63,6 +63,41 @@ module = ["ruamel.*"]
 ignore_missing_imports = true
 module = ["nbformat.*"]
 
+
+[tool.pyright]
+exclude = [
+    "**/.git",
+    "**/.ipynb_checkpoints",
+    "**/.mypy_cache",
+    "**/.pytest_cache",
+    "**/.tox",
+    "**/__pycache__",
+    "**/_build",
+]
+reportGeneralTypeIssues = false
+reportIncompatibleMethodOverride = false
+reportMissingParameterType = false
+reportMissingTypeArgument = false
+reportMissingTypeStubs = false
+reportOverlappingOverload = false
+reportPrivateImportUsage = false
+reportPrivateUsage = false
+reportUnboundVariable = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryComparison = false
+reportUnnecessaryContains = false
+reportUnnecessaryIsInstance = false
+reportUntypedFunctionDecorator = false
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedImport = true
+reportUnusedVariable = true
+typeCheckingMode = "strict"
+
+
 [tool.pytest.ini_options]
 addopts = """
 --color=yes
