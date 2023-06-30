@@ -19,6 +19,7 @@ def _update_extensions() -> None:
         vscode.remove_extension_recommendation,
         "travisillig.vscode-json-stable-stringify",
         # cspell:ignore travisillig
+        unwanted=True,
     )
     executor(
         vscode.add_extension_recommendation,

@@ -20,5 +20,11 @@
     "tyriar.sort-lines",
     "yzhang.markdown-all-in-one"
   ],
-  "unwantedRecommendations": ["ms-python.flake8", "ms-python.isort", "ms-python.pylint"]
+  "unwantedRecommendations": [
+    "bungcip.better-toml",
+    "ms-python.flake8",
+    "ms-python.isort",
+    "ms-python.pylint",
+    "travisillig.vscode-json-stable-stringify"
+  ]
 }
