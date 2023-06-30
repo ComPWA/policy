@@ -40,6 +40,37 @@ def find_repo(
     return None
 
 
+def remove_precommit_hook(hook_id: str, repo_url: Optional[str] = None) -> None:
+    config, yaml_parser = load_round_trip_precommit_config()
+    repo_and_hook_idx = __find_repo_and_hook_idx(config, hook_id, repo_url)
+    if repo_and_hook_idx is None:
+        return
+    repo_idx, hook_idx = repo_and_hook_idx
+    repos: CommentedSeq = config["repos"]
+    hooks: CommentedSeq = repos[repo_idx]["hooks"]
+    if len(hooks) <= 1:
+        repos.pop(repo_idx)
+    else:
+        hooks.pop(hook_idx)
+    yaml_parser.dump(config, CONFIG_PATH.precommit)
+    msg = f"Removed {hook_id!r} from {CONFIG_PATH.precommit}"
+    raise PrecommitError(msg)
+
+
+def __find_repo_and_hook_idx(
+    config: CommentedMap, hook_id: str, repo_url: Optional[str] = None
+) -> Optional[Tuple[int, int]]:
+    repos: CommentedSeq = config.get("repos", [])
+    for repo_idx, repo in enumerate(repos):
+        if repo_url is not None and repo.get("repo") != repo_url:
+            continue
+        hooks: CommentedSeq = repo.get("hooks", [])
+        for hook_idx, hook in enumerate(hooks):
+            if hook.get("id") == hook_id:
+                return repo_idx, hook_idx
+    return None
+
+
 def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
     """Update the repo definition in :code:`.pre-commit-config.yaml`.
 

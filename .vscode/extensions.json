@@ -9,7 +9,6 @@
     "garaioag.garaio-vscode-unwanted-recommendations",
     "github.vscode-github-actions",
     "github.vscode-pull-request-github",
-    "ms-python.flake8",
     "ms-python.isort",
     "ms-python.pylint",
     "ms-python.python",
@@ -22,5 +21,6 @@
     "tamasfe.even-better-toml",
     "tyriar.sort-lines",
     "yzhang.markdown-all-in-one"
-  ]
+  ],
+  "unwantedRecommendations": ["ms-python.flake8"]
 }

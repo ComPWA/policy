@@ -15,7 +15,6 @@ def test_extract_extensions():
         "garaioag.garaio-vscode-unwanted-recommendations",
         "github.vscode-github-actions",
         "github.vscode-pull-request-github",
-        "ms-python.flake8",
         "ms-python.isort",
         "ms-python.pylint",
         "ms-python.python",

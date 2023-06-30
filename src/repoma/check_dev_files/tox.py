@@ -12,12 +12,6 @@ def main() -> None:
     executor(
         extract_config_section,
         extract_from=CONFIG_PATH.tox,
-        extract_to=CONFIG_PATH.flake8,
-        sections=["flake8"],
-    )
-    executor(
-        extract_config_section,
-        extract_from=CONFIG_PATH.tox,
         extract_to=CONFIG_PATH.pydocstyle,
         sections=["pydocstyle"],
     )

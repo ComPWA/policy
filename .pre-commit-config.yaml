@@ -3,7 +3,6 @@ ci:
   autoupdate_schedule: quarterly
   skip:
     - check-dev-files
-    - flake8
     - format-setup-cfg
     - mypy
     - pylint
@@ -62,11 +61,6 @@ repos:
         language: python
         files: ^\.pre\-commit\-(config|hooks)\.yaml$
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.1.1
-    hooks:
-      - id: autoflake
-
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
@@ -92,15 +86,6 @@ repos:
           (?x)^(
             .*\.py
           )$
-
-  - repo: local
-    hooks:
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types:
-          - python
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0

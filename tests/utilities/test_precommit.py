@@ -63,7 +63,6 @@ class TestRepo:
         repo = dummy_config.find_repo("local")
         assert repo is not None
         assert repo.get_hook_index("non-existent") is None
-        assert repo.get_hook_index("flake8") == 0
         assert repo.get_hook_index("mypy") == 1
 
 

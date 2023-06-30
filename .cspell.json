@@ -24,7 +24,6 @@
     "*particle*.*ml",
     ".constraints/*.txt",
     ".editorconfig",
-    ".flake8*",
     ".gitignore",
     ".gitpod.*",
     ".mypy.ini",

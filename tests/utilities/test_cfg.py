@@ -101,9 +101,15 @@ def test_open_config_exception():
 
 
 def test_open_config_from_path():
-    cfg_from_str = open_config(".flake8")
-    assert cfg_from_str.sections() == ["flake8"]
-    cfg_from_path = open_config(Path(".flake8"))
+    cfg_from_str = open_config(".mypy.ini")
+    assert cfg_from_str.sections() == [
+        "mypy",
+        "mypy-tests.*",
+        "mypy-typings.*",
+        "mypy-ruamel.*",
+        "mypy-nbformat.*",
+    ]
+    cfg_from_path = open_config(Path(".mypy.ini"))
     assert cfg_from_path == cfg_from_str
 
 

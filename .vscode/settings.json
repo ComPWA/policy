@@ -36,7 +36,6 @@
     "**/.git/**": true,
     "**/.tox/**": true
   },
-  "flake8.importStrategy": "fromEnvironment",
   "git.rebaseWhenSync": true,
   "github-actions.workflows.pinned.workflows": [".github/workflows/ci.yml"],
   "isort.check": true,

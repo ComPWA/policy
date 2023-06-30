@@ -8,7 +8,7 @@ from repoma.errors import PrecommitError
 __README_PATH = "README.md"
 
 
-def add_badge(badge: str) -> None:  # noqa: R701
+def add_badge(badge: str) -> None:
     if not os.path.exists(__README_PATH):
         msg = f"This repository contains no {__README_PATH}, so cannot add badge"
         raise PrecommitError(msg)
