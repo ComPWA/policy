@@ -33,6 +33,10 @@ target-version = [
     "py39",
 ]
 
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
 [tool.mypy]
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
@@ -58,6 +62,20 @@ module = ["ruamel.*"]
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = ["nbformat.*"]
+
+[tool.pytest.ini_options]
+addopts = """
+--color=yes
+--doctest-continue-on-failure
+--doctest-modules
+--durations=3
+"""
+filterwarnings = ["error"]
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+testpaths = [
+    "src",
+    "tests",
+]
 
 [tool.ruff]
 extend-select = [
