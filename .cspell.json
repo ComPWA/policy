@@ -80,7 +80,6 @@
     "conda",
     "fromdict",
     "indentless",
-    "isort",
     "linkcheck",
     "maxsplit",
     "nargs",

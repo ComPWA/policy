@@ -16,6 +16,7 @@ from . import (
     github_templates,
     github_workflows,
     gitpod,
+    isort,
     nbstripout,
     precommit,
     prettier,
@@ -167,6 +168,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if is_python_repo:
         executor(black.main)
         executor(flake8.main)
+        executor(isort.main)
         executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
