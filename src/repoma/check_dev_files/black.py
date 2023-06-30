@@ -1,8 +1,9 @@
 """Check :file:`pyproject.toml` black config."""
 from textwrap import dedent
-from typing import List, Optional
+from typing import Optional
 
 from ruamel.yaml.comments import CommentedMap
+from tomlkit.items import Table
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
@@ -13,7 +14,7 @@ from repoma.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from repoma.utilities.pyproject import load_pyproject
+from repoma.utilities.pyproject import get_sub_table, load_pyproject, write_pyproject
 from repoma.utilities.setup_cfg import get_supported_python_versions
 
 
@@ -26,13 +27,13 @@ def main() -> None:
     executor(_check_activate_preview, config)
     executor(_check_option_ordering, config)
     executor(_check_target_versions, config)
-    executor(_check_pyproject)
+    executor(_update_nbqa_settings)
     executor(_update_precommit_repo)
     executor(_update_precommit_nbqa_hook)
     executor.finalize()
 
 
-def _load_black_config(content: Optional[str] = None) -> dict:
+def _load_black_config(content: Optional[str] = None) -> Table:
     config = load_pyproject(content)
     return config.get("tool", {}).get("black", {})
 
@@ -106,29 +107,25 @@ def _update_precommit_nbqa_hook() -> None:
     )
 
 
-def _check_pyproject() -> None:
+def _update_nbqa_settings() -> None:
+    # cspell:ignore addopts
     if not CONFIG_PATH.precommit.exists():
         return
+    if not __has_nbqa_precommit_repo():
+        return
+    pyproject = load_pyproject()
+    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    expected = ["--line-length=85"]
+    if nbqa_table.get("black") != expected:
+        nbqa_table["black"] = expected
+        write_pyproject(pyproject)
+        msg = "Added nbQA configuration for black"
+        raise PrecommitError(msg)
+
+
+def __has_nbqa_precommit_repo() -> bool:
     config, _ = load_round_trip_precommit_config()
     nbqa_repo = find_repo(config, "https://github.com/nbQA-dev/nbQA")
     if nbqa_repo is None:
-        return
-    nbqa_config = _load_nbqa_black_config()
-    if nbqa_config != ["--line-length=85"]:
-        error_message = dedent("""
-            Configuration of nbqa-black in pyproject.toml should be as follows:
-
-            [tool.nbqa.addopts]
-            black = [
-                "--line-length=85",
-            ]
-
-            This is to ensure that code blocks render nicely in the sphinx-book-theme.
-            """).strip()
-        raise PrecommitError(error_message)
-
-
-def _load_nbqa_black_config(content: Optional[str] = None) -> List[str]:
-    # cspell:ignore addopts
-    config = load_pyproject(content)
-    return config.get("tool", {}).get("nbqa", {}).get("addopts", {}).get("black", {})
+        return False
+    return True

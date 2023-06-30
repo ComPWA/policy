@@ -8,7 +8,6 @@ from repoma.check_dev_files.black import (
     _check_option_ordering,
     _check_target_versions,
     _load_black_config,
-    _load_nbqa_black_config,
 )
 from repoma.errors import PrecommitError
 
@@ -96,18 +95,6 @@ def test_load_config_from_string():
         "include": R"\.pyi?$",
         "line-length": 88,
     }
-
-
-def test_load_nbqa_black_config():
-    # cspell:ignore addopts
-    toml_content = dedent(R"""
-        [tool.nbqa.addopts]
-        black = [
-            "--line-length=85",
-        ]
-        """).strip()
-    config = _load_nbqa_black_config(toml_content)
-    assert config == ["--line-length=85"]
 
 
 def test_check_option_ordering():
