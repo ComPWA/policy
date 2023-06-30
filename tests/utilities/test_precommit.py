@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 from pathlib import Path
 
 import pytest
@@ -75,7 +74,7 @@ def test_fromdict():
     assert fromdict(repo_def, Repo) == repo
 
     ci_def = {"autofix_prs": False}
-    ci = PrecommitCi(autofix_prs=False)  # pylint: disable=invalid-name
+    ci = PrecommitCi(autofix_prs=False)
     assert fromdict(ci_def, PrecommitCi) == ci
 
     config_def = {"repos": [repo_def], "ci": ci_def}

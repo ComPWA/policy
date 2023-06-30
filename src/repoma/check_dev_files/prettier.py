@@ -12,7 +12,6 @@ from repoma.utilities.readme import add_badge, remove_badge
 # cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
 
-# pylint: disable=line-too-long
 # fmt: off
 __BADGE = "[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)"
 # fmt: on

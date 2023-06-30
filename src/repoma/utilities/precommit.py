@@ -1,4 +1,3 @@
-# pylint: disable=no-name-in-module
 """Helper functions for modifying :file:`.pre-commit.config.yaml`."""
 
 import os.path

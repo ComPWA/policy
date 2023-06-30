@@ -80,7 +80,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--no-autolink-concat",
         default="",
         help=(
-            # pylint: disable=line-too-long
             "Do not add a cell with a autolink-concat directive. See"
             " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
         ),

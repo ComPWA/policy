@@ -24,7 +24,6 @@ from repoma.utilities.readme import add_badge, remove_badge
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
 # cspell:ignore pelling
-# pylint: disable=line-too-long
 # fmt: off
 __BADGE = (
     "[![Spelling"

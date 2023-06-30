@@ -21,7 +21,7 @@ from repoma.utilities.vscode import (
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(  # pylint: disable=too-many-arguments
+def main(
     allow_deprecated: bool,
     doc_apt_packages: List[str],
     no_macos: bool,

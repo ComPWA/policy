@@ -55,7 +55,6 @@ def check_svg_output_cells(filename: str) -> None:
             data = output.get("data", {})
             for binary in BINARY_CELL_OUTPUT:
                 if binary in data:
-                    # pylint: disable=line-too-long
                     error_message = f"""
                     Cell {i} in {filename} contains {binary} output. Please
                     store it somewhere outside this repository and render it
