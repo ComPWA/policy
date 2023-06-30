@@ -33,6 +33,32 @@ target-version = [
     "py39",
 ]
 
+[tool.mypy]
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+exclude = '.*/repoma/__init__\.py'
+files = ["**/*.py"]
+show_error_codes = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+check_untyped_defs = true
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+module = ["tests.*"]
+
+[[tool.mypy.overrides]]
+ignore_errors = true
+module = ["typings.*"]
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["ruamel.*"]
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["nbformat.*"]
+
 [tool.ruff]
 extend-select = [
     "A",

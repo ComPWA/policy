@@ -16,6 +16,7 @@ from . import (
     github_templates,
     github_workflows,
     gitpod,
+    mypy,
     nbstripout,
     precommit,
     prettier,
@@ -171,6 +172,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 update_pip_constraints.main,
                 cron_frequency=args.pin_requirements,
             )
+        executor(mypy.main)
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)

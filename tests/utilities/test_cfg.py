@@ -101,15 +101,17 @@ def test_open_config_exception():
 
 
 def test_open_config_from_path():
-    cfg_from_str = open_config(".mypy.ini")
+    path_str = "setup.cfg"
+    cfg_from_str = open_config(path_str)
     assert cfg_from_str.sections() == [
-        "mypy",
-        "mypy-tests.*",
-        "mypy-typings.*",
-        "mypy-ruamel.*",
-        "mypy-nbformat.*",
+        "metadata",
+        "options",
+        "options.extras_require",
+        "options.entry_points",
+        "options.packages.find",
+        "options.package_data",
     ]
-    cfg_from_path = open_config(Path(".mypy.ini"))
+    cfg_from_path = open_config(Path(path_str))
     assert cfg_from_path == cfg_from_str
 
 
