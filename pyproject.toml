@@ -65,9 +65,6 @@ extend-select = [
     "UP",
     "YTT",
 ]
-external = [
-    "D100",
-]
 ignore = [
     "D101",    # class docstring
     "D102",    # method docstring

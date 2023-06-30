@@ -107,11 +107,6 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-
   - repo: local
     hooks:
       - id: pylint

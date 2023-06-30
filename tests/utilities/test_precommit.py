@@ -54,7 +54,6 @@ class TestPrecommitConfig:
         assert repo_names >= {
             "https://github.com/pre-commit/pre-commit-hooks",
             "https://github.com/psf/black",
-            "https://github.com/pycqa/pydocstyle",
         }
 
 

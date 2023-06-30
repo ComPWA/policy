@@ -22,7 +22,6 @@ class _ConfigFilePaths(NamedTuple):
     precommit: Path = Path(".pre-commit-config.yaml")
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
-    pydocstyle: Path = Path(".pydocstyle")
     pyproject: Path = Path("pyproject.toml")
     pytest: Path = Path("pytest.ini")
     readme: Path = Path("README.md")
