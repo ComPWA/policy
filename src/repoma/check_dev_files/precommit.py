@@ -6,6 +6,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
+from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -20,9 +21,11 @@ __SKIPPED_HOOKS = {
 
 def main() -> None:
     cfg = PrecommitConfig.load()
-    _check_plural_hooks_first(cfg)
-    _check_single_hook_sorting(cfg)
-    _check_skipped_hooks(cfg)
+    executor = Executor()
+    executor(_check_plural_hooks_first, cfg)
+    executor(_check_single_hook_sorting, cfg)
+    executor(_check_skipped_hooks, cfg)
+    executor.finalize()
 
 
 def _check_plural_hooks_first(config: PrecommitConfig) -> None:

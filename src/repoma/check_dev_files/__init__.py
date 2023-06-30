@@ -163,7 +163,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     executor(nbstripout.main)
     executor(toml.main)  # has to run before pre-commit
-    executor(precommit.main)
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
         executor(black.main)
@@ -179,6 +178,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
+    executor(precommit.main)
     executor(vscode.main)
     if not args.no_gitpod:
         executor(gitpod.main)
