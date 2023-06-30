@@ -1,10 +1,10 @@
 """Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
 import os
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 import tomlkit
 from tomlkit.container import Container
-from tomlkit.items import Table
+from tomlkit.items import Array, Table
 from tomlkit.toml_document import TOMLDocument
 
 from repoma.utilities import CONFIG_PATH
@@ -36,3 +36,11 @@ def write_pyproject(config: TOMLDocument) -> None:
     src = tomlkit.dumps(config, sort_keys=True)
     with open(CONFIG_PATH.pyproject, "w") as stream:
         stream.write(src)
+
+
+def to_toml_array(items: Iterable[Any]) -> Array:
+    array = tomlkit.array()
+    array.extend(items)
+    if len(array) > 1:
+        array.multiline(True)
+    return array
