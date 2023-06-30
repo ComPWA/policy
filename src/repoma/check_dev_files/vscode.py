@@ -15,11 +15,15 @@ def main() -> None:
 
 def _update_extensions() -> None:
     executor = Executor()
-    executor(vscode.remove_unwanted_recommendations)
     executor(
         vscode.remove_extension_recommendation,
         "travisillig.vscode-json-stable-stringify",
         # cspell:ignore travisillig
+    )
+    executor(
+        vscode.add_extension_recommendation,
+        "garaioag.garaio-vscode-unwanted-recommendations",
+        # cspell:ignore garaio garaioag
     )
     executor.finalize()
 
