@@ -10,7 +10,6 @@ from repoma.utilities.pyproject import load_pyproject, write_pyproject
 from repoma.utilities.readme import remove_badge
 from repoma.utilities.setup_cfg import open_setup_cfg
 from repoma.utilities.vscode import (
-    add_unwanted_extension,
     remove_extension_recommendation,
     remove_settings,
     set_setting,
@@ -30,8 +29,8 @@ def _remove_flake8() -> None:
     executor = Executor()
     executor(__remove_configs, [".flake8"])
     executor(__uninstall, "flake8", check_options=["lint", "sty"])
-    executor(add_unwanted_extension, "ms-python.flake8")
-    executor(remove_extension_recommendation, "ms-python.flake8")
+    executor(__uninstall, "pep8-naming", check_options=["lint", "sty"])
+    executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
     executor(remove_precommit_hook, "nbqa-flake8")
@@ -43,8 +42,7 @@ def _remove_flake8() -> None:
 def _remove_isort() -> None:
     executor = Executor()
     executor(__remove_isort_settings)
-    executor(add_unwanted_extension, "ms-python.isort")
-    executor(remove_extension_recommendation, "ms-python.isort")
+    executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
     executor(remove_settings, ["isort.check", "isort.importStrategy"])
@@ -70,8 +68,8 @@ def _remove_pydocstyle() -> None:
 def _remove_pylint() -> None:
     executor = Executor()
     executor(__remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
-    executor(__remove_extension, "ms-python.pylint")
     executor(__uninstall, "pylint", check_options=["lint", "sty"])
+    executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
     executor(remove_precommit_hook, "nbqa-pylint")
     executor(remove_settings, ["pylint.importStrategy"])
@@ -102,13 +100,6 @@ def __remove_file(path: str) -> None:
     os.remove(path)
     msg = f"Removed {path}"
     raise PrecommitError(msg)
-
-
-def __remove_extension(extension_id: str) -> None:
-    executor = Executor()
-    executor(remove_extension_recommendation, extension_id)
-    executor(add_unwanted_extension, extension_id)
-    executor.finalize()
 
 
 def __uninstall(package: str, check_options: List[str]) -> None:

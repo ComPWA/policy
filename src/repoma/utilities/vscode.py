@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 from . import CONFIG_PATH
 
@@ -30,39 +31,53 @@ def _update_settings(old: dict, new: dict) -> None:
 
 
 def add_extension_recommendation(extension_name: str) -> None:
+    __add_extension(
+        extension_name,
+        key="recommendations",
+        msg=f'Added VS Code extension recommendation "{extension_name}"',
+    )
+
+
+def add_unwanted_extension(extension_name: str) -> None:
+    __add_extension(
+        extension_name,
+        key="unwantedRecommendations",
+        msg=f'Added unwanted VS Code extension "{extension_name}"',
+    )
+
+
+def __add_extension(extension_name: str, key: str, msg: str) -> None:
     config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
-    recommended_extensions = config.get("recommendations", [])
+    recommended_extensions = config.get(key, [])
     if extension_name not in set(recommended_extensions):
         recommended_extensions.append(extension_name)
-        config["recommendations"] = sorted(recommended_extensions)
+        config[key] = sorted(recommended_extensions)
         __dump_config(config, CONFIG_PATH.vscode_extensions)
         msg = f'Added VS Code extension recommendation "{extension_name}"'
         raise PrecommitError(msg)
 
 
-def add_unwanted_extension(extension_name: str) -> None:
-    config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
-    unwanted_recommendations = config.get("unwantedRecommendations", [])
-    if extension_name not in set(unwanted_recommendations):
-        unwanted_recommendations.append(extension_name)
-        config["unwantedRecommendations"] = sorted(unwanted_recommendations)
-        __dump_config(config, CONFIG_PATH.vscode_extensions)
-        msg = f"Added unwanted VS Code extension {extension_name!r}"
-        raise PrecommitError(msg)
+def remove_extension_recommendation(
+    extension_name: str, *, unwanted: bool = False
+) -> None:
+    def _remove() -> None:
+        if not CONFIG_PATH.vscode_extensions.exists():
+            return
+        with open(CONFIG_PATH.vscode_extensions) as stream:
+            config = json.load(stream)
+        recommended_extensions = list(config.get("recommendations", []))
+        if extension_name in recommended_extensions:
+            recommended_extensions.remove(extension_name)
+            config["recommendations"] = sorted(recommended_extensions)
+            __dump_config(config, CONFIG_PATH.vscode_extensions)
+            msg = f'Removed VS Code extension recommendation "{extension_name}"'
+            raise PrecommitError(msg)
 
-
-def remove_extension_recommendation(extension_name: str) -> None:
-    if not CONFIG_PATH.vscode_extensions.exists():
-        return
-    with open(CONFIG_PATH.vscode_extensions) as stream:
-        config = json.load(stream)
-    recommended_extensions = list(config.get("recommendations", []))
-    if extension_name in recommended_extensions:
-        recommended_extensions.remove(extension_name)
-        config["recommendations"] = sorted(recommended_extensions)
-        __dump_config(config, CONFIG_PATH.vscode_extensions)
-        msg = f'Removed VS Code extension recommendation "{extension_name}"'
-        raise PrecommitError(msg)
+    executor = Executor()
+    executor(_remove)
+    if unwanted:
+        executor(add_unwanted_extension, extension_name)
+    executor.finalize()
 
 
 def __dump_config(config: dict, path: Path) -> None:
