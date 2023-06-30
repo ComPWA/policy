@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "charliermarsh.ruff",
     "christian-kohler.path-intellisense",
     "davidanson.vscode-markdownlint",
     "eamodio.gitlens",

@@ -21,6 +21,7 @@ from . import (
     prettier,
     pyupgrade,
     release_drafter,
+    ruff,
     setup_cfg,
     toml,
     tox,
@@ -173,6 +174,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 cron_frequency=args.pin_requirements,
             )
         executor(pyupgrade.main)
+        executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
     executor(vscode.main)

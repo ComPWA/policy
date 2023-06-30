@@ -10,6 +10,10 @@ from tomlkit.toml_document import TOMLDocument
 from repoma.utilities import CONFIG_PATH
 
 
+def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
+    return all(settings.get(key) == value for key, value in minimal_settings.items())
+
+
 def load_pyproject(content: Optional[str] = None) -> TOMLDocument:
     if not os.path.exists(CONFIG_PATH.pyproject):
         return TOMLDocument()
