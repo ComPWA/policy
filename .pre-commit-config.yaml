@@ -5,7 +5,6 @@ ci:
     - check-dev-files
     - format-setup-cfg
     - mypy
-    - pylint
     - pyright
     - repoma-self-check
     - taplo
@@ -106,19 +105,6 @@ repos:
     rev: v3.0.0-alpha.9-for-vscode
     hooks:
       - id: prettier
-
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        args:
-          - --rcfile=.pylintrc
-          - --score=no
-        language: system
-        require_serial: true
-        types:
-          - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
     rev: v1.1.307

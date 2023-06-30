@@ -21,6 +21,7 @@ from . import (
     precommit,
     prettier,
     pydocstyle,
+    pylint,
     pyupgrade,
     release_drafter,
     ruff,
@@ -170,6 +171,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(flake8.main)
         executor(isort.main)
         executor(pydocstyle.main)
+        executor(pylint.main)
         executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(

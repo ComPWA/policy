@@ -93,7 +93,6 @@
     "prereleased",
     "prettierignore",
     "prettierrc",
-    "pylint",
     "pyright",
     "pyupgrade",
     "redeboer",
