@@ -40,9 +40,8 @@ def main(no_prettierrc: bool) -> None:
 def _remove_configuration() -> None:
     if CONFIG_PATH.prettier.exists():
         os.remove(CONFIG_PATH.prettier)
-        raise PrecommitError(
-            f'"{CONFIG_PATH.prettier}" is no longer required and has been removed'
-        )
+        msg = f'"{CONFIG_PATH.prettier}" is no longer required and has been removed'
+        raise PrecommitError(msg)
     remove_badge(__BADGE_PATTERN)
     vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
 
@@ -51,9 +50,8 @@ def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
         if CONFIG_PATH.prettier.exists():
             os.remove(CONFIG_PATH.prettier)
-            raise PrecommitError(
-                f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
-            )
+            msg = f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
+            raise PrecommitError(msg)
     else:
         if not CONFIG_PATH.prettier.exists():
             existing_content = ""
@@ -63,7 +61,8 @@ def _fix_config_content(no_prettierrc: bool) -> None:
         if existing_content != __EXPECTED_CONFIG:
             with open(CONFIG_PATH.prettier, "w") as stream:
                 stream.write(__EXPECTED_CONFIG)
-            raise PrecommitError(f"Updated {CONFIG_PATH.prettier} config file")
+            msg = f"Updated {CONFIG_PATH.prettier} config file"
+            raise PrecommitError(msg)
 
     wrong_config_paths = [  # https://prettier.io/docs/en/configuration.html
         ".prettierrc.json",
@@ -75,9 +74,8 @@ def _fix_config_content(no_prettierrc: bool) -> None:
     for path in wrong_config_paths:
         if os.path.exists(path):
             os.remove(path)
-            raise PrecommitError(
-                f'Removed "{path}": "{CONFIG_PATH.prettier}" should suffice'
-            )
+            msg = f'Removed "{path}": "{CONFIG_PATH.prettier}" should suffice'
+            raise PrecommitError(msg)
 
 
 def _update_prettier_ignore() -> None:
@@ -99,9 +97,8 @@ def __remove_forbidden_paths() -> None:
     ]
     if existing != expected:
         __write_lines(expected)
-        raise PrecommitError(
-            f"Removed forbidden paths from {CONFIG_PATH.prettier_ignore}"
-        )
+        msg = f"Removed forbidden paths from {CONFIG_PATH.prettier_ignore}"
+        raise PrecommitError(msg)
 
 
 def __insert_expected_paths() -> None:
@@ -110,13 +107,15 @@ def __insert_expected_paths() -> None:
         "LICENSE",
     ]
     obligatory = [p for p in obligatory if os.path.exists(p)]
-    expected = sorted(set(existing + obligatory) - {""}) + [""]
+    expected = [*sorted(set(existing + obligatory) - {""}), ""]
     if expected == [""] and os.path.exists(CONFIG_PATH.prettier_ignore):
         os.remove(CONFIG_PATH.prettier_ignore)
-        raise PrecommitError(f"{CONFIG_PATH.prettier_ignore} is not needed")
+        msg = f"{CONFIG_PATH.prettier_ignore} is not needed"
+        raise PrecommitError(msg)
     if existing != expected:
         __write_lines(expected)
-        raise PrecommitError(f"Added paths to {CONFIG_PATH.prettier_ignore}")
+        msg = f"Added paths to {CONFIG_PATH.prettier_ignore}"
+        raise PrecommitError(msg)
 
 
 def __get_existing_lines() -> List[str]:

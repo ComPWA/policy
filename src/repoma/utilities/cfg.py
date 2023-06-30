@@ -32,10 +32,11 @@ def extract_config_section(
         old_cfg, extracted_cfg = __split_config(cfg, sections)
         __write_config(old_cfg, extract_from)
         __write_config(extracted_cfg, extract_to)
-        raise PrecommitError(
-            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}" '
-            f'has been extracted to a "./{extract_to}" config file.'
+        msg = (
+            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}" has been'
+            f' extracted to a "./{extract_to}" config file.'
         )
+        raise PrecommitError(msg)
 
 
 def __split_config(
@@ -93,13 +94,15 @@ def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
         else:
             path = definition
         if not path.exists():
-            raise PrecommitError(f'Config file "{path}" does not exist')
+            msg = f'Config file "{path}" does not exist'
+            raise PrecommitError(msg)
         cfg.read(path)
     else:
-        raise TypeError(
+        msg = (
             f"Cannot create a {ConfigParser.__name__} from a"
             f" {type(definition).__name__}"
         )
+        raise TypeError(msg)
     return cfg
 
 
@@ -110,6 +113,5 @@ def write_config(cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]) -> 
         with open(output) as stream:
             cfg.write(stream)
     else:
-        raise TypeError(
-            f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"
-        )
+        msg = f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"
+        raise TypeError(msg)

@@ -56,10 +56,7 @@ def main() -> None:
 
 def _is_flake8_installed() -> bool:
     cfg = open_setup_cfg()
-    for _, value in cfg.items("options.extras_require"):
-        if "flake8" in value:
-            return True
-    return False
+    return any("flake8" in value for _, value in cfg.items("options.extras_require"))
 
 
 def _extract_flake8_config() -> None:
@@ -81,9 +78,8 @@ def _extract_flake8_config() -> None:
 
 def _check_config_exists() -> None:
     if not CONFIG_PATH.flake8.exists():
-        raise PrecommitError(
-            f"This repository has no {CONFIG_PATH.flake8} config file."
-        )
+        msg = f"This repository has no {CONFIG_PATH.flake8} config file."
+        raise PrecommitError(msg)
 
 
 def _format_flake8_config() -> None:
@@ -118,13 +114,13 @@ def _check_comments_on_separate_line(
             continue
         before_comment = split_line[0]
         if before_comment:
-            raise PrecommitError(
+            msg = (
                 "Please move the comment on the following line in the"
-                f" {CONFIG_PATH.flake8} config file to a separate line:\n\n"
-                f"    {line}\n\n"
-                "For more info, see "
-                "https://flake8.pycqa.org/en/latest/user/configuration.html#project-configuration"
+                f" {CONFIG_PATH.flake8} config file to a separate line:\n\n   "
+                f" {line}\n\nFor more info, see"
+                " https://flake8.pycqa.org/en/latest/user/configuration.html#project-configuration"
             )
+            raise PrecommitError(msg)
 
 
 def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
@@ -136,9 +132,8 @@ def _check_option_order(cfg: Optional[ConfigParser] = None) -> None:
             if "" in values:
                 values.remove("")
             if values != sorted(values, key=lambda s: natural_sorting(s.lower())):
-                raise PrecommitError(
-                    f'Option "{option}" in section [{section}] is not sorted'
-                )
+                msg = f'Option "{option}" in section [{section}] is not sorted'
+                raise PrecommitError(msg)
 
 
 def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
@@ -146,9 +141,8 @@ def _check_setup_cfg(cfg: Optional[ConfigParser] = None) -> None:
         cfg = open_setup_cfg()
     extras_require = "options.extras_require"
     if not cfg.has_section(extras_require):
-        raise PrecommitError(
-            f"Please list flake8 under a section [{extras_require}] in setup.cfg"
-        )
+        msg = f"Please list flake8 under a section [{extras_require}] in setup.cfg"
+        raise PrecommitError(msg)
     requirements = indent("\n".join(__FLAKE8_REQUIREMENTS), 12 * " ")
     error_message = f"""\
         Section [{extras_require}] in setup.cfg should look like this:

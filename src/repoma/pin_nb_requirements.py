@@ -35,10 +35,11 @@ def check_pinned_requirements(filename: str) -> None:
         __check_requirements(filename, cell_content)
         __check_metadata(filename, cell["metadata"])
         return
-    raise PrecommitError(
-        f'Notebook "{filename}" does not contain a pip install cell of the'
-        f" form {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
+    msg = (
+        f'Notebook "{filename}" does not contain a pip install cell of the form'
+        f" {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
     )
+    raise PrecommitError(msg)
 
 
 def __has_python_kernel(notebook: dict) -> bool:
@@ -51,24 +52,25 @@ def __has_python_kernel(notebook: dict) -> bool:
 
 def __check_install_statement(filename: str, install_statement: str) -> None:
     if not install_statement.startswith(__PIP_INSTALL_STATEMENT):
-        raise PrecommitError(
+        msg = (
             f"First shell cell in notebook {filename} does not start with"
             f" {__PIP_INSTALL_STATEMENT}"
         )
+        raise PrecommitError(msg)
     if install_statement.endswith("/dev/null"):
-        raise PrecommitError(
+        msg = (
             "Remove the /dev/null from the pip install statement in notebook"
             f" {filename}"
         )
+        raise PrecommitError(msg)
 
 
 def __check_requirements(filename: str, install_statement: str) -> None:  # noqa: R701
     package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
     requirements = package_listing.split(" ")
     if len(requirements) == 0:
-        raise PrecommitError(
-            f'At least one dependency required in install cell of "{filename}"'
-        )
+        msg = f'At least one dependency required in install cell of "{filename}"'
+        raise PrecommitError(msg)
     for requirement in requirements:
         requirement = requirement.strip()
         if not requirement:
@@ -76,31 +78,34 @@ def __check_requirements(filename: str, install_statement: str) -> None:  # noqa
         if "git+" in requirement:
             continue
         if not any(equal_sign in requirement for equal_sign in ["==", "~="]):
-            raise PrecommitError(
-                f'Install cell in notebook "{filename}" contains a'
-                f" requirement without == or ~= ({requirement})"
+            msg = (
+                f'Install cell in notebook "{filename}" contains a requirement without'
+                f" == or ~= ({requirement})"
             )
+            raise PrecommitError(msg)
     requirements_lower = [r.lower() for r in requirements if not r.startswith("git+")]
     if sorted(requirements_lower) != requirements_lower:
         sorted_requirements = " ".join(sorted(requirements))
-        raise PrecommitError(
-            f'Requirements in notebook "{filename}"'
-            " are not sorted alphabetically. Should be:\n\n  "
-            f"  {sorted_requirements}"
+        msg = (
+            f'Requirements in notebook "{filename}" are not sorted alphabetically.'
+            f" Should be:\n\n    {sorted_requirements}"
         )
+        raise PrecommitError(msg)
 
 
 def __check_metadata(filename: str, metadata: dict) -> None:
     source_hidden = metadata.get("jupyter", {}).get("source_hidden")
     if not source_hidden:
-        raise PrecommitError(f'Install cell in notebook "{filename}" is not hidden')
+        msg = f'Install cell in notebook "{filename}" is not hidden'
+        raise PrecommitError(msg)
     tags = set(metadata.get("tags", []))
     expected_tags = {"remove-cell"}
     if expected_tags != tags:
-        raise PrecommitError(
+        msg = (
             f'Install cell in notebook "{filename}" should have tags'
             f" {sorted(expected_tags)}"
         )
+        raise PrecommitError(msg)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

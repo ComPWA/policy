@@ -25,7 +25,8 @@ def _update_settings(old: dict, new: dict) -> None:
     if old == new:
         return
     __dump_config(new, CONFIG_PATH.vscode_settings)
-    raise PrecommitError("Updated VS Code settings")
+    msg = "Updated VS Code settings"
+    raise PrecommitError(msg)
 
 
 def remove_unwanted_recommendations() -> None:
@@ -36,7 +37,8 @@ def remove_unwanted_recommendations() -> None:
     unwanted_recommendations = config.pop(key, None)
     if unwanted_recommendations is not None:
         __dump_config(config, CONFIG_PATH.vscode_extensions)
-        raise PrecommitError(f'Removed VS Code extension setting "{key}"')
+        msg = f'Removed VS Code extension setting "{key}"'
+        raise PrecommitError(msg)
 
 
 def add_extension_recommendation(extension_name: str) -> None:
@@ -46,9 +48,8 @@ def add_extension_recommendation(extension_name: str) -> None:
         recommended_extensions.append(extension_name)
         config["recommendations"] = sorted(recommended_extensions)
         __dump_config(config, CONFIG_PATH.vscode_extensions)
-        raise PrecommitError(
-            f'Added VS Code extension recommendation "{extension_name}"'
-        )
+        msg = f'Added VS Code extension recommendation "{extension_name}"'
+        raise PrecommitError(msg)
 
 
 def remove_extension_recommendation(extension_name: str) -> None:
@@ -61,9 +62,8 @@ def remove_extension_recommendation(extension_name: str) -> None:
         recommended_extensions.remove(extension_name)
         config["recommendations"] = sorted(recommended_extensions)
         __dump_config(config, CONFIG_PATH.vscode_extensions)
-        raise PrecommitError(
-            f'Removed VS Code extension recommendation "{extension_name}"'
-        )
+        msg = f'Removed VS Code extension recommendation "{extension_name}"'
+        raise PrecommitError(msg)
 
 
 def __dump_config(config: dict, path: Path) -> None:

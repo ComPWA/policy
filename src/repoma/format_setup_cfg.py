@@ -34,8 +34,7 @@ def _format_setup_cfg(
     def format_version_constraints(content: str) -> str:
         content = re.sub(r"(>=?|<=?|==)\s+", r"\1", content)
         content = re.sub(r"([^\s])(>=?|<=?)", r"\1 \2", content)
-        content = re.sub(r"([^\s])\s\s+(>=?|<=?)", r"\1 \2", content)
-        return content
+        return re.sub(r"([^\s])\s\s+(>=?|<=?)", r"\1 \2", content)
 
     format_config(
         input=input,

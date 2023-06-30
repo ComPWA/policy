@@ -67,10 +67,7 @@ def _update_black_settings() -> None:
 
 
 def __complies(settings: dict, minimal_settings: dict) -> bool:
-    for key, value in minimal_settings.items():
-        if settings.get(key) != value:
-            return False
-    return True
+    return all(settings.get(key) == value for key, value in minimal_settings.items())
 
 
 def _update_precommit_repo() -> None:

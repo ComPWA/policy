@@ -38,14 +38,16 @@ def _rename_taplo_config() -> None:
         if not os.path.exists(path):
             continue
         shutil.move(path, CONFIG_PATH.taplo)
-        raise PrecommitError(f"Renamed {path} to {CONFIG_PATH.taplo}")
+        msg = f"Renamed {path} to {CONFIG_PATH.taplo}"
+        raise PrecommitError(msg)
 
 
 def _update_taplo_config() -> None:
     template_path = REPOMA_DIR / ".template" / CONFIG_PATH.taplo
     if not CONFIG_PATH.taplo.exists():
         shutil.copyfile(template_path, CONFIG_PATH.taplo)
-        raise PrecommitError(f"Added {CONFIG_PATH.taplo} config for TOML formatting")
+        msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
+        raise PrecommitError(msg)
     with open(template_path) as f:
         expected_content = f.read()
     with open(CONFIG_PATH.taplo) as f:
@@ -53,7 +55,8 @@ def _update_taplo_config() -> None:
     if existing_content != expected_content:
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_content)
-        raise PrecommitError(f"Updated {CONFIG_PATH.taplo} config file")
+        msg = f"Updated {CONFIG_PATH.taplo} config file"
+        raise PrecommitError(msg)
 
 
 def _update_precommit_repo() -> None:

@@ -18,11 +18,13 @@ def _update_draft(repo_name: str, repo_title: str) -> None:
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
         yaml.dump(expected, output_path)
-        raise PrecommitError(f"Created {output_path}")
+        msg = f"Created {output_path}"
+        raise PrecommitError(msg)
     existing = _get_existing_config()
     if existing != expected:
         yaml.dump(expected, output_path)
-        raise PrecommitError(f"Updated {output_path}")
+        msg = f"Updated {output_path}"
+        raise PrecommitError(msg)
 
 
 def _get_expected_config(repo_name: str, repo_title: str) -> Dict[str, Any]:

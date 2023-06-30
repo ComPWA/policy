@@ -27,7 +27,8 @@ def get_sub_table(config: Container, dotted_header: str, create: bool = False) -
             if create:
                 current_table[header] = tomlkit.table()
             else:
-                raise KeyError(f"TOML data does not contain {dotted_header!r}")
+                msg = f"TOML data does not contain {dotted_header!r}"
+                raise KeyError(msg)
         current_table = current_table[header]
     return current_table
 

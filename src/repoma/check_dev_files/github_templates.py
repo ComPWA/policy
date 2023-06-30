@@ -50,18 +50,20 @@ def _check_pr_template() -> None:
         os.makedirs(os.path.dirname(__PR_TEMPLATE_PATH), exist_ok=True)
         expected_content = __get_template_content(REPOMA_DIR / __PR_TEMPLATE_PATH)
         __write_template(expected_content, __PR_TEMPLATE_PATH)
-        raise PrecommitError(
+        msg = (
             f"This repository has no {__PR_TEMPLATE_PATH} file. Problem has been fixed."
         )
+        raise PrecommitError(msg)
     with open(__PR_TEMPLATE_PATH) as stream:
         template_content = stream.read()
     expected_content = __get_template_content(REPOMA_DIR / __PR_TEMPLATE_PATH)
     if template_content != expected_content:
         __write_template(expected_content, path=__PR_TEMPLATE_PATH)
-        raise PrecommitError(
-            f"PR template {__PR_TEMPLATE_PATH} does not contain expected"
-            " content. Problem has been fixed."
+        msg = (
+            f"PR template {__PR_TEMPLATE_PATH} does not contain expected content."
+            " Problem has been fixed."
         )
+        raise PrecommitError(msg)
 
 
 def __get_template_content(path: Path) -> str:

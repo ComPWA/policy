@@ -53,7 +53,8 @@ def _load_precommit_hook_definitions() -> Dict[str, Hook]:
     hooks = [fromdict(h, Hook) for h in hook_definitions]
     hook_ids = [h.id for h in hooks]
     if len(hook_ids) != len(set(hook_ids)):
-        raise PrecommitError(f"{__HOOK_DEFINITION_FILE} contains duplicate IDs")
+        msg = f"{__HOOK_DEFINITION_FILE} contains duplicate IDs"
+        raise PrecommitError(msg)
     return {h.id: h for h in hooks}
 
 

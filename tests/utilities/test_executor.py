@@ -7,14 +7,17 @@ from repoma.utilities.executor import Executor
 class TestExecutor:
     def test_error_messages(self):
         def do_without_args() -> None:
-            raise PrecommitError("Function did not have arguments")
+            msg = "Function did not have arguments"
+            raise PrecommitError(msg)
 
         def do_with_positional_args(some_list: list) -> None:
             list_content = ", ".join(some_list)
-            raise PrecommitError(f"\nList contains {list_content}")
+            msg = f"\nList contains {list_content}"
+            raise PrecommitError(msg)
 
         def do_with_keyword_args(text: str) -> None:
-            raise PrecommitError(f"Text is {text}")
+            msg = f"Text is {text}"
+            raise PrecommitError(msg)
 
         def no_error() -> None:
             pass
