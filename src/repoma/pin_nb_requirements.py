@@ -65,7 +65,7 @@ def __check_install_statement(filename: str, install_statement: str) -> None:
         raise PrecommitError(msg)
 
 
-def __check_requirements(filename: str, install_statement: str) -> None:  # noqa: R701
+def __check_requirements(filename: str, install_statement: str) -> None:
     package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
     requirements = package_listing.split(" ")
     if len(requirements) == 0:

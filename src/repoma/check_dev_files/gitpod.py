@@ -32,7 +32,6 @@ def main() -> None:
     try:
         repo_url = get_repo_url()
         add_badge(
-            # pylint: disable=line-too-long
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )
     except PrecommitError:

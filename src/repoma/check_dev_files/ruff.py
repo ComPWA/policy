@@ -29,7 +29,6 @@ from repoma.utilities.vscode import add_extension_recommendation, set_setting
 
 def main() -> None:
     executor = Executor()
-    # pylint: disable=line-too-long
     executor(
         add_badge,
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",

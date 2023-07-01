@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 from pathlib import Path
 
 import pytest
@@ -54,7 +53,6 @@ class TestPrecommitConfig:
         assert repo_names >= {
             "https://github.com/pre-commit/pre-commit-hooks",
             "https://github.com/psf/black",
-            "https://github.com/pycqa/pydocstyle",
         }
 
 
@@ -63,7 +61,6 @@ class TestRepo:
         repo = dummy_config.find_repo("local")
         assert repo is not None
         assert repo.get_hook_index("non-existent") is None
-        assert repo.get_hook_index("flake8") == 0
         assert repo.get_hook_index("mypy") == 1
 
 
@@ -77,7 +74,7 @@ def test_fromdict():
     assert fromdict(repo_def, Repo) == repo
 
     ci_def = {"autofix_prs": False}
-    ci = PrecommitCi(autofix_prs=False)  # pylint: disable=invalid-name
+    ci = PrecommitCi(autofix_prs=False)
     assert fromdict(ci_def, PrecommitCi) == ci
 
     config_def = {"repos": [repo_def], "ci": ci_def}

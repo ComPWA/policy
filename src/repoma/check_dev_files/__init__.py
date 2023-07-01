@@ -4,6 +4,7 @@ import argparse
 import sys
 from typing import List, Optional, Sequence
 
+from repoma.check_dev_files.deprecated import remove_deprecated_tools
 from repoma.utilities.executor import Executor
 
 from . import (
@@ -11,7 +12,6 @@ from . import (
     commitlint,
     cspell,
     editorconfig,
-    flake8,
     github_labels,
     github_templates,
     github_workflows,
@@ -162,11 +162,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
     executor(nbstripout.main)
     executor(toml.main)  # has to run before pre-commit
-    executor(precommit.main)
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
         executor(black.main)
-        executor(flake8.main)
         executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
@@ -177,6 +175,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
         executor(tox.main)
+    executor(precommit.main)
+    executor(remove_deprecated_tools)
     executor(vscode.main)
     if not args.no_gitpod:
         executor(gitpod.main)

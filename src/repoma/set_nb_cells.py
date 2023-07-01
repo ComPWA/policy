@@ -80,7 +80,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--no-autolink-concat",
         default="",
         help=(
-            # pylint: disable=line-too-long
             "Do not add a cell with a autolink-concat directive. See"
             " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
         ),
@@ -115,7 +114,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if "ipython" in args.additional_packages.lower():
                 config_cell_content = config_cell_content.replace(
                     "import os",
-                    "import os\n\nfrom IPython.display import display  # noqa: F401",
+                    "import os\n\nfrom IPython.display import display",
                 )
             _update_cell(
                 filename,

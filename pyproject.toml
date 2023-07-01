@@ -33,13 +33,6 @@ target-version = [
     "py39",
 ]
 
-[tool.isort]
-profile = "black"
-src_paths = [
-    "src",
-    "tests",
-]
-
 [tool.ruff]
 extend-select = [
     "A",
@@ -71,10 +64,6 @@ extend-select = [
     "TRY",
     "UP",
     "YTT",
-]
-external = [
-    "D100",
-    "R701",
 ]
 ignore = [
     "D101",    # class docstring

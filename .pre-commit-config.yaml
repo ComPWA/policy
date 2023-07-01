@@ -3,10 +3,8 @@ ci:
   autoupdate_schedule: quarterly
   skip:
     - check-dev-files
-    - flake8
     - format-setup-cfg
     - mypy
-    - pylint
     - pyright
     - repoma-self-check
     - taplo
@@ -62,11 +60,6 @@ repos:
         language: python
         files: ^\.pre\-commit\-(config|hooks)\.yaml$
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.1.1
-    hooks:
-      - id: autoflake
-
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
@@ -93,20 +86,6 @@ repos:
             .*\.py
           )$
 
-  - repo: local
-    hooks:
-      - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types:
-          - python
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.34.0
     hooks:
@@ -126,24 +105,6 @@ repos:
     rev: v3.0.0-alpha.9-for-vscode
     hooks:
       - id: prettier
-
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        args:
-          - --rcfile=.pylintrc
-          - --score=no
-        language: system
-        require_serial: true
-        types:
-          - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
     rev: v1.1.307

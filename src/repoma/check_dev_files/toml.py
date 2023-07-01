@@ -71,5 +71,7 @@ def _update_vscode_extensions() -> None:
     # cspell:ignore bungcip tamasfe
     executor = Executor()
     executor(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
-    executor(vscode.remove_extension_recommendation, "bungcip.better-toml")
+    executor(
+        vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True
+    )
     executor.finalize()
