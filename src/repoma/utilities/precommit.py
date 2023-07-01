@@ -9,7 +9,7 @@ from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
 
 import attrs
 import yaml
-from attrs import define
+from attrs import define, field
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, PlainScalarString
@@ -175,8 +175,8 @@ class Hook:
     description: Optional[str] = None
     entry: Optional[str] = None
     alias: Optional[str] = None
-    additional_dependencies: List[str] = []
-    args: List[str] = []
+    additional_dependencies: List[str] = field(factory=list)
+    args: List[str] = field(factory=list)
     files: Optional[str] = None
     exclude: Optional[str] = None
     types: Optional[List[str]] = None
@@ -214,7 +214,8 @@ class PrecommitConfig:
     @classmethod
     def load(cls, path: Union[Path, str] = CONFIG_PATH.precommit) -> "PrecommitConfig":
         if not os.path.exists(path):
-            raise PrecommitError(f"This repository contains no {path}")
+            msg = f"This repository contains no {path}"
+            raise PrecommitError(msg)
         with open(path) as stream:
             definition = yaml.safe_load(stream)
         return fromdict(definition, PrecommitConfig)
@@ -262,4 +263,5 @@ def fromdict(definition: dict, typ: Type[_T]) -> _T:
         if "ci" in definition:
             definition["ci"] = fromdict(definition["ci"], PrecommitCi)
         return PrecommitConfig(**definition)  # type: ignore[return-value]
-    raise NotImplementedError(f"No implementation for type {typ.__name__}")
+    msg = f"No implementation for type {typ.__name__}"
+    raise NotImplementedError(msg)

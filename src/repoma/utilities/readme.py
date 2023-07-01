@@ -10,9 +10,8 @@ __README_PATH = "README.md"
 
 def add_badge(badge: str) -> None:  # noqa: R701
     if not os.path.exists(__README_PATH):
-        raise PrecommitError(
-            f"This repository contains no {__README_PATH}, so cannot add badge"
-        )
+        msg = f"This repository contains no {__README_PATH}, so cannot add badge"
+        raise PrecommitError(msg)
     with open(__README_PATH) as stream:
         lines = stream.readlines()
     stripped_lines = {s.strip("\n") for s in lines}
@@ -37,9 +36,8 @@ def add_badge(badge: str) -> None:  # noqa: R701
 
 def remove_badge(badge_pattern: str) -> None:
     if not os.path.exists(__README_PATH):
-        raise PrecommitError(
-            f"This repository contains no {__README_PATH}, so cannot add badge"
-        )
+        msg = f"This repository contains no {__README_PATH}, so cannot add badge"
+        raise PrecommitError(msg)
     with open(__README_PATH) as stream:
         lines = stream.readlines()
     badge_line = None
@@ -52,6 +50,5 @@ def remove_badge(badge_pattern: str) -> None:
     lines.remove(badge_line)
     with open(__README_PATH, "w") as stream:
         stream.writelines(lines)
-    raise PrecommitError(
-        f"A badge has been removed from {__README_PATH}:\n\n  {badge_line}"
-    )
+    msg = f"A badge has been removed from {__README_PATH}:\n\n  {badge_line}"
+    raise PrecommitError(msg)

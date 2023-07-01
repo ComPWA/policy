@@ -6,6 +6,7 @@ from repoma.check_dev_files.gitpod import _extract_extensions, _generate_gitpod_
 def test_extract_extensions():
     assert _extract_extensions() == [
         # cspell:disable
+        "charliermarsh.ruff",
         "christian-kohler.path-intellisense",
         "davidanson.vscode-markdownlint",
         "eamodio.gitlens",

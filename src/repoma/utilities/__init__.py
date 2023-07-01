@@ -47,7 +47,8 @@ def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
             return input_stream.read()
     if isinstance(input, io.TextIOBase):
         return input.read()
-    raise TypeError(f"Cannot read from {type(input).__name__}")
+    msg = f"Cannot read from {type(input).__name__}"
+    raise TypeError(msg)
 
 
 def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
@@ -60,14 +61,16 @@ def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
     elif isinstance(target, io.TextIOBase):
         target.write(content)
     else:
-        raise TypeError(f"Cannot write from {type(target).__name__}")
+        msg = f"Cannot write from {type(target).__name__}"
+        raise TypeError(msg)
 
 
 def rename_file(old: str, new: str) -> None:
     """Rename a file and raise a `.PrecommitError`."""
     if os.path.exists(old):
         os.rename(old, new)
-        raise PrecommitError(f"File {old} has been renamed to {new}")
+        msg = f"File {old} has been renamed to {new}"
+        raise PrecommitError(msg)
 
 
 def natural_sorting(text: str) -> List[Union[float, str]]:
@@ -86,16 +89,16 @@ def update_file(relative_path: Path, in_template_folder: bool = False) -> None:
     template_path = template_dir / relative_path
     if not os.path.exists(relative_path):
         copyfile(template_path, relative_path)
-        raise PrecommitError(
-            f"{relative_path} is missing, so created a new one. Please commit it."
-        )
+        msg = f"{relative_path} is missing, so created a new one. Please commit it."
+        raise PrecommitError(msg)
     with open(template_path) as f:
         expected_content = f.read()
     with open(relative_path) as f:
         existing_content = f.read()
     if expected_content != existing_content:
         copyfile(template_path, relative_path)
-        raise PrecommitError(f"{relative_path} has been updated.")
+        msg = f"{relative_path} has been updated."
+        raise PrecommitError(msg)
 
 
 def __attempt_number_cast(text: str) -> Union[float, str]:

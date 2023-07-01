@@ -118,7 +118,7 @@ def test_open_config_from_stream():
         option3 =
             =src
         """)
-    print(content)
+    print(content)  # noqa: T201
     stream = io.StringIO(content)
     cfg = open_config(stream)
     assert cfg.sections() == ["section1", "section2"]

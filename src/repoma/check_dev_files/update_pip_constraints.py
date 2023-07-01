@@ -30,7 +30,8 @@ def _remove_script(script_name: str) -> None:
     bash_script_name = CONFIG_PATH.pip_constraints / script_name
     if bash_script_name.exists():
         bash_script_name.unlink()
-        raise PrecommitError(f'Removed deprecated "{bash_script_name}" script')
+        msg = f'Removed deprecated "{bash_script_name}" script'
+        raise PrecommitError(msg)
 
 
 def _update_requirement_workflow(frequency: str) -> None:
@@ -58,5 +59,6 @@ def _update_requirement_workflow(frequency: str) -> None:
 def _to_cron_schedule(frequency: str) -> str:
     schedule = __CRON_SCHEDULES.get(frequency)
     if schedule is None:
-        raise PrecommitError(f'No cron schedule defined for frequency "{frequency}"')
+        msg = f'No cron schedule defined for frequency "{frequency}"'
+        raise PrecommitError(msg)
     return schedule

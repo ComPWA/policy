@@ -25,7 +25,7 @@ class Executor:
         if error_msg:
             if exception:
                 raise PrecommitError(error_msg)
-            print(error_msg)
+            print(error_msg)  # noqa: T201
             return 1
         return 0
 

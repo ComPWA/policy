@@ -157,6 +157,13 @@ repos:
         args:
           - --py36-plus
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.275
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+
   - repo: https://github.com/ComPWA/mirrors-taplo
     rev: v0.8.0
     hooks:

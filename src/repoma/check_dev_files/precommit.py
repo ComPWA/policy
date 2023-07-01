@@ -31,10 +31,11 @@ def _check_plural_hooks_first(config: PrecommitConfig) -> None:
     plural_hook_repos = [r for r in config.repos if len(r.hooks) > 1]
     n_plural_repos = len(plural_hook_repos)
     if config.repos[:n_plural_repos] != plural_hook_repos:
-        raise PrecommitError(
+        msg = (
             "Please bundle repos with multiple hooks at the top of the pre-commit"
             " config"
         )
+        raise PrecommitError(msg)
 
 
 def _check_single_hook_sorting(config: PrecommitConfig) -> None:
@@ -64,7 +65,8 @@ def _check_skipped_hooks(config: PrecommitConfig) -> None:
             del contents["ci"]["skip"]
             contents.yaml_set_comment_before_after_key("repos", before="\n")
             yaml.dump(contents, CONFIG_PATH.precommit)
-            raise PrecommitError(f"No need for a ci.skip in {CONFIG_PATH.precommit}")
+            msg = f"No need for a ci.skip in {CONFIG_PATH.precommit}"
+            raise PrecommitError(msg)
         return
     existing_skips = __get_precommit_ci_skips(config)
     if existing_skips != expected_skips:
@@ -77,7 +79,8 @@ def _check_skipped_hooks(config: PrecommitConfig) -> None:
         ci_section["skip"] = skips
         contents.yaml_set_comment_before_after_key("repos", before="\n")
         yaml.dump(contents, CONFIG_PATH.precommit)
-        raise PrecommitError(f"Updated ci.skip section in {CONFIG_PATH.precommit}")
+        msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
+        raise PrecommitError(msg)
     hooks_to_execute = __NON_SKIPPED_HOOKS & existing_skips
     if hooks_to_execute:
         msg = f"""
@@ -91,7 +94,8 @@ def _check_skipped_hooks(config: PrecommitConfig) -> None:
 
 def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:
     if config.ci is None:
-        raise ValueError("Pre-commit config does not contain a ci section")
+        msg = "Pre-commit config does not contain a ci section"
+        raise ValueError(msg)
     if config.ci.skip is None:
         return set()
     return set(config.ci.skip)

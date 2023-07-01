@@ -12,6 +12,7 @@ from repoma.utilities.precommit import (
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.pyproject import (
+    complies_with_subset,
     get_sub_table,
     load_pyproject,
     to_toml_array,
@@ -59,18 +60,11 @@ def _update_black_settings() -> None:
         "preview": True,
         "target-version": target_version,
     }
-    if not __complies(settings, minimal_settings):
+    if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
         msg = f"Updated black configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
-
-
-def __complies(settings: dict, minimal_settings: dict) -> bool:
-    for key, value in minimal_settings.items():
-        if settings.get(key) != value:
-            return False
-    return True
 
 
 def _update_precommit_repo() -> None:

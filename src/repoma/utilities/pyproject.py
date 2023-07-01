@@ -10,6 +10,10 @@ from tomlkit.toml_document import TOMLDocument
 from repoma.utilities import CONFIG_PATH
 
 
+def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
+    return all(settings.get(key) == value for key, value in minimal_settings.items())
+
+
 def load_pyproject(content: Optional[str] = None) -> TOMLDocument:
     if not os.path.exists(CONFIG_PATH.pyproject):
         return TOMLDocument()
@@ -27,7 +31,8 @@ def get_sub_table(config: Container, dotted_header: str, create: bool = False) -
             if create:
                 current_table[header] = tomlkit.table()
             else:
-                raise KeyError(f"TOML data does not contain {dotted_header!r}")
+                msg = f"TOML data does not contain {dotted_header!r}"
+                raise KeyError(msg)
         current_table = current_table[header]
     return current_table
 

@@ -87,7 +87,8 @@ def _update_ci_workflow(
         if not expected_data.get("jobs"):
             if workflow_path.exists():
                 workflow_path.unlink()
-                raise PrecommitError("Removed redundant CI workflows")
+                msg = "Removed redundant CI workflows"
+                raise PrecommitError(msg)
         else:
             if not workflow_path.exists():
                 update_workflow(yaml, expected_data, workflow_path)
@@ -196,13 +197,15 @@ def _copy_workflow_file(filename: str) -> None:
     workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{filename}"
     if not os.path.exists(workflow_path):
         write(expected_content, target=workflow_path)
-        raise PrecommitError(f'Created "{workflow_path}" workflow')
+        msg = f'Created "{workflow_path}" workflow'
+        raise PrecommitError(msg)
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
         write(expected_content, target=workflow_path)
-        raise PrecommitError(f'Updated "{workflow_path}" workflow')
+        msg = f'Updated "{workflow_path}" workflow'
+        raise PrecommitError(msg)
 
 
 def __remove_constraint_pinning(content: str) -> str:
@@ -239,11 +242,13 @@ def remove_workflow(filename: str) -> None:
     path = CONFIG_PATH.github_workflow_dir / filename
     if path.exists():
         path.unlink()
-        raise PrecommitError(f'Removed deprecated "{filename}" workflow')
+        msg = f'Removed deprecated "{filename}" workflow'
+        raise PrecommitError(msg)
 
 
 def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
     path.parent.mkdir(exist_ok=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
-    raise PrecommitError(f'{verb} "{path}" workflow')
+    msg = f'{verb} "{path}" workflow'
+    raise PrecommitError(msg)

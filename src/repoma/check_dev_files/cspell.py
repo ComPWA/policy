@@ -68,17 +68,15 @@ def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
         config_dict, yaml_parser = load_round_trip_precommit_config(path)
         config_dict["repos"][repo_index]["repo"] = __REPO_URL
         yaml_parser.dump(config_dict, path)
-        raise PrecommitError(
-            f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
-        )
+        msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
+        raise PrecommitError(msg)
 
 
 def _remove_configuration() -> None:
     if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)
-        raise PrecommitError(
-            f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
-        )
+        msg = f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
+        raise PrecommitError(msg)
     if CONFIG_PATH.editorconfig.exists():
         with open(CONFIG_PATH.editorconfig) as stream:
             prettier_ignore_content = stream.readlines()
@@ -87,10 +85,11 @@ def _remove_configuration() -> None:
             prettier_ignore_content.remove(expected_line)
             with open(CONFIG_PATH.editorconfig, "w") as stream:
                 stream.writelines(prettier_ignore_content)
-            raise PrecommitError(
-                f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editorconfig}'
-                " is no longer required and has been removed"
+            msg = (
+                f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editorconfig} is no longer'
+                " required and has been removed"
             )
+            raise PrecommitError(msg)
     executor = Executor()
     executor(remove_badge, __BADGE_PATTERN)
     executor(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
@@ -164,10 +163,11 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
         expected_section_content_set = set(expected_section_content)
         expected_section_content_set.update(section_content)
         return __sort_section(expected_section_content_set, section)
-    raise NotImplementedError(
+    msg = (
         "No implementation for section content of type"
         f' {section_content.__class__.__name__} (section: "{section}"'
     )
+    raise NotImplementedError(msg)
 
 
 def __express_list_of_sections(sections: Sequence[str]) -> str:
@@ -190,7 +190,7 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     else:
         sentence += "s "
         sentence += ", ".join(sections[:-1])
-        if len(sections) > 2:
+        if len(sections) > 2:  # noqa: PLR2004
             sentence += ","
         sentence += " and " + sections[-1]
     return sentence
