@@ -111,6 +111,7 @@
     "showcode",
     "showtags",
     "taplo",
+    "tomlkit",
     "unittests",
     "venv"
   ]
