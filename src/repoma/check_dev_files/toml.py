@@ -3,16 +3,14 @@
 import os
 import shutil
 from pathlib import Path
-from textwrap import dedent
 from typing import List, Union
 
-from ruamel.yaml.comments import CommentedSeq
+from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import PrecommitConfig
-from repoma.utilities.yaml import create_prettier_round_trip_yaml
+from repoma.utilities.precommit import update_single_hook_precommit_repo
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     "taplo.toml",
@@ -30,7 +28,7 @@ def main() -> None:
     executor = Executor()
     executor(_rename_taplo_config)
     executor(_update_taplo_config)
-    executor(_update_precommit_config)
+    executor(_update_precommit_repo)
     executor(_update_vscode_extensions)
     executor.finalize()
 
@@ -58,33 +56,12 @@ def _update_taplo_config() -> None:
         raise PrecommitError(f"Updated {CONFIG_PATH.taplo} config file")
 
 
-def _update_precommit_config() -> None:
-    if not os.path.exists(CONFIG_PATH.precommit):
-        return
-    existing_config = PrecommitConfig.load()
-    repo_url = "https://github.com/ComPWA/mirrors-taplo"
-    if existing_config.find_repo(repo_url) is not None:
-        return
-    yaml = create_prettier_round_trip_yaml()
-    config = yaml.load(CONFIG_PATH.precommit)
-    hook_definition = {
-        "repo": repo_url,
-        "rev": "v0.8.0",
-        "hooks": [{"id": "taplo"}],
-    }
-    repos: CommentedSeq = config["repos"]
-    repos.append(hook_definition)
-    repo_idx = len(repos) - 1
-    repos.yaml_set_comment_before_after_key(repo_idx, before="\n")
-    yaml.dump(config, CONFIG_PATH.precommit)
-    msg = f"""
-    Added Taplo TOML formatter as a pre-commit hook. Please run
-
-        pre-commit autoupdate --repo {repo_url}
-
-    to update it to the latest version.
-    """
-    raise PrecommitError(dedent(msg).strip())
+def _update_precommit_repo() -> None:
+    expected_hook = CommentedMap(
+        repo="https://github.com/ComPWA/mirrors-taplo",
+        hooks=[CommentedMap(id="taplo")],
+    )
+    update_single_hook_precommit_repo(expected_hook)
 
 
 def _update_vscode_extensions() -> None:

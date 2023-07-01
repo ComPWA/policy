@@ -9,16 +9,15 @@ import os
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence, Union
 
-import yaml
+from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, rename_file, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     PrecommitConfig,
-    Repo,
-    fromdict,
     load_round_trip_precommit_config,
+    update_single_hook_precommit_repo,
 )
 from repoma.utilities.readme import add_badge, remove_badge
 
@@ -49,7 +48,7 @@ def main() -> None:
     if repo is None:
         executor(_remove_configuration)
     else:
-        executor(_check_check_hook_options)
+        executor(_update_precommit_repo)
         executor(_fix_config_content)
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
@@ -98,23 +97,12 @@ def _remove_configuration() -> None:
     executor.finalize()
 
 
-def _check_check_hook_options() -> None:
-    config = PrecommitConfig.load()
-    existing = config.find_repo(__REPO_URL)
-    if existing is None:
-        raise PrecommitError(f"{CONFIG_PATH.precommit} is missing a repo: {__REPO_URL}")
-    expected_yaml = f"""
-  - repo: {__REPO_URL}
-    rev: ...
-    hooks:
-      - id: cspell
-    """
-    expected = fromdict(yaml.safe_load(expected_yaml)[0], Repo)
-    existing.rev = expected.rev
-    if existing != expected:
-        raise PrecommitError(
-            "cSpell pre-commit hook should have the following form:\n" + expected_yaml
-        )
+def _update_precommit_repo() -> None:
+    expected_hook = CommentedMap(
+        repo=__REPO_URL,
+        hooks=[CommentedMap(id="cspell")],
+    )
+    update_single_hook_precommit_repo(expected_hook)
 
 
 def _fix_config_content() -> None:
