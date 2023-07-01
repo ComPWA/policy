@@ -16,15 +16,17 @@ from . import (
     github_templates,
     github_workflows,
     gitpod,
+    mypy,
     nbstripout,
     precommit,
     prettier,
+    pyright,
+    pytest,
     pyupgrade,
     release_drafter,
     ruff,
     setup_cfg,
     toml,
-    tox,
     update_pip_constraints,
     vscode,
 )
@@ -171,10 +173,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 update_pip_constraints.main,
                 cron_frequency=args.pin_requirements,
             )
+        executor(mypy.main)
+        executor(pytest.main)
+        executor(pyright.main)
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
-        executor(tox.main)
     executor(precommit.main)
     executor(remove_deprecated_tools)
     executor(vscode.main)
