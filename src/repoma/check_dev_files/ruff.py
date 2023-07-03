@@ -91,6 +91,8 @@ def _update_ruff_settings() -> None:
         "D213",  # multi-line docstring should start at the second line
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
+        "E501",  # line-width already handled by black
+        "SIM108",  # allow if-else blocks
     ]
     ignores = sorted({*settings.get("ignore", []), *extend_ignore})
     minimal_settings = {
