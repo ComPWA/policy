@@ -93,7 +93,7 @@ def _update_nbqa_settings() -> None:
         return
     pyproject = load_pyproject()
     nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
-    expected = ["--line-length=85"]
+    expected = to_toml_array(["--line-length=85"])
     if nbqa_table.get("black") != expected:
         nbqa_table["black"] = expected
         write_pyproject(pyproject)
