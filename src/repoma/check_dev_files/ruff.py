@@ -81,8 +81,21 @@ def _check_setup_cfg() -> None:
 def _update_ruff_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff", create=True)
+    extend_ignore = [
+        "D101",  # class docstring
+        "D102",  # method docstring
+        "D103",  # function docstring
+        "D105",  # magic method docstring
+        "D107",  # init docstring
+        "D203",  # conflicts with D211
+        "D213",  # multi-line docstring should start at the second line
+        "D407",  # missing dashed underline after section
+        "D416",  # section name does not have to end with a colon
+    ]
+    ignores = sorted({*settings.get("ignore", []), *extend_ignore})
     minimal_settings = {
         "extend-select": __get_selected_ruff_rules(),
+        "ignore": to_toml_array(ignores),
         "show-fixes": True,
         "target-version": __get_target_version(),
         "task-tags": __get_task_tags(settings),
