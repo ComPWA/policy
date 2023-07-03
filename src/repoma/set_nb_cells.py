@@ -111,11 +111,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             cell_id += 1
         if not args.no_config_cell:
             config_cell_content = __CONFIG_CELL_CONTENT
-            if "ipython" in args.additional_packages.lower():
-                config_cell_content = config_cell_content.replace(
-                    "import os",
-                    "import os\n\nfrom IPython.display import display",
-                )
             _update_cell(
                 filename,
                 new_content=config_cell_content.strip("\n"),
