@@ -20,6 +20,7 @@ from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
     to_toml_array,
+    update_nbqa_settings,
     write_pyproject,
 )
 from repoma.utilities.readme import add_badge
@@ -40,6 +41,7 @@ def main() -> None:
     executor(_update_precommit_hook)
     executor(_update_precommit_nbqa_hook)
     executor(_update_vscode_settings)
+    executor(update_nbqa_settings, "ruff", to_toml_array(["--line-length=85"]))
     executor.finalize()
 
 
