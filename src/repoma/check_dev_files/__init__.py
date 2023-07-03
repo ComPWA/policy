@@ -174,8 +174,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 cron_frequency=args.pin_requirements,
             )
         executor(mypy.main)
-        executor(pytest.main)
         executor(pyright.main)
+        executor(pytest.main)
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
