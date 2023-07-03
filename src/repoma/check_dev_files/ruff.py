@@ -90,6 +90,13 @@ def _update_ruff_settings() -> None:
     src_directories = __get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
+    typings_dir = "typings"
+    if os.path.exists(typings_dir) and os.path.isdir(typings_dir):
+        extend_exclude = {
+            "typings",
+            *settings.get("extend-exclude", []),
+        }
+        minimal_settings["extend-exclude"] = to_toml_array(sorted(extend_exclude))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
