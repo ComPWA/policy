@@ -7,7 +7,9 @@ from tomlkit.container import Container
 from tomlkit.items import Array, Table
 from tomlkit.toml_document import TOMLDocument
 
+from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
+from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
 
 
 def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
@@ -48,4 +50,29 @@ def to_toml_array(items: Iterable[Any]) -> Array:
     array.extend(items)
     if len(array) > 1:
         array.multiline(True)
+    else:
+        array.multiline(False)
     return array
+
+
+def update_nbqa_settings(key: str, expected: Any) -> None:
+    # cspell:ignore addopts
+    if not CONFIG_PATH.precommit.exists():
+        return
+    if not __has_nbqa_precommit_repo():
+        return
+    pyproject = load_pyproject()
+    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    if nbqa_table.get(key) != expected:
+        nbqa_table[key] = expected
+        write_pyproject(pyproject)
+        msg = f"Added nbQA configuration for {key!r}"
+        raise PrecommitError(msg)
+
+
+def __has_nbqa_precommit_repo() -> bool:
+    config, _ = load_round_trip_precommit_config()
+    nbqa_repo = find_repo(config, "https://github.com/nbQA-dev/nbQA")
+    if nbqa_repo is None:
+        return False
+    return True

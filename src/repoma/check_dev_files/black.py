@@ -6,8 +6,6 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
-    find_repo,
-    load_round_trip_precommit_config,
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
@@ -16,6 +14,7 @@ from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
     to_toml_array,
+    update_nbqa_settings,
     write_pyproject,
 )
 from repoma.utilities.setup_cfg import get_supported_python_versions
@@ -27,9 +26,9 @@ def main() -> None:
     executor = Executor()
     executor(_remove_outdated_settings)
     executor(_update_black_settings)
-    executor(_update_nbqa_settings)
     executor(_update_precommit_repo)
     executor(_update_precommit_nbqa_hook)
+    executor(update_nbqa_settings, "black", to_toml_array(["--line-length=85"]))
     executor.finalize()
 
 
@@ -83,27 +82,3 @@ def _update_precommit_nbqa_hook() -> None:
             additional_dependencies=["black>=22.1.0"],
         ),
     )
-
-
-def _update_nbqa_settings() -> None:
-    # cspell:ignore addopts
-    if not CONFIG_PATH.precommit.exists():
-        return
-    if not __has_nbqa_precommit_repo():
-        return
-    pyproject = load_pyproject()
-    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
-    expected = ["--line-length=85"]
-    if nbqa_table.get("black") != expected:
-        nbqa_table["black"] = expected
-        write_pyproject(pyproject)
-        msg = "Added nbQA configuration for black"
-        raise PrecommitError(msg)
-
-
-def __has_nbqa_precommit_repo() -> bool:
-    config, _ = load_round_trip_precommit_config()
-    nbqa_repo = find_repo(config, "https://github.com/nbQA-dev/nbQA")
-    if nbqa_repo is None:
-        return False
-    return True
