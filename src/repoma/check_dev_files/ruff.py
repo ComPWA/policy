@@ -193,11 +193,23 @@ def _update_ruff_per_file_ignores() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
+    docs_dir = "docs"
+    if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
+        key = f"{docs_dir}/*"
+        ignore_codes = {
+            "E402",  # import not at top of file
+            "INP001",  # implicit namespace package
+            "S101",  # `assert` detected
+            "S113",  # requests call without timeout
+            "T201",  # print found
+        }
+        ignore_codes.update(settings.get(key, []))  # type: ignore[arg-type]
+        minimal_settings[key] = to_toml_array(sorted(ignore_codes))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
-    tests_dir = "tests"
-    if os.path.exists(tests_dir) and os.path.isdir(tests_dir):
-        key = f"{tests_dir}/*"
+    docs_dir = "tests"
+    if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
+        key = f"{docs_dir}/*"
         ignore_codes = {
             "D",
             "INP001",
