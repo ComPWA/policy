@@ -1,6 +1,6 @@
 """Remove deprecated linters and formatters."""
 import os
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -14,6 +14,9 @@ from repoma.utilities.vscode import (
     remove_settings,
     set_setting,
 )
+
+if TYPE_CHECKING:
+    from tomlkit.items import Table
 
 
 def remove_deprecated_tools() -> None:
@@ -42,12 +45,37 @@ def _remove_flake8() -> None:
 def _remove_isort() -> None:
     executor = Executor()
     executor(__remove_isort_settings)
+    executor(__remove_nbqa_isort_settings)
     executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
     executor(remove_settings, ["isort.check", "isort.importStrategy"])
     executor(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
     executor.finalize()
+
+
+def __remove_isort_settings() -> None:
+    pyproject = load_pyproject()
+    if pyproject.get("tool", {}).get("isort") is None:
+        return
+    pyproject["tool"].remove("isort")  # type: ignore[union-attr]
+    write_pyproject(pyproject)
+    msg = f"Removed [tool.isort] section from {CONFIG_PATH.pyproject}"
+    raise PrecommitError(msg)
+
+
+def __remove_nbqa_isort_settings() -> None:
+    pyproject = load_pyproject()
+    # cspell:ignore addopts
+    nbqa_table: Table = pyproject.get("tool", {}).get("nbqa", {}).get("addopts")
+    if nbqa_table is None:
+        return
+    if nbqa_table.get("isort") is None:
+        return
+    nbqa_table.remove("isort")
+    write_pyproject(pyproject)
+    msg = f"Removed 'isort' nbQA options from {CONFIG_PATH.pyproject}"
+    raise PrecommitError(msg)
 
 
 def _remove_pydocstyle() -> None:
@@ -75,16 +103,6 @@ def _remove_pylint() -> None:
     executor(remove_settings, ["pylint.importStrategy"])
     executor(set_setting, {"python.linting.pylintEnabled": False})
     executor.finalize()
-
-
-def __remove_isort_settings() -> None:
-    pyproject = load_pyproject()
-    if pyproject.get("tool", {}).get("isort") is None:
-        return
-    pyproject["tool"].remove("isort")  # type: ignore[union-attr]
-    write_pyproject(pyproject)
-    msg = f"Removed [tool.isort] section from {CONFIG_PATH.pyproject}"
-    raise PrecommitError(msg)
 
 
 def __remove_configs(paths: List[str]) -> None:
