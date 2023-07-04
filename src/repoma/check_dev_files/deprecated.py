@@ -90,6 +90,7 @@ def _remove_pydocstyle() -> None:
         ],
     )
     executor(__uninstall, "pydocstyle", check_options=["lint", "sty"])
+    executor(remove_precommit_hook, "pydocstyle")
     executor(set_setting, {"python.linting.pydocstyleEnabled": False})
     executor.finalize()
 

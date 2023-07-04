@@ -81,8 +81,23 @@ def _check_setup_cfg() -> None:
 def _update_ruff_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff", create=True)
+    extend_ignore = [
+        "D101",  # class docstring
+        "D102",  # method docstring
+        "D103",  # function docstring
+        "D105",  # magic method docstring
+        "D107",  # init docstring
+        "D203",  # conflicts with D211
+        "D213",  # multi-line docstring should start at the second line
+        "D407",  # missing dashed underline after section
+        "D416",  # section name does not have to end with a colon
+        "E501",  # line-width already handled by black
+        "SIM108",  # allow if-else blocks
+    ]
+    ignores = sorted({*settings.get("ignore", []), *extend_ignore})
     minimal_settings = {
         "extend-select": __get_selected_ruff_rules(),
+        "ignore": to_toml_array(ignores),
         "show-fixes": True,
         "target-version": __get_target_version(),
         "task-tags": __get_task_tags(settings),
@@ -90,6 +105,13 @@ def _update_ruff_settings() -> None:
     src_directories = __get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
+    typings_dir = "typings"
+    if os.path.exists(typings_dir) and os.path.isdir(typings_dir):
+        extend_exclude = {
+            "typings",
+            *settings.get("extend-exclude", []),
+        }
+        minimal_settings["extend-exclude"] = to_toml_array(sorted(extend_exclude))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
@@ -173,11 +195,23 @@ def _update_ruff_per_file_ignores() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
+    docs_dir = "docs"
+    if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
+        key = f"{docs_dir}/*"
+        ignore_codes = {
+            "E402",  # import not at top of file
+            "INP001",  # implicit namespace package
+            "S101",  # `assert` detected
+            "S113",  # requests call without timeout
+            "T201",  # print found
+        }
+        ignore_codes.update(settings.get(key, []))  # type: ignore[arg-type]
+        minimal_settings[key] = to_toml_array(sorted(ignore_codes))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
-    tests_dir = "tests"
-    if os.path.exists(tests_dir) and os.path.isdir(tests_dir):
-        key = f"{tests_dir}/*"
+    docs_dir = "tests"
+    if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
+        key = f"{docs_dir}/*"
         ignore_codes = {
             "D",
             "INP001",

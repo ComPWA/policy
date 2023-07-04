@@ -113,6 +113,7 @@ testpaths = [
 ]
 
 [tool.ruff]
+extend-exclude = ["typings"]
 extend-select = [
     "A",
     "B",
