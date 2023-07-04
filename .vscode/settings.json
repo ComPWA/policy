@@ -39,7 +39,6 @@
   "git.rebaseWhenSync": true,
   "github-actions.workflows.pinned.workflows": [".github/workflows/ci.yml"],
   "python.analysis.autoImportCompletions": false,
-  "python.analysis.diagnosticMode": "workspace",
   "python.analysis.inlayHints.pytestParameters": true,
   "python.analysis.typeCheckingMode": "strict",
   "python.formatting.provider": "black",

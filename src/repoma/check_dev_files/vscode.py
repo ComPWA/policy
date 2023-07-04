@@ -39,6 +39,7 @@ def _update_settings() -> None:
 
 def _remove_outdated_settings() -> None:
     outdated_settings = [
+        "python.analysis.diagnosticMode",
         "telemetry.telemetryLevel",
     ]
     vscode.remove_settings(outdated_settings)
