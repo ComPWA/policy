@@ -73,8 +73,8 @@ def _check_setup_cfg() -> None:
         if cfg.has_option(extras_require, section):
             continue
         raise PrecommitError(msg)
-    lint_section = cfg.get(extras_require, "lint").split("\n")
-    if "ruff" not in lint_section:
+    lint_section = cfg.get(extras_require, "lint")
+    if not any("ruff" in line for line in lint_section.split("\n")):
         raise PrecommitError(msg)
 
 
