@@ -179,11 +179,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
-    executor(precommit.main)
     executor(remove_deprecated_tools)
     executor(vscode.main)
     if not args.no_gitpod:
         executor(gitpod.main)
+    executor(precommit.main)
     return executor.finalize(exception=False)
 
 
