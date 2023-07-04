@@ -35,13 +35,13 @@ def main() -> None:
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
     executor(_check_setup_cfg)
+    executor(_update_nbqa_settings)
     executor(_update_ruff_settings)
     executor(_update_ruff_per_file_ignores)
     executor(_update_ruff_pydocstyle_settings)
     executor(_update_precommit_hook)
     executor(_update_precommit_nbqa_hook)
     executor(_update_vscode_settings)
-    executor(update_nbqa_settings, "ruff", to_toml_array(["--line-length=85"]))
     executor.finalize()
 
 
@@ -76,6 +76,27 @@ def _check_setup_cfg() -> None:
     lint_section = cfg.get(extras_require, "lint").split("\n")
     if "ruff" not in lint_section:
         raise PrecommitError(msg)
+
+
+def _update_nbqa_settings() -> None:
+    # cspell:ignore addopts
+    ruff_rules = [
+        "--extend-ignore=B018",
+        "--extend-ignore=C90",
+        "--extend-ignore=D",
+        "--extend-ignore=N806",
+        "--extend-ignore=N816",
+        "--extend-ignore=PLR09",
+        "--extend-ignore=PLR2004",
+        "--extend-ignore=PLW0602",
+        "--extend-ignore=PLW0603",
+        "--line-length=85",
+    ]
+    pyproject = load_pyproject()
+    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    ruff_rules.extend(nbqa_table.get("ruff", []))
+    ruff_rules = sorted(set(ruff_rules))
+    update_nbqa_settings("ruff", to_toml_array(ruff_rules))
 
 
 def _update_ruff_settings() -> None:
