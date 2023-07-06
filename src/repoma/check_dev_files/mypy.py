@@ -8,20 +8,35 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.pyproject import get_sub_table, load_pyproject, write_pyproject
-from repoma.utilities.vscode import add_extension_recommendation, set_setting
+from repoma.utilities.vscode import (
+    add_extension_recommendation,
+    remove_extension_recommendation,
+    remove_settings,
+    set_setting,
+)
 
 
 def main() -> None:
     executor = Executor()
     executor(_merge_mypy_into_pyproject)
-    executor(add_extension_recommendation, "ms-python.mypy-type-checker")
-    executor(
-        set_setting,
-        {
+    executor(_update_vscode_settings)
+    executor.finalize()
+
+
+def _update_vscode_settings() -> None:
+    pyproject = load_pyproject()
+    mypy_config = pyproject.get("tool", {}).get("mypy")
+    executor = Executor()
+    if mypy_config is None:
+        executor(remove_extension_recommendation, "ms-python.mypy-type-checker")
+        executor(remove_settings, ["mypy-type-checker.importStrategy"])
+    else:
+        executor(add_extension_recommendation, "ms-python.mypy-type-checker")
+        settings = {
             "mypy-type-checker.importStrategy": "fromEnvironment",
             "python.linting.mypyEnabled": False,
-        },
-    )
+        }
+        executor(set_setting, settings)
     executor.finalize()
 
 
