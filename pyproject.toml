@@ -105,7 +105,10 @@ addopts = """
 --doctest-modules
 --durations=3
 """
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    "ignore: Importing ErrorTree directly from the jsonschema package is deprecated.*",
+]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 testpaths = [
     "src",
