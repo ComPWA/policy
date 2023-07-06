@@ -6,11 +6,23 @@ from ini2toml.api import Translator
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
+from repoma.utilities.executor import Executor
 from repoma.utilities.pyproject import get_sub_table, load_pyproject, write_pyproject
+from repoma.utilities.vscode import add_extension_recommendation, set_setting
 
 
 def main() -> None:
-    _merge_mypy_into_pyproject()
+    executor = Executor()
+    executor(_merge_mypy_into_pyproject)
+    executor(add_extension_recommendation, "ms-python.mypy-type-checker")
+    executor(
+        set_setting,
+        {
+            "mypy-type-checker.importStrategy": "fromEnvironment",
+            "python.linting.mypyEnabled": False,
+        },
+    )
+    executor.finalize()
 
 
 def _merge_mypy_into_pyproject() -> None:
