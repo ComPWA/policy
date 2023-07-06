@@ -28,7 +28,11 @@ def _update_vscode_settings() -> None:
     mypy_config = pyproject.get("tool", {}).get("mypy")
     executor = Executor()
     if mypy_config is None:
-        executor(remove_extension_recommendation, "ms-python.mypy-type-checker")
+        executor(
+            remove_extension_recommendation,
+            "ms-python.mypy-type-checker",
+            unwanted=True,
+        )
         executor(remove_settings, ["mypy-type-checker.importStrategy"])
     else:
         executor(add_extension_recommendation, "ms-python.mypy-type-checker")
