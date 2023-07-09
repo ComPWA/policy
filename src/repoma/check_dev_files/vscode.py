@@ -39,6 +39,8 @@ def _update_settings() -> None:
 
 def _remove_outdated_settings() -> None:
     outdated_settings = [
+        "githubPullRequests.telemetry.enabled",
+        "gitlens.advanced.telemetry.enabled",
         "python.analysis.diagnosticMode",
         "telemetry.telemetryLevel",
     ]
