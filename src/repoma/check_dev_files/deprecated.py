@@ -123,6 +123,8 @@ def __remove_file(path: str) -> None:
 
 
 def __uninstall(package: str, check_options: List[str]) -> None:
+    if not os.path.exists(CONFIG_PATH.setup_cfg):
+        return
     cfg = open_setup_cfg()
     section = "options.extras_require"
     if not cfg.has_section(section):
