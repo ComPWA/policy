@@ -123,6 +123,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         type=str,
     )
     parser.add_argument(
+        "--pytest-single-threaded",
+        action="store_true",
+        default=False,
+        help="Run pytest without the `-n` argument",
+    )
+    parser.add_argument(
         "--repo-name",
         help=(
             "Name of the repository. This can usually be found in the URL of the"
@@ -159,6 +165,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         no_macos=args.no_macos,
         no_pypi=args.no_pypi,
         no_version_branches=args.no_version_branches,
+        single_threaded=args.pytest_single_threaded,
         skip_tests=_to_list(args.ci_skipped_tests),
         test_extras=_to_list(args.ci_test_extras),
     )

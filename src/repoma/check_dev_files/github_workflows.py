@@ -27,6 +27,7 @@ def main(
     no_macos: bool,
     no_pypi: bool,
     no_version_branches: bool,
+    single_threaded: bool,
     skip_tests: List[str],
     test_extras: List[str],
 ) -> None:
@@ -37,6 +38,7 @@ def main(
         allow_deprecated,
         doc_apt_packages,
         no_macos,
+        single_threaded,
         skip_tests,
         test_extras,
     )
@@ -72,6 +74,7 @@ def _update_ci_workflow(
     allow_deprecated: bool,
     doc_apt_packages: List[str],
     no_macos: bool,
+    single_threaded: bool,
     skip_tests: List[str],
     test_extras: List[str],
 ) -> None:
@@ -80,6 +83,7 @@ def _update_ci_workflow(
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             doc_apt_packages,
             no_macos,
+            single_threaded,
             skip_tests,
             test_extras,
         )
@@ -112,13 +116,14 @@ def _get_ci_workflow(
     path: Path,
     doc_apt_packages: List[str],
     no_macos: bool,
+    single_threaded: bool,
     skip_tests: List[str],
     test_extras: List[str],
 ) -> Tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     __update_doc_section(config, doc_apt_packages)
-    __update_pytest_section(config, no_macos, skip_tests, test_extras)
+    __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
     __update_style_section(config)
     return yaml, config
 
@@ -145,7 +150,11 @@ def __update_style_section(config: CommentedMap) -> None:
 
 
 def __update_pytest_section(
-    config: CommentedMap, no_macos: bool, skip_tests: List[str], test_extras: List[str]
+    config: CommentedMap,
+    no_macos: bool,
+    single_threaded: bool,
+    skip_tests: List[str],
+    test_extras: List[str],
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):
@@ -160,6 +169,8 @@ def __update_pytest_section(
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.9")
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
+        if single_threaded:
+            with_section["multithreaded"] = False
         output_path = f"{test_dir}/output/"
         if os.path.exists(output_path):
             with_section["test-output-path"] = output_path
