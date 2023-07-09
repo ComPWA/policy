@@ -30,6 +30,7 @@ jobs:
           labels sync -o ComPWA -r repo-maintenance
           labels sync -o ComPWA -r sphinxcontrib-hep-pdgref
           labels sync -o ComPWA -r tensorwaves
+          labels sync -o ComPWA -r update-pip-constraints
       - name: Sync issue labels for physics repositories
         run: |
           labels sync --filename labels-physics.toml -o ComPWA -r PWA-pages
