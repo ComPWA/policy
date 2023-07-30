@@ -106,7 +106,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             cell_id += 1
         if not args.no_config_cell:
-            config_cell_content = __get_config_cell(filename)
+            if __has_pip_install_cell(filename):
+                config_cell_content = __get_config_cell(filename)
+            else:
+                config_cell_content = __get_config_cell()
             _update_cell(
                 filename,
                 new_content=config_cell_content,
@@ -117,15 +120,37 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return 0
 
 
-def __get_config_cell(notebook_path: str) -> str:
+def __has_pip_install_cell(filename: str) -> bool:
+    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    for cell in notebook["cells"]:
+        if cell["cell_type"] != "code":
+            continue
+        src = cell["source"]
+        if "pip install" in src and "--target" in src:
+            return True
+    return False
+
+
+def __get_config_cell(notebook_path: Optional[str] = None) -> str:
+    svg_backend = "%config InlineBackend.figure_formats = ['svg']"
+    static_web_page = (
+        'STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)'
+    )
+    if notebook_path is None:
+        return dedent(f"""
+        {svg_backend}
+        import os
+
+        {static_web_page}
+        """).strip()
     pip_target_dir = get_pip_target_dir(notebook_path)
     return dedent(f"""
-    %config InlineBackend.figure_formats = ['svg']
+    {svg_backend}
     import os
     import sys
 
     sys.path.insert(0, "{pip_target_dir}")
-    STATIC_WEB_PAGE = {{"EXECUTE_NB", "READTHEDOCS"}}.intersection(os.environ)
+    {static_web_page}
     """).strip()
 
 
