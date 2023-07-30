@@ -25,17 +25,13 @@ from typing import Optional, Sequence
 
 import nbformat
 
+from repoma.utilities._notebook import get_pip_target_dir
 from repoma.utilities.setup_cfg import open_setup_cfg
 
 __SETUP_CFG = open_setup_cfg()
 __PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]
 
-__CONFIG_CELL_CONTENT = """
-%config InlineBackend.figure_formats = ['svg']
-import os
 
-STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
-"""
 __CONFIG_CELL_METADATA: dict = {
     "hideCode": True,
     "hideOutput": True,
@@ -110,15 +106,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
             cell_id += 1
         if not args.no_config_cell:
-            config_cell_content = __CONFIG_CELL_CONTENT
+            config_cell_content = __get_config_cell(filename)
             _update_cell(
                 filename,
-                new_content=config_cell_content.strip("\n"),
+                new_content=config_cell_content,
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
         _insert_autolink_concat(filename)
     return 0
+
+
+def __get_config_cell(notebook_path: str) -> str:
+    pip_target_dir = get_pip_target_dir(notebook_path)
+    return dedent(f"""
+    %config InlineBackend.figure_formats = ['svg']
+    import os
+    import sys
+
+    sys.path.insert(0, "{pip_target_dir}")
+    STATIC_WEB_PAGE = {{"EXECUTE_NB", "READTHEDOCS"}}.intersection(os.environ)
+    """).strip()
 
 
 def _update_cell(

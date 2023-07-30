@@ -5,23 +5,36 @@ should specify which package versions should be used to run the notebook. This
 hook checks whether a notebook has such install statements and whether they
 comply with the expected formatting.
 """
-
+# cspell:ignore notebooknode
 import argparse
-import sys
 from typing import List, Optional, Sequence
 
 import nbformat
+from nbformat.notebooknode import NotebookNode
 
-from .errors import PrecommitError
+from repoma.errors import PrecommitError
+from repoma.utilities._notebook import get_pip_target_dir
+from repoma.utilities.executor import Executor
 
-__PIP_INSTALL_STATEMENT = "%pip install -q "
+__PIP_INSTALL_STATEMENT = "%pip install"
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(__doc__)
+    parser.add_argument("filenames", nargs="*", help="Filenames to check.")
+    args = parser.parse_args(argv)
+
+    executor = Executor()
+    for filename in args.filenames:
+        executor(check_pinned_requirements, filename)
+    return executor.finalize(exception=False)
 
 
 def check_pinned_requirements(filename: str) -> None:
-    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    notebook: NotebookNode = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     if not __has_python_kernel(notebook):
         return
-    for cell in notebook["cells"]:
+    for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "code":
             continue
         source: str = cell["source"]
@@ -31,15 +44,11 @@ def check_pinned_requirements(filename: str) -> None:
         cell_content = "".join(s.strip("\\") for s in src_lines)
         if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
-        __check_install_statement(filename, cell_content)
-        __check_requirements(filename, cell_content)
-        __check_metadata(filename, cell["metadata"])
-        return
-    msg = (
-        f'Notebook "{filename}" does not contain a pip install cell of the form'
-        f" {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
-    )
-    raise PrecommitError(msg)
+        executor = Executor()
+        executor(__check_requirement_pinning, filename, cell_id, cell_content)
+        executor(__update_install_statement, filename, notebook, cell_id, cell_content)
+        executor(__update_metadata, filename, notebook, cell_id)
+        executor.finalize()
 
 
 def __has_python_kernel(notebook: dict) -> bool:
@@ -50,82 +59,79 @@ def __has_python_kernel(notebook: dict) -> bool:
     return "python" in kernel_language
 
 
-def __check_install_statement(filename: str, install_statement: str) -> None:
-    if not install_statement.startswith(__PIP_INSTALL_STATEMENT):
-        msg = (
-            f"First shell cell in notebook {filename} does not start with"
-            f" {__PIP_INSTALL_STATEMENT}"
-        )
-        raise PrecommitError(msg)
-    if install_statement.endswith("/dev/null"):
-        msg = (
-            "Remove the /dev/null from the pip install statement in notebook"
-            f" {filename}"
-        )
-        raise PrecommitError(msg)
-
-
-def __check_requirements(filename: str, install_statement: str) -> None:
-    package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
-    requirements = package_listing.split(" ")
-    if len(requirements) == 0:
-        msg = f'At least one dependency required in install cell of "{filename}"'
-        raise PrecommitError(msg)
-    for requirement in requirements:
-        requirement = requirement.strip()
-        if not requirement:
+def __check_requirement_pinning(filename: str, cell_id: int, cell_content: str) -> None:
+    requirements = __get_notebook_requirements(cell_content)
+    for package in requirements:
+        if not package:
             continue
-        if "git+" in requirement:
+        if "git+" in package:
             continue
-        if not any(equal_sign in requirement for equal_sign in ["==", "~="]):
+        if not any(equal_sign in package for equal_sign in ["==", "~="]):
             msg = (
-                f'Install cell in notebook "{filename}" contains a requirement without'
-                f" == or ~= ({requirement})"
+                f'Install cell ({cell_id}) in notebook "{filename}" contains a'
+                f" requirement without == or ~= ({package})"
             )
             raise PrecommitError(msg)
-    requirements_lower = [r.lower() for r in requirements if not r.startswith("git+")]
-    if sorted(requirements_lower) != requirements_lower:
-        sorted_requirements = " ".join(sorted(requirements))
-        msg = (
-            f'Requirements in notebook "{filename}" are not sorted alphabetically.'
-            f" Should be:\n\n    {sorted_requirements}"
+
+
+def __update_install_statement(
+    filename: str, notebook: NotebookNode, cell_id: int, cell_content: str
+) -> None:
+    requirements = __get_notebook_requirements(cell_content)
+    pip_requirements = sorted(r for r in requirements if not r.startswith("git+"))
+    git_requirements = sorted(r for r in requirements if r.startswith("git+"))
+    sorted_requirements = pip_requirements + git_requirements
+    pip_target_dir = get_pip_target_dir(filename)
+    requirements_str = " ".join(sorted_requirements)
+    expected = (
+        f"{__PIP_INSTALL_STATEMENT} {requirements_str} -qq --target={pip_target_dir}"
+    )
+    if cell_content != expected:
+        metadata = notebook["cells"][cell_id]["metadata"]
+        if "jupyter" in metadata:
+            metadata["jupyter"]["source_hidden"] = True
+        else:
+            metadata["jupyter"] = {"source_hidden": True}
+        new_cell = nbformat.v4.new_code_cell(
+            expected,
+            metadata=metadata,
         )
+        del new_cell["id"]  # following nbformat_minor = 4
+        notebook["cells"][cell_id] = new_cell
+        nbformat.validate(notebook)
+        nbformat.write(notebook, filename)
+        msg = f"Updated pip install cell in {filename}"
         raise PrecommitError(msg)
 
 
-def __check_metadata(filename: str, metadata: dict) -> None:
+def __get_notebook_requirements(install_statement: str) -> List[str]:
+    package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
+    packages = package_listing.split(" ")
+    packages = [p.strip() for p in packages]
+    return [p for p in packages if p and p if not p.startswith("-")]
+
+
+def __update_metadata(filename: str, notebook: NotebookNode, cell_id: int) -> None:
+    updated = False
+    metadata = notebook["cells"][cell_id]["metadata"]
     source_hidden = metadata.get("jupyter", {}).get("source_hidden")
     if not source_hidden:
-        msg = f'Install cell in notebook "{filename}" is not hidden'
-        raise PrecommitError(msg)
+        if "jupyter" in metadata:
+            metadata["jupyter"]["source_hidden"] = True
+        else:
+            metadata["jupyter"] = {"source_hidden": True}
+        updated = True
     tags = set(metadata.get("tags", []))
     expected_tags = {"remove-cell"}
     if expected_tags != tags:
-        msg = (
-            f'Install cell in notebook "{filename}" should have tags'
-            f" {sorted(expected_tags)}"
-        )
+        metadata["tags"] = sorted(tags)
+        updated = True
+    if updated:
+        nbformat.validate(notebook)
+        nbformat.write(notebook, filename)
+        msg = f"Updated metadata of cell {cell_id} in notebook {filename}"
         raise PrecommitError(msg)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument("filenames", nargs="*", help="Filenames to check.")
-    args = parser.parse_args(argv)
-
-    errors: List[PrecommitError] = []
-    for filename in args.filenames:
-        try:
-            check_pinned_requirements(filename)
-        except PrecommitError as exception:
-            errors.append(exception)
-    if errors:
-        for error in errors:
-            error_msg = "\n ".join(error.args)
-            print(error_msg)  # noqa: T201
-        return 1
-    return 0
-
-
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
