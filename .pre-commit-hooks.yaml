@@ -31,10 +31,6 @@
   description: >
     Add or replace certain default cells in a Jupyter notebook.
   entry: set-nb-cells
-  exclude: >
-    (?x)^(
-      docs/adr/.*
-    )$
   language: python
   types:
     - jupyter
