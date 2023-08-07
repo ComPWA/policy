@@ -12,7 +12,6 @@ from repoma.utilities.setup_cfg import open_setup_cfg
 from repoma.utilities.vscode import (
     remove_extension_recommendation,
     remove_settings,
-    set_setting,
 )
 
 if TYPE_CHECKING:
@@ -39,7 +38,6 @@ def _remove_flake8() -> None:
     executor(remove_precommit_hook, "flake8")
     executor(remove_precommit_hook, "nbqa-flake8")
     executor(remove_settings, ["flake8.importStrategy"])
-    executor(set_setting, {"python.linting.flake8Enabled": False})
     executor.finalize()
 
 
@@ -91,7 +89,6 @@ def _remove_pydocstyle() -> None:
     )
     executor(__uninstall, "pydocstyle", check_options=["lint", "sty"])
     executor(remove_precommit_hook, "pydocstyle")
-    executor(set_setting, {"python.linting.pydocstyleEnabled": False})
     executor.finalize()
 
 
@@ -103,7 +100,6 @@ def _remove_pylint() -> None:
     executor(remove_precommit_hook, "pylint")
     executor(remove_precommit_hook, "nbqa-pylint")
     executor(remove_settings, ["pylint.importStrategy"])
-    executor(set_setting, {"python.linting.pylintEnabled": False})
     executor.finalize()
 
 
