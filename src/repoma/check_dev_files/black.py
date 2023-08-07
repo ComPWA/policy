@@ -18,7 +18,11 @@ from repoma.utilities.pyproject import (
     write_pyproject,
 )
 from repoma.utilities.setup_cfg import get_supported_python_versions
-from repoma.utilities.vscode import add_extension_recommendation, set_setting
+from repoma.utilities.vscode import (
+    add_extension_recommendation,
+    set_setting,
+    set_sub_setting,
+)
 
 
 def main() -> None:
@@ -31,6 +35,11 @@ def main() -> None:
     executor(_update_precommit_nbqa_hook)
     executor(add_extension_recommendation, "ms-python.black-formatter")
     executor(set_setting, {"black-formatter.importStrategy": "fromEnvironment"})
+    executor(
+        set_sub_setting,
+        "[python]",
+        {"editor.defaultFormatter": "ms-python.black-formatter"},
+    )
     executor(update_nbqa_settings, "black", to_toml_array(["--line-length=85"]))
     executor.finalize()
 
