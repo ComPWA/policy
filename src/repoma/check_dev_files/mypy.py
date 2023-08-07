@@ -39,7 +39,6 @@ def _update_vscode_settings() -> None:
         settings = {
             "mypy-type-checker.args": ["--config-file", "pyproject.toml"],
             "mypy-type-checker.importStrategy": "fromEnvironment",
-            "python.linting.mypyEnabled": False,
         }
         executor(set_setting, settings)
     executor.finalize()

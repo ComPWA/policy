@@ -42,6 +42,14 @@ def _remove_outdated_settings() -> None:
         "githubPullRequests.telemetry.enabled",
         "gitlens.advanced.telemetry.enabled",
         "python.analysis.diagnosticMode",
+        "python.formatting.provider",
+        "python.linting.banditEnabled",
+        "python.linting.enabled",
+        "python.linting.flake8Enabled",
+        "python.linting.mypyEnabled",
+        "python.linting.pydocstyleEnabled",
+        "python.linting.pylamaEnabled",
+        "python.linting.pylintEnabled",
         "telemetry.telemetryLevel",
     ]
     vscode.remove_settings(outdated_settings)
