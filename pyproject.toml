@@ -63,6 +63,10 @@ module = ["ruamel.*"]
 ignore_missing_imports = true
 module = ["nbformat.*"]
 
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["pre_commit.commands.autoupdate.*"]
+
 
 [tool.pyright]
 exclude = [

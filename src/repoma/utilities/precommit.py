@@ -2,16 +2,18 @@
 
 import os.path
 import re
+import socket
+from functools import lru_cache
 from pathlib import Path
-from textwrap import dedent
 from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
 
 import attrs
 import yaml
 from attrs import define, field
+from pre_commit.commands.autoupdate import autoupdate as precommit_autoupdate
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString, PlainScalarString
+from ruamel.yaml.scalarstring import PlainScalarString
 
 from repoma.errors import PrecommitError
 
@@ -86,7 +88,7 @@ def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
     hook_id: str = expected_repo_def["hooks"][0]["id"]
     if idx_and_repo is None:
         if "rev" not in expected_repo_def:
-            expected_repo_def.insert(1, "rev", DoubleQuotedScalarString(""))
+            expected_repo_def.insert(1, "rev", "PLEASE-UPDATE")
         idx = _determine_expected_repo_index(config, hook_id)
         repos.insert(idx, expected_repo_def)
         repos.yaml_set_comment_before_after_key(
@@ -94,13 +96,14 @@ def update_single_hook_precommit_repo(expected_repo_def: CommentedMap) -> None:
             before="\n",
         )
         yaml_parser.dump(config, CONFIG_PATH.precommit)
-        msg = dedent(f"""
-        Added {hook_id} hook to {CONFIG_PATH.precommit}. Please run
-
-            pre-commit autoupdate --repo {repo_url}
-
-        to update to the latest release of this pre-commit repository.
-        """).strip()
+        if has_internet_connection():
+            precommit_autoupdate(
+                CONFIG_PATH.precommit,
+                freeze=False,
+                repos=[repo_url],
+                tags_only=True,
+            )
+        msg = f"Added {hook_id} hook to {CONFIG_PATH.precommit}."
         raise PrecommitError(msg)
     idx, existing_hook = idx_and_repo
     if not _is_equivalent_repo(existing_hook, expected_repo_def):
@@ -295,3 +298,17 @@ def fromdict(definition: dict, typ: Type[_T]) -> _T:
         return PrecommitConfig(**definition)  # type: ignore[return-value]
     msg = f"No implementation for type {typ.__name__}"
     raise NotImplementedError(msg)
+
+
+@lru_cache(maxsize=None)
+def has_internet_connection(
+    host: str = "8.8.8.8", port: int = 53, timeout: float = 0.5
+) -> bool:
+    try:
+        # cspell:ignore setdefaulttimeout
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+    except OSError:
+        return False
+    else:
+        return True
