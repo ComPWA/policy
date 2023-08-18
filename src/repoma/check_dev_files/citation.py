@@ -90,10 +90,6 @@ def _convert_zenodo(zenodo: dict) -> CommentedMap:
     if lic is not None:
         citation_cff["license"] = lic
 
-    references = _get_references(zenodo)
-    if references is not None:
-        citation_cff["references"] = references
-
     return citation_cff
 
 
@@ -142,32 +138,6 @@ def __convert_author(creator: dict) -> dict:
     if orcid is not None:
         author_info["orcid"] = f"https://orcid.org/{orcid}"
     return author_info
-
-
-def _get_references(zenodo: dict) -> Optional[List[Dict[str, str]]]:
-    related_ids: Optional[List[Dict[str, str]]] = zenodo.get("related_identifiers")
-    if related_ids is None:
-        converted_references = []
-    else:
-        converted_references = [__convert_reference(item) for item in related_ids]
-    references: Optional[List[str]] = zenodo.get("references")
-    if references is not None:
-        converted_references += [{"title": FoldedScalarString(r)} for r in references]
-    if not converted_references:
-        return None
-    return converted_references
-
-
-def __convert_reference(ref: dict) -> dict:
-    scheme = ref["scheme"]
-    if scheme == "doi":
-        reference = {"doi": ref["identifier"]}
-        resource_type = ref.get("resource_type")
-        if resource_type is not None:
-            reference["type"] = resource_type
-        return reference
-    msg = f"No implementation for related_identifiers scheme {scheme!r}"
-    raise NotImplementedError(msg)
 
 
 def check_citation_keys() -> None:
