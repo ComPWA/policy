@@ -28,8 +28,12 @@ from repoma.utilities.vscode import (
 
 def main() -> None:
     executor = Executor()
-    executor(convert_zenodo_json)
+    if CONFIG_PATH.zenodo.exists():
+        executor(convert_zenodo_json)
+        executor(remove_zenodo_json)
     if CONFIG_PATH.citation.exists():
+        if CONFIG_PATH.zenodo.exists():
+            executor(remove_zenodo_json)
         executor(check_citation_keys)
         executor(add_json_schema_precommit)
         executor(add_extension_recommendation, "redhat.vscode-yaml")
@@ -38,23 +42,22 @@ def main() -> None:
 
 
 def convert_zenodo_json() -> None:
-    if not CONFIG_PATH.zenodo.exists():
-        return
-    if CONFIG_PATH.citation.exists():
-        CONFIG_PATH.zenodo.unlink()
-        msg = (
-            f"Removed {CONFIG_PATH.zenodo}, because a {CONFIG_PATH.citation} already"
-            " exists"
-        )
-        raise PrecommitError(msg)
     with open(CONFIG_PATH.zenodo) as f:
         zenodo = json.load(f)
     citation_cff = _convert_zenodo(zenodo)
     _write_citation_cff(citation_cff)
     CONFIG_PATH.zenodo.unlink()
+    msg = dedent(f"""
+    Converted {CONFIG_PATH.zenodo} to a {CONFIG_PATH.citation} config
+      For more info, see https://citation-file-format.github.io
+    """).strip()
+    raise PrecommitError(msg)
+
+
+def remove_zenodo_json() -> None:
+    CONFIG_PATH.zenodo.unlink()
     msg = (
-        f"Converted {CONFIG_PATH.zenodo} to a {CONFIG_PATH.citation} config. For more"
-        " info, see https://citation-file-format.github.io"
+        f"Removed {CONFIG_PATH.zenodo}, because a {CONFIG_PATH.citation} already exists"
     )
     raise PrecommitError(msg)
 
@@ -192,8 +195,8 @@ def check_citation_keys() -> None:
         sorted_keys = sorted(missing_keys)
         msg = dedent(f"""
             {CONFIG_PATH.citation} is missing the following keys: {', '.join(sorted_keys)}
-            More info on the keys can be found on
-            https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
+              More info on the keys can be found on
+              https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
         """).strip()
         raise PrecommitError(msg)
 
