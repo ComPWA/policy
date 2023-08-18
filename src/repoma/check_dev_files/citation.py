@@ -128,7 +128,7 @@ def __convert_author(creator: dict) -> dict:
     if rest:
         given_names = " ".join(rest)
     else:
-        words = full_name.split("")
+        words = full_name.split(" ")
         family_name = words[-1]
         given_names = " ".join(words[:-1])
     author_info = {
@@ -164,7 +164,7 @@ def __convert_reference(ref: dict) -> dict:
         reference = {"doi": ref["identifier"]}
         resource_type = ref.get("resource_type")
         if resource_type is not None:
-            reference["resource_type"] = resource_type
+            reference["type"] = resource_type
         return reference
     msg = f"No implementation for related_identifiers scheme {scheme!r}"
     raise NotImplementedError(msg)
