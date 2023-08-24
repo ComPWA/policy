@@ -14,6 +14,7 @@ __NON_SKIPPED_HOOKS = {
     "editorconfig-checker",
 }
 __SKIPPED_HOOKS = {
+    "check-jsonschema",
     "pyright",
     "taplo",
 }

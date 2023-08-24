@@ -79,6 +79,7 @@
     "conda",
     "fromdict",
     "indentless",
+    "jsonschema",
     "linkcheck",
     "maxsplit",
     "nargs",
