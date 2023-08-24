@@ -9,6 +9,7 @@ from repoma.utilities.executor import Executor
 
 from . import (
     black,
+    citation,
     commitlint,
     cspell,
     editorconfig,
@@ -152,6 +153,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         args.repo_title = args.repo_name
 
     executor = Executor()
+    executor(citation.main)
     executor(commitlint.main)
     executor(cspell.main)
     executor(editorconfig.main)

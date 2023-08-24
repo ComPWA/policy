@@ -12,6 +12,7 @@ from repoma.errors import PrecommitError
 
 
 class _ConfigFilePaths(NamedTuple):
+    citation: Path = Path("CITATION.cff")
     codecov: Path = Path("codecov.yml")
     commitlint: Path = Path("commitlint.config.js")
     cspell: Path = Path(".cspell.json")
@@ -30,8 +31,9 @@ class _ConfigFilePaths(NamedTuple):
     setup_cfg: Path = Path("setup.cfg")
     taplo: Path = Path(".taplo.toml")
     tox: Path = Path("tox.ini")
-    vscode_settings: Path = Path(".vscode/settings.json")
     vscode_extensions: Path = Path(".vscode/extensions.json")
+    vscode_settings: Path = Path(".vscode/settings.json")
+    zenodo: Path = Path(".zenodo.json")
 
 
 CONFIG_PATH = _ConfigFilePaths()

@@ -5,7 +5,6 @@ from textwrap import dedent
 from typing import List, Set
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from tomlkit.items import Array, Table
 
 from repoma.errors import PrecommitError
@@ -268,7 +267,6 @@ def _update_precommit_hook() -> None:
         return
     expected_hook = CommentedMap(
         repo="https://github.com/astral-sh/ruff-pre-commit",
-        rev=DoubleQuotedScalarString(""),
         hooks=[CommentedMap(id="ruff", args=["--fix"])],
     )
     update_single_hook_precommit_repo(expected_hook)

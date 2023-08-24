@@ -22,6 +22,13 @@ def set_setting(values: dict) -> None:
     _update_settings(settings, new={**settings, **values})
 
 
+def set_sub_setting(key: str, values: dict) -> None:
+    settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
+    new_settings = dict(settings)
+    new_settings[key] = {**settings.get(key, {}), **values}
+    _update_settings(settings, new_settings)
+
+
 def _update_settings(old: dict, new: dict) -> None:
     if old == new:
         return
