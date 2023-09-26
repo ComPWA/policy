@@ -25,6 +25,7 @@ def main() -> None:
         "cell.attachments",
         "cell.metadata.code_folding",
         "cell.metadata.id",
+        "cell.metadata.pycharm",
         "cell.metadata.user_expressions",
         "metadata.celltoolbar",
         "metadata.colab.name",
