@@ -5,6 +5,13 @@
   always_run: true
   pass_filenames: false
 
+- id: colab-toc-visible
+  name: Show the TOC sidebar in Google Colab by default
+  entry: colab-toc-visible
+  language: python
+  types:
+    - jupyter
+
 - id: fix-nbformat-version
   name: Set nbformat minor version to 4 and remove cell IDs
   entry: fix-nbformat-version
