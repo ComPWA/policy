@@ -36,6 +36,7 @@ def _remove_flake8() -> None:
     executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
+    executor(remove_precommit_hook, "markdownlint")
     executor(remove_precommit_hook, "nbqa-flake8")
     executor(remove_settings, ["flake8.importStrategy"])
     executor.finalize()
@@ -46,6 +47,12 @@ def _remove_isort() -> None:
     executor(__remove_isort_settings)
     executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
+    executor(
+        remove_extension_recommendation,
+        # cspell:ignore davidanson markdownlint
+        extension_name="davidanson.vscode-markdownlint",
+        unwanted=True,
+    )
     executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
@@ -96,6 +103,7 @@ def _remove_pydocstyle() -> None:
 def _remove_pylint() -> None:
     executor = Executor()
     executor(__remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
+    executor(__remove_from_gitignore, ".markdownlint.json")
     executor(__uninstall, "pylint", check_options=["lint", "sty"])
     executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
@@ -133,3 +141,18 @@ def __uninstall(package: str, check_options: List[str]) -> None:
             continue
         msg = f'Please remove {package} from the "{section}" section of setup.cfg'
         raise PrecommitError(msg)
+
+
+def __remove_from_gitignore(pattern: str) -> None:
+    gitignore_path = ".gitignore"
+    if not os.path.exists(gitignore_path):
+        return
+    with open(gitignore_path) as f:
+        lines = f.readlines()
+    filtered_lines = [s for s in lines if pattern not in s]
+    if filtered_lines == lines:
+        return
+    with open(gitignore_path, "w") as f:
+        f.writelines(filtered_lines)
+    msg = f"Removed {pattern} from {gitignore_path}"
+    raise PrecommitError(msg)
