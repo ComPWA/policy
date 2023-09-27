@@ -14,26 +14,27 @@ from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import update_single_hook_precommit_repo
 
 
-def main() -> None:
+def main(no_python: bool) -> None:
     if CONFIG_PATH.editorconfig.exists():
-        _update_precommit_config()
+        _update_precommit_config(no_python)
 
 
-def _update_precommit_config() -> None:
-    excludes = dedent(R"""
-    (?x)^(
-      .*\.py
-    )$
-    """).strip()
+def _update_precommit_config(no_python: bool) -> None:
+    hook = CommentedMap(
+        id="editorconfig-checker",
+        name="editorconfig",
+        alias="ec",
+    )
+    if not no_python:
+        excludes = dedent(R"""
+        (?x)^(
+          .*\.py
+        )$
+        """).strip()
+        hook["exclude"] = FoldedScalarString(excludes)
+
     expected_hook = CommentedMap(
         repo="https://github.com/editorconfig-checker/editorconfig-checker.python",
-        hooks=[
-            CommentedMap(
-                id="editorconfig-checker",
-                name="editorconfig",
-                alias="ec",
-                exclude=FoldedScalarString(excludes),
-            )
-        ],
+        hooks=[hook],
     )
     update_single_hook_precommit_repo(expected_hook)

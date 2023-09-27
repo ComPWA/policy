@@ -162,7 +162,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(citation.main)
     executor(commitlint.main)
     executor(cspell.main)
-    executor(editorconfig.main)
+    executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
         executor(github_labels.main)
     executor(github_templates.main)
