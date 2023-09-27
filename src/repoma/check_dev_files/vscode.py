@@ -50,6 +50,7 @@ def _remove_outdated_settings() -> None:
         "python.linting.pydocstyleEnabled",
         "python.linting.pylamaEnabled",
         "python.linting.pylintEnabled",
+        "telemetry.enableTelemetry",
         "telemetry.telemetryLevel",
     ]
     vscode.remove_settings(outdated_settings)
