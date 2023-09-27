@@ -44,6 +44,7 @@ def _remove_flake8() -> None:
 def _remove_isort() -> None:
     executor = Executor()
     executor(__remove_isort_settings)
+    executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
     executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
