@@ -102,6 +102,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Do not run test job on macOS",
     )
     parser.add_argument(
+        "--no-notebooks",
+        action="store_true",
+        default=False,
+        help="This repository does not contain Jupyter notebooks",
+    )
+    parser.add_argument(
         "--no-pypi",
         action="store_true",
         default=False,
@@ -175,7 +181,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(toml.main)  # has to run before pre-commit
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
-        executor(black.main)
+        executor(black.main, not args.no_notebooks)
         executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
