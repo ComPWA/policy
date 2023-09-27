@@ -217,6 +217,7 @@ class Hook:
     language: Optional[str] = None
     always_run: Optional[bool] = None
     pass_filenames: Optional[bool] = None
+    types_or: Optional[List[str]] = None
 
 
 @define

@@ -82,6 +82,10 @@ def _update_precommit_repo(has_notebooks: bool) -> None:
         hooks=[CommentedMap(id="black")],
     )
     if has_notebooks:
-        black_jupyter = CommentedMap(id="black-jupyter", args=["--line-length=85"])
+        black_jupyter = CommentedMap(
+            id="black-jupyter",
+            args=["--line-length=85"],
+            types_or=["jupyter"],
+        )
         expected_hook["hooks"].append(black_jupyter)
     update_single_hook_precommit_repo(expected_hook)
