@@ -6,7 +6,7 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
-    update_precommit_hook,
+    remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.pyproject import (
@@ -14,7 +14,6 @@ from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
     to_toml_array,
-    update_nbqa_settings,
     write_pyproject,
 )
 from repoma.utilities.setup_cfg import get_supported_python_versions
@@ -25,14 +24,13 @@ from repoma.utilities.vscode import (
 )
 
 
-def main() -> None:
+def main(has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     executor = Executor()
     executor(_remove_outdated_settings)
     executor(_update_black_settings)
-    executor(_update_precommit_repo)
-    executor(_update_precommit_nbqa_hook)
+    executor(_update_precommit_repo, has_notebooks)
     executor(add_extension_recommendation, "ms-python.black-formatter")
     executor(set_setting, {"black-formatter.importStrategy": "fromEnvironment"})
     executor(
@@ -40,7 +38,7 @@ def main() -> None:
         "[python]",
         {"editor.defaultFormatter": "ms-python.black-formatter"},
     )
-    executor(update_nbqa_settings, "black", to_toml_array(["--line-length=85"]))
+    executor(remove_precommit_hook, "nbqa-black")
     executor.finalize()
 
 
@@ -78,19 +76,16 @@ def _update_black_settings() -> None:
         raise PrecommitError(msg)
 
 
-def _update_precommit_repo() -> None:
+def _update_precommit_repo(has_notebooks: bool) -> None:
     expected_hook = CommentedMap(
         repo="https://github.com/psf/black",
         hooks=[CommentedMap(id="black")],
     )
+    if has_notebooks:
+        black_jupyter = CommentedMap(
+            id="black-jupyter",
+            args=["--line-length=85"],
+            types_or=["jupyter"],
+        )
+        expected_hook["hooks"].append(black_jupyter)
     update_single_hook_precommit_repo(expected_hook)
-
-
-def _update_precommit_nbqa_hook() -> None:
-    update_precommit_hook(
-        repo_url="https://github.com/nbQA-dev/nbQA",
-        expected_hook=CommentedMap(
-            id="nbqa-black",
-            additional_dependencies=["black>=22.1.0"],
-        ),
-    )
