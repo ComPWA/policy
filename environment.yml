@@ -1,4 +1,4 @@
-name: repoma
+name: repo-maintenance
 channels:
   - defaults
 dependencies:
