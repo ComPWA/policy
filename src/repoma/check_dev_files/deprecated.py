@@ -1,5 +1,6 @@
 """Remove deprecated linters and formatters."""
 import os
+import shutil
 from typing import TYPE_CHECKING, List
 
 from repoma.errors import PrecommitError
@@ -18,10 +19,12 @@ if TYPE_CHECKING:
     from tomlkit.items import Table
 
 
-def remove_deprecated_tools() -> None:
+def remove_deprecated_tools(keep_issue_templates: bool) -> None:
     executor = Executor()
     executor(_remove_flake8)
     executor(_remove_isort)
+    if not keep_issue_templates:
+        executor(_remove_github_issue_templates)
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
     executor.finalize()
@@ -85,6 +88,15 @@ def __remove_nbqa_option(option: str) -> None:
     raise PrecommitError(msg)
 
 
+def _remove_github_issue_templates() -> None:
+    __remove_configs(
+        [
+            ".github/ISSUE_TEMPLATE",
+            ".github/pull_request_template.md",
+        ]
+    )
+
+
 def _remove_pydocstyle() -> None:
     executor = Executor()
     executor(
@@ -122,7 +134,10 @@ def __remove_configs(paths: List[str]) -> None:
 def __remove_file(path: str) -> None:
     if not os.path.exists(path):
         return
-    os.remove(path)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
     msg = f"Removed {path}"
     raise PrecommitError(msg)
 

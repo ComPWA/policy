@@ -14,7 +14,6 @@ from . import (
     cspell,
     editorconfig,
     github_labels,
-    github_templates,
     github_workflows,
     gitpod,
     mypy,
@@ -64,6 +63,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         required=False,
         type=str,
+    )
+    parser.add_argument(
+        "--keep-issue-templates",
+        help="Do not remove the .github/ISSUE_TEMPLATE directory",
+        action="store_true",
+        default=False,
     )
     parser.add_argument(
         "--ignore-author",
@@ -165,7 +170,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
         executor(github_labels.main)
-    executor(github_templates.main)
     executor(
         github_workflows.main,
         allow_deprecated=args.allow_deprecated_workflows,
@@ -194,7 +198,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pyupgrade.main)
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
-    executor(remove_deprecated_tools)
+    executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main)
     if not args.no_gitpod:
         executor(gitpod.main)
