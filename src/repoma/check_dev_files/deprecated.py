@@ -1,5 +1,6 @@
 """Remove deprecated linters and formatters."""
 import os
+import shutil
 from typing import TYPE_CHECKING, List
 
 from repoma.errors import PrecommitError
@@ -18,10 +19,13 @@ if TYPE_CHECKING:
     from tomlkit.items import Table
 
 
-def remove_deprecated_tools() -> None:
+def remove_deprecated_tools(keep_issue_templates: bool) -> None:
     executor = Executor()
     executor(_remove_flake8)
     executor(_remove_isort)
+    if not keep_issue_templates:
+        executor(_remove_github_issue_templates)
+    executor(_remove_markdownlint)
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
     executor.finalize()
@@ -36,7 +40,6 @@ def _remove_flake8() -> None:
     executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
-    executor(remove_precommit_hook, "markdownlint")
     executor(remove_precommit_hook, "nbqa-flake8")
     executor(remove_settings, ["flake8.importStrategy"])
     executor.finalize()
@@ -47,12 +50,6 @@ def _remove_isort() -> None:
     executor(__remove_isort_settings)
     executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
-    executor(
-        remove_extension_recommendation,
-        # cspell:ignore davidanson markdownlint
-        extension_name="davidanson.vscode-markdownlint",
-        unwanted=True,
-    )
     executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
@@ -85,6 +82,29 @@ def __remove_nbqa_option(option: str) -> None:
     raise PrecommitError(msg)
 
 
+def _remove_github_issue_templates() -> None:
+    __remove_configs(
+        [
+            ".github/ISSUE_TEMPLATE",
+            ".github/pull_request_template.md",
+        ]
+    )
+
+
+def _remove_markdownlint() -> None:
+    executor = Executor()
+    executor(__remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
+    executor(__remove_from_gitignore, ".markdownlint.json")
+    executor(
+        remove_extension_recommendation,
+        # cspell:ignore davidanson markdownlint
+        extension_name="davidanson.vscode-markdownlint",
+        unwanted=True,
+    )
+    executor(remove_precommit_hook, "markdownlint")
+    executor.finalize()
+
+
 def _remove_pydocstyle() -> None:
     executor = Executor()
     executor(
@@ -103,7 +123,6 @@ def _remove_pydocstyle() -> None:
 def _remove_pylint() -> None:
     executor = Executor()
     executor(__remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
-    executor(__remove_from_gitignore, ".markdownlint.json")
     executor(__uninstall, "pylint", check_options=["lint", "sty"])
     executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
@@ -122,7 +141,10 @@ def __remove_configs(paths: List[str]) -> None:
 def __remove_file(path: str) -> None:
     if not os.path.exists(path):
         return
-    os.remove(path)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
     msg = f"Removed {path}"
     raise PrecommitError(msg)
 
