@@ -50,7 +50,7 @@ def _update_tomlsort_config() -> None:
         "tool.setuptools",
         "tool.setuptools_scm",
     ]
-    expected_config = dict(  # noqa: C408
+    expected_config = dict(
         all=False,
         ignore_case=True,
         in_place=True,
