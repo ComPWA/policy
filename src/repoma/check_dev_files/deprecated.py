@@ -7,7 +7,6 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
-from repoma.utilities.project_info import open_setup_cfg
 from repoma.utilities.pyproject import load_pyproject, write_pyproject
 from repoma.utilities.readme import remove_badge
 from repoma.utilities.vscode import (
@@ -35,8 +34,8 @@ def _remove_flake8() -> None:
     executor = Executor()
     executor(__remove_configs, [".flake8"])
     executor(__remove_nbqa_option, "flake8")
-    executor(__uninstall, "flake8", check_options=["lint", "sty"])
-    executor(__uninstall, "pep8-naming", check_options=["lint", "sty"])
+    executor(__uninstall, "flake8")
+    executor(__uninstall, "pep8-naming")
     executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
@@ -115,7 +114,7 @@ def _remove_pydocstyle() -> None:
             "tests/.pydocstyle",
         ],
     )
-    executor(__uninstall, "pydocstyle", check_options=["lint", "sty"])
+    executor(__uninstall, "pydocstyle")
     executor(remove_precommit_hook, "pydocstyle")
     executor.finalize()
 
@@ -123,7 +122,7 @@ def _remove_pydocstyle() -> None:
 def _remove_pylint() -> None:
     executor = Executor()
     executor(__remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
-    executor(__uninstall, "pylint", check_options=["lint", "sty"])
+    executor(__uninstall, "pylint")
     executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
     executor(remove_precommit_hook, "nbqa-pylint")
@@ -149,19 +148,27 @@ def __remove_file(path: str) -> None:
     raise PrecommitError(msg)
 
 
-def __uninstall(package: str, check_options: List[str]) -> None:
-    if not os.path.exists(CONFIG_PATH.setup_cfg):
+def __uninstall(package: str) -> None:
+    if not os.path.exists(CONFIG_PATH.pyproject):
         return
-    cfg = open_setup_cfg()
-    section = "options.extras_require"
-    if not cfg.has_section(section):
+    pyproject = load_pyproject()
+    project = pyproject.get("project")
+    if project is None:
         return
-    for option in check_options:
-        if not cfg.has_option(section, option):
-            continue
-        if package not in cfg.get(section, option):
-            continue
-        msg = f'Please remove {package} from the "{section}" section of setup.cfg'
+    updated = False
+    dependencies = project.get("dependencies")
+    if dependencies is not None and package in dependencies:
+        dependencies.remove(package)
+        updated = True
+    optional_dependencies = project.get("optional-dependencies")
+    if optional_dependencies is not None:
+        for values in optional_dependencies.values():
+            if package in values:
+                values.remove(package)
+                updated = True
+    if updated:
+        write_pyproject(pyproject)
+        msg = f"Removed {package} from {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 

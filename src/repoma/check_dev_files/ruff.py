@@ -1,7 +1,7 @@
 """Check `Ruff <https://ruff.rs>`_ configuration."""
 
 import os
-from textwrap import dedent
+from copy import deepcopy
 from typing import List, Set
 
 from ruamel.yaml.comments import CommentedMap
@@ -14,7 +14,10 @@ from repoma.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from repoma.utilities.project_info import get_supported_python_versions, open_setup_cfg
+from repoma.utilities.project_info import (
+    get_project_info,
+    get_supported_python_versions,
+)
 from repoma.utilities.pyproject import (
     complies_with_subset,
     get_sub_table,
@@ -33,48 +36,60 @@ def main() -> None:
         add_badge,
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
-    executor(_check_setup_cfg)
     executor(_update_nbqa_settings)
     executor(_update_ruff_settings)
     executor(_update_ruff_per_file_ignores)
     executor(_update_ruff_pydocstyle_settings)
     executor(_update_precommit_hook)
     executor(_update_precommit_nbqa_hook)
+    executor(_update_setup_cfg)
     executor(_update_vscode_settings)
     executor.finalize()
 
 
-def _check_setup_cfg() -> None:
-    cfg = open_setup_cfg()
-    extras_require = "options.extras_require"
-    if not cfg.has_section(extras_require):
-        msg = f"Please list ruff under a section [{extras_require}] in setup.cfg"
+def _update_setup_cfg() -> None:
+    pyproject = load_pyproject()
+    project_info = get_project_info(pyproject)
+    package = project_info.name
+    if package is None:
+        msg = (
+            "Please specify a [project.name] for the package in"
+            f" [{CONFIG_PATH.pyproject}]"
+        )
         raise PrecommitError(msg)
-    msg = f"""\
-        Section [{extras_require}] in setup.cfg should look like this:
+    project = get_sub_table(pyproject, "project", create=True)
+    old_dependencies = project.get("optional-dependencies")
+    new_dependencies = deepcopy(old_dependencies)
+    python_versions = project_info.supported_python_versions
+    if python_versions is not None and "3.6" in python_versions:
+        ruff = 'ruff; python_version >="3.7.0"'
+    else:
+        ruff = "ruff"
+    if new_dependencies is None:
+        new_dependencies = dict(
+            dev=[f"{package}[sty]"],
+            lint=[ruff],
+            sty=[f"{package}[lint]"],
+        )
+    else:
+        __add_package(new_dependencies, "dev", f"{package}[sty]")
+        __add_package(new_dependencies, "lint", ruff)
+        __add_package(new_dependencies, "sty", f"{package}[lint]")
+    if old_dependencies != new_dependencies:
+        project["optional-dependencies"] = new_dependencies
+        write_pyproject(pyproject)
+        msg = f"Updated [project.optional-dependencies] in {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
 
-        [{extras_require}]
-        ...
-        lint =
-            ruff
-            ...
-        sty =
-            ...
-            %(lint)s
-            ...
-        dev =
-            ...
-            %(sty)s
-            ...
-    """
-    msg = dedent(msg).strip()
-    for section in ("dev", "lint", "sty"):
-        if cfg.has_option(extras_require, section):
-            continue
-        raise PrecommitError(msg)
-    lint_section = cfg.get(extras_require, "lint")
-    if not any("ruff" in line for line in lint_section.split("\n")):
-        raise PrecommitError(msg)
+
+def __add_package(optional_dependencies: Table, key: str, package: str) -> None:
+    section = optional_dependencies.get(key)
+    if section is None:
+        optional_dependencies[key] = [package]
+    elif package not in section:
+        optional_dependencies[key] = to_toml_array(
+            sorted({package, *section}, key=lambda s: ('"' in s, s))  # Taplo sorting
+        )
 
 
 def _update_nbqa_settings() -> None:
