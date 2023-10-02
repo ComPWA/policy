@@ -125,3 +125,11 @@ repos:
     rev: v0.8.0
     hooks:
       - id: taplo
+
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort
+        args:
+          - --in-place
+        exclude: (?x)^(labels.toml|labels-physics.toml)$
