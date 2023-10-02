@@ -7,9 +7,9 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
+from repoma.utilities.project_info import open_setup_cfg
 from repoma.utilities.pyproject import load_pyproject, write_pyproject
 from repoma.utilities.readme import remove_badge
-from repoma.utilities.setup_cfg import open_setup_cfg
 from repoma.utilities.vscode import (
     remove_extension_recommendation,
     remove_settings,

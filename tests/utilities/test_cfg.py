@@ -6,7 +6,7 @@ import pytest
 
 from repoma.errors import PrecommitError
 from repoma.utilities.cfg import copy_config, format_config, open_config
-from repoma.utilities.setup_cfg import get_repo_url, open_setup_cfg
+from repoma.utilities.project_info import get_repo_url, open_setup_cfg
 
 
 def test_copy_config():

@@ -14,6 +14,7 @@ from repoma.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
+from repoma.utilities.project_info import get_supported_python_versions, open_setup_cfg
 from repoma.utilities.pyproject import (
     complies_with_subset,
     get_sub_table,
@@ -23,7 +24,6 @@ from repoma.utilities.pyproject import (
     write_pyproject,
 )
 from repoma.utilities.readme import add_badge
-from repoma.utilities.setup_cfg import get_supported_python_versions, open_setup_cfg
 from repoma.utilities.vscode import add_extension_recommendation, set_setting
 
 

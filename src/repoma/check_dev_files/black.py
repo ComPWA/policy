@@ -9,6 +9,7 @@ from repoma.utilities.precommit import (
     remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
+from repoma.utilities.project_info import get_supported_python_versions
 from repoma.utilities.pyproject import (
     complies_with_subset,
     get_sub_table,
@@ -16,7 +17,6 @@ from repoma.utilities.pyproject import (
     to_toml_array,
     write_pyproject,
 )
-from repoma.utilities.setup_cfg import get_supported_python_versions
 from repoma.utilities.vscode import (
     add_extension_recommendation,
     set_setting,

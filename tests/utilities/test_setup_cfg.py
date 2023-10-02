@@ -1,4 +1,4 @@
-from repoma.utilities.setup_cfg import open_setup_cfg
+from repoma.utilities.project_info import open_setup_cfg
 
 
 def test_open_setup_cfg():
