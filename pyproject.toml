@@ -67,7 +67,6 @@ module = ["nbformat.*"]
 ignore_missing_imports = true
 module = ["pre_commit.commands.autoupdate.*"]
 
-
 [tool.pyright]
 exclude = [
     "**/.git",
@@ -100,7 +99,6 @@ reportUnusedFunction = true
 reportUnusedImport = true
 reportUnusedVariable = true
 typeCheckingMode = "strict"
-
 
 [tool.pytest.ini_options]
 addopts = """
@@ -153,20 +151,21 @@ extend-select = [
     "YTT",
 ]
 ignore = [
-    "D101",    # class docstring
-    "D102",    # method docstring
-    "D103",    # function docstring
-    "D105",    # magic method docstring
-    "D107",    # init docstring
-    "D203",    # conflicts with D211
-    "D213",    # multi-line docstring should start at the second line
-    "D407",    # missing dashed underline after section
-    "D416",    # section name does not have to end with a colon
-    "E501",    # handled by black formatting
+    "C408", # Unnecessary dict call - rewrite as a literal
+    "D101", # class docstring
+    "D102", # method docstring
+    "D103", # function docstring
+    "D105", # magic method docstring
+    "D107", # init docstring
+    "D203", # conflicts with D211
+    "D213", # multi-line docstring should start at the second line
+    "D407", # missing dashed underline after section
+    "D416", # section name does not have to end with a colon
+    "E501", # handled by black formatting
     "PLR0913", # sympy functions
     "PLW2901", # often used for xreplace
-    "S301",    # allow pickle
-    "SIM108",  # if-else-block-instead-of-if-exp
+    "S301", # allow pickle
+    "SIM108", # if-else-block-instead-of-if-exp
 ]
 show-fixes = true
 src = [
@@ -192,3 +191,17 @@ known-first-party = ["repoma"]
 
 [tool.ruff.pydocstyle]
 convention = "google"
+
+[tool.tomlsort]
+all = false
+ignore_case = true
+in_place = true
+sort_first = [
+    "build-system",
+    "project",
+    "tool.setuptools",
+    "tool.setuptools_scm",
+]
+sort_table_keys = true
+spaces_indent_inline_array = 4
+trailing_comma_inline_array = true

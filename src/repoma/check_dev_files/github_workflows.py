@@ -12,7 +12,7 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
-from repoma.utilities.setup_cfg import get_pypi_name
+from repoma.utilities.project_info import get_pypi_name
 from repoma.utilities.vscode import (
     add_extension_recommendation,
     remove_extension_recommendation,

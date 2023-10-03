@@ -11,6 +11,12 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import update_single_hook_precommit_repo
+from repoma.utilities.pyproject import (
+    get_sub_table,
+    load_pyproject,
+    to_toml_array,
+    write_pyproject,
+)
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     "taplo.toml",
@@ -29,8 +35,49 @@ def main() -> None:
     executor(_rename_taplo_config)
     executor(_update_taplo_config)
     executor(_update_precommit_repo)
+    executor(_update_tomlsort_config)
+    executor(_update_tomlsort_hook)
     executor(_update_vscode_extensions)
     executor.finalize()
+
+
+def _update_tomlsort_config() -> None:
+    # cspell:ignore tomlsort
+    pyproject = load_pyproject()
+    sort_first = [
+        "build-system",
+        "project",
+        "tool.setuptools",
+        "tool.setuptools_scm",
+    ]
+    expected_config = dict(
+        all=False,
+        ignore_case=True,
+        in_place=True,
+        sort_first=to_toml_array(sort_first),
+        sort_table_keys=True,
+        spaces_indent_inline_array=4,
+        trailing_comma_inline_array=True,
+    )
+    tool_table = get_sub_table(pyproject, "tool", create=True)
+    if tool_table.get("tomlsort") == expected_config:
+        return
+    tool_table["tomlsort"] = expected_config
+    write_pyproject(pyproject)
+    msg = "Updated toml-sort configuration"
+    raise PrecommitError(msg)
+
+
+def _update_tomlsort_hook() -> None:
+    expected_hook = CommentedMap(
+        repo="https://github.com/pappasam/toml-sort",
+        hooks=[CommentedMap(id="toml-sort", args=["--in-place"])],
+    )
+    excludes = ["labels.toml", "labels-physics.toml"]
+    excludes = [f for f in excludes if os.path.exists(f)]
+    if excludes:
+        expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
+    update_single_hook_precommit_repo(expected_hook)
 
 
 def _rename_taplo_config() -> None:

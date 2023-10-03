@@ -8,7 +8,7 @@ from repoma.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from repoma.utilities.setup_cfg import get_supported_python_versions
+from repoma.utilities.project_info import get_supported_python_versions
 
 
 def main() -> None:

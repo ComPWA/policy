@@ -7,8 +7,8 @@ import yaml
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
+from repoma.utilities.project_info import get_repo_url
 from repoma.utilities.readme import add_badge
-from repoma.utilities.setup_cfg import get_repo_url
 from repoma.utilities.yaml import write_yaml
 
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"

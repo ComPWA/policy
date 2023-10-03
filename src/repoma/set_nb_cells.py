@@ -20,15 +20,13 @@ and writing the following `Markdown comment
 
 import argparse
 import sys
+from functools import lru_cache
 from textwrap import dedent
 from typing import Optional, Sequence
 
 import nbformat
 
-from repoma.utilities.setup_cfg import open_setup_cfg
-
-__SETUP_CFG = open_setup_cfg()
-__PACKAGE_NAME = __SETUP_CFG["metadata"]["name"]
+from repoma.utilities.project_info import get_pypi_name
 
 __CONFIG_CELL_CONTENT = """
 %config InlineBackend.figure_formats = ['svg']
@@ -45,10 +43,6 @@ __CONFIG_CELL_METADATA: dict = {
     "tags": ["remove-cell"],
 }
 
-__INSTALL_CELL_CONTENT = f"""
-# WARNING: advised to install a specific version, e.g. {__PACKAGE_NAME}==0.1.2
-%pip install -q {__PACKAGE_NAME}
-"""
 __INSTALL_CELL_METADATA: dict = {
     **__CONFIG_CELL_METADATA,
     "tags": ["remove-cell", "skip-execution"],
@@ -95,7 +89,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     for filename in args.filenames:
         cell_id = 0
         if args.add_install_cell:
-            cell_content = __INSTALL_CELL_CONTENT.strip("\n")
+            cell_content = __get_install_cell().strip("\n")
             if args.extras_require:
                 extras = args.extras_require.strip()
                 cell_content += f"[{extras}]"
@@ -119,6 +113,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         _insert_autolink_concat(filename)
     return 0
+
+
+@lru_cache(maxsize=1)
+def __get_install_cell() -> str:
+    package_name = get_pypi_name()
+    return dedent(f"""
+    # WARNING: advised to install a specific version, e.g. {package_name}==0.1.2
+    %pip install -q {package_name}
+    """)
 
 
 def _update_cell(
