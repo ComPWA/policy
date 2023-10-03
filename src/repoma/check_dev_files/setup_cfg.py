@@ -17,6 +17,7 @@ from tomlkit.items import Array, Table
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
+from repoma.utilities.precommit import remove_precommit_hook
 from repoma.utilities.project_info import get_pypi_name
 from repoma.utilities.pyproject import (
     get_sub_table,
@@ -51,6 +52,7 @@ def _convert_to_pyproject() -> None:
         _update_optional_dependencies(pyproject, extras_require)
     write_pyproject(pyproject)
     os.remove(setup_cfg)
+    remove_precommit_hook("format-setup-cfg")
     msg = f"Converted {setup_cfg} configuration to {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
 
