@@ -37,8 +37,6 @@ from repoma.utilities.pyproject import (
 def main(ignore_author: bool) -> None:
     if CONFIG_PATH.setup_cfg.exists():
         _convert_to_pyproject()
-    if not CONFIG_PATH.pyproject.exists():
-        return
     executor = Executor()
     executor(_check_required_options)
     if not ignore_author:
