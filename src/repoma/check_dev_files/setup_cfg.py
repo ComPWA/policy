@@ -37,13 +37,13 @@ from repoma.utilities.pyproject import (
 def main(ignore_author: bool) -> None:
     if CONFIG_PATH.setup_cfg.exists():
         _convert_to_pyproject()
-    if not CONFIG_PATH.pyproject.exists():
-        return
     executor = Executor()
     executor(_check_required_options)
     if not ignore_author:
         executor(_update_author_data)
     executor(_fix_long_description)
+    if CONFIG_PATH.pyproject.exists():
+        executor(_remove_empty_tables)
     executor.finalize()
 
 
@@ -242,6 +242,30 @@ def __fix_long_description_in_setup_cfg() -> None:
         write_formatted_setup_cfg(new_cfg)
         msg = f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
         raise PrecommitError(msg)
+
+
+def _remove_empty_tables() -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
+    pyproject = load_pyproject()
+    if __recursive_remove_empty_tables(pyproject):
+        write_pyproject(pyproject)
+        msg = f"Removed empty tables from {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
+
+
+def __recursive_remove_empty_tables(table: Union[Container, Table]) -> bool:
+    updated = False
+    items = list(table.items())
+    for key, value in items:
+        if not isinstance(value, Table):
+            continue
+        if len(value) == 0:
+            del table[key]
+            updated = True
+        else:
+            updated |= __recursive_remove_empty_tables(value)
+    return updated
 
 
 def has_pyproject_build_system() -> bool:
