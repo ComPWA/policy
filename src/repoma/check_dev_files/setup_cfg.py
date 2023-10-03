@@ -52,6 +52,8 @@ def _convert_to_pyproject() -> None:
         _update_optional_dependencies(pyproject, extras_require)
     write_pyproject(pyproject)
     os.remove(setup_cfg)
+    if os.path.exists("setup.py"):
+        os.remove("setup.py")
     remove_precommit_hook("format-setup-cfg")
     msg = f"Converted {setup_cfg} configuration to {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
