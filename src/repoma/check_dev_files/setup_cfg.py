@@ -6,7 +6,7 @@ import re
 import textwrap
 from collections import defaultdict
 from configparser import RawConfigParser
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import tomlkit
 from ini2toml.api import Translator
@@ -18,7 +18,7 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
-from repoma.utilities.project_info import get_pypi_name
+from repoma.utilities.project_info import get_pypi_name, get_supported_python_versions
 from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
@@ -50,6 +50,8 @@ def _convert_to_pyproject() -> None:
     extras_require = _get_recursive_optional_dependencies()
     if extras_require:
         _update_optional_dependencies(pyproject, extras_require)
+    if "3.6" in get_supported_python_versions(pyproject):
+        __downgrade_setuptools(pyproject)
     write_pyproject(pyproject)
     os.remove(setup_cfg)
     if os.path.exists("setup.py"):
@@ -57,6 +59,25 @@ def _convert_to_pyproject() -> None:
     remove_precommit_hook("format-setup-cfg")
     msg = f"Converted {setup_cfg} configuration to {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
+
+
+def __downgrade_setuptools(pyproject: TOMLDocument) -> None:
+    if "3.6" not in get_supported_python_versions(pyproject):
+        return
+    build_system: Optional[Table] = pyproject.get("build-system")
+    if build_system is None:
+        return
+    requirements: Optional[Array] = build_system.get("requires")
+    if requirements is None:
+        return
+    for idx, package in enumerate(requirements):
+        if ">" not in package:
+            continue
+        package, *_ = package.split(">")
+        if package.strip() == "setuptools":
+            requirements[idx] = "setuptools>=58.0"
+            break
+    build_system["requires"] = requirements
 
 
 def _get_recursive_optional_dependencies() -> Dict[str, List[Tuple[str, str]]]:
