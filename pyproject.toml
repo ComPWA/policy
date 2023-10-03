@@ -44,28 +44,17 @@ requires-python = ">=3.6"
 
 [project.optional-dependencies]
 dev = [
-    "black",
     "labels",
-    "mypy",
-    "pre-commit >=1.4.0",
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-    "radon",
     "repo-maintenance[sty]",
-    "tox >=1.9",
-    "types-PyYAML",
-    "types-setuptools",
-    "types-toml",
-    'ruff; python_version >="3.7.0"',
+    "repo-maintenance[test]",
+    "tox >=1.9", # for skip_install, use_develop
 ]
-format = ["black"]
+format = [
+    "black",
+]
 lint = [
-    "mypy",
     "radon",
-    "types-PyYAML",
-    "types-setuptools",
-    "types-toml",
+    "repo-maintenance[mypy]",
     'ruff; python_version >="3.7.0"',
 ]
 mypy = [
@@ -75,18 +64,10 @@ mypy = [
     "types-toml",
 ]
 sty = [
-    "black",
-    "mypy",
     "pre-commit >=1.4.0",
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-    "radon",
+    "repo-maintenance[format]",
     "repo-maintenance[lint]",
-    "types-PyYAML",
-    "types-setuptools",
-    "types-toml",
-    'ruff; python_version >="3.7.0"',
+    "repo-maintenance[test]", # for pytest type hints
 ]
 test = [
     "pytest",
