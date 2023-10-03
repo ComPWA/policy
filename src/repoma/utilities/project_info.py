@@ -111,7 +111,7 @@ def get_supported_python_versions(
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
-    ['3.10', '3.11', '3.6', '3.7', '3.8', '3.9']
+    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11']
     """
     project_info = get_project_info(pyproject)
     if project_info.supported_python_versions is None:

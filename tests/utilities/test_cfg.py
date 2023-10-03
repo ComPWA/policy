@@ -1,11 +1,19 @@
 import io
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
 
 from repoma.errors import PrecommitError
-from repoma.utilities.cfg import format_config, open_config
-from repoma.utilities.project_info import get_repo_url
+from repoma.utilities.cfg import copy_config, format_config, open_config
+from repoma.utilities.project_info import get_repo_url, open_setup_cfg
+
+
+def test_copy_config():
+    cfg = open_setup_cfg()
+    cfg_copy = copy_config(cfg)
+    assert cfg_copy is not cfg
+    assert cfg_copy == cfg
 
 
 @pytest.mark.parametrize(
@@ -90,6 +98,21 @@ def test_open_config_exception():
     path = "non-existent.cfg"
     with pytest.raises(PrecommitError, match=rf'^Config file "{path}" does not exist$'):
         open_config(path)
+
+
+def test_open_config_from_path():
+    path_str = "setup.cfg"
+    cfg_from_str = open_config(path_str)
+    assert cfg_from_str.sections() == [
+        "metadata",
+        "options",
+        "options.extras_require",
+        "options.entry_points",
+        "options.packages.find",
+        "options.package_data",
+    ]
+    cfg_from_path = open_config(Path(path_str))
+    assert cfg_from_path == cfg_from_str
 
 
 def test_open_config_from_stream():

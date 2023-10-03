@@ -6,7 +6,7 @@ import re
 import textwrap
 from collections import defaultdict
 from configparser import RawConfigParser
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import tomlkit
 from ini2toml.api import Translator
@@ -15,10 +15,18 @@ from tomlkit.container import Container
 from tomlkit.items import Array, Table
 
 from repoma.errors import PrecommitError
+from repoma.format_setup_cfg import write_formatted_setup_cfg
 from repoma.utilities import CONFIG_PATH
+from repoma.utilities.cfg import copy_config
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
-from repoma.utilities.project_info import get_pypi_name, get_supported_python_versions
+from repoma.utilities.project_info import (
+    ProjectInfo,
+    get_project_info,
+    get_pypi_name,
+    get_supported_python_versions,
+    open_setup_cfg,
+)
 from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
@@ -40,6 +48,8 @@ def main(ignore_author: bool) -> None:
 
 
 def _convert_to_pyproject() -> None:
+    if "3.6" in get_supported_python_versions():
+        return
     setup_cfg = CONFIG_PATH.setup_cfg
     with open(setup_cfg) as stream:
         original_contents = stream.read()
@@ -50,8 +60,6 @@ def _convert_to_pyproject() -> None:
     extras_require = _get_recursive_optional_dependencies()
     if extras_require:
         _update_optional_dependencies(pyproject, extras_require)
-    if "3.6" in get_supported_python_versions(pyproject):
-        __downgrade_setuptools(pyproject)
     write_pyproject(pyproject)
     os.remove(setup_cfg)
     if os.path.exists("setup.py"):
@@ -59,25 +67,6 @@ def _convert_to_pyproject() -> None:
     remove_precommit_hook("format-setup-cfg")
     msg = f"Converted {setup_cfg} configuration to {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
-
-
-def __downgrade_setuptools(pyproject: TOMLDocument) -> None:
-    if "3.6" not in get_supported_python_versions(pyproject):
-        return
-    build_system: Optional[Table] = pyproject.get("build-system")
-    if build_system is None:
-        return
-    requirements: Optional[Array] = build_system.get("requires")
-    if requirements is None:
-        return
-    for idx, package in enumerate(requirements):
-        if ">" not in package:
-            continue
-        package, *_ = package.split(">")
-        if package.strip() == "setuptools":
-            requirements[idx] = "setuptools>=58.0"
-            break
-    build_system["requires"] = requirements
 
 
 def _get_recursive_optional_dependencies() -> Dict[str, List[Tuple[str, str]]]:
@@ -144,7 +133,12 @@ def _update_container(
 
 
 def _check_required_options() -> None:
+    if not has_pyproject_build_system():
+        return
     pyproject = load_pyproject()
+    project_info = get_project_info()
+    if project_info.is_empty():
+        return
     required_options = {
         "project": [
             "name",
@@ -174,6 +168,15 @@ def _check_required_options() -> None:
 
 
 def _update_author_data() -> None:
+    __update_author_data_in_pyproject()
+    __update_author_data_in_setup_cfg()
+
+
+def __update_author_data_in_pyproject() -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
+    if not has_pyproject_build_system():
+        return
     pyproject = load_pyproject()
     author_info = dict(
         name="Common Partial Wave Analysis",
@@ -189,8 +192,29 @@ def _update_author_data() -> None:
         raise PrecommitError(msg)
 
 
+def __update_author_data_in_setup_cfg() -> None:
+    if not CONFIG_PATH.setup_cfg.exists():
+        return
+    old_cfg = open_setup_cfg()
+    new_cfg = copy_config(old_cfg)
+    new_cfg.set("metadata", "author", "Common Partial Wave Analysis")
+    new_cfg.set("metadata", "author_email", "Common Partial Wave Analysis")
+    new_cfg.set("metadata", "author_email", "compwa-admin@ep1.rub.de")
+    if new_cfg != old_cfg:
+        write_formatted_setup_cfg(new_cfg)
+        msg = f"Updated author info in ./{CONFIG_PATH.setup_cfg}"
+        raise PrecommitError(msg)
+
+
 def _fix_long_description() -> None:
     if not os.path.exists("README.md"):
+        return
+    __fix_long_description_in_pyproject()
+    __fix_long_description_in_setup_cfg()
+
+
+def __fix_long_description_in_pyproject() -> None:
+    if not has_pyproject_build_system():
         return
     cfg = load_pyproject()
     project = get_sub_table(cfg, "project", create=True)
@@ -205,3 +229,31 @@ def _fix_long_description() -> None:
     write_pyproject(cfg)
     msg = f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
     raise PrecommitError(msg)
+
+
+def __fix_long_description_in_setup_cfg() -> None:
+    if not has_setup_cfg_build_system():
+        return
+    old_cfg = open_setup_cfg()
+    new_cfg = copy_config(old_cfg)
+    new_cfg.set("metadata", "long_description", "file: README.md")
+    new_cfg.set("metadata", "long_description_content_type", "text/markdown")
+    if new_cfg != old_cfg:
+        write_formatted_setup_cfg(new_cfg)
+        msg = f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
+        raise PrecommitError(msg)
+
+
+def has_pyproject_build_system() -> bool:
+    if not CONFIG_PATH.pyproject.exists():
+        return False
+    pyproject = load_pyproject()
+    project_info = ProjectInfo.from_pyproject_toml(pyproject)
+    return not project_info.is_empty()
+
+
+def has_setup_cfg_build_system() -> bool:
+    if not CONFIG_PATH.setup_cfg.exists():
+        return False
+    cfg = open_setup_cfg()
+    return cfg.has_section("metadata")

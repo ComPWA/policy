@@ -2,11 +2,16 @@
 
 import os
 from copy import deepcopy
+from textwrap import dedent
 from typing import List, Set
 
 from ruamel.yaml.comments import CommentedMap
 from tomlkit.items import Array, Table
 
+from repoma.check_dev_files.setup_cfg import (
+    has_pyproject_build_system,
+    has_setup_cfg_build_system,
+)
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, natural_sorting
 from repoma.utilities.executor import Executor
@@ -17,6 +22,7 @@ from repoma.utilities.precommit import (
 from repoma.utilities.project_info import (
     get_project_info,
     get_supported_python_versions,
+    open_setup_cfg,
 )
 from repoma.utilities.pyproject import (
     complies_with_subset,
@@ -36,18 +42,56 @@ def main() -> None:
         add_badge,
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
+    executor(_check_setup_cfg)
     executor(_update_nbqa_settings)
     executor(_update_ruff_settings)
     executor(_update_ruff_per_file_ignores)
     executor(_update_ruff_pydocstyle_settings)
     executor(_update_precommit_hook)
     executor(_update_precommit_nbqa_hook)
-    executor(_update_setup_cfg)
+    executor(_update_pyproject)
     executor(_update_vscode_settings)
     executor.finalize()
 
 
-def _update_setup_cfg() -> None:
+def _check_setup_cfg() -> None:
+    if not has_setup_cfg_build_system():
+        return
+    cfg = open_setup_cfg()
+    extras_require = "options.extras_require"
+    if not cfg.has_section(extras_require):
+        msg = f"Please list ruff under a section [{extras_require}] in setup.cfg"
+        raise PrecommitError(msg)
+    msg = f"""\
+        Section [{extras_require}] in setup.cfg should look like this:
+
+        [{extras_require}]
+        ...
+        lint =
+            ruff
+            ...
+        sty =
+            ...
+            %(lint)s
+            ...
+        dev =
+            ...
+            %(sty)s
+            ...
+    """
+    msg = dedent(msg).strip()
+    for section in ("dev", "lint", "sty"):
+        if cfg.has_option(extras_require, section):
+            continue
+        raise PrecommitError(msg)
+    lint_section = cfg.get(extras_require, "lint")
+    if not any("ruff" in line for line in lint_section.split("\n")):
+        raise PrecommitError(msg)
+
+
+def _update_pyproject() -> None:
+    if not has_pyproject_build_system():
+        return
     pyproject = load_pyproject()
     project_info = get_project_info(pyproject)
     package = project_info.name

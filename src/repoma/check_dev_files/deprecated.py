@@ -7,6 +7,7 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
+from repoma.utilities.project_info import open_setup_cfg
 from repoma.utilities.pyproject import load_pyproject, write_pyproject
 from repoma.utilities.readme import remove_badge
 from repoma.utilities.vscode import (
@@ -149,6 +150,27 @@ def __remove_file(path: str) -> None:
 
 
 def __uninstall(package: str) -> None:
+    __uninstall_from_setup_cfg(package)
+    __uninstall_from_pyproject_toml(package)
+
+
+def __uninstall_from_setup_cfg(package: str) -> None:
+    if not os.path.exists(CONFIG_PATH.setup_cfg):
+        return
+    cfg = open_setup_cfg()
+    section = "options.extras_require"
+    if not cfg.has_section(section):
+        return
+    for option in cfg[section]:
+        if not cfg.has_option(section, option):
+            continue
+        if package not in cfg.get(section, option):
+            continue
+        msg = f'Please remove {package} from the "{section}" section of setup.cfg'
+        raise PrecommitError(msg)
+
+
+def __uninstall_from_pyproject_toml(package: str) -> None:
     if not os.path.exists(CONFIG_PATH.pyproject):
         return
     pyproject = load_pyproject()
