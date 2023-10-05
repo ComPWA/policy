@@ -14,7 +14,6 @@ from repoma.errors import PrecommitError
 class _ConfigFilePaths(NamedTuple):
     citation: Path = Path("CITATION.cff")
     codecov: Path = Path("codecov.yml")
-    commitlint: Path = Path("commitlint.config.js")
     cspell: Path = Path(".cspell.json")
     editorconfig: Path = Path(".editorconfig")
     github_workflow_dir: Path = Path(".github/workflows")
