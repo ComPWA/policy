@@ -32,7 +32,7 @@ from . import (
 )
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: PLR0915
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
@@ -162,7 +162,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     is_python_repo = not args.no_python
     if not args.repo_title:
         args.repo_title = args.repo_name
-
+    has_notebooks = not args.no_notebooks
     executor = Executor()
     executor(citation.main)
     executor(commitlint.main)
@@ -185,7 +185,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(toml.main)  # has to run before pre-commit
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
-        executor(black.main, not args.no_notebooks)
+        executor(black.main, has_notebooks)
         executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
@@ -199,7 +199,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
     executor(remove_deprecated_tools, args.keep_issue_templates)
-    executor(vscode.main)
+    executor(vscode.main, has_notebooks)
     if not args.no_gitpod:
         executor(gitpod.main)
     executor(precommit.main)
