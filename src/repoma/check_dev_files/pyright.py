@@ -48,5 +48,5 @@ def _update_settings() -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
-        msg = f"Updated black configuration in {CONFIG_PATH.pyproject}"
+        msg = f"Updated pyright configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)

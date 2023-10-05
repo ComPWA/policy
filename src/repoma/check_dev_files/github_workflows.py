@@ -1,6 +1,7 @@
 """Check :file:`.github/workflows` folder content."""
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import List, Tuple
 
@@ -9,10 +10,10 @@ from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR, write
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, hash_file, write
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
-from repoma.utilities.setup_cfg import get_pypi_name
+from repoma.utilities.project_info import get_pypi_name
 from repoma.utilities.vscode import (
     add_extension_recommendation,
     remove_extension_recommendation,
@@ -42,6 +43,7 @@ def main(
         skip_tests,
         test_extras,
     )
+    executor(_update_pr_linting)
     executor(_recommend_vscode_extension)
     executor.finalize()
 
@@ -68,6 +70,17 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
     executor(update)
     executor(remove_workflow, "milestone.yml")
     executor.finalize()
+
+
+def _update_pr_linting() -> None:
+    filename = "pr-linting.yml"
+    input_path = REPOMA_DIR / CONFIG_PATH.github_workflow_dir / filename
+    output_path = CONFIG_PATH.github_workflow_dir / filename
+    output_path.parent.mkdir(exist_ok=True)
+    if not output_path.exists() or hash_file(input_path) != hash_file(output_path):
+        shutil.copyfile(input_path, output_path)
+        msg = f'Updated "{output_path}" workflow'
+        raise PrecommitError(msg)
 
 
 def _update_ci_workflow(

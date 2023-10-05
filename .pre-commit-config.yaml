@@ -3,7 +3,6 @@ ci:
   autoupdate_schedule: quarterly
   skip:
     - check-dev-files
-    - format-setup-cfg
     - mypy
     - pyright
     - repoma-self-check
@@ -48,12 +47,6 @@ repos:
           - --no-pypi
           - --repo-name=repo-maintenance
           - --repo-title=ComPWA Repository Maintenance
-
-      - id: format-setup-cfg
-        name: Format setup.cfg
-        entry: format-setup-cfg
-        language: python
-        files: ^setup.cfg$
 
       - id: repoma-self-check
         name: repoma-self-check
@@ -125,3 +118,11 @@ repos:
     rev: v0.8.1
     hooks:
       - id: taplo
+
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort
+        args:
+          - --in-place
+        exclude: (?x)^(labels.toml|labels-physics.toml)$

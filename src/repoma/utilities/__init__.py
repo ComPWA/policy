@@ -1,5 +1,6 @@
 """Collection of helper functions that are shared by all sub-hooks."""
 
+import hashlib
 import io
 import os
 import re
@@ -14,7 +15,6 @@ from repoma.errors import PrecommitError
 class _ConfigFilePaths(NamedTuple):
     citation: Path = Path("CITATION.cff")
     codecov: Path = Path("codecov.yml")
-    commitlint: Path = Path("commitlint.config.js")
     cspell: Path = Path(".cspell.json")
     editorconfig: Path = Path(".editorconfig")
     github_workflow_dir: Path = Path(".github/workflows")
@@ -38,6 +38,19 @@ class _ConfigFilePaths(NamedTuple):
 
 CONFIG_PATH = _ConfigFilePaths()
 REPOMA_DIR = Path(repoma.__file__).parent.absolute()
+
+
+def hash_file(path: Union[Path, str]) -> str:
+    # https://stackoverflow.com/a/22058673
+    buffer_size = 65_536
+    sha256 = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            data = f.read(buffer_size)
+            if not data:
+                break
+            sha256.update(data)
+    return sha256.hexdigest()
 
 
 def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002

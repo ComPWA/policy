@@ -62,8 +62,7 @@
     "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
     "src/repoma/.template/.prettierrc": true,
-    "src/repoma/.template/.taplo.toml": true,
-    "src/repoma/.template/commitlint.config.js": true
+    "src/repoma/.template/.taplo.toml": true
   },
   "yaml.schemas": {
     "https://citation-file-format.github.io/1.2.0/schema.json": "CITATION.cff",

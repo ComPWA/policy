@@ -10,7 +10,7 @@ from typing import Optional, Sequence, Union
 
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.cfg import format_config
-from repoma.utilities.setup_cfg import open_setup_cfg
+from repoma.utilities.project_info import open_setup_cfg
 
 
 def format_setup_cfg() -> None:
