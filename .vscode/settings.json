@@ -18,7 +18,8 @@
     "editor.codeActionsOnSave": {
       "source.organizeImports": true
     },
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.rulers": [88]
   },
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -30,7 +31,6 @@
   "coverage-gutters.showLineCoverage": true,
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
-  "editor.rulers": [88],
   "files.watcherExclude": {
     "**/*_cache/**": true,
     "**/.eggs/**": true,
