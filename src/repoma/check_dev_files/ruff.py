@@ -173,6 +173,8 @@ def _update_ruff_settings() -> None:
         "E501",  # line-width already handled by black
         "SIM108",  # allow if-else blocks
     ]
+    if "3.6" in get_supported_python_versions():
+        extend_ignore.append("UP036")
     ignores = sorted({*settings.get("ignore", []), *extend_ignore})
     minimal_settings = {
         "extend-select": __get_selected_ruff_rules(),

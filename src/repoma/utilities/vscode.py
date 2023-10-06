@@ -2,15 +2,21 @@
 
 import collections
 import json
+import sys
 from collections import abc
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Iterable, List, OrderedDict, TypeVar, Union, overload
+from typing import Dict, Iterable, List, TypeVar, Union, overload
 
 from repoma.errors import PrecommitError
 from repoma.utilities.executor import Executor
 
 from . import CONFIG_PATH
+
+if sys.version_info < (3, 7):
+    from typing_extensions import OrderedDict
+else:
+    from typing import OrderedDict
 
 
 def remove_setting(key: Union[str, dict]) -> None:
