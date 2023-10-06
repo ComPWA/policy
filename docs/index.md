@@ -35,7 +35,6 @@ pre-commit install
 The `repo-maintenance` repository provides the following hooks:
 
 - [`check-dev-files`](./check-dev-files.md)
-- {mod}`check-dev-files <.check_dev_files>`
 - {mod}`colab-toc-visible <.colab_toc_visible>`
 - {mod}`fix-nbformat-version <.fix_nbformat_version>`
 - {mod}`format-setup-cfg <.format_setup_cfg>`
