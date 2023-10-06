@@ -37,4 +37,4 @@ then run
 pre-commit autoupdate --repo=https://github.com/ComPWA/repo-maintenance
 ```
 
-This example lists all available hooks (listed here as `id`s) ― you can remove some of them.
+This example lists [all available hooks](./.pre-commit-hooks.yaml) (listed here as `id`s) ― you can remove some of them.
