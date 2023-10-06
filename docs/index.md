@@ -3,7 +3,7 @@
 :::{title} Welcome
 :::
 
-This package standardizes and synchronizes the developer environment of repositories by the [ComPWA organization](https://github.com/ComPWA). The maintenance is performed through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The [`check-dev-files`](./check-dev-files.md) in particular can be used as a **cookie cutter** for new repositories.
+This package standardizes and synchronizes the developer environment of repositories by the [ComPWA organization](https://github.com/ComPWA). The maintenance is performed through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The {mod}`check-dev-files <.check_dev_files>` in particular can be used as a **cookie cutter** for new repositories.
 
 ## Usage
 
