@@ -90,7 +90,7 @@ def _extract_python_versions(classifiers: List[str]) -> Optional[List[str]]:
 
 
 def get_pypi_name(pyproject: Optional[TOMLDocument] = None) -> str:
-    """Extract package name for PyPI from `setup.cfg`.
+    """Extract package name for PyPI from :file:`setup.cfg`.
 
     >>> get_pypi_name()
     'repo-maintenance'

@@ -75,6 +75,7 @@ autodoc_typehints_format = "short"
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
+default_role = "py:obj"
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
@@ -122,6 +123,7 @@ nitpick_ignore_regex = [
     (r"py:.*", r"ruamel\.yaml\..*"),
 ]
 nitpicky = True
+primary_domain = "py"
 project = REPO_NAME
 release = get_version(REPO_NAME)
 version = get_version(REPO_NAME)
