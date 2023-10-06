@@ -126,4 +126,4 @@ repos:
       - id: toml-sort
         args:
           - --in-place
-        exclude: (?x)^(labels.toml|labels-physics.toml)$
+        exclude: (?x)^(labels/.*\.toml)$

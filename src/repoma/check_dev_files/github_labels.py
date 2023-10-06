@@ -1,4 +1,4 @@
-"""Check whether the repository (still) contains a ``labels.toml`` file.
+"""Check whether the repository (still) contains a :file:`labels.toml` file.
 
 If it's still there remove it, because it is now managed through
 https://github.com/ComPWA/repo-maintenance.
