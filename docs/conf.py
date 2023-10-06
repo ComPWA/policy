@@ -117,10 +117,10 @@ myst_enable_extensions = [
     "colon_fence",
 ]
 nitpick_ignore = [
-    ("py:class", "repoma.utilities.precommit.T"),
     ("py:class", "tomlkit.container.Container"),
 ]
 nitpick_ignore_regex = [
+    ("py:class", r"^.*.[A-Z]$"),
     (r"py:.*", r"ruamel\.yaml\..*"),
 ]
 nitpicky = True
