@@ -32,7 +32,7 @@ from . import (
 )
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: PLR0915
+def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
@@ -200,8 +200,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:  # noqa: PLR0915
         executor(setup_cfg.main, args.ignore_author)
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
-    if not args.no_gitpod:
-        executor(gitpod.main)
+    executor(gitpod.main, args.no_gitpod)
     executor(precommit.main)
     return executor.finalize(exception=False)
 

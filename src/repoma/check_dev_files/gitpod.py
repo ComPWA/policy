@@ -14,7 +14,13 @@ from repoma.utilities.yaml import write_yaml
 __CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 
 
-def main() -> None:
+def main(no_gitpod: bool) -> None:
+    if no_gitpod:
+        if CONFIG_PATH.gitpod.exists():
+            os.remove(CONFIG_PATH.gitpod)
+            msg = f"Removed {CONFIG_PATH.gitpod} as requested by --no-gitpod"
+            raise PrecommitError(msg)
+        return
     pin_dependencies = os.path.exists(__CONSTRAINTS_FILE)
     error_message = ""
     expected_config = _generate_gitpod_config(pin_dependencies)
