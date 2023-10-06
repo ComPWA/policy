@@ -41,6 +41,7 @@ def _update_settings(has_notebooks: bool) -> None:
 
 def _remove_outdated_settings() -> None:
     outdated_settings = [
+        "editor.rulers",
         "githubPullRequests.telemetry.enabled",
         "gitlens.advanced.telemetry.enabled",
         "python.analysis.diagnosticMode",

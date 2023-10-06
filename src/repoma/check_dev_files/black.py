@@ -36,7 +36,10 @@ def main(has_notebooks: bool) -> None:
     executor(
         set_sub_setting,
         "[python]",
-        {"editor.defaultFormatter": "ms-python.black-formatter"},
+        {
+            "editor.defaultFormatter": "ms-python.black-formatter",
+            "editor.rulers": [88],
+        },
     )
     executor(remove_precommit_hook, "nbqa-black")
     executor.finalize()

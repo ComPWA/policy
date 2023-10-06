@@ -1,13 +1,34 @@
 """Helper functions for modifying a VSCode configuration."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Union
 
 from repoma.errors import PrecommitError
 from repoma.utilities.executor import Executor
 
 from . import CONFIG_PATH
+
+
+def remove_setting(key: Union[str, dict]) -> None:
+    old = __load_config(CONFIG_PATH.vscode_settings, create=True)
+    new = deepcopy(old)
+    _recursive_remove_setting(key, new)
+    _update_settings(old, new)
+
+
+def _recursive_remove_setting(nested_keys: Union[str, dict], settings: dict) -> None:
+    if isinstance(nested_keys, str) and nested_keys in settings:
+        settings.pop(nested_keys)
+    elif isinstance(nested_keys, dict):
+        for key, sub_keys in nested_keys.items():
+            if key not in settings:
+                continue
+            if isinstance(sub_keys, str):
+                sub_keys = [sub_keys]
+            for sub_key in sub_keys:
+                _recursive_remove_setting(sub_key, settings[key])
 
 
 def remove_settings(keys: Iterable[str]) -> None:

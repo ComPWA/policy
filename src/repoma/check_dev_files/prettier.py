@@ -47,10 +47,10 @@ def _remove_configuration() -> None:
 
 def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
-        if CONFIG_PATH.prettier.exists():
-            os.remove(CONFIG_PATH.prettier)
-            msg = f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
-            raise PrecommitError(msg)
+        executor = Executor()
+        executor(__remove_prettierrc)
+        executor(vscode.remove_setting, {"[markdown]": "editor.wordWrap"})
+        executor.finalize()
     else:
         if not CONFIG_PATH.prettier.exists():
             existing_content = ""
@@ -75,6 +75,14 @@ def _fix_config_content(no_prettierrc: bool) -> None:
             os.remove(path)
             msg = f'Removed "{path}": "{CONFIG_PATH.prettier}" should suffice'
             raise PrecommitError(msg)
+
+
+def __remove_prettierrc() -> None:
+    if not CONFIG_PATH.prettier.exists():
+        return
+    CONFIG_PATH.prettier.unlink()
+    msg = f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
+    raise PrecommitError(msg)
 
 
 def _update_prettier_ignore() -> None:
