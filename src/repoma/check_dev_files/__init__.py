@@ -1,7 +1,7 @@
 """A collection of scripts that check the file structure of a repository."""
 
-import argparse
 import sys
+from argparse import ArgumentParser
 from typing import List, Optional, Sequence
 
 from repoma.check_dev_files.deprecated import remove_deprecated_tools
@@ -33,7 +33,56 @@ from . import (
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(__doc__)
+    parser = _create_argparse()
+    args = parser.parse_args(argv)
+    is_python_repo = not args.no_python
+    if not args.repo_title:
+        args.repo_title = args.repo_name
+    has_notebooks = not args.no_notebooks
+    executor = Executor()
+    executor(citation.main)
+    executor(commitlint.main)
+    executor(cspell.main)
+    executor(editorconfig.main, args.no_python)
+    if not args.allow_labels:
+        executor(github_labels.main)
+    executor(
+        github_workflows.main,
+        allow_deprecated=args.allow_deprecated_workflows,
+        doc_apt_packages=_to_list(args.doc_apt_packages),
+        no_macos=args.no_macos,
+        no_pypi=args.no_pypi,
+        no_version_branches=args.no_version_branches,
+        single_threaded=args.pytest_single_threaded,
+        skip_tests=_to_list(args.ci_skipped_tests),
+        test_extras=_to_list(args.ci_test_extras),
+    )
+    executor(nbstripout.main)
+    executor(toml.main)  # has to run before pre-commit
+    executor(prettier.main, args.no_prettierrc)
+    if is_python_repo:
+        executor(black.main, has_notebooks)
+        executor(release_drafter.main, args.repo_name, args.repo_title)
+        if args.pin_requirements != "no":
+            executor(
+                update_pip_constraints.main,
+                cron_frequency=args.pin_requirements,
+            )
+        executor(mypy.main)
+        executor(pyright.main)
+        executor(pytest.main)
+        executor(pyupgrade.main)
+        executor(ruff.main)
+        executor(setup_cfg.main, args.ignore_author)
+    executor(remove_deprecated_tools, args.keep_issue_templates)
+    executor(vscode.main, has_notebooks)
+    executor(gitpod.main, args.no_gitpod)
+    executor(precommit.main)
+    return executor.finalize(exception=False)
+
+
+def _create_argparse() -> ArgumentParser:
+    parser = ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
         action="store_true",
@@ -158,51 +207,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         type=str,
     )
-    args = parser.parse_args(argv)
-    is_python_repo = not args.no_python
-    if not args.repo_title:
-        args.repo_title = args.repo_name
-    has_notebooks = not args.no_notebooks
-    executor = Executor()
-    executor(citation.main)
-    executor(commitlint.main)
-    executor(cspell.main)
-    executor(editorconfig.main, args.no_python)
-    if not args.allow_labels:
-        executor(github_labels.main)
-    executor(
-        github_workflows.main,
-        allow_deprecated=args.allow_deprecated_workflows,
-        doc_apt_packages=_to_list(args.doc_apt_packages),
-        no_macos=args.no_macos,
-        no_pypi=args.no_pypi,
-        no_version_branches=args.no_version_branches,
-        single_threaded=args.pytest_single_threaded,
-        skip_tests=_to_list(args.ci_skipped_tests),
-        test_extras=_to_list(args.ci_test_extras),
-    )
-    executor(nbstripout.main)
-    executor(toml.main)  # has to run before pre-commit
-    executor(prettier.main, args.no_prettierrc)
-    if is_python_repo:
-        executor(black.main, has_notebooks)
-        executor(release_drafter.main, args.repo_name, args.repo_title)
-        if args.pin_requirements != "no":
-            executor(
-                update_pip_constraints.main,
-                cron_frequency=args.pin_requirements,
-            )
-        executor(mypy.main)
-        executor(pyright.main)
-        executor(pytest.main)
-        executor(pyupgrade.main)
-        executor(ruff.main)
-        executor(setup_cfg.main, args.ignore_author)
-    executor(remove_deprecated_tools, args.keep_issue_templates)
-    executor(vscode.main, has_notebooks)
-    executor(gitpod.main, args.no_gitpod)
-    executor(precommit.main)
-    return executor.finalize(exception=False)
+    return parser
 
 
 def _to_list(arg: str) -> List[str]:

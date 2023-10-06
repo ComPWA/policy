@@ -3,7 +3,7 @@
 :::{title} Welcome
 :::
 
-This package standardizes and synchronizes the developer environment of repositories by the [ComPWA organization](https://github.com/ComPWA). The maintenance is performed through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The {mod}`check-dev-files <.check_dev_files>` in particular can be used as a **cookie cutter** for new repositories.
+This package standardizes and synchronizes the developer environment of repositories by the [ComPWA organization](https://github.com/ComPWA). The maintenance is performed through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The [`check-dev-files`](./check-dev-files.md) in particular can be used as a **cookie cutter** for new repositories.
 
 ## Usage
 
@@ -34,6 +34,7 @@ pre-commit install
 
 The `repo-maintenance` repository provides the following hooks:
 
+- [`check-dev-files`](./check-dev-files.md)
 - {mod}`check-dev-files <.check_dev_files>`
 - {mod}`colab-toc-visible <.colab_toc_visible>`
 - {mod}`fix-nbformat-version <.fix_nbformat_version>`
@@ -43,6 +44,7 @@ The `repo-maintenance` repository provides the following hooks:
 
 ```{toctree}
 :hidden:
+check-dev-files
 API <api/repoma>
 Changelog <https://github.com/ComPWA/repoma/releases>
 Upcoming features <https://github.com/ComPWA/repoma/milestones?direction=asc&sort=title&state=open>
