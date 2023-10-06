@@ -67,6 +67,10 @@ def _update_doc_settings() -> None:
     }
     executor = Executor()
     executor(vscode.set_setting, settings)
+    executor(
+        vscode.add_extension_recommendation,
+        "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
+    )
     executor(vscode.add_extension_recommendation, "ms-vscode.live-server")
     executor.finalize()
 
