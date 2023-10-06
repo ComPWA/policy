@@ -37,7 +37,9 @@ def _update_vscode_settings() -> None:
     else:
         executor(add_extension_recommendation, "ms-python.mypy-type-checker")
         settings = {
-            "mypy-type-checker.args": ["--config-file", "pyproject.toml"],
+            "mypy-type-checker.args": [
+                "--config-file=${workspaceFolder}/pyproject.toml"
+            ],
             "mypy-type-checker.importStrategy": "fromEnvironment",
         }
         executor(set_setting, settings)
