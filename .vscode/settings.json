@@ -40,6 +40,7 @@
   },
   "git.rebaseWhenSync": true,
   "github-actions.workflows.pinned.workflows": [".github/workflows/ci.yml"],
+  "livePreview.defaultPreviewPath": "docs/_build/html",
   "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
   "mypy-type-checker.importStrategy": "fromEnvironment",
   "python.analysis.autoImportCompletions": false,

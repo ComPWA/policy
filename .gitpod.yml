@@ -18,6 +18,7 @@ vscode:
     - eamodio.gitlens
     - editorconfig.editorconfig
     - esbenp.prettier-vscode
+    - executablebookproject.myst-highlight
     - garaioag.garaio-vscode-unwanted-recommendations
     - github.vscode-github-actions
     - github.vscode-pull-request-github
@@ -25,6 +26,7 @@ vscode:
     - ms-python.mypy-type-checker
     - ms-python.python
     - ms-python.vscode-pylance
+    - ms-vscode.live-server
     - ms-vsliveshare.vsliveshare
     - redhat.vscode-yaml
     - ryanluker.vscode-coverage-gutters
