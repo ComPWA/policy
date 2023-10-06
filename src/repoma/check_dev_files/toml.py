@@ -1,7 +1,7 @@
 """Configuration for working with TOML files."""
-
 import os
 import shutil
+from glob import glob
 from pathlib import Path
 from typing import List, Union
 
@@ -73,10 +73,8 @@ def _update_tomlsort_hook() -> None:
         repo="https://github.com/pappasam/toml-sort",
         hooks=[CommentedMap(id="toml-sort", args=["--in-place"])],
     )
-    excludes = ["labels.toml", "labels-physics.toml"]
-    excludes = [f for f in excludes if os.path.exists(f)]
-    if excludes:
-        expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
+    if glob("labels/*.toml"):
+        expected_hook["hooks"][0]["exclude"] = r"(?x)^(labels/.*\.toml)$"
     update_single_hook_precommit_repo(expected_hook)
 
 
