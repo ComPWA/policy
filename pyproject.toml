@@ -87,6 +87,7 @@ reportPrivateImportUsage = false
 reportPrivateUsage = false
 reportUnboundVariable = false
 reportUnknownArgumentType = false
+reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnknownParameterType = false
 reportUnknownVariableType = false
@@ -151,21 +152,22 @@ extend-select = [
     "YTT",
 ]
 ignore = [
-    "C408", # Unnecessary dict call - rewrite as a literal
-    "D101", # class docstring
-    "D102", # method docstring
-    "D103", # function docstring
-    "D105", # magic method docstring
-    "D107", # init docstring
-    "D203", # conflicts with D211
-    "D213", # multi-line docstring should start at the second line
-    "D407", # missing dashed underline after section
-    "D416", # section name does not have to end with a colon
-    "E501", # handled by black formatting
-    "PLR0913", # sympy functions
-    "PLW2901", # often used for xreplace
-    "S301", # allow pickle
-    "SIM108", # if-else-block-instead-of-if-exp
+    "C408",
+    "D101",
+    "D102",
+    "D103",
+    "D105",
+    "D107",
+    "D203",
+    "D213",
+    "D407",
+    "D416",
+    "E501",
+    "PLR0913",
+    "PLW2901",
+    "S301",
+    "SIM108",
+    "UP036",
 ]
 show-fixes = true
 src = [
