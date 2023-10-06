@@ -139,7 +139,7 @@ def sort_case_insensitive(dct):  # type: ignore[no-untyped-def]
 
     This function is implemented in order to :func:`~json.dump` a JSON file with a
     sorting that is the same as `the one used by VS Code
-    <https://code.visualstudio.com/updates/v1_76#_jsonc-document-sorting>`.
+    <https://code.visualstudio.com/updates/v1_76#_jsonc-document-sorting>`_.
 
     >>> sort_case_insensitive(
     ...     {
