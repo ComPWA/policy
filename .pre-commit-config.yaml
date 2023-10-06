@@ -44,6 +44,7 @@ repos:
         args:
           - --allow-labels
           - --no-notebooks
+          - --no-prettierrc
           - --no-pypi
           - --repo-name=repo-maintenance
           - --repo-title=ComPWA Repository Maintenance
