@@ -140,9 +140,8 @@ def _is_equivalent_repo(expected: CommentedMap, existing: CommentedMap) -> bool:
 def update_precommit_hook(repo_url: str, expected_hook: CommentedMap) -> None:
     """Update the pre-commit hook definition of a specific pre-commit repo.
 
-    Just like :func:`update_precommit_repo`, this function updates the
-    :code:`.pre-commit-config.yaml` file, but does this only for a specific hook
-    definition *within* a pre-commit repository definition.
+    This function updates the :code:`.pre-commit-config.yaml` file, but does this only
+    for a specific hook definition *within* a pre-commit repository definition.
     """
     if not CONFIG_PATH.precommit.exists():
         return
@@ -269,7 +268,7 @@ class PrecommitConfig:
         return None
 
 
-_T = TypeVar("_T", Hook, PrecommitCi, PrecommitConfig, Repo)
+T = TypeVar("T", Hook, PrecommitCi, PrecommitConfig, Repo)
 
 
 def asdict(inst: Any) -> dict:
@@ -280,7 +279,7 @@ def asdict(inst: Any) -> dict:
     )
 
 
-def fromdict(definition: dict, typ: Type[_T]) -> _T:
+def fromdict(definition: dict, typ: Type[T]) -> T:
     if typ in {Hook, PrecommitCi}:
         return typ(**definition)  # type: ignore[return-value]
     if typ is Repo:

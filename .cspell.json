@@ -64,6 +64,7 @@
     "pytest",
     "PYTHONHASHSEED",
     "repoma",
+    "toctree",
     "Zenodo"
   ],
   "ignoreWords": [
@@ -81,6 +82,7 @@
     "indentless",
     "jsonschema",
     "linkcheck",
+    "maxdepth",
     "maxsplit",
     "nargs",
     "nbcell",

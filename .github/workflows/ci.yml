@@ -26,6 +26,14 @@ on:
         type: string
 
 jobs:
+  doc:
+    uses: ComPWA/actions/.github/workflows/ci-docs.yml@v1
+    permissions:
+      pages: write
+      id-token: write
+    with:
+      gh-pages: true
+      specific-pip-packages: ${{ inputs.specific-pip-packages }}
   pytest:
     uses: ComPWA/actions/.github/workflows/pytest.yml@v1
     with:
