@@ -85,6 +85,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
+    "sphinxarg.ext",
 ]
 html_copy_source = True  # needed for download notebook button
 html_favicon = "_static/favicon.ico"

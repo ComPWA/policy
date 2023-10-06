@@ -70,6 +70,7 @@
   "ignoreWords": [
     "MAINT",
     "PyPI",
+    "argparse",
     "autonumbering",
     "autoupdate",
     "bdist",
