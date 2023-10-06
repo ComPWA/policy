@@ -16,6 +16,10 @@ def main(has_notebooks: bool) -> None:
 def _update_extensions() -> None:
     executor = Executor()
     executor(
+        vscode.add_extension_recommendation,
+        "stkb.rewrap",  # cspell:ignore stkb
+    )
+    executor(
         vscode.remove_extension_recommendation,
         "travisillig.vscode-json-stable-stringify",
         # cspell:ignore travisillig
@@ -31,6 +35,21 @@ def _update_extensions() -> None:
 
 def _update_settings(has_notebooks: bool) -> None:
     executor = Executor()
+    executor(
+        vscode.set_setting,
+        {
+            "editor.formatOnSave": True,
+            "rewrap.wrappingColumn": 88,  # black
+        },
+    )
+    executor(
+        vscode.set_sub_setting,
+        "[git-commit]",
+        {
+            "editor.rulers": [72],
+            "rewrap.wrappingColumn": 72,
+        },
+    )
     executor(_remove_outdated_settings)
     executor(_update_doc_settings)
     if has_notebooks:
