@@ -225,7 +225,7 @@ def __fix_long_description_in_pyproject() -> None:
     }
     if existing_readme == expected_readme:
         return
-    project["readme "] = expected_readme
+    project["readme"] = expected_readme
     write_pyproject(cfg)
     msg = f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
     raise PrecommitError(msg)
