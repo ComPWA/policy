@@ -45,10 +45,10 @@ def write_pyproject(config: TOMLDocument) -> None:
         stream.write(src)
 
 
-def to_toml_array(items: Iterable[Any]) -> Array:
+def to_toml_array(items: Iterable[Any], enforce_multiline: bool = False) -> Array:
     array = tomlkit.array()
     array.extend(items)
-    if len(array) > 1:
+    if enforce_multiline or len(array) > 1:
         array.multiline(True)
     else:
         array.multiline(False)
