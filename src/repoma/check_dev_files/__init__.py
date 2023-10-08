@@ -46,23 +46,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
         executor(github_labels.main)
-    executor(
-        github_workflows.main,
-        allow_deprecated=args.allow_deprecated_workflows,
-        doc_apt_packages=_to_list(args.doc_apt_packages),
-        no_macos=args.no_macos,
-        no_pypi=args.no_pypi,
-        no_version_branches=args.no_version_branches,
-        single_threaded=args.pytest_single_threaded,
-        skip_tests=_to_list(args.ci_skipped_tests),
-        test_extras=_to_list(args.ci_test_extras),
-    )
+    if not args.no_github_actions:
+        executor(
+            github_workflows.main,
+            allow_deprecated=args.allow_deprecated_workflows,
+            doc_apt_packages=_to_list(args.doc_apt_packages),
+            no_macos=args.no_macos,
+            no_pypi=args.no_pypi,
+            no_version_branches=args.no_version_branches,
+            single_threaded=args.pytest_single_threaded,
+            skip_tests=_to_list(args.ci_skipped_tests),
+            test_extras=_to_list(args.ci_test_extras),
+        )
     executor(nbstripout.main)
     executor(toml.main)  # has to run before pre-commit
     executor(prettier.main, args.no_prettierrc)
     if is_python_repo:
         executor(black.main, has_notebooks)
-        executor(release_drafter.main, args.repo_name, args.repo_title)
+        if not args.no_github_actions:
+            executor(release_drafter.main, args.repo_name, args.repo_title)
         if args.pin_requirements != "no":
             executor(
                 update_pip_constraints.main,
@@ -125,6 +127,12 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not update author info in setup.cfg.",
+    )
+    parser.add_argument(
+        "--no-github-actions",
+        action="store_true",
+        default=False,
+        help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
         "--no-python",
