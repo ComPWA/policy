@@ -5,6 +5,7 @@ from glob import glob
 from pathlib import Path
 from typing import List, Union
 
+import tomlkit
 from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
@@ -94,12 +95,20 @@ def _update_taplo_config() -> None:
         msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
         raise PrecommitError(msg)
     with open(template_path) as f:
-        expected_content = f.read()
+        expected = tomlkit.load(f)
+    excludes: List[str] = [p for p in expected["exclude"] if glob(p, recursive=True)]  # type: ignore[union-attr]
+    if excludes:
+        excludes = sorted(excludes, key=str.lower)
+        expected["exclude"] = to_toml_array(excludes, enforce_multiline=True)
+    else:
+        del expected["exclude"]
     with open(CONFIG_PATH.taplo) as f:
-        existing_content = f.read()
-    if existing_content != expected_content:
+        existing = tomlkit.load(f)
+    expected_str = tomlkit.dumps(expected)
+    existing_str = tomlkit.dumps(existing)
+    if existing_str != expected_str:
         with open(CONFIG_PATH.taplo, "w") as stream:
-            stream.write(expected_content)
+            stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
         raise PrecommitError(msg)
 
