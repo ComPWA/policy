@@ -141,10 +141,10 @@ def _check_required_options() -> None:
         return
     required_options = {
         "project": [
-            "name",
+            "classifiers",
             "description",
             "license",
-            "classifiers",
+            "name",
             "requires-python",
         ],
     }
@@ -158,7 +158,7 @@ def _check_required_options() -> None:
         summary = "\n"
         for section, options in missing_options.items():
             summary += f"[{section}]\n...\n"
-            for option in options:
+            for option in sorted(options):
                 summary += f"{option} = ...\n"
             summary += "...\n"
         raise PrecommitError(
@@ -225,7 +225,7 @@ def __fix_long_description_in_pyproject() -> None:
     }
     if existing_readme == expected_readme:
         return
-    project["readme "] = expected_readme
+    project["readme"] = expected_readme
     write_pyproject(cfg)
     msg = f"Updated long_description in ./{CONFIG_PATH.setup_cfg}"
     raise PrecommitError(msg)

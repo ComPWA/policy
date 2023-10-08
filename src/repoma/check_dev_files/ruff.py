@@ -13,9 +13,10 @@ from repoma.check_dev_files.setup_cfg import (
     has_setup_cfg_build_system,
 )
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, natural_sorting
+from repoma.utilities import CONFIG_PATH, natural_sorting, remove_configs
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
+    remove_precommit_hook,
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
@@ -32,8 +33,13 @@ from repoma.utilities.pyproject import (
     update_nbqa_settings,
     write_pyproject,
 )
-from repoma.utilities.readme import add_badge
-from repoma.utilities.vscode import add_extension_recommendation, set_setting
+from repoma.utilities.readme import add_badge, remove_badge
+from repoma.utilities.vscode import (
+    add_extension_recommendation,
+    remove_extension_recommendation,
+    remove_settings,
+    set_setting,
+)
 
 
 def main() -> None:
@@ -43,6 +49,10 @@ def main() -> None:
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
     executor(_check_setup_cfg)
+    executor(_remove_flake8)
+    executor(_remove_isort)
+    executor(_remove_pydocstyle)
+    executor(_remove_pylint)
     executor(_update_nbqa_settings)
     executor(_update_ruff_settings)
     executor(_update_ruff_per_file_ignores)
@@ -86,6 +96,128 @@ def _check_setup_cfg() -> None:
         raise PrecommitError(msg)
     lint_section = cfg.get(extras_require, "lint")
     if not any("ruff" in line for line in lint_section.split("\n")):
+        raise PrecommitError(msg)
+
+
+def _remove_flake8() -> None:
+    executor = Executor()
+    executor(remove_configs, [".flake8"])
+    executor(__remove_nbqa_option, "flake8")
+    executor(__uninstall, "flake8")
+    executor(__uninstall, "pep8-naming")
+    executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
+    executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
+    executor(remove_precommit_hook, "flake8")
+    executor(remove_precommit_hook, "nbqa-flake8")
+    executor(remove_settings, ["flake8.importStrategy"])
+    executor.finalize()
+
+
+def _remove_isort() -> None:
+    executor = Executor()
+    executor(__remove_isort_settings)
+    executor(__remove_nbqa_option, "black")
+    executor(__remove_nbqa_option, "isort")
+    executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
+    executor(remove_precommit_hook, "isort")
+    executor(remove_precommit_hook, "nbqa-isort")
+    executor(remove_settings, ["isort.check", "isort.importStrategy"])
+    executor(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
+    executor.finalize()
+
+
+def __remove_nbqa_option(option: str) -> None:
+    pyproject = load_pyproject()
+    # cspell:ignore addopts
+    nbqa_table: Table = pyproject.get("tool", {}).get("nbqa", {}).get("addopts")
+    if nbqa_table is None:
+        return
+    if nbqa_table.get(option) is None:
+        return
+    nbqa_table.remove(option)
+    write_pyproject(pyproject)
+    msg = f"Removed {option!r} nbQA options from {CONFIG_PATH.pyproject}"
+    raise PrecommitError(msg)
+
+
+def __remove_isort_settings() -> None:
+    pyproject = load_pyproject()
+    if pyproject.get("tool", {}).get("isort") is None:
+        return
+    pyproject["tool"].remove("isort")  # type: ignore[union-attr]
+    write_pyproject(pyproject)
+    msg = f"Removed [tool.isort] section from {CONFIG_PATH.pyproject}"
+    raise PrecommitError(msg)
+
+
+def _remove_pydocstyle() -> None:
+    executor = Executor()
+    executor(
+        remove_configs,
+        [
+            ".pydocstyle",
+            "docs/.pydocstyle",
+            "tests/.pydocstyle",
+        ],
+    )
+    executor(__uninstall, "pydocstyle")
+    executor(remove_precommit_hook, "pydocstyle")
+    executor.finalize()
+
+
+def _remove_pylint() -> None:
+    executor = Executor()
+    executor(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
+    executor(__uninstall, "pylint")
+    executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
+    executor(remove_precommit_hook, "pylint")
+    executor(remove_precommit_hook, "nbqa-pylint")
+    executor(remove_settings, ["pylint.importStrategy"])
+    executor.finalize()
+
+
+def __uninstall(package: str) -> None:
+    __uninstall_from_setup_cfg(package)
+    __uninstall_from_pyproject_toml(package)
+
+
+def __uninstall_from_setup_cfg(package: str) -> None:
+    if not os.path.exists(CONFIG_PATH.setup_cfg):
+        return
+    cfg = open_setup_cfg()
+    section = "options.extras_require"
+    if not cfg.has_section(section):
+        return
+    for option in cfg[section]:
+        if not cfg.has_option(section, option):
+            continue
+        if package not in cfg.get(section, option):
+            continue
+        msg = f'Please remove {package} from the "{section}" section of setup.cfg'
+        raise PrecommitError(msg)
+
+
+def __uninstall_from_pyproject_toml(package: str) -> None:
+    if not os.path.exists(CONFIG_PATH.pyproject):
+        return
+    pyproject = load_pyproject()
+    project = pyproject.get("project")
+    if project is None:
+        return
+    updated = False
+    dependencies = project.get("dependencies")
+    if dependencies is not None and package in dependencies:
+        dependencies.remove(package)
+        updated = True
+    optional_dependencies = project.get("optional-dependencies")
+    if optional_dependencies is not None:
+        for values in optional_dependencies.values():
+            if package in values:
+                values.remove(package)
+                updated = True
+    if updated:
+        write_pyproject(pyproject)
+        msg = f"Removed {package} from {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 
