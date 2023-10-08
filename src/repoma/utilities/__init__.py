@@ -4,12 +4,14 @@ import hashlib
 import io
 import os
 import re
+import shutil
 from pathlib import Path
 from shutil import copyfile
 from typing import List, NamedTuple, Union
 
 import repoma
 from repoma.errors import PrecommitError
+from repoma.utilities.executor import Executor
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -75,6 +77,39 @@ def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
     else:
         msg = f"Cannot write from {type(target).__name__}"
         raise TypeError(msg)
+
+
+def remove_configs(paths: List[str]) -> None:
+    executor = Executor()
+    for path in paths:
+        executor(__remove_file, path)
+    executor.finalize()
+
+
+def __remove_file(path: str) -> None:
+    if not os.path.exists(path):
+        return
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
+    msg = f"Removed {path}"
+    raise PrecommitError(msg)
+
+
+def remove_from_gitignore(pattern: str) -> None:
+    gitignore_path = ".gitignore"
+    if not os.path.exists(gitignore_path):
+        return
+    with open(gitignore_path) as f:
+        lines = f.readlines()
+    filtered_lines = [s for s in lines if pattern not in s]
+    if filtered_lines == lines:
+        return
+    with open(gitignore_path, "w") as f:
+        f.writelines(filtered_lines)
+    msg = f"Removed {pattern} from {gitignore_path}"
+    raise PrecommitError(msg)
 
 
 def rename_file(old: str, new: str) -> None:
