@@ -57,13 +57,13 @@
     ".constraints/*.txt": true,
     ".github/workflows/cd.yml": true,
     ".github/workflows/ci.yml": true,
+    ".taplo.toml": true,
     "src/repoma/.github/workflows/clean-caches.yml": true,
     "src/repoma/.github/workflows/pr-linting.yml": true,
     "src/repoma/.github/workflows/release-drafter.yml": true,
     "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
-    "src/repoma/.template/.prettierrc": true,
-    "src/repoma/.template/.taplo.toml": true
+    "src/repoma/.template/.prettierrc": true
   },
   "yaml.schemas": {
     "https://citation-file-format.github.io/1.2.0/schema.json": "CITATION.cff",

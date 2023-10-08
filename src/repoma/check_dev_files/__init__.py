@@ -74,7 +74,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pyright.main)
         executor(pytest.main)
         executor(pyupgrade.main)
-        executor(ruff.main)
+        if not args.no_ruff:
+            executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
@@ -174,6 +175,12 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not publish package to PyPI",
+    )
+    parser.add_argument(
+        "--no-ruff",
+        action="store_true",
+        default=False,
+        help="Do not enforce Ruff as a linter",
     )
     parser.add_argument(
         "--no-version-branches",
