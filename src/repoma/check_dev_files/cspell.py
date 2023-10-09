@@ -6,6 +6,7 @@ See `cSpell
 
 import json
 import os
+from glob import glob
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence, Union
 
@@ -158,6 +159,10 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
     if isinstance(expected_section_content, str):
         return expected_section_content
     if isinstance(expected_section_content, list):
+        if section == "ignorePaths":
+            expected_section_content = [
+                p for p in expected_section_content if glob(p, recursive=True)
+            ]
         if not extend:
             return __sort_section(expected_section_content, section)
         expected_section_content_set = set(expected_section_content)
