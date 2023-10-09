@@ -1,6 +1,7 @@
 """Check and update :code:`mypy` settings."""
 import json
 import os
+from typing import TYPE_CHECKING, Optional
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -12,6 +13,9 @@ from repoma.utilities.pyproject import (
     to_toml_array,
     write_pyproject,
 )
+
+if TYPE_CHECKING:
+    from tomlkit.items import Table
 
 
 def main() -> None:
@@ -41,12 +45,14 @@ def _merge_config_into_pyproject() -> None:
 
 def _update_settings() -> None:
     pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.pyright", create=True)
+    pyright_settings: Optional[Table] = pyproject.get("tool", {}).get("pyright")
+    if pyright_settings is None:
+        return
     minimal_settings = {
         "typeCheckingMode": "strict",
     }
-    if not complies_with_subset(settings, minimal_settings):
-        settings.update(minimal_settings)
+    if not complies_with_subset(pyright_settings, minimal_settings):
+        pyright_settings.update(minimal_settings)
         write_pyproject(pyproject)
         msg = f"Updated pyright configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
