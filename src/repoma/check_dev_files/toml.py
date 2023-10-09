@@ -104,9 +104,9 @@ def _update_taplo_config() -> None:
         del expected["exclude"]
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
-    expected_str = tomlkit.dumps(expected)
+    expected_str = tomlkit.dumps(expected, sort_keys=True)
     existing_str = tomlkit.dumps(existing)
-    if existing_str != expected_str:
+    if existing_str.strip() != expected_str.strip():
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
