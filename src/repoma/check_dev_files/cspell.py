@@ -6,6 +6,7 @@ See `cSpell
 
 import json
 import os
+from glob import glob
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence, Union
 
@@ -38,7 +39,7 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main() -> None:
+def main(no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
     executor = Executor()
     executor(_update_cspell_repo_url)
@@ -48,7 +49,8 @@ def main() -> None:
         executor(_remove_configuration)
     else:
         executor(_update_precommit_repo)
-        executor(_fix_config_content)
+        if not no_cspell_update:
+            executor(_update_config_content)
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
         executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
@@ -103,7 +105,7 @@ def _update_precommit_repo() -> None:
     update_single_hook_precommit_repo(expected_hook)
 
 
-def _fix_config_content() -> None:
+def _update_config_content() -> None:
     if not CONFIG_PATH.cspell.exists():
         with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
@@ -157,6 +159,10 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
     if isinstance(expected_section_content, str):
         return expected_section_content
     if isinstance(expected_section_content, list):
+        if section == "ignorePaths":
+            expected_section_content = [
+                p for p in expected_section_content if glob(p, recursive=True)
+            ]
         if not extend:
             return __sort_section(expected_section_content, section)
         expected_section_content_set = set(expected_section_content)
