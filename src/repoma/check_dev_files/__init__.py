@@ -142,7 +142,12 @@ def _create_argparse() -> ArgumentParser:
         "--no-github-actions",
         action="store_true",
         default=False,
-        help="Skip check that concern config files for Python projects.",
+        help=(
+            "Do not add standard GitHub Actions workflows that are used across ComPWA"
+            " repositories. This can be useful if you already have your own CI"
+            " workflows that do the same as the workflows enforced by the"
+            " check-dev-files hook."
+        ),
     )
     parser.add_argument(
         "--no-python",
