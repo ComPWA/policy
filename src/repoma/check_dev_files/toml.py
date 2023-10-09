@@ -74,8 +74,14 @@ def _update_tomlsort_hook() -> None:
         repo="https://github.com/pappasam/toml-sort",
         hooks=[CommentedMap(id="toml-sort", args=["--in-place"])],
     )
+    excludes = []
     if glob("labels/*.toml"):
-        expected_hook["hooks"][0]["exclude"] = r"(?x)^(labels/.*\.toml)$"
+        excludes.append(r"labels/.*\.toml")
+    if glob("labels*.toml"):
+        excludes.append(r"labels.*\.toml")
+    if excludes:
+        excludes = sorted(excludes, key=str.lower)
+        expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
     update_single_hook_precommit_repo(expected_hook)
 
 
