@@ -48,7 +48,7 @@ def main() -> None:
         executor(_remove_configuration)
     else:
         executor(_update_precommit_repo)
-        executor(_fix_config_content)
+        executor(_update_config_content)
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
         executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
@@ -103,7 +103,7 @@ def _update_precommit_repo() -> None:
     update_single_hook_precommit_repo(expected_hook)
 
 
-def _fix_config_content() -> None:
+def _update_config_content() -> None:
     if not CONFIG_PATH.cspell.exists():
         with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
