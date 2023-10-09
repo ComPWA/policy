@@ -21,6 +21,7 @@ from repoma.utilities.precommit import (
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.readme import add_badge, remove_badge
+from repoma.utilities.vscode import sort_case_insensitive
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -229,4 +230,4 @@ def __sort_section(content: Iterable[Any], section_name: str) -> List[str]:
         return sorted(content, key=sort_key)
     if section_name == "ignoreWords":
         return sorted(content)
-    return sorted(content, key=lambda s: s.lower() if isinstance(s, str) else s)
+    return sort_case_insensitive(content)
