@@ -61,7 +61,6 @@
     "src/repoma/.github/workflows/clean-caches.yml": true,
     "src/repoma/.github/workflows/pr-linting.yml": true,
     "src/repoma/.github/workflows/release-drafter.yml": true,
-    "src/repoma/.template/.cspell.json": true,
     "src/repoma/.template/.gitpod.yml": true,
     "src/repoma/.template/.prettierrc": true
   },
