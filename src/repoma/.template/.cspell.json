@@ -15,8 +15,8 @@
     "transisions"
   ],
   "ignorePaths": [
+    "**/*.bib",
     "**/.cspell.json",
-    "*.bib",
     "*.ico",
     "*.root",
     "*.rst_t",
