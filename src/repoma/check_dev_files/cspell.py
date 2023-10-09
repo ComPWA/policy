@@ -38,7 +38,7 @@ with open(REPOMA_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main() -> None:
+def main(no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
     executor = Executor()
     executor(_update_cspell_repo_url)
@@ -48,7 +48,8 @@ def main() -> None:
         executor(_remove_configuration)
     else:
         executor(_update_precommit_repo)
-        executor(_update_config_content)
+        if not no_cspell_update:
+            executor(_update_config_content)
         executor(_sort_config_entries)
         executor(add_badge, __BADGE)
         executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)

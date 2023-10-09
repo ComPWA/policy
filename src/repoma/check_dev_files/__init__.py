@@ -42,7 +42,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     executor = Executor()
     executor(citation.main)
     executor(commitlint.main)
-    executor(cspell.main)
+    executor(cspell.main, args.no_cspell_update)
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
         executor(github_labels.main)
@@ -127,6 +127,16 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not update author info in setup.cfg.",
+    )
+    parser.add_argument(
+        "--no-cspell-update",
+        action="store_true",
+        default=False,
+        help=(
+            "Do not enforce same cSpell configuration as other ComPWA repositories."
+            " This can be useful if you have a more advanced configuration, like using"
+            " different dictionaries for different file types."
+        ),
     )
     parser.add_argument(
         "--no-github-actions",
