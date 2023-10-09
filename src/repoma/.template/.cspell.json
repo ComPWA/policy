@@ -17,6 +17,8 @@
   "ignorePaths": [
     "**/*.bib",
     "**/.cspell.json",
+    "**/Manifest.toml",
+    "**/Project.toml",
     "*.ico",
     "*.root",
     "*.rst_t",
@@ -41,8 +43,6 @@
     "labels.toml",
     "labels/*.toml",
     "Makefile",
-    "Manifest.toml",
-    "Project.toml",
     "pyproject.toml",
     "pyrightconfig.json",
     "pytest.ini",
