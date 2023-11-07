@@ -1,4 +1,5 @@
 """Apply a certain set of standards to the :file:`setup.cfg`."""
+
 # pyright: reportUnknownLambdaType=false
 import dataclasses
 import os

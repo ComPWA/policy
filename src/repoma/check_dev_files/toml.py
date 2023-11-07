@@ -1,4 +1,5 @@
 """Configuration for working with TOML files."""
+
 import os
 import shutil
 from glob import glob

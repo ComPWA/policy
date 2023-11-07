@@ -2,6 +2,7 @@
 
 See https://github.com/ComPWA/repo-maintenance/issues/177.
 """
+
 import os
 
 from repoma.errors import PrecommitError

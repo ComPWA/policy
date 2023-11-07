@@ -1,4 +1,5 @@
 """Check and update :code:`mypy` settings."""
+
 import json
 import os
 from typing import TYPE_CHECKING, Optional

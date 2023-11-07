@@ -1,4 +1,5 @@
 """Update Release Drafter Action."""
+
 import os
 from typing import Any, Dict
 

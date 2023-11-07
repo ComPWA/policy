@@ -1,4 +1,5 @@
 """Check and update :code:`mypy` settings."""
+
 import os
 
 import tomlkit
