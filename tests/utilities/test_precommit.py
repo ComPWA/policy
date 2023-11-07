@@ -52,7 +52,7 @@ class TestPrecommitConfig:
         repo_names = {repo.repo for repo in config.repos}
         assert repo_names >= {
             "https://github.com/pre-commit/pre-commit-hooks",
-            "https://github.com/psf/black",
+            "https://github.com/psf/black-pre-commit-mirror",
         }
 
 
