@@ -35,6 +35,11 @@ def main(has_notebooks: bool) -> None:
         hook_id="black",
         repo_url="https://github.com/psf/black",
     )
+    executor(
+        remove_precommit_hook,
+        hook_id="black-jupyter",
+        repo_url="https://github.com/psf/black",
+    )
     executor(_update_precommit_repo, has_notebooks)
     executor(add_extension_recommendation, "ms-python.black-formatter")
     executor(set_setting, {"black-formatter.importStrategy": "fromEnvironment"})
