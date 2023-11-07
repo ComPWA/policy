@@ -1,4 +1,5 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
+
 from textwrap import dedent
 from typing import List, Set
 

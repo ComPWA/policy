@@ -1,4 +1,5 @@
 """Check :file:`.github/workflows` folder content."""
+
 import os
 import re
 import shutil

@@ -1,4 +1,5 @@
 """Check and update :code:`pytest` settings."""
+
 import os
 from typing import Dict
 

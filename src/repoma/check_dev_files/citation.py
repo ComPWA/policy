@@ -1,4 +1,5 @@
 """Check citation files."""
+
 import json
 import os
 from textwrap import dedent

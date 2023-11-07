@@ -1,6 +1,5 @@
 """Check the nbstripout hook in the pre-commit config."""
 
-
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import LiteralScalarString
 

@@ -1,4 +1,5 @@
 """Checks to be performed locally on the ComPWA/repo-maintenance repository."""
+
 from functools import lru_cache
 from io import StringIO
 from textwrap import dedent, indent
