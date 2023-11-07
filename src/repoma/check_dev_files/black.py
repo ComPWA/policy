@@ -30,6 +30,11 @@ def main(has_notebooks: bool) -> None:
     executor = Executor()
     executor(_remove_outdated_settings)
     executor(_update_black_settings)
+    executor(
+        remove_precommit_hook,
+        hook_id="black",
+        repo_url="https://github.com/psf/black",
+    )
     executor(_update_precommit_repo, has_notebooks)
     executor(add_extension_recommendation, "ms-python.black-formatter")
     executor(set_setting, {"black-formatter.importStrategy": "fromEnvironment"})
@@ -81,7 +86,7 @@ def _update_black_settings() -> None:
 
 def _update_precommit_repo(has_notebooks: bool) -> None:
     expected_hook = CommentedMap(
-        repo="https://github.com/psf/black",
+        repo="https://github.com/psf/black-pre-commit-mirror",
         hooks=[CommentedMap(id="black")],
     )
     if has_notebooks:
