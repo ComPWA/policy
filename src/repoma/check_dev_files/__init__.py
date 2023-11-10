@@ -65,11 +65,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(black.main, has_notebooks)
         if not args.no_github_actions:
             executor(release_drafter.main, args.repo_name, args.repo_title)
-        if args.pin_requirements != "no":
-            executor(
-                update_pip_constraints.main,
-                cron_frequency=args.pin_requirements,
-            )
         executor(mypy.main)
         executor(pyright.main)
         executor(pytest.main)
@@ -77,6 +72,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.no_ruff:
             executor(ruff.main)
         executor(setup_cfg.main, args.ignore_author)
+    if args.pin_requirements != "no":
+        executor(
+            update_pip_constraints.main,
+            cron_frequency=args.pin_requirements,
+        )
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
     executor(gitpod.main, args.no_gitpod)
