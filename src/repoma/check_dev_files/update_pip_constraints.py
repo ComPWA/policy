@@ -15,6 +15,8 @@ __CRON_SCHEDULES = {
     "biweekly": "0 2 * * 1",
     "monthly": "0 3 7 */1 *",
     "bimonthly": "0 3 7 */2 *",
+    "quarterly": "0 3 7 */3 *",
+    "biannually": "0 3 7 */6 *",
 }
 
 
