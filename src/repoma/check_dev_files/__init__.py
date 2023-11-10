@@ -205,7 +205,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--pin-requirements",
-        choices=["no", "biweekly", "monthly", "bimonthly"],
+        choices=["no", "biweekly", "monthly", "bimonthly", "quarterly", "biannually"],
         default="no",
         help=(
             "Add a script to pin developer requirements to a constraint file."
