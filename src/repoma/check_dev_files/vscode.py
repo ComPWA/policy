@@ -38,6 +38,7 @@ def _update_settings(has_notebooks: bool) -> None:
     executor(
         vscode.set_setting,
         {
+            "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
             "rewrap.wrappingColumn": 88,  # black
         },
