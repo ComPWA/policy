@@ -12,6 +12,8 @@ from typing import List, Optional, Sequence
 
 import nbformat
 
+from repoma.utilities.executor import Executor
+
 from .errors import PrecommitError
 
 __PIP_INSTALL_STATEMENT = "%pip install -q "
@@ -31,9 +33,11 @@ def check_pinned_requirements(filename: str) -> None:
         cell_content = "".join(s.strip("\\") for s in src_lines)
         if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
-        __check_install_statement(filename, cell_content)
-        __check_requirements(filename, cell_content)
-        __check_metadata(filename, cell["metadata"])
+        executor = Executor()
+        executor(__check_install_statement, filename, cell_content)
+        executor(__check_requirements, filename, cell_content)
+        executor(__check_metadata, filename, cell["metadata"])
+        executor.finalize()
         return
     msg = (
         f'Notebook "{filename}" does not contain a pip install cell of the form'
