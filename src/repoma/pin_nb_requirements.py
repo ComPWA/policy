@@ -11,6 +11,9 @@ import sys
 from typing import List, Optional, Sequence
 
 import nbformat
+from nbformat import NotebookNode
+
+from repoma.utilities.executor import Executor
 
 from .errors import PrecommitError
 
@@ -31,9 +34,11 @@ def check_pinned_requirements(filename: str) -> None:
         cell_content = "".join(s.strip("\\") for s in src_lines)
         if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
-        __check_install_statement(filename, cell_content)
-        __check_requirements(filename, cell_content)
-        __check_metadata(filename, cell["metadata"])
+        executor = Executor()
+        executor(__check_install_statement, filename, cell_content)
+        executor(__check_requirements, filename, cell_content)
+        executor(__update_metadata, filename, cell["metadata"], notebook)
+        executor.finalize()
         return
     msg = (
         f'Notebook "{filename}" does not contain a pip install cell of the form'
@@ -93,18 +98,23 @@ def __check_requirements(filename: str, install_statement: str) -> None:
         raise PrecommitError(msg)
 
 
-def __check_metadata(filename: str, metadata: dict) -> None:
-    source_hidden = metadata.get("jupyter", {}).get("source_hidden")
-    if not source_hidden:
-        msg = f'Install cell in notebook "{filename}" is not hidden'
-        raise PrecommitError(msg)
+def __update_metadata(filename: str, metadata: dict, notebook: NotebookNode) -> None:
+    updated_metadata = False
+    jupyter_metadata = metadata.get("jupyter")
+    if jupyter_metadata is not None and jupyter_metadata.get("source_hidden"):
+        if len(jupyter_metadata) == 1:
+            metadata.pop("jupyter")
+        else:
+            jupyter_metadata.pop("source_hidden")
+        updated_metadata = True
     tags = set(metadata.get("tags", []))
     expected_tags = {"remove-cell"}
     if expected_tags != tags:
-        msg = (
-            f'Install cell in notebook "{filename}" should have tags'
-            f" {sorted(expected_tags)}"
-        )
+        metadata["tags"] = sorted(expected_tags)
+        updated_metadata = True
+    if updated_metadata:
+        nbformat.write(notebook, filename)
+        msg = f'Updated metadata of pip install cell in notebook "{filename}"'
         raise PrecommitError(msg)
 
 
