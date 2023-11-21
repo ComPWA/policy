@@ -27,6 +27,7 @@ preview = true
 target-version = [
     "py310",
     "py311",
+    "py312",
     "py36",
     "py37",
     "py38",
