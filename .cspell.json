@@ -47,9 +47,11 @@
     "ipython",
     "mkdir",
     "mypy",
+    "oneline",
     "pytest",
     "PYTHONHASHSEED",
     "repoma",
+    "sympy",
     "toctree",
     "Zenodo"
   ],
