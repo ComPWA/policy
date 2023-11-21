@@ -15,6 +15,7 @@ import nbformat
 from nbformat import NotebookNode
 
 from repoma.utilities.executor import Executor
+from repoma.utilities.notebook import load_notebook
 
 from .errors import PrecommitError
 
@@ -22,7 +23,7 @@ __PIP_INSTALL_STATEMENT = "%pip install -q"
 
 
 def check_pinned_requirements(filename: str) -> None:
-    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    notebook = load_notebook(filename)
     if not __has_python_kernel(notebook):
         return
     for cell_id, cell in enumerate(notebook["cells"]):
