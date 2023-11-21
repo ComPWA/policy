@@ -11,6 +11,8 @@ from typing import Optional, Sequence
 
 import nbformat
 
+from repoma.utilities.notebook import load_notebook
+
 from .errors import PrecommitError
 from .utilities.executor import Executor
 
@@ -34,14 +36,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 def set_nbformat_version(filename: str) -> None:
-    notebook = open_notebook(filename)
+    notebook = load_notebook(filename)
     if notebook["nbformat_minor"] != 4:  # noqa: PLR2004
         notebook["nbformat_minor"] = 4
         nbformat.write(notebook, filename)
 
 
 def remove_cell_ids(filename: str) -> None:
-    notebook = open_notebook(filename)
+    notebook = load_notebook(filename)
     for cell in notebook["cells"]:
         if "id" in cell:
             del cell["id"]
@@ -49,7 +51,7 @@ def remove_cell_ids(filename: str) -> None:
 
 
 def check_svg_output_cells(filename: str) -> None:
-    notebook = open_notebook(filename)
+    notebook = load_notebook(filename)
     for i, cell in enumerate(notebook["cells"]):
         for output in cell.get("outputs", []):
             data = output.get("data", {})
@@ -64,10 +66,6 @@ def check_svg_output_cells(filename: str) -> None:
                     raise PrecommitError(
                         dedent(error_message).strip().replace("\n", " ")
                     )
-
-
-def open_notebook(filename: str) -> dict:
-    return nbformat.read(filename, as_version=nbformat.NO_CONVERT)
 
 
 if __name__ == "__main__":

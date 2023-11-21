@@ -26,6 +26,7 @@ from typing import Optional, Sequence
 
 import nbformat
 
+from repoma.utilities.notebook import load_notebook
 from repoma.utilities.project_info import get_pypi_name
 
 __CONFIG_CELL_CONTENT = """
@@ -132,7 +133,7 @@ def _update_cell(
 ) -> None:
     if _skip_notebook(filename):
         return
-    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    notebook = load_notebook(filename)
     exiting_cell = notebook["cells"][cell_id]
     new_cell = nbformat.v4.new_code_cell(
         new_content,
@@ -150,7 +151,7 @@ def _update_cell(
 def _insert_autolink_concat(filename: str) -> None:
     if _skip_notebook(filename, ignore_statement="<!-- no autolink-concat -->"):
         return
-    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    notebook = load_notebook(filename)
     expected_cell_content = """
     ```{autolink-concat}
     ```
@@ -173,7 +174,7 @@ def _insert_autolink_concat(filename: str) -> None:
 def _skip_notebook(
     filename: str, ignore_statement: str = "<!-- no-set-nb-cells -->"
 ) -> bool:
-    notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
+    notebook = load_notebook(filename)
     for cell in notebook["cells"]:
         if cell["cell_type"] != "markdown":
             continue
