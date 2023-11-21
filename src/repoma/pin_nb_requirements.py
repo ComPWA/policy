@@ -8,6 +8,7 @@ comply with the expected formatting.
 
 import argparse
 import sys
+from functools import lru_cache
 from typing import List, Optional, Sequence
 
 import nbformat
@@ -17,14 +18,14 @@ from repoma.utilities.executor import Executor
 
 from .errors import PrecommitError
 
-__PIP_INSTALL_STATEMENT = "%pip install -q "
+__PIP_INSTALL_STATEMENT = "%pip install -q"
 
 
 def check_pinned_requirements(filename: str) -> None:
     notebook = nbformat.read(filename, as_version=nbformat.NO_CONVERT)
     if not __has_python_kernel(notebook):
         return
-    for cell in notebook["cells"]:
+    for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "code":
             continue
         source: str = cell["source"]
@@ -37,12 +38,13 @@ def check_pinned_requirements(filename: str) -> None:
         executor = Executor()
         executor(__check_install_statement, filename, cell_content)
         executor(__check_requirements, filename, cell_content)
+        executor(__sort_requirements, filename, cell_content, notebook, cell_id)
         executor(__update_metadata, filename, cell["metadata"], notebook)
         executor.finalize()
         return
     msg = (
         f'Notebook "{filename}" does not contain a pip install cell of the form'
-        f" {__PIP_INSTALL_STATEMENT}some-package==0.1.0 package2==3.2"
+        f" {__PIP_INSTALL_STATEMENT} some-package==0.1.0 package2==3.2"
     )
     raise PrecommitError(msg)
 
@@ -71,8 +73,7 @@ def __check_install_statement(filename: str, install_statement: str) -> None:
 
 
 def __check_requirements(filename: str, install_statement: str) -> None:
-    package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
-    requirements = package_listing.split(" ")
+    requirements = __extract_requirements(install_statement)
     if len(requirements) == 0:
         msg = f'At least one dependency required in install cell of "{filename}"'
         raise PrecommitError(msg)
@@ -88,14 +89,30 @@ def __check_requirements(filename: str, install_statement: str) -> None:
                 f" == or ~= ({requirement})"
             )
             raise PrecommitError(msg)
-    requirements_lower = [r.lower() for r in requirements if not r.startswith("git+")]
-    if sorted(requirements_lower) != requirements_lower:
-        sorted_requirements = " ".join(sorted(requirements))
-        msg = (
-            f'Requirements in notebook "{filename}" are not sorted alphabetically.'
-            f" Should be:\n\n    {sorted_requirements}"
-        )
+
+
+def __sort_requirements(
+    filename: str, install_statement: str, notebook: NotebookNode, cell_id: int
+) -> None:
+    requirements = __extract_requirements(install_statement)
+    git_requirements = {r for r in requirements if r.startswith("git+")}
+    pip_requirements = set(requirements) - git_requirements
+    pip_requirements = {r.lower().replace("_", "-") for r in pip_requirements}
+    sorted_requirements = sorted(pip_requirements) + sorted(git_requirements)
+    if sorted_requirements != requirements:
+        new_source = f"{__PIP_INSTALL_STATEMENT} {' '.join(sorted_requirements)}"
+        notebook["cells"][cell_id]["source"] = new_source
+        nbformat.write(notebook, filename)
+        msg = f'Ordered and formatted pip install cell  in "{filename}"'
         raise PrecommitError(msg)
+
+
+@lru_cache(maxsize=1)
+def __extract_requirements(install_statement: str) -> List[str]:
+    package_listing = install_statement.replace(__PIP_INSTALL_STATEMENT, "")
+    requirements = package_listing.split(" ")
+    requirements = [r.strip() for r in requirements]
+    return [r for r in requirements if r]
 
 
 def __update_metadata(filename: str, metadata: dict, notebook: NotebookNode) -> None:
