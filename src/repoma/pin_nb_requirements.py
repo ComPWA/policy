@@ -37,10 +37,10 @@ def check_pinned_requirements(filename: str) -> None:
         if not cell_content.startswith(__PIP_INSTALL_STATEMENT):
             continue
         executor = Executor()
-        executor(__check_install_statement, filename, cell_content)
-        executor(__check_requirements, filename, cell_content)
-        executor(__sort_requirements, filename, cell_content, notebook, cell_id)
-        executor(__update_metadata, filename, cell["metadata"], notebook)
+        executor(_check_install_statement, filename, cell_content)
+        executor(_check_requirements, filename, cell_content)
+        executor(_sort_requirements, filename, cell_content, notebook, cell_id)
+        executor(_update_metadata, filename, cell["metadata"], notebook)
         executor.finalize()
         return
     msg = (
@@ -58,7 +58,7 @@ def __has_python_kernel(notebook: dict) -> bool:
     return "python" in kernel_language
 
 
-def __check_install_statement(filename: str, install_statement: str) -> None:
+def _check_install_statement(filename: str, install_statement: str) -> None:
     if not install_statement.startswith(__PIP_INSTALL_STATEMENT):
         msg = (
             f"First shell cell in notebook {filename} does not start with"
@@ -73,7 +73,7 @@ def __check_install_statement(filename: str, install_statement: str) -> None:
         raise PrecommitError(msg)
 
 
-def __check_requirements(filename: str, install_statement: str) -> None:
+def _check_requirements(filename: str, install_statement: str) -> None:
     requirements = __extract_requirements(install_statement)
     if len(requirements) == 0:
         msg = f'At least one dependency required in install cell of "{filename}"'
@@ -92,7 +92,7 @@ def __check_requirements(filename: str, install_statement: str) -> None:
             raise PrecommitError(msg)
 
 
-def __sort_requirements(
+def _sort_requirements(
     filename: str, install_statement: str, notebook: NotebookNode, cell_id: int
 ) -> None:
     requirements = __extract_requirements(install_statement)
@@ -116,7 +116,7 @@ def __extract_requirements(install_statement: str) -> List[str]:
     return [r for r in requirements if r]
 
 
-def __update_metadata(filename: str, metadata: dict, notebook: NotebookNode) -> None:
+def _update_metadata(filename: str, metadata: dict, notebook: NotebookNode) -> None:
     updated_metadata = False
     jupyter_metadata = metadata.get("jupyter")
     if jupyter_metadata is not None and jupyter_metadata.get("source_hidden"):
