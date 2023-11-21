@@ -9,7 +9,8 @@ import sys
 from typing import Optional, Sequence
 
 import nbformat
-from nbformat import NotebookNode
+
+from repoma.utilities.notebook import load_notebook
 
 from .errors import PrecommitError
 from .utilities.executor import Executor
@@ -30,7 +31,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
 
 def _update_metadata(path: str) -> None:
-    notebook = open_notebook(path)
+    notebook = load_notebook(path)
     metadata = notebook["metadata"]
     updated = False
     if metadata.get("colab") is None:
@@ -44,10 +45,6 @@ def _update_metadata(path: str) -> None:
     nbformat.write(notebook, path)
     msg = f"Colab TOC is now visible for notebook {path}"
     raise PrecommitError(msg)
-
-
-def open_notebook(path: str) -> NotebookNode:
-    return nbformat.read(path, as_version=nbformat.NO_CONVERT)
 
 
 if __name__ == "__main__":
