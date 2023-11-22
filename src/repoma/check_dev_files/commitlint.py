@@ -4,6 +4,7 @@ See https://github.com/ComPWA/repo-maintenance/issues/177.
 """
 
 import os
+from textwrap import dedent
 
 from repoma.errors import PrecommitError
 
@@ -13,5 +14,8 @@ def main() -> None:
     if not os.path.exists(path):
         return
     os.remove(path)
-    msg = f"Remove outdated {path}"
+    msg = dedent(f"""
+    Remove outdated {path}. Commitlint is now configured through
+    https://github.com/ComPWA/commitlint-config.
+    """).strip().replace("\n", " ")
     raise PrecommitError(msg)
