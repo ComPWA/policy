@@ -5,6 +5,7 @@ from copy import deepcopy
 from textwrap import dedent
 from typing import List, Set
 
+from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tomlkit.items import Array, Table
 
@@ -17,7 +18,6 @@ from repoma.utilities import CONFIG_PATH, natural_sorting, remove_configs
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     remove_precommit_hook,
-    update_precommit_hook,
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.project_info import (
@@ -30,7 +30,6 @@ from repoma.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
     to_toml_array,
-    update_nbqa_settings,
     write_pyproject,
 )
 from repoma.utilities.readme import add_badge, remove_badge
@@ -42,7 +41,7 @@ from repoma.utilities.vscode import (
 )
 
 
-def main() -> None:
+def main(has_notebooks: bool) -> None:
     executor = Executor()
     executor(
         add_badge,
@@ -51,14 +50,13 @@ def main() -> None:
     executor(_check_setup_cfg)
     executor(_remove_flake8)
     executor(_remove_isort)
+    executor(_remove_nbqa)
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
-    executor(_update_nbqa_settings)
-    executor(_update_ruff_settings)
-    executor(_update_ruff_per_file_ignores)
+    executor(_update_ruff_settings, has_notebooks)
+    executor(_update_ruff_per_file_ignores, has_notebooks)
     executor(_update_ruff_pydocstyle_settings)
-    executor(_update_precommit_hook)
-    executor(_update_precommit_nbqa_hook)
+    executor(_update_precommit_hook, has_notebooks)
     executor(_update_pyproject)
     executor(_update_vscode_settings)
     executor.finalize()
@@ -268,28 +266,29 @@ def __add_package(optional_dependencies: Table, key: str, package: str) -> None:
         )
 
 
-def _update_nbqa_settings() -> None:
+def _remove_nbqa() -> None:
+    executor = Executor()
+    executor(__remove_nbqa_settings)
+    executor(remove_precommit_hook, "nbqa-ruff")
+    executor.finalize()
+
+
+def __remove_nbqa_settings() -> None:
     # cspell:ignore addopts
-    ruff_rules = [
-        "--extend-ignore=B018",
-        "--extend-ignore=C90",
-        "--extend-ignore=D",
-        "--extend-ignore=N806",
-        "--extend-ignore=N816",
-        "--extend-ignore=PLR09",
-        "--extend-ignore=PLR2004",
-        "--extend-ignore=PLW0602",
-        "--extend-ignore=PLW0603",
-        "--line-length=85",
-    ]
     pyproject = load_pyproject()
-    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
-    ruff_rules.extend(nbqa_table.get("ruff", []))
-    ruff_rules = sorted(set(ruff_rules))
-    update_nbqa_settings("ruff", to_toml_array(ruff_rules))
+    nbqa_addopts = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    if "ruff" in nbqa_addopts:
+        del nbqa_addopts["ruff"]
+    if not nbqa_addopts:
+        tool_table = get_sub_table(pyproject, "tool", create=True)
+        del tool_table["nbqa"]
+    write_pyproject(pyproject)
+    if nbqa_addopts:
+        msg = f"Removed Ruff configuration for nbQA from {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
 
 
-def _update_ruff_settings() -> None:
+def _update_ruff_settings(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff", create=True)
     extend_ignore = [
@@ -315,6 +314,10 @@ def _update_ruff_settings() -> None:
         "target-version": __get_target_version(),
         "task-tags": __get_task_tags(settings),
     }
+    if has_notebooks:
+        extend_include = ["*.ipynb"]
+        extend_include = sorted({*settings.get("extend-include", []), *extend_include})
+        minimal_settings["extend-include"] = to_toml_array(extend_include)
     src_directories = __get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
@@ -404,10 +407,23 @@ def __get_target_version() -> str:
     return lowest_version
 
 
-def _update_ruff_per_file_ignores() -> None:
+def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
+    if has_notebooks:
+        notebook_ignores = [
+            "B018",
+            "C90",
+            "D",
+            "N806",
+            "N816",
+            "PLR09",
+            "PLR2004",
+            "PLW0602",
+            "PLW0603",
+        ]
+        minimal_settings["*.ipynb"] = to_toml_array(notebook_ignores)
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
@@ -455,26 +471,19 @@ def _update_ruff_pydocstyle_settings() -> None:
         raise PrecommitError(msg)
 
 
-def _update_precommit_hook() -> None:
+def _update_precommit_hook(has_notebooks: bool) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
-    expected_hook = CommentedMap(
+    yaml = YAML(typ="rt")
+    ruff_hook = CommentedMap(id="ruff", args=yaml.load("[--fix]"))
+    if has_notebooks:
+        types = yaml.load("[python, pyi, jupyter]")
+        ruff_hook["types_or"] = types
+    expected_repo = CommentedMap(
         repo="https://github.com/astral-sh/ruff-pre-commit",
-        hooks=[CommentedMap(id="ruff", args=["--fix"])],
+        hooks=[ruff_hook],
     )
-    update_single_hook_precommit_repo(expected_hook)
-
-
-def _update_precommit_nbqa_hook() -> None:
-    if not CONFIG_PATH.precommit.exists():
-        return
-    update_precommit_hook(
-        repo_url="https://github.com/nbQA-dev/nbQA",
-        expected_hook=CommentedMap(
-            id="nbqa-ruff",
-            args=["--fix"],
-        ),
-    )
+    update_single_hook_precommit_repo(expected_repo)
 
 
 def _update_vscode_settings() -> None:

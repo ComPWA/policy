@@ -70,7 +70,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(pytest.main)
         executor(pyupgrade.main)
         if not args.no_ruff:
-            executor(ruff.main)
+            executor(ruff.main, has_notebooks)
         executor(setup_cfg.main, args.ignore_author)
     if args.pin_requirements != "no":
         executor(
