@@ -68,7 +68,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         executor(mypy.main)
         executor(pyright.main)
         executor(pytest.main)
-        executor(pyupgrade.main)
+        executor(pyupgrade.main, args.no_ruff)
         if not args.no_ruff:
             executor(ruff.main, has_notebooks)
         executor(setup_cfg.main, args.ignore_author)

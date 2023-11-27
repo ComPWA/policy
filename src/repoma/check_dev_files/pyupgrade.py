@@ -6,16 +6,20 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from repoma.utilities import natural_sorting
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
+    remove_precommit_hook,
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.project_info import get_supported_python_versions
 
 
-def main() -> None:
+def main(no_ruff: bool) -> None:
     executor = Executor()
-    executor(_update_precommit_repo)
-    executor(_update_precommit_nbqa_hook)
+    if no_ruff:
+        executor(_update_precommit_repo)
+        executor(_update_precommit_nbqa_hook)
+    else:
+        executor(_remove_pyupgrade)
     executor.finalize()
 
 
@@ -55,3 +59,10 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     lowest_version = supported_python_versions[0]
     yaml = YAML(typ="rt")
     return yaml.load(f"[--py{lowest_version}-plus]")
+
+
+def _remove_pyupgrade() -> None:
+    executor = Executor()
+    executor(remove_precommit_hook, "nbqa-pyupgrade")
+    executor(remove_precommit_hook, "pyupgrade")
+    executor.finalize()
