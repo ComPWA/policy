@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Union
 
 import tomlkit
+from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
@@ -73,7 +74,7 @@ def _update_tomlsort_config() -> None:
 def _update_tomlsort_hook() -> None:
     expected_hook = CommentedMap(
         repo="https://github.com/pappasam/toml-sort",
-        hooks=[CommentedMap(id="toml-sort", args=["--in-place"])],
+        hooks=[CommentedMap(id="toml-sort", args=YAML(typ="rt").load("[--in-place]"))],
     )
     excludes = []
     if glob("labels/*.toml"):
