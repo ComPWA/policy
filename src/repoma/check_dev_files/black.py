@@ -1,5 +1,6 @@
 """Update :file:`pyproject.toml` black configuration."""
 
+from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
@@ -97,8 +98,8 @@ def _update_precommit_repo(has_notebooks: bool) -> None:
     if has_notebooks:
         black_jupyter = CommentedMap(
             id="black-jupyter",
-            args=["--line-length=85"],
-            types_or=["jupyter"],
+            args=YAML(typ="rt").load("[--line-length=85]"),
+            types_or=YAML(typ="rt").load("[jupyter]"),
         )
         expected_hook["hooks"].append(black_jupyter)
     update_single_hook_precommit_repo(expected_hook)
