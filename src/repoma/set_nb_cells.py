@@ -30,7 +30,6 @@ from repoma.utilities.notebook import load_notebook
 from repoma.utilities.project_info import get_pypi_name
 
 __CONFIG_CELL_CONTENT = """
-%config InlineBackend.figure_formats = ['svg']
 import os
 
 STATIC_WEB_PAGE = {"EXECUTE_NB", "READTHEDOCS"}.intersection(os.environ)
