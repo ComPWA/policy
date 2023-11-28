@@ -1,9 +1,10 @@
 """Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
 
-import os
+import io
 from collections import abc
 from itertools import zip_longest
-from typing import Any, Iterable, List, Optional, Sequence, Set, Union
+from pathlib import Path
+from typing import IO, Any, Iterable, List, Optional, Sequence, Set, Union
 
 import tomlkit
 from tomlkit.container import Container
@@ -64,13 +65,18 @@ def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
     return all(settings.get(key) == value for key, value in minimal_settings.items())
 
 
-def load_pyproject(content: Optional[str] = None) -> TOMLDocument:
-    if not os.path.exists(CONFIG_PATH.pyproject):
-        return TOMLDocument()
-    if content is None:
-        with open(CONFIG_PATH.pyproject) as stream:
-            return tomlkit.loads(stream.read())
-    return tomlkit.loads(content)
+def load_pyproject(
+    source: Union[IO, Path, str] = CONFIG_PATH.pyproject
+) -> TOMLDocument:
+    if isinstance(source, io.IOBase):
+        return tomlkit.load(source)
+    if isinstance(source, Path):
+        with open(source) as stream:
+            return load_pyproject(stream)
+    if isinstance(source, str):
+        return tomlkit.loads(source)
+    msg = f"Source of type {type(source).__name__} is not supported"
+    raise TypeError(msg)
 
 
 def get_package_name(pyproject: Optional[TOMLDocument]) -> Optional[str]:
