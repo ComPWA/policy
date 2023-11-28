@@ -413,15 +413,15 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     minimal_settings = {}
     if has_notebooks:
         notebook_ignores = [
-            "B018",
-            "C90",
-            "D",
-            "N806",
-            "N816",
-            "PLR09",
-            "PLR2004",
-            "PLW0602",
-            "PLW0603",
+            "B018",  # useless-expression
+            "C90",  # complex-structure
+            "D",  # pydocstyle
+            "N806",  # non-lowercase-variable-in-function
+            "N816",  # mixed-case-variable-in-global-scope
+            "PLR09",  # complicated logic
+            "PLR2004",  # magic-value-comparison
+            "PLW0602",  # global-variable-not-assigned
+            "PLW0603",  # global-statement
         ]
         minimal_settings["*.ipynb"] = to_toml_array(notebook_ignores)
     docs_dir = "docs"
