@@ -1,6 +1,7 @@
 """Helper functions for reading from and writing to :file:`setup.cfg`."""
 
 import os
+import sys
 from configparser import ConfigParser
 from textwrap import dedent
 from typing import Dict, List, Optional
@@ -14,11 +15,19 @@ from repoma.utilities.pyproject import get_sub_table, load_pyproject
 from . import CONFIG_PATH
 from .cfg import open_config
 
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
+
+PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+
 
 @frozen
 class ProjectInfo:
     name: Optional[str] = None
-    supported_python_versions: Optional[List[str]] = None
+    supported_python_versions: Optional[List[PythonVersion]] = None
     urls: Dict[str, str] = field(factory=dict)
 
     def is_empty(self) -> bool:
@@ -80,13 +89,13 @@ def get_project_info(pyproject: Optional[TOMLDocument] = None) -> ProjectInfo:
     raise PrecommitError(msg)
 
 
-def _extract_python_versions(classifiers: List[str]) -> Optional[List[str]]:
+def _extract_python_versions(classifiers: List[str]) -> Optional[List[PythonVersion]]:
     identifier = "Programming Language :: Python :: 3."
     version_classifiers = [s for s in classifiers if s.startswith(identifier)]
     if not version_classifiers:
         return None
     prefix = identifier[:-2]
-    return [s.replace(prefix, "") for s in version_classifiers]
+    return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
 
 
 def get_pypi_name(pyproject: Optional[TOMLDocument] = None) -> str:
@@ -107,7 +116,7 @@ def get_pypi_name(pyproject: Optional[TOMLDocument] = None) -> str:
 
 def get_supported_python_versions(
     pyproject: Optional[TOMLDocument] = None,
-) -> List[str]:
+) -> List[PythonVersion]:
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
