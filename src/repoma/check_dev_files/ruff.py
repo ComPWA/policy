@@ -8,6 +8,7 @@ from typing import List, Set
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from tomlkit.items import Array, Table
+from tomlkit.toml_document import TOMLDocument
 
 from repoma.check_dev_files.setup_cfg import (
     has_pyproject_build_system,
@@ -50,11 +51,9 @@ def main(has_notebooks: bool) -> None:
     executor(_check_setup_cfg)
     executor(_remove_flake8)
     executor(_remove_isort)
-    executor(_remove_nbqa)
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
     executor(_update_ruff_settings, has_notebooks)
-    executor(_update_ruff_per_file_ignores, has_notebooks)
     executor(_update_ruff_pydocstyle_settings)
     executor(_update_precommit_hook, has_notebooks)
     executor(_update_pyproject)
@@ -289,6 +288,14 @@ def __remove_nbqa_settings() -> None:
 
 
 def _update_ruff_settings(has_notebooks: bool) -> None:
+    executor = Executor()
+    executor(__update_ruff_settings, has_notebooks)
+    executor(_update_ruff_per_file_ignores, has_notebooks)
+    executor(_remove_nbqa)
+    executor.finalize()
+
+
+def __update_ruff_settings(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff", create=True)
     extend_ignore = [
@@ -333,6 +340,37 @@ def _update_ruff_settings(has_notebooks: bool) -> None:
         write_pyproject(pyproject)
         msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
+
+
+def __get_ipynb_ignores(pyproject: TOMLDocument, per_file_settings: Table) -> Array:
+    notebook_ignores = {
+        "B018",  # useless-expression
+        "C90",  # complex-structure
+        "D",  # pydocstyle
+        "E703",  #  useless-semicolon
+        "N806",  # non-lowercase-variable-in-function
+        "N816",  # mixed-case-variable-in-global-scope
+        "PLR09",  # complicated logic
+        "PLR2004",  # magic-value-comparison
+        "PLW0602",  # global-variable-not-assigned
+        "PLW0603",  # global-statement
+        "TCH00",  # type-checking block
+    }
+    notebook_ignores.update(__get_existing_nbqa_ignores(pyproject))
+    notebook_ignores.update(per_file_settings.get("*.ipynb", []))
+    return to_toml_array(sorted(notebook_ignores))
+
+
+def __get_existing_nbqa_ignores(pyproject: TOMLDocument) -> Set[str]:
+    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    if not nbqa_table:
+        return set()
+    ruff_rules: List[str] = nbqa_table.get("ruff", [])
+    return {
+        r.replace("--extend-ignore=", "")
+        for r in ruff_rules
+        if r.startswith("--extend-ignore=")
+    }
 
 
 def __get_selected_ruff_rules() -> Array:
@@ -412,20 +450,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
     if has_notebooks:
-        notebook_ignores = [
-            "B018",  # useless-expression
-            "C90",  # complex-structure
-            "D",  # pydocstyle
-            "E703",  #  useless-semicolon
-            "N806",  # non-lowercase-variable-in-function
-            "N816",  # mixed-case-variable-in-global-scope
-            "PLR09",  # complicated logic
-            "PLR2004",  # magic-value-comparison
-            "PLW0602",  # global-variable-not-assigned
-            "PLW0603",  # global-statement
-            "TCH00",  # type-checking block
-        ]
-        minimal_settings["*.ipynb"] = to_toml_array(notebook_ignores)
+        minimal_settings["*.ipynb"] = __get_ipynb_ignores(pyproject, settings)
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
