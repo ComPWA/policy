@@ -1,7 +1,6 @@
 """Check `Ruff <https://ruff.rs>`_ configuration."""
 
 import os
-from copy import deepcopy
 from textwrap import dedent
 from typing import List, Set
 
@@ -27,6 +26,7 @@ from repoma.utilities.project_info import (
     open_setup_cfg,
 )
 from repoma.utilities.pyproject import (
+    add_dependency,
     complies_with_subset,
     get_sub_table,
     load_pyproject,
@@ -230,39 +230,16 @@ def _update_pyproject() -> None:
             f" [{CONFIG_PATH.pyproject}]"
         )
         raise PrecommitError(msg)
-    project = get_sub_table(pyproject, "project", create=True)
-    old_dependencies = project.get("optional-dependencies")
-    new_dependencies = deepcopy(old_dependencies)
     python_versions = project_info.supported_python_versions
     if python_versions is not None and "3.6" in python_versions:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    if new_dependencies is None:
-        new_dependencies = dict(
-            dev=[f"{package}[sty]"],
-            lint=[ruff],
-            sty=[f"{package}[lint]"],
-        )
-    else:
-        __add_package(new_dependencies, "dev", f"{package}[sty]")
-        __add_package(new_dependencies, "lint", ruff)
-        __add_package(new_dependencies, "sty", f"{package}[lint]")
-    if old_dependencies != new_dependencies:
-        project["optional-dependencies"] = new_dependencies
-        write_pyproject(pyproject)
-        msg = f"Updated [project.optional-dependencies] in {CONFIG_PATH.pyproject}"
-        raise PrecommitError(msg)
-
-
-def __add_package(optional_dependencies: Table, key: str, package: str) -> None:
-    section = optional_dependencies.get(key)
-    if section is None:
-        optional_dependencies[key] = [package]
-    elif package not in section:
-        optional_dependencies[key] = to_toml_array(
-            sorted({package, *section}, key=lambda s: ('"' in s, s))  # Taplo sorting
-        )
+    executor = Executor()
+    executor(add_dependency, ruff, key="lint")
+    executor(add_dependency, f"{package}[lint]", key="sty")
+    executor(add_dependency, f"{package}[sty]", key="dev")
+    executor.finalize()
 
 
 def _remove_nbqa() -> None:

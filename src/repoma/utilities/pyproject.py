@@ -1,7 +1,7 @@
 """Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
 
 import os
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Set
 
 import tomlkit
 from tomlkit.container import Container
@@ -11,6 +11,36 @@ from tomlkit.toml_document import TOMLDocument
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
+
+
+def add_dependency(package: str, optional_key: Optional[str] = None) -> None:
+    pyproject = load_pyproject()
+    if optional_key is None:
+        project = get_sub_table(pyproject, "project", create=True)
+        existing_dependencies: Set[str] = set(project.get("dependencies", []))
+        if package in existing_dependencies:
+            return
+        existing_dependencies.add(package)
+        project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
+    else:
+        optional_dependencies = get_sub_table(
+            pyproject, "project.optional-dependencies", create=True
+        )
+        existing_dependencies = set(optional_dependencies.get(optional_key, []))
+        if package in existing_dependencies:
+            return
+        existing_dependencies.add(package)
+        existing_dependencies = set(existing_dependencies)
+        optional_dependencies[optional_key] = to_toml_array(
+            _sort_taplo(existing_dependencies)
+        )
+    write_pyproject(pyproject)
+    msg = f"Listed {package} as a dependency under {CONFIG_PATH.pyproject}"
+    raise PrecommitError(msg)
+
+
+def _sort_taplo(items: Iterable[str]) -> List[str]:
+    return sorted(items, key=lambda s: ('"' in s, s))
 
 
 def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
