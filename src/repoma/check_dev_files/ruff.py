@@ -235,11 +235,7 @@ def _update_pyproject() -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    executor = Executor()
-    executor(add_dependency, ruff, key="lint")
-    executor(add_dependency, f"{package}[lint]", key="sty")
-    executor(add_dependency, f"{package}[sty]", key="dev")
-    executor.finalize()
+    add_dependency(ruff, optional_key=["lint", "sty", "dev"])
 
 
 def _remove_nbqa() -> None:

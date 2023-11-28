@@ -1,7 +1,9 @@
 """Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
 
 import os
-from typing import Any, Iterable, List, Optional, Set
+from collections import abc
+from itertools import zip_longest
+from typing import Any, Iterable, List, Optional, Sequence, Set, Union
 
 import tomlkit
 from tomlkit.container import Container
@@ -10,10 +12,13 @@ from tomlkit.toml_document import TOMLDocument
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
+from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
 
 
-def add_dependency(package: str, optional_key: Optional[str] = None) -> None:
+def add_dependency(
+    package: str, optional_key: Optional[Union[str, Sequence[str]]] = None
+) -> None:
     pyproject = load_pyproject()
     if optional_key is None:
         project = get_sub_table(pyproject, "project", create=True)
@@ -22,7 +27,7 @@ def add_dependency(package: str, optional_key: Optional[str] = None) -> None:
             return
         existing_dependencies.add(package)
         project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
-    else:
+    elif isinstance(optional_key, str):
         optional_dependencies = get_sub_table(
             pyproject, "project.optional-dependencies", create=True
         )
@@ -34,6 +39,18 @@ def add_dependency(package: str, optional_key: Optional[str] = None) -> None:
         optional_dependencies[optional_key] = to_toml_array(
             _sort_taplo(existing_dependencies)
         )
+    elif isinstance(optional_key, abc.Iterable):
+        this_package = get_package_name_safe(pyproject)
+        executor = Executor()
+        for key, next_key in zip_longest(optional_key, optional_key[1:]):
+            if next_key is None:
+                executor(add_dependency, package, key)
+            else:
+                executor(add_dependency, f"{this_package}[{key}]", next_key)
+        executor.finalize()
+    else:
+        msg = f"Unsupported type for optional_key: {type(optional_key)}"
+        raise NotImplementedError(msg)
     write_pyproject(pyproject)
     msg = f"Listed {package} as a dependency under {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
@@ -54,6 +71,26 @@ def load_pyproject(content: Optional[str] = None) -> TOMLDocument:
         with open(CONFIG_PATH.pyproject) as stream:
             return tomlkit.loads(stream.read())
     return tomlkit.loads(content)
+
+
+def get_package_name(pyproject: Optional[TOMLDocument]) -> Optional[str]:
+    pyproject = load_pyproject()
+    project = get_sub_table(pyproject, "project")
+    package_name = project.get("name")
+    if package_name is None:
+        return None
+    return package_name
+
+
+def get_package_name_safe(pyproject: Optional[TOMLDocument]) -> str:
+    package_name = get_package_name(pyproject)
+    if package_name is None:
+        msg = (
+            "Please specify a [project.name] for the package in"
+            f" [{CONFIG_PATH.pyproject}]"
+        )
+        raise PrecommitError(msg)
+    return package_name
 
 
 def get_sub_table(config: Container, dotted_header: str, create: bool = False) -> Table:
