@@ -2,7 +2,6 @@
 
 import io
 from collections import abc
-from itertools import zip_longest
 from pathlib import Path
 from typing import IO, Any, Iterable, List, Optional, Sequence, Set, Union
 
@@ -17,10 +16,21 @@ from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
 
 
-def add_dependency(
-    package: str, optional_key: Optional[Union[str, Sequence[str]]] = None
+def add_dependency(  # noqa: C901, PLR0912
+    package: str,
+    optional_key: Optional[Union[str, Sequence[str]]] = None,
+    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject,
+    target: Optional[Union[IO, Path, str]] = None,
 ) -> None:
-    pyproject = load_pyproject()
+    if isinstance(source, TOMLDocument):
+        pyproject = source
+    else:
+        pyproject = load_pyproject(source)
+    if target is None:
+        if isinstance(source, TOMLDocument):
+            msg = "If the source is a TOML document, you have to specify a target"
+            raise TypeError(msg)
+        target = source
     if optional_key is None:
         project = get_sub_table(pyproject, "project", create=True)
         existing_dependencies: Set[str] = set(project.get("dependencies", []))
@@ -40,19 +50,24 @@ def add_dependency(
         optional_dependencies[optional_key] = to_toml_array(
             _sort_taplo(existing_dependencies)
         )
-    elif isinstance(optional_key, abc.Iterable):
+    elif isinstance(optional_key, abc.Sequence):
+        if len(optional_key) < 2:  # noqa: PLR2004
+            msg = "Need at least two keys to define nested optional dependencies"
+            raise ValueError(msg)
         this_package = get_package_name_safe(pyproject)
         executor = Executor()
-        for key, next_key in zip_longest(optional_key, optional_key[1:]):
-            if next_key is None:
-                executor(add_dependency, package, key)
+        for key, previous in zip(optional_key, [None, *optional_key]):
+            if previous is None:
+                executor(add_dependency, package, key, source, target)
             else:
-                executor(add_dependency, f"{this_package}[{key}]", next_key)
+                executor(
+                    add_dependency, f"{this_package}[{previous}]", key, source, target
+                )
         executor.finalize()
     else:
         msg = f"Unsupported type for optional_key: {type(optional_key)}"
         raise NotImplementedError(msg)
-    write_pyproject(pyproject)
+    write_pyproject(pyproject, target)
     msg = f"Listed {package} as a dependency under {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
 

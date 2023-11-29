@@ -8,6 +8,7 @@ from tomlkit.items import Table
 
 from repoma.errors import PrecommitError
 from repoma.utilities.pyproject import (
+    add_dependency,
     get_package_name_safe,
     get_sub_table,
     load_pyproject,
@@ -16,6 +17,67 @@ from repoma.utilities.pyproject import (
 )
 
 REPOMA_DIR = Path(__file__).absolute().parent.parent.parent
+
+
+def test_add_dependency():
+    stream = io.StringIO(dedent("""
+    [project]
+    name = "my-package"
+    """))
+    stream.seek(0)
+    dependency = "attrs"
+    with pytest.raises(
+        PrecommitError,
+        match=f"Listed {dependency} as a dependency under pyproject.toml",
+    ):
+        add_dependency(dependency, source=stream)
+    result = stream.getvalue()
+    print(result)  # noqa: T201  # run with pytest -s
+    assert result == dedent("""
+    [project]
+    name = "my-package"
+    dependencies = ["attrs"]
+    """)
+
+
+def test_add_dependency_nested():
+    stream = io.StringIO(dedent("""
+    [project]
+    name = "my-package"
+    """))
+    stream.seek(0)
+    with pytest.raises(PrecommitError):
+        add_dependency("ruff", optional_key=["lint", "sty", "dev"], source=stream)
+    result = stream.getvalue()
+    print(result)  # noqa: T201  # run with pytest -s
+    assert result == dedent("""
+    [project]
+    name = "my-package"
+
+    [project.optional-dependencies]
+    lint = ["ruff"]
+    sty = ["my-package[lint]"]
+    dev = ["my-package[sty]"]
+    """)
+
+
+def test_add_dependency_optional():
+    stream = io.StringIO(dedent("""
+    [project]
+    name = "my-package"
+    """))
+    stream.seek(0)
+    with pytest.raises(PrecommitError):
+        add_dependency("ruff", optional_key="lint", source=stream)
+    result = stream.getvalue()
+    print(result)  # noqa: T201  # run with pytest -s
+    assert result == dedent("""
+    [project]
+    name = "my-package"
+
+    [project.optional-dependencies]
+    lint = ["ruff"]
+    """)
 
 
 def test_edit_toml():
