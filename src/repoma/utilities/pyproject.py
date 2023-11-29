@@ -63,7 +63,8 @@ def add_dependency(  # noqa: C901, PLR0912
                 executor(
                     add_dependency, f"{this_package}[{previous}]", key, source, target
                 )
-        executor.finalize()
+        if executor.finalize() == 0:
+            return
     else:
         msg = f"Unsupported type for optional_key: {type(optional_key)}"
         raise NotImplementedError(msg)

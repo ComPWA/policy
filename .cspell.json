@@ -71,6 +71,7 @@
     "indentless",
     "ipynb",
     "jsonschema",
+    "jupyterlab",
     "linkcheck",
     "maxdepth",
     "maxsplit",

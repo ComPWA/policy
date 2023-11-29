@@ -16,6 +16,7 @@ from . import (
     github_labels,
     github_workflows,
     gitpod,
+    jupyter,
     mypy,
     nbstripout,
     precommit,
@@ -58,6 +59,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             skip_tests=_to_list(args.ci_skipped_tests),
             test_extras=_to_list(args.ci_test_extras),
         )
+    if has_notebooks:
+        executor(jupyter.main)
     executor(nbstripout.main)
     executor(toml.main)  # has to run before pre-commit
     executor(prettier.main, args.no_prettierrc)
