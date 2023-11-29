@@ -113,10 +113,18 @@ def get_sub_table(config: Container, dotted_header: str, create: bool = False) -
     return current_table
 
 
-def write_pyproject(config: TOMLDocument) -> None:
-    src = tomlkit.dumps(config, sort_keys=True)
-    with open(CONFIG_PATH.pyproject, "w") as stream:
-        stream.write(src)
+def write_pyproject(
+    config: TOMLDocument, target: Union[IO, Path, str] = CONFIG_PATH.pyproject
+) -> None:
+    if isinstance(target, io.IOBase):
+        tomlkit.dump(config, target, sort_keys=True)
+    elif isinstance(target, (Path, str)):
+        src = tomlkit.dumps(config, sort_keys=True)
+        with open(target, "w") as stream:
+            stream.write(src)
+    else:
+        msg = f"Target of type {type(target).__name__} is not supported"
+        raise TypeError(msg)
 
 
 def to_toml_array(items: Iterable[Any], enforce_multiline: bool = False) -> Array:
