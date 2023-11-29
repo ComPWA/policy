@@ -69,6 +69,7 @@ def load_pyproject(
     source: Union[IO, Path, str] = CONFIG_PATH.pyproject
 ) -> TOMLDocument:
     if isinstance(source, io.IOBase):
+        source.seek(0)
         return tomlkit.load(source)
     if isinstance(source, Path):
         with open(source) as stream:
@@ -117,6 +118,7 @@ def write_pyproject(
     config: TOMLDocument, target: Union[IO, Path, str] = CONFIG_PATH.pyproject
 ) -> None:
     if isinstance(target, io.IOBase):
+        target.seek(0)
         tomlkit.dump(config, target, sort_keys=True)
     elif isinstance(target, (Path, str)):
         src = tomlkit.dumps(config, sort_keys=True)
