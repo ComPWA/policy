@@ -429,6 +429,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "B018",  # useless-expression
             "C90",  # complex-structure
             "D",  # pydocstyle
+            "E402",  # import not at top of file
             "E703",  #  useless-semicolon
             "N806",  # non-lowercase-variable-in-function
             "N816",  # mixed-case-variable-in-global-scope
@@ -436,6 +437,8 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "PLR2004",  # magic-value-comparison
             "PLW0602",  # global-variable-not-assigned
             "PLW0603",  # global-statement
+            "S101",  # `assert` detected
+            "T201",  # print found
             "TCH00",  # type-checking block
         }
         minimal_settings[key] = __merge_rules(
