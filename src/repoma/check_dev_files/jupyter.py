@@ -16,6 +16,7 @@ def _update_dev_requirements() -> None:
     dependencies = [
         "jupyterlab",
         "jupyterlab-code-formatter",
+        "jupyterlab-git",
         "jupyterlab-lsp",
         "jupyterlab-myst",
         "python-lsp-server[rope]",
