@@ -2,7 +2,7 @@
 
 import os
 from textwrap import dedent
-from typing import List, Set
+from typing import Iterable, List, Set
 
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
@@ -295,19 +295,17 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         "task-tags": __get_task_tags(settings),
     }
     if has_notebooks:
-        extend_include = ["*.ipynb"]
-        extend_include = sorted({*settings.get("extend-include", []), *extend_include})
-        minimal_settings["extend-include"] = to_toml_array(extend_include)
+        key = "extend-include"
+        default_includes = ["*.ipynb"]
+        minimal_settings[key] = __merge(default_includes, settings.get(key, []))
     src_directories = __get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
     typings_dir = "typings"
     if os.path.exists(typings_dir) and os.path.isdir(typings_dir):
-        extend_exclude = {
-            "typings",
-            *settings.get("extend-exclude", []),
-        }
-        minimal_settings["extend-exclude"] = to_toml_array(sorted(extend_exclude))
+        key = "extend-exclude"
+        default_excludes = ["typings"]
+        minimal_settings[key] = __merge(default_excludes, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
@@ -315,23 +313,26 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def __get_ipynb_ignores(pyproject: TOMLDocument, per_file_settings: Table) -> Array:
-    notebook_ignores = {
-        "B018",  # useless-expression
-        "C90",  # complex-structure
-        "D",  # pydocstyle
-        "E703",  #  useless-semicolon
-        "N806",  # non-lowercase-variable-in-function
-        "N816",  # mixed-case-variable-in-global-scope
-        "PLR09",  # complicated logic
-        "PLR2004",  # magic-value-comparison
-        "PLW0602",  # global-variable-not-assigned
-        "PLW0603",  # global-statement
-        "TCH00",  # type-checking block
+def __merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -> Array:
+    """Extend Ruff rules with new rules and filter out redundant ones.
+
+    >>> __merge_rules(["C90", "B018"], ["D10", "C"])
+    ['B018', 'C', 'D10']
+    """
+    merged = __merge(*rule_sets)
+    filtered = {
+        rule
+        for rule in merged
+        if not any(rule != r and rule.startswith(r) for r in merged)
     }
-    notebook_ignores.update(__get_existing_nbqa_ignores(pyproject))
-    notebook_ignores.update(per_file_settings.get("*.ipynb", []))
-    return to_toml_array(sorted(notebook_ignores))
+    return to_toml_array(sorted(filtered), enforce_multiline)
+
+
+def __merge(*listings: Iterable[str], enforce_multiline: bool = False) -> Array:
+    merged = set()
+    for lst in listings:
+        merged |= set(lst)
+    return to_toml_array(sorted(merged), enforce_multiline)
 
 
 def __get_existing_nbqa_ignores(pyproject: TOMLDocument) -> Set[str]:
@@ -423,25 +424,42 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
     if has_notebooks:
-        minimal_settings["*.ipynb"] = __get_ipynb_ignores(pyproject, settings)
+        key = "*.ipynb"
+        default_ignores = {
+            "B018",  # useless-expression
+            "C90",  # complex-structure
+            "D",  # pydocstyle
+            "E703",  #  useless-semicolon
+            "N806",  # non-lowercase-variable-in-function
+            "N816",  # mixed-case-variable-in-global-scope
+            "PLR09",  # complicated logic
+            "PLR2004",  # magic-value-comparison
+            "PLW0602",  # global-variable-not-assigned
+            "PLW0603",  # global-statement
+            "TCH00",  # type-checking block
+        }
+        minimal_settings[key] = __merge_rules(
+            default_ignores,
+            __get_existing_nbqa_ignores(pyproject),
+            settings.get(key, []),
+        )
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
-        ignore_codes = {
+        default_ignores = {
             "E402",  # import not at top of file
             "INP001",  # implicit namespace package
             "S101",  # `assert` detected
             "S113",  # requests call without timeout
             "T201",  # print found
         }
-        ignore_codes.update(settings.get(key, []))  # type: ignore[arg-type]
-        minimal_settings[key] = to_toml_array(sorted(ignore_codes))
+        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
     docs_dir = "tests"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
-        ignore_codes = {
+        default_ignores = {
             "D",
             "INP001",
             "PGH001",
@@ -449,8 +467,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "PLR2004",
             "S101",
         }
-        ignore_codes.update(settings.get(key, []))  # type: ignore[arg-type]
-        minimal_settings[key] = to_toml_array(sorted(ignore_codes))
+        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
