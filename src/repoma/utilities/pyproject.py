@@ -80,21 +80,28 @@ def load_pyproject(
     raise TypeError(msg)
 
 
-def get_package_name(pyproject: Optional[TOMLDocument]) -> Optional[str]:
-    pyproject = load_pyproject()
-    project = get_sub_table(pyproject, "project")
+def get_package_name(
+    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject
+) -> Optional[str]:
+    if isinstance(source, TOMLDocument):
+        pyproject = source
+    else:
+        pyproject = load_pyproject(source)
+    project = get_sub_table(pyproject, "project", create=True)
     package_name = project.get("name")
     if package_name is None:
         return None
     return package_name
 
 
-def get_package_name_safe(pyproject: Optional[TOMLDocument]) -> str:
-    package_name = get_package_name(pyproject)
+def get_package_name_safe(
+    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject
+) -> str:
+    package_name = get_package_name(source)
     if package_name is None:
         msg = (
-            "Please specify a [project.name] for the package in"
-            f" [{CONFIG_PATH.pyproject}]"
+            "Please provide a name for the package under the [project] table in"
+            f" {CONFIG_PATH.pyproject}"
         )
         raise PrecommitError(msg)
     return package_name

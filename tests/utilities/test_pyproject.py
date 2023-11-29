@@ -6,7 +6,9 @@ from typing import Optional
 import pytest
 from tomlkit.items import Table
 
+from repoma.errors import PrecommitError
 from repoma.utilities.pyproject import (
+    get_package_name_safe,
     get_sub_table,
     load_pyproject,
     to_toml_array,
@@ -56,6 +58,19 @@ def test_edit_toml():
         "--line-length=79",
     ]
     """)
+
+
+def test_get_package_name_safe():
+    correct_input = io.StringIO(dedent("""
+    [project]
+    name = "my-package"
+    """))
+    assert get_package_name_safe(correct_input) == "my-package"
+
+    with pytest.raises(PrecommitError, match=r"^Please provide a name for the package"):
+        _ = get_package_name_safe(io.StringIO("[project]"))
+    with pytest.raises(PrecommitError, match=r"^Please provide a name for the package"):
+        _ = get_package_name_safe(io.StringIO())
 
 
 @pytest.mark.parametrize("path", [None, REPOMA_DIR / "pyproject.toml"])
