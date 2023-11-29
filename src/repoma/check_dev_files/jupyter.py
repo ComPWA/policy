@@ -19,6 +19,7 @@ def _update_dev_requirements() -> None:
         "jupyterlab-git",
         "jupyterlab-lsp",
         "jupyterlab-myst",
+        "python-lsp-ruff",
         "python-lsp-server[rope]",
     ]
     executor = Executor()
