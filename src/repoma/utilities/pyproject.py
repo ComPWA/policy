@@ -145,6 +145,7 @@ def write_pyproject(
         tomlkit.dump(config, target, sort_keys=True)
     elif isinstance(target, (Path, str)):
         src = tomlkit.dumps(config, sort_keys=True)
+        src = f"{src.strip()}\n"
         with open(target, "w") as stream:
             stream.write(src)
     else:
