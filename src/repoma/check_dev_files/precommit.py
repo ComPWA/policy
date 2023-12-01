@@ -14,11 +14,6 @@ from repoma.utilities.yaml import create_prettier_round_trip_yaml
 __NON_SKIPPED_HOOKS = {
     "editorconfig-checker",
 }
-__SKIPPED_HOOKS = {
-    "check-jsonschema",
-    "pyright",
-    "taplo",
-}
 
 
 def main() -> None:
@@ -116,5 +111,19 @@ def get_non_functional_hooks(config: PrecommitConfig) -> List[str]:
         for repo in config.repos
         for hook in repo.hooks
         if repo.repo
-        if hook.id in __SKIPPED_HOOKS
+        if hook.id in __get_skipped_hooks(config)
     ]
+
+
+def __get_skipped_hooks(config: PrecommitConfig) -> Set[str]:
+    skipped_hooks = {
+        "check-jsonschema",
+        "pyright",
+        "taplo",
+    }
+    repo = config.find_repo(r"^.*/mirrors-prettier$")
+    if repo is not None and repo.rev is not None:
+        rev = repo.rev
+        if rev.startswith("v4") and "alpha" in rev:
+            skipped_hooks.add("prettier")
+    return skipped_hooks
