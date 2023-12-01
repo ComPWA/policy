@@ -1,9 +1,11 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
 
+from pathlib import Path
 from textwrap import dedent
 from typing import List, Set
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -22,6 +24,7 @@ def main() -> None:
     executor(_check_plural_hooks_first, cfg)
     executor(_check_single_hook_sorting, cfg)
     executor(_check_skipped_hooks, cfg)
+    executor(_update_conda_environment, cfg)
     executor.finalize()
 
 
@@ -115,15 +118,50 @@ def get_non_functional_hooks(config: PrecommitConfig) -> List[str]:
     ]
 
 
+def _update_conda_environment(precommit_config: PrecommitConfig) -> None:
+    """Temporary fix for Prettier v4 alpha releases.
+
+    https://prettier.io/blog/2023/11/30/cli-deep-dive#installation
+    """
+    path = Path("environment.yml")
+    if not path.exists():
+        return
+    yaml = create_prettier_round_trip_yaml()
+    conda_env: CommentedMap = yaml.load(path)
+    variables: CommentedMap = conda_env.get("variables", {})
+    key = "PRETTIER_LEGACY_CLI"
+    if __has_prettier_v4alpha(precommit_config):
+        if key not in variables:
+            variables[key] = DoubleQuotedScalarString("1")
+            conda_env["variables"] = variables
+            yaml.dump(conda_env, path)
+            msg = f"Set {key} environment variable in {path}"
+            raise PrecommitError(msg)
+    elif key in variables:
+        del variables[key]
+        if not variables:
+            del conda_env["variables"]
+        yaml.dump(conda_env, path)
+        msg = f"Removed {key} environment variable {path}"
+        raise PrecommitError(msg)
+
+
 def __get_skipped_hooks(config: PrecommitConfig) -> Set[str]:
     skipped_hooks = {
         "check-jsonschema",
         "pyright",
         "taplo",
     }
-    repo = config.find_repo(r"^.*/mirrors-prettier$")
-    if repo is not None and repo.rev is not None:
-        rev = repo.rev
-        if rev.startswith("v4") and "alpha" in rev:
-            skipped_hooks.add("prettier")
+    if __has_prettier_v4alpha(config):
+        skipped_hooks.add("prettier")
     return skipped_hooks
+
+
+def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
+    repo = config.find_repo(r"^.*/mirrors-prettier$")
+    if repo is None:
+        return False
+    if repo.rev is None:
+        return False
+    rev = repo.rev
+    return rev.startswith("v4") and "alpha" in rev
