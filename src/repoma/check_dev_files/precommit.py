@@ -1,7 +1,7 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
 
 from pathlib import Path
-from typing import Iterable, List, Set
+from typing import Iterable, List, Optional, Set, Tuple
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
@@ -16,38 +16,33 @@ from repoma.utilities.yaml import create_prettier_round_trip_yaml
 def main() -> None:
     cfg = PrecommitConfig.load()
     executor = Executor()
-    executor(_check_plural_hooks_first, cfg)
-    executor(_check_single_hook_sorting, cfg)
+    executor(_sort_hooks)
     executor(_update_conda_environment, cfg)
     executor(_update_precommit_ci_skip, cfg)
     executor.finalize()
 
 
-def _check_plural_hooks_first(config: PrecommitConfig) -> None:
-    if config.ci is None:
+def _sort_hooks() -> None:
+    yaml = create_prettier_round_trip_yaml()
+    contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
+    repos: Optional[CommentedSeq] = contents.get("repos")
+    if repos is None:
         return
-    plural_hook_repos = [r for r in config.repos if len(r.hooks) > 1]
-    n_plural_repos = len(plural_hook_repos)
-    if config.repos[:n_plural_repos] != plural_hook_repos:
-        msg = (
-            "Please bundle repos with multiple hooks at the top of the pre-commit"
-            " config"
-        )
+    sorted_repos: List[CommentedMap] = sorted(repos, key=__repo_def_sorting)
+    contents["repos"] = sorted_repos
+    if sorted_repos != repos:
+        yaml.dump(contents, CONFIG_PATH.precommit)
+        msg = f"Sorted pre-commit hooks in {CONFIG_PATH.precommit}"
         raise PrecommitError(msg)
 
 
-def _check_single_hook_sorting(config: PrecommitConfig) -> None:
-    if config.ci is None:
-        return
-    single_hook_repos = [r for r in config.repos if len(r.hooks) == 1]
-    expected_repo_order = sorted(
-        (r for r in single_hook_repos),
-        key=lambda r: r.hooks[0].id,
-    )
-    if single_hook_repos != expected_repo_order:
-        msg = "Pre-commit hooks are not sorted. Should be as follows:\n\n  "
-        msg += "\n  ".join(f"{r.hooks[0].id:20s} {r.repo}" for r in expected_repo_order)
-        raise PrecommitError(msg)
+def __repo_def_sorting(repo_def: CommentedMap) -> Tuple[int, str]:
+    if repo_def["repo"] == "meta":
+        return (0, "meta")
+    hooks: CommentedSeq = repo_def["hooks"]
+    if len(hooks) > 1:
+        return 1, repo_def["repo"]
+    return (2, hooks[0]["id"])
 
 
 def _update_precommit_ci_skip(config: PrecommitConfig) -> None:
