@@ -3,23 +3,13 @@
 import io
 import re
 from configparser import ConfigParser
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 from repoma.errors import PrecommitError
 
 from . import CONFIG_PATH, read, write
-
-
-def copy_config(cfg: ConfigParser) -> ConfigParser:
-    # can't use deepcopy in Python 3.6
-    # https://stackoverflow.com/a/24343297
-    stream = io.StringIO()
-    cfg.write(stream)
-    stream.seek(0)
-    cfg_copy = ConfigParser()
-    cfg_copy.read_file(stream)
-    return cfg_copy
 
 
 def extract_config_section(
@@ -42,8 +32,8 @@ def extract_config_section(
 def __split_config(
     cfg: ConfigParser, extracted_sections: List[str]
 ) -> Tuple[ConfigParser, ConfigParser]:
-    old_config = copy_config(cfg)
-    extracted_config = copy_config(cfg)
+    old_config = deepcopy(cfg)
+    extracted_config = deepcopy(cfg)
     for section in cfg.sections():
         if section in extracted_sections:
             old_config.remove_section(section)

@@ -7,6 +7,7 @@ import re
 import textwrap
 from collections import defaultdict
 from configparser import RawConfigParser
+from copy import deepcopy
 from typing import Dict, List, Tuple, Union
 
 import tomlkit
@@ -18,7 +19,6 @@ from tomlkit.items import Array, Table
 from repoma.errors import PrecommitError
 from repoma.format_setup_cfg import write_formatted_setup_cfg
 from repoma.utilities import CONFIG_PATH
-from repoma.utilities.cfg import copy_config
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
 from repoma.utilities.project_info import (
@@ -197,7 +197,7 @@ def __update_author_data_in_setup_cfg() -> None:
     if not CONFIG_PATH.setup_cfg.exists():
         return
     old_cfg = open_setup_cfg()
-    new_cfg = copy_config(old_cfg)
+    new_cfg = deepcopy(old_cfg)
     new_cfg.set("metadata", "author", "Common Partial Wave Analysis")
     new_cfg.set("metadata", "author_email", "Common Partial Wave Analysis")
     new_cfg.set("metadata", "author_email", "compwa-admin@ep1.rub.de")
@@ -236,7 +236,7 @@ def __fix_long_description_in_setup_cfg() -> None:
     if not has_setup_cfg_build_system():
         return
     old_cfg = open_setup_cfg()
-    new_cfg = copy_config(old_cfg)
+    new_cfg = deepcopy(old_cfg)
     new_cfg.set("metadata", "long_description", "file: README.md")
     new_cfg.set("metadata", "long_description_content_type", "text/markdown")
     if new_cfg != old_cfg:
