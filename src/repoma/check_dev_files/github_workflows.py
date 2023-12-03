@@ -206,7 +206,12 @@ def __get_package_name() -> str:
     if os.path.exists(f"src/{package_name}/"):
         return package_name
     src_dirs = os.listdir("src/")
-    candidate_dirs = [s for s in src_dirs if s.startswith(pypi_name[0].lower())]
+    candidate_dirs = [
+        s
+        for s in src_dirs
+        if s.startswith(pypi_name[0].lower())
+        if not s.endswith(".egg-info")
+    ]
     if candidate_dirs:
         return sorted(candidate_dirs)[0]
     return sorted(src_dirs)[0]
