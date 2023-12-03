@@ -1,9 +1,10 @@
 """Checks to be performed locally on the ComPWA/repo-maintenance repository."""
 
+from __future__ import annotations
+
 from functools import lru_cache
 from io import StringIO
 from textwrap import dedent, indent
-from typing import Dict
 
 import yaml
 
@@ -48,7 +49,7 @@ def _to_dict(hook: Hook) -> dict:
 
 
 @lru_cache(maxsize=None)
-def _load_precommit_hook_definitions() -> Dict[str, Hook]:
+def _load_precommit_hook_definitions() -> dict[str, Hook]:
     with open(__HOOK_DEFINITION_FILE) as f:
         hook_definitions = yaml.load(f, Loader=yaml.SafeLoader)
     hooks = [fromdict(h, Hook) for h in hook_definitions]

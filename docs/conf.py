@@ -4,12 +4,13 @@ This file only contains a selection of the most common options. For a full list 
 documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
+from __future__ import annotations
+
 import contextlib
 import os
 import shutil
 import subprocess
 import sys
-from typing import Optional
 
 import requests
 
@@ -46,7 +47,7 @@ def generate_api(package: str) -> None:
     )
 
 
-def get_html_logo_path() -> Optional[str]:
+def get_html_logo_path() -> str | None:
     logo_path = "_static/logo.svg"
     os.makedirs(os.path.dirname(logo_path), exist_ok=True)
     with contextlib.suppress(requests.exceptions.ConnectionError):

@@ -1,9 +1,10 @@
 """Check citation files."""
 
+from __future__ import annotations
+
 import json
 import os
 from textwrap import dedent
-from typing import Dict, List, Optional, Set
 
 from html2text import HTML2Text
 from ruamel.yaml import YAML
@@ -112,8 +113,8 @@ def _write_citation_cff(citation_cff: CommentedMap) -> None:
         yaml.dump(citation_cff, stream)
 
 
-def _get_authors(zenodo: dict) -> Optional[List[Dict[str, str]]]:
-    creators: Optional[List[Dict[str, str]]] = zenodo.get("creators")
+def _get_authors(zenodo: dict) -> list[dict[str, str]] | None:
+    creators: list[dict[str, str]] | None = zenodo.get("creators")
     if creators is None:
         return None
     return [__convert_author(item) for item in creators]
@@ -132,10 +133,10 @@ def __convert_author(creator: dict) -> dict:
         "family-names": family_name.strip(),
         "given-names": given_names.strip(),
     }
-    affiliation: Optional[str] = creator.get("affiliation")
+    affiliation: str | None = creator.get("affiliation")
     if affiliation is not None:
         author_info["affiliation"] = affiliation
-    orcid: Optional[str] = creator.get("orcid")
+    orcid: str | None = creator.get("orcid")
     if orcid is not None:
         author_info["orcid"] = f"https://orcid.org/{orcid}"
     return author_info
@@ -160,7 +161,7 @@ def check_citation_keys() -> None:
     if not citation_cff:
         msg = f"{CONFIG_PATH.citation} is empty"
         raise PrecommitError(msg)
-    existing: Set[str] = set(citation_cff)
+    existing: set[str] = set(citation_cff)
     missing_keys = expected - existing
     if missing_keys:
         sorted_keys = sorted(missing_keys)

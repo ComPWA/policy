@@ -1,11 +1,13 @@
 """Helper functions for formatting :file:`.cfg` files."""
 
+from __future__ import annotations
+
 import io
 import re
 from configparser import ConfigParser
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Tuple, Union
+from typing import Callable, Iterable
 
 from repoma.errors import PrecommitError
 
@@ -13,9 +15,9 @@ from . import CONFIG_PATH, read, write
 
 
 def extract_config_section(
-    extract_from: Union[Path, str],
-    extract_to: Union[Path, str],
-    sections: List[str],
+    extract_from: Path | str,
+    extract_to: Path | str,
+    sections: list[str],
 ) -> None:
     cfg = open_config(extract_from)
     if any(map(cfg.has_section, sections)):
@@ -30,8 +32,8 @@ def extract_config_section(
 
 
 def __split_config(
-    cfg: ConfigParser, extracted_sections: List[str]
-) -> Tuple[ConfigParser, ConfigParser]:
+    cfg: ConfigParser, extracted_sections: list[str]
+) -> tuple[ConfigParser, ConfigParser]:
     old_config = deepcopy(cfg)
     extracted_config = deepcopy(cfg)
     for section in cfg.sections():
@@ -42,16 +44,16 @@ def __split_config(
     return old_config, extracted_config
 
 
-def __write_config(cfg: ConfigParser, output_path: Union[Path, str]) -> None:
+def __write_config(cfg: ConfigParser, output_path: Path | str) -> None:
     with open(output_path, "w") as stream:
         cfg.write(stream)
     format_config(input=output_path, output=output_path)
 
 
 def format_config(
-    input: Union[Path, io.TextIOBase, str],  # noqa: A002
-    output: Union[Path, io.TextIOBase, str],
-    additional_rules: Optional[Iterable[Callable[[str], str]]] = None,
+    input: Path | (io.TextIOBase | str),  # noqa: A002
+    output: Path | (io.TextIOBase | str),
+    additional_rules: Iterable[Callable[[str], str]] | None = None,
 ) -> None:
     content = read(input)
     indent_size = 4
@@ -73,7 +75,7 @@ def format_config(
     write(content, target=output)
 
 
-def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
+def open_config(definition: Path | (io.TextIOBase | str)) -> ConfigParser:
     cfg = ConfigParser()
     if isinstance(definition, io.TextIOBase):
         text = definition.read()
@@ -96,7 +98,7 @@ def open_config(definition: Union[Path, io.TextIOBase, str]) -> ConfigParser:
     return cfg
 
 
-def write_config(cfg: ConfigParser, output: Union[Path, io.TextIOBase, str]) -> None:
+def write_config(cfg: ConfigParser, output: Path | (io.TextIOBase | str)) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
     elif isinstance(output, (Path, str)):

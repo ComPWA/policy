@@ -1,5 +1,7 @@
 """Collection of helper functions that are shared by all sub-hooks."""
 
+from __future__ import annotations
+
 import hashlib
 import io
 import os
@@ -7,7 +9,7 @@ import re
 import shutil
 from pathlib import Path
 from shutil import copyfile
-from typing import List, NamedTuple, Union
+from typing import NamedTuple
 
 import repoma
 from repoma.errors import PrecommitError
@@ -42,7 +44,7 @@ CONFIG_PATH = _ConfigFilePaths()
 REPOMA_DIR = Path(repoma.__file__).parent.absolute()
 
 
-def hash_file(path: Union[Path, str]) -> str:
+def hash_file(path: Path | str) -> str:
     # https://stackoverflow.com/a/22058673
     buffer_size = 65_536
     sha256 = hashlib.sha256()
@@ -55,7 +57,7 @@ def hash_file(path: Union[Path, str]) -> str:
     return sha256.hexdigest()
 
 
-def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
+def read(input: Path | (io.TextIOBase | str)) -> str:  # noqa: A002
     if isinstance(input, (Path, str)):
         with open(input) as input_stream:
             return input_stream.read()
@@ -65,7 +67,7 @@ def read(input: Union[Path, io.TextIOBase, str]) -> str:  # noqa: A002
     raise TypeError(msg)
 
 
-def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
+def write(content: str, target: Path | (io.TextIOBase | str)) -> None:
     if isinstance(target, str):
         target = Path(target)
     if isinstance(target, Path):
@@ -79,7 +81,7 @@ def write(content: str, target: Union[Path, io.TextIOBase, str]) -> None:
         raise TypeError(msg)
 
 
-def remove_configs(paths: List[str]) -> None:
+def remove_configs(paths: list[str]) -> None:
     executor = Executor()
     for path in paths:
         executor(__remove_file, path)
@@ -120,7 +122,7 @@ def rename_file(old: str, new: str) -> None:
         raise PrecommitError(msg)
 
 
-def natural_sorting(text: str) -> List[Union[float, str]]:
+def natural_sorting(text: str) -> list[float | str]:
     # https://stackoverflow.com/a/5967539/13219025
     return [
         __attempt_number_cast(c)
@@ -148,7 +150,7 @@ def update_file(relative_path: Path, in_template_folder: bool = False) -> None:
         raise PrecommitError(msg)
 
 
-def __attempt_number_cast(text: str) -> Union[float, str]:
+def __attempt_number_cast(text: str) -> float | str:
     try:
         return float(text)
     except ValueError:

@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import io
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import Optional
 
 import pytest
 from tomlkit.items import Table
@@ -136,7 +137,7 @@ def test_get_package_name_safe():
 
 
 @pytest.mark.parametrize("path", [None, REPOMA_DIR / "pyproject.toml"])
-def test_load_pyproject(path: Optional[Path]):
+def test_load_pyproject(path: Path | None):
     if path is None:
         pyproject = load_pyproject()
     else:

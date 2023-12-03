@@ -1,7 +1,9 @@
 """Check content of :code:`.pre-commit-config.yaml` and related files."""
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Iterable, List, Optional, Set, Tuple
+from typing import Iterable
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
@@ -25,10 +27,10 @@ def main() -> None:
 def _sort_hooks() -> None:
     yaml = create_prettier_round_trip_yaml()
     contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
-    repos: Optional[CommentedSeq] = contents.get("repos")
+    repos: CommentedSeq | None = contents.get("repos")
     if repos is None:
         return
-    sorted_repos: List[CommentedMap] = sorted(repos, key=__repo_def_sorting)
+    sorted_repos: list[CommentedMap] = sorted(repos, key=__repo_def_sorting)
     contents["repos"] = sorted_repos
     if sorted_repos != repos:
         yaml.dump(contents, CONFIG_PATH.precommit)
@@ -36,7 +38,7 @@ def _sort_hooks() -> None:
         raise PrecommitError(msg)
 
 
-def __repo_def_sorting(repo_def: CommentedMap) -> Tuple[int, str]:
+def __repo_def_sorting(repo_def: CommentedMap) -> tuple[int, str]:
     if repo_def["repo"] == "meta":
         return (0, "meta")
     hooks: CommentedSeq = repo_def["hooks"]
@@ -80,7 +82,7 @@ def __update_precommit_ci_skip(expected_skips: Iterable[str]) -> None:
     raise PrecommitError(msg)
 
 
-def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:
+def __get_precommit_ci_skips(config: PrecommitConfig) -> set[str]:
     if config.ci is None:
         msg = "Pre-commit config does not contain a ci section"
         raise ValueError(msg)
@@ -89,11 +91,11 @@ def __get_precommit_ci_skips(config: PrecommitConfig) -> Set[str]:
     return set(config.ci.skip)
 
 
-def get_local_hooks(config: PrecommitConfig) -> List[str]:
+def get_local_hooks(config: PrecommitConfig) -> list[str]:
     return [h.id for r in config.repos for h in r.hooks if r.repo == "local"]
 
 
-def get_non_functional_hooks(config: PrecommitConfig) -> List[str]:
+def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
     return [
         hook.id
         for repo in config.repos
@@ -131,7 +133,7 @@ def _update_conda_environment(precommit_config: PrecommitConfig) -> None:
         raise PrecommitError(msg)
 
 
-def __get_skipped_hooks(config: PrecommitConfig) -> Set[str]:
+def __get_skipped_hooks(config: PrecommitConfig) -> set[str]:
     skipped_hooks = {
         "check-jsonschema",
         "pyright",

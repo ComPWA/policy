@@ -1,7 +1,8 @@
 """Check and update :code:`pytest` settings."""
 
+from __future__ import annotations
+
 import os
-from typing import Dict
 
 import tomlkit
 from ini2toml.api import Translator
@@ -30,7 +31,7 @@ def _merge_coverage_into_pyproject() -> None:
     section_name = "coverage:run"
     if not pytest_ini.has_section(section_name):
         return
-    coverage_config: Dict = dict(pytest_ini[section_name])
+    coverage_config: dict = dict(pytest_ini[section_name])
     for key, value in coverage_config.items():
         if value in {"False", "True"}:
             coverage_config[key] = bool(value)

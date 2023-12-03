@@ -1,6 +1,8 @@
 """Collect `.PrecommitError` instances from several executed functions."""
 
-from typing import Any, Callable, List
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import attr
 
@@ -11,7 +13,7 @@ from repoma.errors import PrecommitError
 class Executor:
     """Execute functions and collect any `.PrecommitError` exceptions."""
 
-    error_messages: List[str] = attr.ib(factory=list, init=False)
+    error_messages: list[str] = attr.ib(factory=list, init=False)
 
     def __call__(self, function: Callable, *args: Any, **kwargs: Any) -> None:
         try:

@@ -1,8 +1,10 @@
 """A collection of scripts that check the file structure of a repository."""
 
+from __future__ import annotations
+
 import sys
 from argparse import ArgumentParser
-from typing import List, Optional, Sequence
+from typing import Sequence
 
 from repoma.check_dev_files.deprecated import remove_deprecated_tools
 from repoma.utilities.executor import Executor
@@ -33,7 +35,7 @@ from . import (
 )
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = _create_argparse()
     args = parser.parse_args(argv)
     is_python_repo = not args.no_python
@@ -243,7 +245,7 @@ def _create_argparse() -> ArgumentParser:
     return parser
 
 
-def _to_list(arg: str) -> List[str]:
+def _to_list(arg: str) -> list[str]:
     """Create a comma-separated list from a string argument.
 
     >>> _to_list('a c , test,b')

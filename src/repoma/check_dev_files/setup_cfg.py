@@ -1,6 +1,9 @@
 """Apply a certain set of standards to the :file:`setup.cfg`."""
 
 # pyright: reportUnknownLambdaType=false
+
+from __future__ import annotations
+
 import dataclasses
 import os
 import re
@@ -8,7 +11,6 @@ import textwrap
 from collections import defaultdict
 from configparser import RawConfigParser
 from copy import deepcopy
-from typing import Dict, List, Tuple, Union
 
 import tomlkit
 from ini2toml.api import Translator
@@ -70,7 +72,7 @@ def _convert_to_pyproject() -> None:
     raise PrecommitError(msg)
 
 
-def _get_recursive_optional_dependencies() -> Dict[str, List[Tuple[str, str]]]:
+def _get_recursive_optional_dependencies() -> dict[str, list[tuple[str, str]]]:
     if not CONFIG_PATH.setup_cfg.exists():
         return {}
     cfg = RawConfigParser()
@@ -85,7 +87,7 @@ def _get_recursive_optional_dependencies() -> Dict[str, List[Tuple[str, str]]]:
 
 
 def _update_optional_dependencies(
-    pyproject: TOMLDocument, extras_require: Dict[str, List[Tuple[str, str]]]
+    pyproject: TOMLDocument, extras_require: dict[str, list[tuple[str, str]]]
 ) -> None:
     package_name = get_pypi_name(pyproject)
     optional_dependencies = tomlkit.table()
@@ -103,8 +105,8 @@ def _update_optional_dependencies(
     project["optional-dependencies"] = optional_dependencies
 
 
-def __extract_package_list(raw_content: str) -> List[Tuple[str, str]]:
-    def split_comment(line: str) -> Tuple[str, str]:
+def __extract_package_list(raw_content: str) -> list[tuple[str, str]]:
+    def split_comment(line: str) -> tuple[str, str]:
         if "#" in line:
             return tuple(s.strip() for s in line.split("#", maxsplit=1))  # type: ignore[return-value]
         return line.strip(), ""
@@ -120,9 +122,7 @@ def __add_comment(array: Array, idx: int, comment: str) -> None:  # disgusting h
     array._value[idx].comment = toml_comment
 
 
-def _update_container(
-    old: Union[Container, Table], new: Union[Container, Table]
-) -> None:
+def _update_container(old: Container | Table, new: Container | Table) -> None:
     for key, value in new.items():
         if isinstance(value, (Container, Table)):
             if key in old:
@@ -255,7 +255,7 @@ def _remove_empty_tables() -> None:
         raise PrecommitError(msg)
 
 
-def __recursive_remove_empty_tables(table: Union[Container, Table]) -> bool:
+def __recursive_remove_empty_tables(table: Container | Table) -> bool:
     updated = False
     items = list(table.items())
     for key, value in items:

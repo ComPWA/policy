@@ -1,32 +1,30 @@
 """Helper functions for modifying a VSCode configuration."""
 
+from __future__ import annotations
+
 import collections
 import json
-import sys
 from collections import abc
 from copy import deepcopy
-from pathlib import Path
-from typing import Dict, Iterable, List, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Iterable, OrderedDict, TypeVar, overload
 
 from repoma.errors import PrecommitError
 from repoma.utilities.executor import Executor
 
 from . import CONFIG_PATH
 
-if sys.version_info < (3, 7):
-    from typing_extensions import OrderedDict
-else:
-    from typing import OrderedDict
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-def remove_setting(key: Union[str, dict]) -> None:
+def remove_setting(key: str | dict) -> None:
     old = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new = deepcopy(old)
     _recursive_remove_setting(key, new)
     _update_settings(old, new)
 
 
-def _recursive_remove_setting(nested_keys: Union[str, dict], settings: dict) -> None:
+def _recursive_remove_setting(nested_keys: str | dict, settings: dict) -> None:
     if isinstance(nested_keys, str) and nested_keys in settings:
         settings.pop(nested_keys)
     elif isinstance(nested_keys, dict):
@@ -127,11 +125,11 @@ V = TypeVar("V")
 
 
 @overload
-def sort_case_insensitive(dct: Dict[K, V]) -> OrderedDict[K, V]: ...  # type: ignore[misc]
+def sort_case_insensitive(dct: dict[K, V]) -> OrderedDict[K, V]: ...  # type: ignore[misc]
 @overload
 def sort_case_insensitive(dct: str) -> str: ...  # type: ignore[misc]
 @overload
-def sort_case_insensitive(dct: Iterable[K]) -> List[K]: ...  # type: ignore[misc]
+def sort_case_insensitive(dct: Iterable[K]) -> list[K]: ...  # type: ignore[misc]
 @overload
 def sort_case_insensitive(dct: K) -> K: ...
 def sort_case_insensitive(dct):  # type: ignore[no-untyped-def]

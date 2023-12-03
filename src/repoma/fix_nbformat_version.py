@@ -4,10 +4,12 @@ nbformat adds random cell ids since version 5.x. This is annoying for git
 diffs. The solution is to set the version to v4 and removes those cell ids.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from textwrap import dedent
-from typing import Optional, Sequence
+from typing import Sequence
 
 import nbformat
 
@@ -23,7 +25,7 @@ BINARY_CELL_OUTPUT = [
 ]
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to fix.")
     args = parser.parse_args(argv)

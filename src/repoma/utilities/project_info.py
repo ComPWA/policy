@@ -1,19 +1,24 @@
 """Helper functions for reading from and writing to :file:`setup.cfg`."""
 
+from __future__ import annotations
+
 import os
 import sys
-from configparser import ConfigParser
 from textwrap import dedent
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from attrs import field, frozen
-from tomlkit import TOMLDocument
 
 from repoma.errors import PrecommitError
 from repoma.utilities.pyproject import get_sub_table, load_pyproject
 
 from . import CONFIG_PATH
 from .cfg import open_config
+
+if TYPE_CHECKING:
+    from configparser import ConfigParser
+
+    from tomlkit import TOMLDocument
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -26,9 +31,9 @@ PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 
 @frozen
 class ProjectInfo:
-    name: Optional[str] = None
-    supported_python_versions: Optional[List[PythonVersion]] = None
-    urls: Dict[str, str] = field(factory=dict)
+    name: str | None = None
+    supported_python_versions: list[PythonVersion] | None = None
+    urls: dict[str, str] = field(factory=dict)
 
     def is_empty(self) -> bool:
         return (
@@ -38,7 +43,7 @@ class ProjectInfo:
         )
 
     @staticmethod
-    def from_pyproject_toml(pyproject: TOMLDocument) -> "ProjectInfo":
+    def from_pyproject_toml(pyproject: TOMLDocument) -> ProjectInfo:
         if "project" not in pyproject:
             return ProjectInfo()
         project = get_sub_table(pyproject, "project")
@@ -51,7 +56,7 @@ class ProjectInfo:
         )
 
     @staticmethod
-    def from_setup_cfg(cfg: ConfigParser) -> "ProjectInfo":
+    def from_setup_cfg(cfg: ConfigParser) -> ProjectInfo:
         if not cfg.has_section("metadata"):
             return ProjectInfo()
         metadata = dict(cfg.items("metadata"))
@@ -73,7 +78,7 @@ class ProjectInfo:
         )
 
 
-def get_project_info(pyproject: Optional[TOMLDocument] = None) -> ProjectInfo:
+def get_project_info(pyproject: TOMLDocument | None = None) -> ProjectInfo:
     if pyproject is not None or os.path.exists(CONFIG_PATH.pyproject):
         if pyproject is None:
             pyproject = load_pyproject()
@@ -89,7 +94,7 @@ def get_project_info(pyproject: Optional[TOMLDocument] = None) -> ProjectInfo:
     raise PrecommitError(msg)
 
 
-def _extract_python_versions(classifiers: List[str]) -> Optional[List[PythonVersion]]:
+def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion] | None:
     identifier = "Programming Language :: Python :: 3."
     version_classifiers = [s for s in classifiers if s.startswith(identifier)]
     if not version_classifiers:
@@ -98,7 +103,7 @@ def _extract_python_versions(classifiers: List[str]) -> Optional[List[PythonVers
     return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
 
 
-def get_pypi_name(pyproject: Optional[TOMLDocument] = None) -> str:
+def get_pypi_name(pyproject: TOMLDocument | None = None) -> str:
     """Extract package name for PyPI from :file:`setup.cfg`.
 
     >>> get_pypi_name()
@@ -115,8 +120,8 @@ def get_pypi_name(pyproject: Optional[TOMLDocument] = None) -> str:
 
 
 def get_supported_python_versions(
-    pyproject: Optional[TOMLDocument] = None,
-) -> List[PythonVersion]:
+    pyproject: TOMLDocument | None = None,
+) -> list[PythonVersion]:
     """Extract supported Python versions from package classifiers.
 
     >>> get_supported_python_versions()
@@ -129,7 +134,7 @@ def get_supported_python_versions(
     return project_info.supported_python_versions
 
 
-def get_repo_url(pyproject: Optional[TOMLDocument] = None) -> str:
+def get_repo_url(pyproject: TOMLDocument | None = None) -> str:
     project_info = get_project_info(pyproject)
     if not project_info.urls:
         msg = dedent("""

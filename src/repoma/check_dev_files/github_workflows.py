@@ -1,13 +1,12 @@
 """Check :file:`.github/workflows` folder content."""
 
+from __future__ import annotations
+
 import os
 import re
 import shutil
-from pathlib import Path
-from typing import List, Tuple
+from typing import TYPE_CHECKING
 
-from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.main import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
@@ -22,16 +21,22 @@ from repoma.utilities.vscode import (
 )
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from ruamel.yaml.comments import CommentedMap
+    from ruamel.yaml.main import YAML
+
 
 def main(
     allow_deprecated: bool,
-    doc_apt_packages: List[str],
+    doc_apt_packages: list[str],
     no_macos: bool,
     no_pypi: bool,
     no_version_branches: bool,
     single_threaded: bool,
-    skip_tests: List[str],
-    test_extras: List[str],
+    skip_tests: list[str],
+    test_extras: list[str],
 ) -> None:
     executor = Executor()
     executor(_update_cd_workflow, no_pypi, no_version_branches)
@@ -86,11 +91,11 @@ def _update_pr_linting() -> None:
 
 def _update_ci_workflow(
     allow_deprecated: bool,
-    doc_apt_packages: List[str],
+    doc_apt_packages: list[str],
     no_macos: bool,
     single_threaded: bool,
-    skip_tests: List[str],
-    test_extras: List[str],
+    skip_tests: list[str],
+    test_extras: list[str],
 ) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
@@ -128,12 +133,12 @@ def _update_ci_workflow(
 
 def _get_ci_workflow(
     path: Path,
-    doc_apt_packages: List[str],
+    doc_apt_packages: list[str],
     no_macos: bool,
     single_threaded: bool,
-    skip_tests: List[str],
-    test_extras: List[str],
-) -> Tuple[YAML, dict]:
+    skip_tests: list[str],
+    test_extras: list[str],
+) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     __update_doc_section(config, doc_apt_packages)
@@ -142,7 +147,7 @@ def _get_ci_workflow(
     return yaml, config
 
 
-def __update_doc_section(config: CommentedMap, apt_packages: List[str]) -> None:
+def __update_doc_section(config: CommentedMap, apt_packages: list[str]) -> None:
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
     else:
@@ -167,8 +172,8 @@ def __update_pytest_section(
     config: CommentedMap,
     no_macos: bool,
     single_threaded: bool,
-    skip_tests: List[str],
-    test_extras: List[str],
+    skip_tests: list[str],
+    test_extras: list[str],
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):

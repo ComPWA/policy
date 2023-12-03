@@ -1,13 +1,13 @@
 """Check `Ruff <https://ruff.rs>`_ configuration."""
 
+from __future__ import annotations
+
 import os
 from textwrap import dedent
-from typing import Iterable, List, Set
+from typing import TYPE_CHECKING, Iterable
 
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
-from tomlkit.items import Array, Table
-from tomlkit.toml_document import TOMLDocument
 
 from repoma.check_dev_files.setup_cfg import (
     has_pyproject_build_system,
@@ -40,6 +40,10 @@ from repoma.utilities.vscode import (
     remove_settings,
     set_setting,
 )
+
+if TYPE_CHECKING:
+    from tomlkit.items import Array, Table
+    from tomlkit.toml_document import TOMLDocument
 
 
 def main(has_notebooks: bool) -> None:
@@ -335,11 +339,11 @@ def __merge(*listings: Iterable[str], enforce_multiline: bool = False) -> Array:
     return to_toml_array(sorted(merged), enforce_multiline)
 
 
-def __get_existing_nbqa_ignores(pyproject: TOMLDocument) -> Set[str]:
+def __get_existing_nbqa_ignores(pyproject: TOMLDocument) -> set[str]:
     nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
     if not nbqa_table:
         return set()
-    ruff_rules: List[str] = nbqa_table.get("ruff", [])
+    ruff_rules: list[str] = nbqa_table.get("ruff", [])
     return {
         r.replace("--extend-ignore=", "")
         for r in ruff_rules
@@ -386,14 +390,14 @@ def __get_selected_ruff_rules() -> Array:
 
 
 def __get_task_tags(ruff_settings: Table) -> Array:
-    existing: Set[str] = set(ruff_settings.get("task-tags", set()))
+    existing: set[str] = set(ruff_settings.get("task-tags", set()))
     expected = {
         "cspell",
     }
     return to_toml_array(sorted(existing | expected))
 
 
-def __get_src_directories() -> List[str]:
+def __get_src_directories() -> list[str]:
     expected_directories = (
         "src",
         "tests",
