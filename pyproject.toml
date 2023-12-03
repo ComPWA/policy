@@ -52,6 +52,7 @@ dev = [
 doc = [
     "Sphinx",
     "myst-parser",
+    "sphinx-api-relink",
     "sphinx-argparse",
     "sphinx-book-theme",
     "sphinx-copybutton",

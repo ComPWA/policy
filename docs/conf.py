@@ -9,10 +9,10 @@ from __future__ import annotations
 import contextlib
 import os
 import shutil
-import subprocess
 import sys
 
 import requests
+from sphinx.ext.apidoc import main as sphinx_apidoc
 
 if sys.version_info < (3, 8):
     from importlib_metadata import version as get_package_version
@@ -30,20 +30,18 @@ def fetch_logo(url: str, output_path: str) -> None:
 
 def generate_api(package: str) -> None:
     shutil.rmtree("api", ignore_errors=True)
-    subprocess.call(
-        " ".join(
-            [
-                "sphinx-apidoc",
-                f"../src/{package}/",
-                f"../src/{package}/version.py",
-                "-o api/",
-                "--force",
-                "--no-toc",
-                "--templatedir _templates",
-                "--separate",
-            ]
-        ),
-        shell=True,  # noqa: S602
+    sphinx_apidoc(
+        [
+            f"../src/{package}/",
+            f"../src/{package}/version.py",
+            "-o",
+            "api/",
+            "--force",
+            "--no-toc",
+            "--templatedir",
+            "_templates",
+            "--separate",
+        ]
     )
 
 
@@ -69,6 +67,17 @@ REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
 generate_api(PACKAGE_NAME)
 
+api_target_substitutions: dict[str, str | tuple[str, str]] = {
+    "Array": "tomlkit.items.Array",
+    "ConfigParser": "configparser.ConfigParser",
+    "K": "typing.TypeVar",
+    "Path": "pathlib.Path",
+    "PythonVersion": "typing.TypeVar",
+    "T": "typing.TypeVar",
+    "TOMLDocument": "tomlkit.TOMLDocument",
+    "Table": "tomlkit.items.Table",
+    "V": "typing.TypeVar",
+}
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
 autosectionlabel_prefix_document = True
@@ -85,6 +94,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_api_relink",
     "sphinx_copybutton",
     "sphinxarg.ext",
 ]
@@ -118,7 +128,7 @@ myst_enable_extensions = [
     "colon_fence",
 ]
 nitpick_ignore = [
-    ("py:class", "tomlkit.container.Container"),
+    ("py:class", "CommentedMap"),
 ]
 nitpick_ignore_regex = [
     ("py:class", r"^.*.[A-Z]$"),
