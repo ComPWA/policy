@@ -6,8 +6,6 @@ documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import contextlib
 import os
-import shutil
-import subprocess
 import sys
 from typing import Optional
 
@@ -25,25 +23,6 @@ def fetch_logo(url: str, output_path: str) -> None:
     online_content = requests.get(url, allow_redirects=True, timeout=10)
     with open(output_path, "wb") as stream:
         stream.write(online_content.content)
-
-
-def generate_api(package: str) -> None:
-    shutil.rmtree("api", ignore_errors=True)
-    subprocess.call(
-        " ".join(
-            [
-                "sphinx-apidoc",
-                f"../src/{package}/",
-                f"../src/{package}/version.py",
-                "-o api/",
-                "--force",
-                "--no-toc",
-                "--templatedir _templates",
-                "--separate",
-            ]
-        ),
-        shell=True,  # noqa: S602
-    )
 
 
 def get_html_logo_path() -> Optional[str]:
@@ -66,7 +45,6 @@ def get_version(package_name: str) -> str:
 
 REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
-generate_api(PACKAGE_NAME)
 
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
@@ -84,9 +62,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_api_relink",
     "sphinx_copybutton",
     "sphinxarg.ext",
 ]
+generate_apidoc_package_path = f"../src/{PACKAGE_NAME}"
 html_copy_source = True  # needed for download notebook button
 html_favicon = "_static/favicon.ico"
 html_last_updated_fmt = "%-d %B %Y"
