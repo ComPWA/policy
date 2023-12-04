@@ -4,26 +4,15 @@ This file only contains a selection of the most common options. For a full list 
 documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
-import sys
-
-if sys.version_info < (3, 8):
-    from importlib_metadata import version as get_package_version
-else:
-    from importlib.metadata import version as get_package_version
-
-
-def get_version(package_name: str) -> str:
-    v = get_package_version(package_name)
-    return ".".join(v.split(".")[:3])
-
+from sphinx_api_relink.helpers import get_package_version
 
 REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
 
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
-autosectionlabel_prefix_document = True
 autodoc_typehints_format = "short"
+autosectionlabel_prefix_document = True
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
@@ -82,5 +71,5 @@ nitpick_ignore_regex = [
 nitpicky = True
 primary_domain = "py"
 project = REPO_NAME
-release = get_version(REPO_NAME)
-version = get_version(REPO_NAME)
+release = get_package_version(REPO_NAME)
+version = get_package_version(REPO_NAME)
