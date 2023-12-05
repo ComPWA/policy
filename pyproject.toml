@@ -52,7 +52,7 @@ dev = [
 doc = [
     "Sphinx",
     "myst-parser",
-    "sphinx-api-relink >=0.0.3",
+    "sphinx-api-relink >=0.0.4",
     "sphinx-api-relink",
     "sphinx-argparse",
     "sphinx-book-theme",
