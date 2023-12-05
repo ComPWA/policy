@@ -1,7 +1,9 @@
 """Update Release Drafter Action."""
 
+from __future__ import annotations
+
 import os
-from typing import Any, Dict
+from typing import Any
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, update_file
@@ -28,7 +30,7 @@ def _update_draft(repo_name: str, repo_title: str) -> None:
         raise PrecommitError(msg)
 
 
-def _get_expected_config(repo_name: str, repo_title: str) -> Dict[str, Any]:
+def _get_expected_config(repo_name: str, repo_title: str) -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(REPOMA_DIR / CONFIG_PATH.release_drafter_config)
     key = "name-template"
@@ -41,6 +43,6 @@ def _get_expected_config(repo_name: str, repo_title: str) -> Dict[str, Any]:
     return config
 
 
-def _get_existing_config() -> Dict[str, Any]:
+def _get_existing_config() -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
     return yaml.load(CONFIG_PATH.release_drafter_config)

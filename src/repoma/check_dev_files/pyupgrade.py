@@ -50,7 +50,7 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     """Get the --py3x-plus argument for pyupgrade.
 
     >>> __get_pyupgrade_version_argument()
-    ['--py36-plus']
+    ['--py37-plus']
     """
     supported_python_versions = sorted(
         (v.replace(".", "") for v in get_supported_python_versions()),

@@ -1,10 +1,11 @@
 """Configuration for working with TOML files."""
 
+from __future__ import annotations
+
 import os
 import shutil
 from glob import glob
-from pathlib import Path
-from typing import List, Union
+from typing import TYPE_CHECKING
 
 import tomlkit
 from ruamel.yaml import YAML
@@ -21,10 +22,13 @@ from repoma.utilities.pyproject import (
     write_pyproject,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     "taplo.toml",
 ]
-__TRIGGER_FILES: List[Union[Path, str]] = [
+__TRIGGER_FILES: list[Path | str] = [
     "pyproject.toml",
     CONFIG_PATH.taplo,
     *__INCORRECT_TAPLO_CONFIG_PATHS,
@@ -104,7 +108,7 @@ def _update_taplo_config() -> None:
         raise PrecommitError(msg)
     with open(template_path) as f:
         expected = tomlkit.load(f)
-    excludes: List[str] = [p for p in expected["exclude"] if glob(p, recursive=True)]  # type: ignore[union-attr]
+    excludes: list[str] = [p for p in expected["exclude"] if glob(p, recursive=True)]  # type: ignore[union-attr]
     if excludes:
         excludes = sorted(excludes, key=str.lower)
         expected["exclude"] = to_toml_array(excludes, enforce_multiline=True)

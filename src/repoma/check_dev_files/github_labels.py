@@ -4,9 +4,10 @@ If it's still there remove it, because it is now managed through
 https://github.com/ComPWA/repo-maintenance.
 """
 
+from __future__ import annotations
+
 import os
 import pathlib
-from typing import List
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -48,7 +49,7 @@ def _check_has_labels_requirement(path: pathlib.Path) -> bool:
     return False
 
 
-def _get_requirement_files() -> List[pathlib.Path]:
+def _get_requirement_files() -> list[pathlib.Path]:
     return [
         *pathlib.Path(".").glob("**/requirements*.in"),
         *pathlib.Path(".").glob("**/requirements*.txt"),

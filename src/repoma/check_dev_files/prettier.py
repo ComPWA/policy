@@ -1,7 +1,9 @@
 """Check the configuration for `Prettier <https://prettier.io>`_."""
 
+from __future__ import annotations
+
 import os
-from typing import Iterable, List
+from typing import Iterable
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, vscode
@@ -125,7 +127,7 @@ def __insert_expected_paths() -> None:
         raise PrecommitError(msg)
 
 
-def __get_existing_lines() -> List[str]:
+def __get_existing_lines() -> list[str]:
     if not os.path.exists(CONFIG_PATH.prettier_ignore):
         return [""]
     with open(CONFIG_PATH.prettier_ignore) as f:

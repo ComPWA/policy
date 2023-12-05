@@ -4,9 +4,11 @@ See `ComPWA/repo-maintenance#40 <https://github.com/ComPWA/repo-maintenance/issu
 for more information.
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
-from typing import Optional, Sequence
+from typing import Sequence
 
 import nbformat
 
@@ -16,7 +18,7 @@ from .errors import PrecommitError
 from .utilities.executor import Executor
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "filenames",

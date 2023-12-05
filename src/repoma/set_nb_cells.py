@@ -18,11 +18,13 @@ and writing the following `Markdown comment
     <!-- no-set-nb-cells -->
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from functools import lru_cache
 from textwrap import dedent
-from typing import Optional, Sequence
+from typing import Sequence
 
 import nbformat
 
@@ -50,7 +52,7 @@ __INSTALL_CELL_METADATA: dict = {
 }
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     parser.add_argument(

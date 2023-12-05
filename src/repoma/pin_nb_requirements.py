@@ -6,12 +6,14 @@ hook checks whether a notebook has such install statements and whether they
 comply with the expected formatting.
 """
 
+from __future__ import annotations
+
 import argparse
 import re
 import sys
 from functools import lru_cache
 from textwrap import dedent
-from typing import List, Optional, Sequence
+from typing import Sequence
 
 import nbformat
 from nbformat import NotebookNode
@@ -63,7 +65,7 @@ def __to_oneline(source: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def extract_pip_requirements(source: str) -> Optional[List[str]]:
+def extract_pip_requirements(source: str) -> list[str] | None:
     r"""Check if the source in a cell is a pip install statement.
 
     >>> extract_pip_requirements("Not a pip install statement")
@@ -99,7 +101,7 @@ def extract_pip_requirements(source: str) -> Optional[List[str]]:
     return [p for p in packages if p]
 
 
-def _check_pip_requirements(filename: str, requirements: List[str]) -> None:
+def _check_pip_requirements(filename: str, requirements: list[str]) -> None:
     if len(requirements) == 0:
         msg = f'At least one dependency required in install cell of "{filename}"'
         raise PrecommitError(msg)
@@ -170,12 +172,12 @@ def _update_metadata(filename: str, metadata: dict, notebook: NotebookNode) -> N
         raise PrecommitError(msg)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to check.")
     args = parser.parse_args(argv)
 
-    errors: List[PrecommitError] = []
+    errors: list[PrecommitError] = []
     for filename in args.filenames:
         try:
             check_pinned_requirements(filename)

@@ -4,11 +4,12 @@ See `cSpell
 <https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell>`_.
 """
 
+from __future__ import annotations
+
 import json
 import os
 from glob import glob
-from pathlib import Path
-from typing import Any, Iterable, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from ruamel.yaml.comments import CommentedMap
 
@@ -22,6 +23,9 @@ from repoma.utilities.precommit import (
 )
 from repoma.utilities.readme import add_badge, remove_badge
 from repoma.utilities.vscode import sort_case_insensitive
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -202,7 +206,7 @@ def __express_list_of_sections(sections: Sequence[str]) -> str:
     return sentence
 
 
-def __get_config(path: Union[str, Path]) -> dict:
+def __get_config(path: str | Path) -> dict:
     with open(path) as stream:
         return json.load(stream)
 
@@ -213,7 +217,7 @@ def __write_config(config: dict) -> None:
         stream.write("\n")
 
 
-def __sort_section(content: Iterable[Any], section_name: str) -> List[str]:
+def __sort_section(content: Iterable[Any], section_name: str) -> list[str]:
     """Sort a list section.
 
     >>> __sort_section({"one", "Two"}, section_name="words")

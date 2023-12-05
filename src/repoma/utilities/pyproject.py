@@ -1,13 +1,13 @@
 """Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
 
+from __future__ import annotations
+
 import io
 from collections import abc
 from pathlib import Path
-from typing import IO, Any, Iterable, List, Optional, Sequence, Set, Union
+from typing import IO, TYPE_CHECKING, Any, Iterable, Sequence
 
 import tomlkit
-from tomlkit.container import Container
-from tomlkit.items import Array, Table
 from tomlkit.toml_document import TOMLDocument
 
 from repoma.errors import PrecommitError
@@ -15,12 +15,16 @@ from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import find_repo, load_round_trip_precommit_config
 
+if TYPE_CHECKING:
+    from tomlkit.container import Container
+    from tomlkit.items import Array, Table
+
 
 def add_dependency(  # noqa: C901, PLR0912
     package: str,
-    optional_key: Optional[Union[str, Sequence[str]]] = None,
-    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject,
-    target: Optional[Union[IO, Path, str]] = None,
+    optional_key: str | Sequence[str] | None = None,
+    source: IO | (Path | (TOMLDocument | str)) = CONFIG_PATH.pyproject,
+    target: IO | (Path | str) | None = None,
 ) -> None:
     if isinstance(source, TOMLDocument):
         pyproject = source
@@ -33,7 +37,7 @@ def add_dependency(  # noqa: C901, PLR0912
         target = source
     if optional_key is None:
         project = get_sub_table(pyproject, "project", create=True)
-        existing_dependencies: Set[str] = set(project.get("dependencies", []))
+        existing_dependencies: set[str] = set(project.get("dependencies", []))
         if package in existing_dependencies:
             return
         existing_dependencies.add(package)
@@ -73,7 +77,7 @@ def add_dependency(  # noqa: C901, PLR0912
     raise PrecommitError(msg)
 
 
-def _sort_taplo(items: Iterable[str]) -> List[str]:
+def _sort_taplo(items: Iterable[str]) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
 
@@ -81,9 +85,7 @@ def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
     return all(settings.get(key) == value for key, value in minimal_settings.items())
 
 
-def load_pyproject(
-    source: Union[IO, Path, str] = CONFIG_PATH.pyproject
-) -> TOMLDocument:
+def load_pyproject(source: IO | (Path | str) = CONFIG_PATH.pyproject) -> TOMLDocument:
     if isinstance(source, io.IOBase):
         source.seek(0)
         return tomlkit.load(source)
@@ -97,8 +99,8 @@ def load_pyproject(
 
 
 def get_package_name(
-    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject
-) -> Optional[str]:
+    source: IO | (Path | (TOMLDocument | str)) = CONFIG_PATH.pyproject,
+) -> str | None:
     if isinstance(source, TOMLDocument):
         pyproject = source
     else:
@@ -111,7 +113,7 @@ def get_package_name(
 
 
 def get_package_name_safe(
-    source: Union[IO, Path, TOMLDocument, str] = CONFIG_PATH.pyproject
+    source: IO | (Path | (TOMLDocument | str)) = CONFIG_PATH.pyproject,
 ) -> str:
     package_name = get_package_name(source)
     if package_name is None:
@@ -138,7 +140,7 @@ def get_sub_table(config: Container, dotted_header: str, create: bool = False) -
 
 
 def write_pyproject(
-    config: TOMLDocument, target: Union[IO, Path, str] = CONFIG_PATH.pyproject
+    config: TOMLDocument, target: IO | (Path | str) = CONFIG_PATH.pyproject
 ) -> None:
     if isinstance(target, io.IOBase):
         target.seek(0)

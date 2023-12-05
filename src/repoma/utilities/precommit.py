@@ -1,18 +1,17 @@
 """Helper functions for modifying :file:`.pre-commit.config.yaml`."""
 
+from __future__ import annotations
+
 import os.path
 import re
 import socket
 from functools import lru_cache
-from pathlib import Path
-from typing import Any, List, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import attrs
 import yaml
 from attrs import define, field
 from pre_commit.commands.autoupdate import autoupdate as precommit_autoupdate
-from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
 from repoma.errors import PrecommitError
@@ -20,10 +19,16 @@ from repoma.errors import PrecommitError
 from . import CONFIG_PATH
 from .yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from ruamel.yaml import YAML
+    from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
 
 def load_round_trip_precommit_config(
     path: Path = CONFIG_PATH.precommit,
-) -> Tuple[CommentedMap, YAML]:
+) -> tuple[CommentedMap, YAML]:
     yaml_parser = create_prettier_round_trip_yaml()
     config = yaml_parser.load(path)
     return config, yaml_parser
@@ -31,7 +36,7 @@ def load_round_trip_precommit_config(
 
 def find_repo(
     config: CommentedMap, search_pattern: str
-) -> Optional[Tuple[int, CommentedMap]]:
+) -> tuple[int, CommentedMap] | None:
     """Find pre-commit hook definition and its index in pre-commit config."""
     repos: CommentedSeq = config.get("repos", [])
     for i, repo in enumerate(repos):
@@ -41,7 +46,7 @@ def find_repo(
     return None
 
 
-def remove_precommit_hook(hook_id: str, repo_url: Optional[str] = None) -> None:
+def remove_precommit_hook(hook_id: str, repo_url: str | None = None) -> None:
     config, yaml_parser = load_round_trip_precommit_config()
     repo_and_hook_idx = __find_repo_and_hook_idx(config, hook_id, repo_url)
     if repo_and_hook_idx is None:
@@ -59,8 +64,8 @@ def remove_precommit_hook(hook_id: str, repo_url: Optional[str] = None) -> None:
 
 
 def __find_repo_and_hook_idx(
-    config: CommentedMap, hook_id: str, repo_url: Optional[str] = None
-) -> Optional[Tuple[int, int]]:
+    config: CommentedMap, hook_id: str, repo_url: str | None = None
+) -> tuple[int, int] | None:
     repos: CommentedSeq = config.get("repos", [])
     for repo_idx, repo in enumerate(repos):
         if repo_url is not None and repo.get("repo") != repo_url:
@@ -170,7 +175,7 @@ def update_precommit_hook(repo_url: str, expected_hook: CommentedMap) -> None:
         raise PrecommitError(msg)
 
 
-def __find_hook_idx(hooks: CommentedSeq, hook_id: str) -> Optional[int]:
+def __find_hook_idx(hooks: CommentedSeq, hook_id: str) -> int | None:
     msg = ""
     for i, hook in enumerate(hooks):
         msg += " " + hook["id"]
@@ -194,7 +199,7 @@ class PrecommitCi:
     autofix_prs: bool = True
     autoupdate_commit_msg: str = "[pre-commit.ci] pre-commit autoupdate"
     autoupdate_schedule: str = "weekly"
-    skip: Optional[List[str]] = None
+    skip: list[str] | None = None
     submodules: bool = False
 
 
@@ -203,20 +208,20 @@ class Hook:
     """https://pre-commit.com/#pre-commit-configyaml---hooks."""
 
     id: str  # noqa: A003
-    name: Optional[str] = None
-    description: Optional[str] = None
-    entry: Optional[str] = None
-    alias: Optional[str] = None
-    additional_dependencies: List[str] = field(factory=list)
-    args: List[str] = field(factory=list)
-    files: Optional[str] = None
-    exclude: Optional[str] = None
-    types: Optional[List[str]] = None
+    name: str | None = None
+    description: str | None = None
+    entry: str | None = None
+    alias: str | None = None
+    additional_dependencies: list[str] = field(factory=list)
+    args: list[str] = field(factory=list)
+    files: str | None = None
+    exclude: str | None = None
+    types: list[str] | None = None
     require_serial: bool = False
-    language: Optional[str] = None
-    always_run: Optional[bool] = None
-    pass_filenames: Optional[bool] = None
-    types_or: Optional[List[str]] = None
+    language: str | None = None
+    always_run: bool | None = None
+    pass_filenames: bool | None = None
+    types_or: list[str] | None = None
 
 
 @define
@@ -224,10 +229,10 @@ class Repo:
     """https://pre-commit.com/#pre-commit-configyaml---repos."""
 
     repo: str
-    hooks: List[Hook]
-    rev: Optional[str] = None
+    hooks: list[Hook]
+    rev: str | None = None
 
-    def get_hook_index(self, hook_id: str) -> Optional[int]:
+    def get_hook_index(self, hook_id: str) -> int | None:
         for i, hook in enumerate(self.hooks):
             if hook.id == hook_id:
                 return i
@@ -238,14 +243,14 @@ class Repo:
 class PrecommitConfig:
     """https://pre-commit.com/#pre-commit-configyaml---top-level."""
 
-    repos: List[Repo]
-    ci: Optional[PrecommitCi] = None
+    repos: list[Repo]
+    ci: PrecommitCi | None = None
     files: str = ""
     exclude: str = "^$"
     fail_fast: bool = False
 
     @classmethod
-    def load(cls, path: Union[Path, str] = CONFIG_PATH.precommit) -> "PrecommitConfig":
+    def load(cls, path: Path | str = CONFIG_PATH.precommit) -> PrecommitConfig:
         if not os.path.exists(path):
             msg = f"This repository contains no {path}"
             raise PrecommitError(msg)
@@ -253,14 +258,14 @@ class PrecommitConfig:
             definition = yaml.safe_load(stream)
         return fromdict(definition, PrecommitConfig)
 
-    def find_repo(self, search_pattern: str) -> Optional[Repo]:
+    def find_repo(self, search_pattern: str) -> Repo | None:
         for repo in self.repos:
             url = repo.repo
             if re.search(search_pattern, url):
                 return repo
         return None
 
-    def get_repo_index(self, search_pattern: str) -> Optional[int]:
+    def get_repo_index(self, search_pattern: str) -> int | None:
         for i, repo in enumerate(self.repos):
             url = repo.repo
             if re.search(search_pattern, url):
@@ -279,7 +284,7 @@ def asdict(inst: Any) -> dict:
     )
 
 
-def fromdict(definition: dict, typ: Type[T]) -> T:
+def fromdict(definition: dict, typ: type[T]) -> T:
     if typ in {Hook, PrecommitCi}:
         return typ(**definition)  # type: ignore[return-value]
     if typ is Repo:

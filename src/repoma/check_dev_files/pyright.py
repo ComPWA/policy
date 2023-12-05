@@ -1,8 +1,10 @@
 """Check and update :code:`mypy` settings."""
 
+from __future__ import annotations
+
 import json
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -46,7 +48,7 @@ def _merge_config_into_pyproject() -> None:
 
 def _update_settings() -> None:
     pyproject = load_pyproject()
-    pyright_settings: Optional[Table] = pyproject.get("tool", {}).get("pyright")
+    pyright_settings: Table | None = pyproject.get("tool", {}).get("pyright")
     if pyright_settings is None:
         return
     minimal_settings = {

@@ -4,11 +4,24 @@ This file only contains a selection of the most common options. For a full list 
 documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
+from __future__ import annotations
+
 from sphinx_api_relink.helpers import get_package_version
 
 REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
 
+api_target_substitutions: dict[str, str | tuple[str, str]] = {
+    "Array": "tomlkit.items.Array",
+    "ConfigParser": "configparser.ConfigParser",
+    "K": "typing.TypeVar",
+    "Path": "pathlib.Path",
+    "PythonVersion": "typing.TypeVar",
+    "T": "typing.TypeVar",
+    "TOMLDocument": "tomlkit.TOMLDocument",
+    "Table": "tomlkit.items.Table",
+    "V": "typing.TypeVar",
+}
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
 autodoc_typehints_format = "short"
@@ -62,7 +75,7 @@ myst_enable_extensions = [
     "colon_fence",
 ]
 nitpick_ignore = [
-    ("py:class", "tomlkit.container.Container"),
+    ("py:class", "CommentedMap"),
 ]
 nitpick_ignore_regex = [
     ("py:class", r"^.*.[A-Z]$"),

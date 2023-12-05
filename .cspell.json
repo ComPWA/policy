@@ -33,8 +33,6 @@
     "docs/conf.py",
     "labels/*.toml",
     "pyproject.toml",
-    "setup.cfg",
-    "setup.py",
     "tox.ini",
     "typings"
   ],
