@@ -52,6 +52,7 @@ dev = [
 doc = [
     "Sphinx",
     "myst-parser",
+    "sphinx-api-relink >=0.0.3",
     "sphinx-api-relink",
     "sphinx-argparse",
     "sphinx-book-theme",
@@ -67,9 +68,8 @@ lint = [
 ]
 mypy = [
     "mypy",
+    "sphinx-api-relink >=0.0.3",
     "types-PyYAML",
-    "types-requests",
-    "types-setuptools",
     "types-toml",
 ]
 sty = [
