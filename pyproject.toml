@@ -311,6 +311,7 @@ known-first-party = ["repoma"]
     "PLR0913",
     "PLR2004",
     "S101",
+    "T20",
 ]
 
 [tool.ruff.pydocstyle]
