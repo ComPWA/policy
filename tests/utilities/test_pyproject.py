@@ -33,7 +33,7 @@ def test_add_dependency():
     ):
         add_dependency(dependency, source=stream)
     result = stream.getvalue()
-    print(result)  # noqa: T201  # run with pytest -s
+    print(result)  # run with pytest -s
     assert result == dedent("""
     [project]
     name = "my-package"
@@ -50,7 +50,7 @@ def test_add_dependency_nested():
     with pytest.raises(PrecommitError):
         add_dependency("ruff", optional_key=["lint", "sty", "dev"], source=stream)
     result = stream.getvalue()
-    print(result)  # noqa: T201  # run with pytest -s
+    print(result)  # run with pytest -s
     assert result == dedent("""
     [project]
     name = "my-package"
@@ -71,7 +71,7 @@ def test_add_dependency_optional():
     with pytest.raises(PrecommitError):
         add_dependency("ruff", optional_key="lint", source=stream)
     result = stream.getvalue()
-    print(result)  # noqa: T201  # run with pytest -s
+    print(result)  # run with pytest -s
     assert result == dedent("""
     [project]
     name = "my-package"
@@ -103,7 +103,7 @@ def test_edit_toml():
     stream = io.StringIO()
     write_pyproject(config, target=stream)
     result = stream.getvalue()
-    print(indent(result, prefix=4 * " "))  # noqa: T201  # run with pytest -s
+    print(indent(result, prefix=4 * " "))  # run with pytest -s
     assert result == dedent("""
     [owner]
     name = "John Smith"
