@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from sphinx_api_relink.helpers import get_package_version
 
+ORGANIZATION = "ComPWA"
 REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
 
+api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
     "ConfigParser": "configparser.ConfigParser",
@@ -37,7 +39,6 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
     "sphinx_api_relink",
     "sphinx_copybutton",
     "sphinxarg.ext",
@@ -57,7 +58,7 @@ html_static_path = ["_static"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
     "logo": {"text": REPO_NAME},
-    "repository_url": f"https://github.com/ComPWA/{REPO_NAME}",
+    "repository_url": f"https://github.com/{ORGANIZATION}/{REPO_NAME}",
     "repository_branch": "main",
     "path_to_docs": "docs",
     "use_repository_button": True,
