@@ -467,12 +467,12 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     if os.path.exists(tests_dir) and os.path.isdir(tests_dir):
         key = f"{tests_dir}/*"
         default_ignores = {
-            "D",
-            "INP001",
-            "PGH001",
-            "PLR2004",
-            "S101",
-            "T20",
+            "D",  # no need for pydocstyle
+            "INP001",  # allow implicit-namespace-package
+            "PGH001",  # allow eval
+            "PLR2004",  # magic-value-comparison
+            "S101",  # allow assert
+            "T20",  # allow print and pprint
         }
         minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
