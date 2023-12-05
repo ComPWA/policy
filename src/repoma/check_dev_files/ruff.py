@@ -442,7 +442,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "PLW0602",  # global-variable-not-assigned
             "PLW0603",  # global-statement
             "S101",  # `assert` detected
-            "T201",  # print found
+            "T20",  # print found
             "TCH00",  # type-checking block
         }
         minimal_settings[key] = __merge_rules(
@@ -458,7 +458,6 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "INP001",  # implicit namespace package
             "S101",  # `assert` detected
             "S113",  # requests call without timeout
-            "T201",  # print found
         }
         minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if os.path.exists("setup.py"):
