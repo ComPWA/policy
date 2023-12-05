@@ -4,74 +4,15 @@ This file only contains a selection of the most common options. For a full list 
 documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
-import contextlib
-import os
-import shutil
-import subprocess
-import sys
-from typing import Optional
-
-import requests
-
-if sys.version_info < (3, 8):
-    from importlib_metadata import version as get_package_version
-else:
-    from importlib.metadata import version as get_package_version
-
-
-def fetch_logo(url: str, output_path: str) -> None:
-    if os.path.exists(output_path):
-        return
-    online_content = requests.get(url, allow_redirects=True, timeout=10)
-    with open(output_path, "wb") as stream:
-        stream.write(online_content.content)
-
-
-def generate_api(package: str) -> None:
-    shutil.rmtree("api", ignore_errors=True)
-    subprocess.call(
-        " ".join(
-            [
-                "sphinx-apidoc",
-                f"../src/{package}/",
-                f"../src/{package}/version.py",
-                "-o api/",
-                "--force",
-                "--no-toc",
-                "--templatedir _templates",
-                "--separate",
-            ]
-        ),
-        shell=True,  # noqa: S602
-    )
-
-
-def get_html_logo_path() -> Optional[str]:
-    logo_path = "_static/logo.svg"
-    os.makedirs(os.path.dirname(logo_path), exist_ok=True)
-    with contextlib.suppress(requests.exceptions.ConnectionError):
-        fetch_logo(
-            url="https://raw.githubusercontent.com/ComPWA/ComPWA/04e5199/doc/images/logo.svg",
-            output_path=logo_path,
-        )
-    if os.path.exists(logo_path):
-        return logo_path
-    return None
-
-
-def get_version(package_name: str) -> str:
-    v = get_package_version(package_name)
-    return ".".join(v.split(".")[:3])
-
+from sphinx_api_relink.helpers import get_package_version
 
 REPO_NAME = "repo-maintenance"
 PACKAGE_NAME = "repoma"
-generate_api(PACKAGE_NAME)
 
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
-autosectionlabel_prefix_document = True
 autodoc_typehints_format = "short"
+autosectionlabel_prefix_document = True
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
@@ -84,13 +25,17 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_api_relink",
     "sphinx_copybutton",
     "sphinxarg.ext",
 ]
+generate_apidoc_package_path = f"../src/{PACKAGE_NAME}"
 html_copy_source = True  # needed for download notebook button
 html_favicon = "_static/favicon.ico"
 html_last_updated_fmt = "%-d %B %Y"
-html_logo = get_html_logo_path()
+html_logo = (
+    "https://raw.githubusercontent.com/ComPWA/ComPWA/04e5199/doc/images/logo.svg"
+)
 html_show_copyright = False
 html_show_sourcelink = False
 html_show_sphinx = False
@@ -126,5 +71,5 @@ nitpick_ignore_regex = [
 nitpicky = True
 primary_domain = "py"
 project = REPO_NAME
-release = get_version(REPO_NAME)
-version = get_version(REPO_NAME)
+release = get_package_version(REPO_NAME)
+version = get_package_version(REPO_NAME)
