@@ -470,7 +470,6 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "D",
             "INP001",
             "PGH001",
-            "PLR0913",
             "PLR2004",
             "S101",
         }
