@@ -472,6 +472,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "PGH001",
             "PLR2004",
             "S101",
+            "T20",
         }
         minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
