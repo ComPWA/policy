@@ -148,7 +148,7 @@ def _get_ci_workflow(
     config = yaml.load(path)
     __update_doc_section(config, doc_apt_packages, python_version)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
-    __update_style_section(config)
+    __update_style_section(config, python_version)
     return yaml, config
 
 
@@ -168,7 +168,11 @@ def __update_doc_section(
         __update_with_section(config, job_name="doc")
 
 
-def __update_style_section(config: CommentedMap) -> None:
+def __update_style_section(config: CommentedMap, python_version: PythonVersion) -> None:
+    if python_version != "3.8":
+        config["jobs"]["style"]["with"] = {
+            "python-version": DoubleQuotedScalarString(python_version)
+        }
     if not CONFIG_PATH.precommit.exists():
         del config["jobs"]["style"]
     else:
