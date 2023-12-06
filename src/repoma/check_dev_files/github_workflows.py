@@ -61,7 +61,7 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(REPOMA_DIR / workflow_path)
-        if no_pypi or not os.path.exists(CONFIG_PATH.setup_cfg):
+        if no_pypi or not CONFIG_PATH.setup_cfg.exists():
             del expected_data["jobs"]["pypi"]
         if no_version_branches:
             del expected_data["jobs"]["push"]
@@ -163,13 +163,13 @@ def __update_doc_section(
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
-        if not os.path.exists(CONFIG_PATH.readthedocs):
+        if not CONFIG_PATH.readthedocs.exists():
             with_section["gh-pages"] = True
         __update_with_section(config, job_name="doc")
 
 
 def __update_style_section(config: CommentedMap) -> None:
-    if not os.path.exists(CONFIG_PATH.precommit):
+    if not CONFIG_PATH.precommit.exists():
         del config["jobs"]["style"]
     else:
         cfg = PrecommitConfig.load()
@@ -191,7 +191,7 @@ def __update_pytest_section(
         with_section = config["jobs"]["pytest"]["with"]
         if test_extras:
             with_section["additional-extras"] = ",".join(test_extras)
-        if os.path.exists(CONFIG_PATH.codecov):
+        if CONFIG_PATH.codecov.exists():
             with_section["coverage-target"] = __get_package_name()
         if not no_macos:
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.9")
