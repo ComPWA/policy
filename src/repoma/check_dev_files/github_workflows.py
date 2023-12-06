@@ -13,7 +13,7 @@ from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR, hash_file, write
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
-from repoma.utilities.project_info import get_pypi_name
+from repoma.utilities.project_info import PythonVersion, get_pypi_name
 from repoma.utilities.vscode import (
     add_extension_recommendation,
     remove_extension_recommendation,
@@ -34,6 +34,7 @@ def main(
     no_macos: bool,
     no_pypi: bool,
     no_version_branches: bool,
+    python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
     test_extras: list[str],
@@ -45,6 +46,7 @@ def main(
         allow_deprecated,
         doc_apt_packages,
         no_macos,
+        python_version,
         single_threaded,
         skip_tests,
         test_extras,
@@ -93,6 +95,7 @@ def _update_ci_workflow(
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     no_macos: bool,
+    python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
     test_extras: list[str],
@@ -102,6 +105,7 @@ def _update_ci_workflow(
             REPOMA_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             doc_apt_packages,
             no_macos,
+            python_version,
             single_threaded,
             skip_tests,
             test_extras,
@@ -135,23 +139,28 @@ def _get_ci_workflow(
     path: Path,
     doc_apt_packages: list[str],
     no_macos: bool,
+    python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
     test_extras: list[str],
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
-    __update_doc_section(config, doc_apt_packages)
+    __update_doc_section(config, doc_apt_packages, python_version)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
     __update_style_section(config)
     return yaml, config
 
 
-def __update_doc_section(config: CommentedMap, apt_packages: list[str]) -> None:
+def __update_doc_section(
+    config: CommentedMap, apt_packages: list[str], python_version: PythonVersion
+) -> None:
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
     else:
         with_section = config["jobs"]["doc"]["with"]
+        if python_version != "3.8":
+            with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
         if not os.path.exists(CONFIG_PATH.readthedocs):

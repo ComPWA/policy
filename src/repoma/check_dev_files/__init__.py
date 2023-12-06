@@ -62,6 +62,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             github_workflows.main,
             allow_deprecated=args.allow_deprecated_workflows,
             doc_apt_packages=_to_list(args.doc_apt_packages),
+            python_version=dev_python_version,
             no_macos=args.no_macos,
             no_pypi=args.no_pypi,
             no_version_branches=args.no_version_branches,
