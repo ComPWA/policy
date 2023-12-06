@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ruamel.yaml.scalarstring import PlainScalarString
+
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.project_info import PythonVersion, get_constraints_file
@@ -47,7 +49,7 @@ def _update_pip_dependencies(version: PythonVersion, conda_deps: CommentedSeq) -
     else:
         expected_pip = f"-c {constraints_file} -e .[dev]"
     if len(pip_deps) and pip_deps[0] != expected_pip:
-        pip_deps[0] = expected_pip
+        pip_deps[0] = PlainScalarString(expected_pip)
         return True
     return False
 
@@ -66,6 +68,6 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
         if not isinstance(dep, dict):
             continue
         pip_deps = dep.get("pip")
-        if pip_deps is not None:
+        if pip_deps is not None and isinstance(pip_deps, list):
             return pip_deps
     return None
