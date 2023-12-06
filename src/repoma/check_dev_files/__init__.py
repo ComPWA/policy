@@ -84,7 +84,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
-    executor(gitpod.main, args.no_gitpod)
+    executor(gitpod.main, args.no_gitpod, args.dev_python_version)
     executor(precommit.main)
     return executor.finalize(exception=False)
 
@@ -177,6 +177,13 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not perform the check on labels.toml",
+    )
+    parser.add_argument(
+        "--dev-python-version",
+        default="3.8",
+        help="Specify the Python version for your developer environment",
+        required=False,
+        type=str,
     )
     parser.add_argument(
         "--no-macos",
