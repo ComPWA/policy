@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from argparse import ArgumentParser
-from typing import Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from repoma.check_dev_files.deprecated import remove_deprecated_tools
 from repoma.utilities.executor import Executor
@@ -13,6 +14,7 @@ from . import (
     black,
     citation,
     commitlint,
+    conda,
     cspell,
     editorconfig,
     github_labels,
@@ -34,6 +36,9 @@ from . import (
     vscode,
 )
 
+if TYPE_CHECKING:
+    from repoma.utilities.project_info import PythonVersion
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _create_argparse()
@@ -42,9 +47,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.repo_title:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
+    dev_python_version = __get_python_version(args.dev_python_version)
     executor = Executor()
     executor(citation.main)
     executor(commitlint.main)
+    executor(conda.main, dev_python_version)
     executor(cspell.main, args.no_cspell_update)
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
@@ -84,7 +91,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
-    executor(gitpod.main, args.no_gitpod, args.dev_python_version)
+    executor(gitpod.main, args.no_gitpod, dev_python_version)
     executor(precommit.main)
     return executor.finalize(exception=False)
 
@@ -268,6 +275,17 @@ def _to_list(arg: str) -> list[str]:
     if space_separated in {"", " "}:
         return []
     return sorted(space_separated.split(" "))
+
+
+def __get_python_version(arg: Any) -> PythonVersion:
+    if not isinstance(arg, str):
+        msg = f"--dev-python-version must be a string, not {type(arg).__name__}"
+        raise TypeError(msg)
+    arg = arg.strip()
+    if not re.match(r"^3\.\d+$", arg):
+        msg = f"Invalid Python version: {arg}"
+        raise ValueError(msg)
+    return arg  # type: ignore[return-value]
 
 
 if __name__ == "__main__":
