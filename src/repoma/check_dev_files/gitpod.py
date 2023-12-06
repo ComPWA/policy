@@ -7,23 +7,24 @@ import yaml
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
-from repoma.utilities.project_info import get_repo_url
+from repoma.utilities.project_info import (
+    PythonVersion,
+    get_constraints_file,
+    get_repo_url,
+)
 from repoma.utilities.readme import add_badge
 from repoma.utilities.yaml import write_yaml
 
-__CONSTRAINTS_FILE = ".constraints/py3.8.txt"
 
-
-def main(no_gitpod: bool) -> None:
+def main(no_gitpod: bool, python_version: PythonVersion) -> None:
     if no_gitpod:
         if CONFIG_PATH.gitpod.exists():
             os.remove(CONFIG_PATH.gitpod)
             msg = f"Removed {CONFIG_PATH.gitpod} as requested by --no-gitpod"
             raise PrecommitError(msg)
         return
-    pin_dependencies = os.path.exists(__CONSTRAINTS_FILE)
     error_message = ""
-    expected_config = _generate_gitpod_config(pin_dependencies)
+    expected_config = _generate_gitpod_config(python_version)
     if CONFIG_PATH.gitpod.exists():
         with open(CONFIG_PATH.gitpod) as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)
@@ -51,14 +52,16 @@ def _extract_extensions() -> dict:
     return {}
 
 
-def _generate_gitpod_config(pin_dependencies: bool) -> dict:
+def _generate_gitpod_config(python_version: PythonVersion) -> dict:
     with open(REPOMA_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
-    if pin_dependencies:
-        tasks[0]["init"] = f"pip install -c {__CONSTRAINTS_FILE} -e .[dev]"
+    tasks[0]["init"] = f"pyenv local {python_version}"
+    constraints_file = get_constraints_file(python_version)
+    if constraints_file is None:
+        tasks[1]["init"] = "pip install -e .[dev]"
     else:
-        tasks[0]["init"] = "pip install -e .[dev]"
+        tasks[1]["init"] = f"pip install -c {constraints_file} -e .[dev]"
     extensions = _extract_extensions()
     if extensions:
         gitpod_config["vscode"] = {"extensions": extensions}

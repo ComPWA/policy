@@ -19,6 +19,7 @@ from repoma.utilities.executor import Executor
 class _ConfigFilePaths(NamedTuple):
     citation: Path = Path("CITATION.cff")
     codecov: Path = Path("codecov.yml")
+    conda: Path = Path("environment.yml")
     cspell: Path = Path(".cspell.json")
     editorconfig: Path = Path(".editorconfig")
     github_workflow_dir: Path = Path(".github/workflows")

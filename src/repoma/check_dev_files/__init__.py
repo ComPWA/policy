@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from argparse import ArgumentParser
-from typing import Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from repoma.check_dev_files.deprecated import remove_deprecated_tools
 from repoma.utilities.executor import Executor
@@ -13,6 +14,7 @@ from . import (
     black,
     citation,
     commitlint,
+    conda,
     cspell,
     editorconfig,
     github_labels,
@@ -26,6 +28,7 @@ from . import (
     pyright,
     pytest,
     pyupgrade,
+    readthedocs,
     release_drafter,
     ruff,
     setup_cfg,
@@ -33,6 +36,9 @@ from . import (
     update_pip_constraints,
     vscode,
 )
+
+if TYPE_CHECKING:
+    from repoma.utilities.project_info import PythonVersion
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -42,9 +48,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.repo_title:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
+    dev_python_version = __get_python_version(args.dev_python_version)
     executor = Executor()
     executor(citation.main)
     executor(commitlint.main)
+    executor(conda.main, dev_python_version)
     executor(cspell.main, args.no_cspell_update)
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
@@ -54,6 +62,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             github_workflows.main,
             allow_deprecated=args.allow_deprecated_workflows,
             doc_apt_packages=_to_list(args.doc_apt_packages),
+            python_version=dev_python_version,
             no_macos=args.no_macos,
             no_pypi=args.no_pypi,
             no_version_branches=args.no_version_branches,
@@ -82,9 +91,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             update_pip_constraints.main,
             cron_frequency=args.pin_requirements,
         )
+    executor(readthedocs.main, dev_python_version)
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
-    executor(gitpod.main, args.no_gitpod)
+    executor(gitpod.main, args.no_gitpod, dev_python_version)
     executor(precommit.main)
     return executor.finalize(exception=False)
 
@@ -179,6 +189,13 @@ def _create_argparse() -> ArgumentParser:
         help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
+        "--dev-python-version",
+        default="3.8",
+        help="Specify the Python version for your developer environment",
+        required=False,
+        type=str,
+    )
+    parser.add_argument(
         "--no-macos",
         action="store_true",
         default=False,
@@ -261,6 +278,17 @@ def _to_list(arg: str) -> list[str]:
     if space_separated in {"", " "}:
         return []
     return sorted(space_separated.split(" "))
+
+
+def __get_python_version(arg: Any) -> PythonVersion:
+    if not isinstance(arg, str):
+        msg = f"--dev-python-version must be a string, not {type(arg).__name__}"
+        raise TypeError(msg)
+    arg = arg.strip()
+    if not re.match(r"^3\.\d+$", arg):
+        msg = f"Invalid Python version: {arg}"
+        raise ValueError(msg)
+    return arg  # type: ignore[return-value]
 
 
 if __name__ == "__main__":
