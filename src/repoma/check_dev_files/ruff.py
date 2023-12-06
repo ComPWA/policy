@@ -317,6 +317,21 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
+def __ban(
+    rules: Iterable[str], banned_rules: Iterable[str], enforce_multiline: bool = False
+) -> Array:
+    """Extend Ruff rules with new rules and filter out redundant ones.
+
+    >>> __ban(["C90", "B018"], banned_rules=["D10", "C"])
+    ['B018']
+    """
+    banned_set = tuple(banned_rules)
+    filtered = {
+        rule for rule in rules if not any(rule.startswith(r) for r in banned_set)
+    }
+    return to_toml_array(sorted(filtered), enforce_multiline)
+
+
 def __merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -> Array:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
@@ -445,11 +460,16 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "T20",  # print found
             "TCH00",  # type-checking block
         }
-        minimal_settings[key] = __merge_rules(
+        expected_rules = __merge_rules(
             default_ignores,
             __get_existing_nbqa_ignores(pyproject),
             settings.get(key, []),
         )
+        banned_rules = {
+            "F821",  # identify variables that are not defined
+            "ISC003",  # explicit-string-concatenation
+        }
+        minimal_settings[key] = __ban(expected_rules, banned_rules)
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
