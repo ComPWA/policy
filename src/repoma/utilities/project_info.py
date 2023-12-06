@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -159,3 +160,10 @@ def open_setup_cfg() -> ConfigParser:
         msg = "This repository contains no setup.cfg file"
         raise PrecommitError(msg)
     return open_config(CONFIG_PATH.setup_cfg)
+
+
+def get_constraints_file(python_version: PythonVersion) -> Path | None:
+    path = Path(f".constraints/py{python_version}.txt")
+    if path.exists():
+        return path
+    return None

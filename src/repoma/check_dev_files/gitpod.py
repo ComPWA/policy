@@ -2,13 +2,16 @@
 
 import json
 import os
-from pathlib import Path
 
 import yaml
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
-from repoma.utilities.project_info import PythonVersion, get_repo_url
+from repoma.utilities.project_info import (
+    PythonVersion,
+    get_constraints_file,
+    get_repo_url,
+)
 from repoma.utilities.readme import add_badge
 from repoma.utilities.yaml import write_yaml
 
@@ -53,18 +56,13 @@ def _generate_gitpod_config(python_version: PythonVersion) -> dict:
     with open(REPOMA_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
-    constraints = __get_constraints_file(python_version)
-    if constraints.exists():
-        tasks[0]["init"] = f"pip install -c {constraints} -e .[dev]"
-        tasks[1]["init"] = f"pip install -c {constraints} -e .[dev]"
-    else:
-        tasks[0]["init"] = f"pyenv local {python_version}"
+    tasks[0]["init"] = f"pyenv local {python_version}"
+    constraints = get_constraints_file(python_version)
+    if constraints is None:
         tasks[1]["init"] = "pip install -e .[dev]"
+    else:
+        tasks[1]["init"] = f"pip install -c {constraints} -e .[dev]"
     extensions = _extract_extensions()
     if extensions:
         gitpod_config["vscode"] = {"extensions": extensions}
     return gitpod_config
-
-
-def __get_constraints_file(python_version: PythonVersion) -> Path:
-    return Path(f".constraints/py{python_version}.txt")
