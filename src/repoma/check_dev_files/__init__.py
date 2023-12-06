@@ -28,6 +28,7 @@ from . import (
     pyright,
     pytest,
     pyupgrade,
+    readthedocs,
     release_drafter,
     ruff,
     setup_cfg,
@@ -89,6 +90,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             update_pip_constraints.main,
             cron_frequency=args.pin_requirements,
         )
+    executor(readthedocs.main, dev_python_version)
     executor(remove_deprecated_tools, args.keep_issue_templates)
     executor(vscode.main, has_notebooks)
     executor(gitpod.main, args.no_gitpod, dev_python_version)

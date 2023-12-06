@@ -57,11 +57,11 @@ def _generate_gitpod_config(python_version: PythonVersion) -> dict:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
     tasks[0]["init"] = f"pyenv local {python_version}"
-    constraints = get_constraints_file(python_version)
-    if constraints is None:
+    constraints_file = get_constraints_file(python_version)
+    if constraints_file is None:
         tasks[1]["init"] = "pip install -e .[dev]"
     else:
-        tasks[1]["init"] = f"pip install -c {constraints} -e .[dev]"
+        tasks[1]["init"] = f"pip install -c {constraints_file} -e .[dev]"
     extensions = _extract_extensions()
     if extensions:
         gitpod_config["vscode"] = {"extensions": extensions}
