@@ -86,14 +86,6 @@ def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
 
 
 def _determine_new_value(old: V, new: V, key: str | None, sort: bool = False) -> V:
-    if type(old) != type(new):
-        msg = (
-            f"Original value is of type {type(old).__name__}, new value is of"
-            f" type{type(new).__name__}"
-        )
-        if key is not None:
-            msg = f"{msg} (corresponding key: {key!r})"
-        raise TypeError(msg)
     if isinstance(old, dict) and isinstance(new, dict):
         return _update_dict_recursively(old, new, sort)  # type: ignore[return-value]
     if isinstance(old, list) and isinstance(new, list):

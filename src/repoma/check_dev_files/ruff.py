@@ -530,6 +530,11 @@ def _update_vscode_settings() -> None:
     executor(
         vscode.update_settings,
         {
+            "[python]": {
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "explicit",
+                }
+            },
             "ruff.enable": True,
             "ruff.organizeImports": True,
         },
