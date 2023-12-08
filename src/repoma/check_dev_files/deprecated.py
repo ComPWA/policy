@@ -19,12 +19,10 @@ def remove_deprecated_tools(keep_issue_templates: bool) -> None:
 
 
 def _remove_github_issue_templates() -> None:
-    remove_configs(
-        [
-            ".github/ISSUE_TEMPLATE",
-            ".github/pull_request_template.md",
-        ]
-    )
+    remove_configs([
+        ".github/ISSUE_TEMPLATE",
+        ".github/pull_request_template.md",
+    ])
 
 
 def _remove_markdownlint() -> None:

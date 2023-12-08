@@ -61,13 +61,11 @@ def remove_zenodo_json() -> None:
 
 
 def _convert_zenodo(zenodo: dict) -> CommentedMap:
-    citation_cff = CommentedMap(
-        {
-            "cff-version": "1.2.0",
-            "message": "If you use this software, please cite it as below.",
-            "title": FoldedScalarString(zenodo["title"]),
-        }
-    )
+    citation_cff = CommentedMap({
+        "cff-version": "1.2.0",
+        "message": "If you use this software, please cite it as below.",
+        "title": FoldedScalarString(zenodo["title"]),
+    })
 
     description = zenodo.get("description")
     if description is not None:
