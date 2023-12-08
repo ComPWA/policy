@@ -4,6 +4,7 @@ ci:
   skip:
     - check-dev-files
     - mypy
+    - prettier
     - pyright
     - repoma-self-check
     - taplo
@@ -56,7 +57,7 @@ repos:
         files: ^\.pre\-commit\-(config|hooks)\.yaml$
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.10.1
+    rev: 23.11.0
     hooks:
       - id: black
 
@@ -66,7 +67,7 @@ repos:
       - id: blacken-docs
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v7.3.2
+    rev: v8.1.1
     hooks:
       - id: cspell
 
@@ -92,17 +93,17 @@ repos:
           - python
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
+    rev: v4.0.0-alpha.3-1
     hooks:
       - id: prettier
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.334
+    rev: v1.1.339
     hooks:
       - id: pyright
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.4
+    rev: v0.1.7
     hooks:
       - id: ruff
         args: [--fix]
