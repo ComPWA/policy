@@ -2,25 +2,41 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+import sys
+from typing import Callable, TypeVar
 
 import attr
 
 from repoma.errors import PrecommitError
 
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
+
+T = TypeVar("T")
+P = ParamSpec("P")
+
 
 @attr.s(on_setattr=attr.setters.frozen)
 class Executor:
-    """Execute functions and collect any `.PrecommitError` exceptions."""
+    """Execute functions and collect any `.PrecommitError` exceptions.
+
+    .. automethod:: __call__
+    """
 
     error_messages: list[str] = attr.ib(factory=list, init=False)
 
-    def __call__(self, function: Callable, *args: Any, **kwargs: Any) -> None:
+    def __call__(
+        self, function: Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> T | None:
+        """Execute a function and collect any `.PrecommitError` exceptions."""
         try:
-            function(*args, **kwargs)
+            return function(*args, **kwargs)
         except PrecommitError as exception:
             error_message = str("\n".join(exception.args))
-            self.error_messages.append(error_message)
+        self.error_messages.append(error_message)
+        return None
 
     def finalize(self, exception: bool = True) -> int:
         error_msg = self.merge_messages()
