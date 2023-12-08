@@ -21,7 +21,7 @@ def remove_setting(key: str | dict) -> None:
     old = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new = deepcopy(old)
     _recursive_remove_setting(key, new)
-    _update_settings(old, new)
+    _update_settings_if_changed(old, new)
 
 
 def _recursive_remove_setting(nested_keys: str | dict, settings: dict) -> None:
@@ -41,22 +41,22 @@ def remove_settings(keys: Iterable[str]) -> None:
     removed_keys = set(keys)
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new_settings = {k: v for k, v in settings.items() if k not in removed_keys}
-    _update_settings(settings, new=new_settings)
+    _update_settings_if_changed(settings, new=new_settings)
 
 
 def set_setting(values: dict) -> None:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    _update_settings(settings, new={**settings, **values})
+    _update_settings_if_changed(settings, new={**settings, **values})
 
 
 def set_sub_setting(key: str, values: dict) -> None:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new_settings = dict(settings)
     new_settings[key] = {**settings.get(key, {}), **values}
-    _update_settings(settings, new_settings)
+    _update_settings_if_changed(settings, new_settings)
 
 
-def _update_settings(old: dict, new: dict) -> None:
+def _update_settings_if_changed(old: dict, new: dict) -> None:
     if old == new:
         return
     __dump_config(new, CONFIG_PATH.vscode_settings)
