@@ -58,6 +58,7 @@
     "MAINT",
     "PyPI",
     "argparse",
+    "automethod",
     "autonumbering",
     "autoupdate",
     "bdist",

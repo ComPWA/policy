@@ -20,13 +20,17 @@ P = ParamSpec("P")
 
 @attr.s(on_setattr=attr.setters.frozen)
 class Executor:
-    """Execute functions and collect any `.PrecommitError` exceptions."""
+    """Execute functions and collect any `.PrecommitError` exceptions.
+
+    .. automethod:: __call__
+    """
 
     error_messages: list[str] = attr.ib(factory=list, init=False)
 
     def __call__(
         self, function: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> T | None:
+        """Execute a function and collect any `.PrecommitError` exceptions."""
         try:
             return function(*args, **kwargs)
         except PrecommitError as exception:
