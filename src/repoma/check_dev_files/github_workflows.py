@@ -10,15 +10,10 @@ from typing import TYPE_CHECKING
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, REPOMA_DIR, hash_file, write
+from repoma.utilities import CONFIG_PATH, REPOMA_DIR, hash_file, vscode, write
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import PrecommitConfig
 from repoma.utilities.project_info import PythonVersion, get_pypi_name
-from repoma.utilities.vscode import (
-    add_extension_recommendation,
-    remove_extension_recommendation,
-    set_setting,
-)
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -275,14 +270,14 @@ def _recommend_vscode_extension() -> None:
         return
     # cspell:ignore cschleiden
     executor = Executor()
-    executor(remove_extension_recommendation, "cschleiden.vscode-github-actions")
-    executor(add_extension_recommendation, "github.vscode-github-actions")
+    executor(vscode.remove_extension_recommendation, "cschleiden.vscode-github-actions")
+    executor(vscode.add_extension_recommendation, "github.vscode-github-actions")
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
             "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
         }
-        set_setting(action_settings)
+        vscode.update_settings(action_settings)
     executor.finalize()
 
 

@@ -4,7 +4,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH
+from repoma.utilities import CONFIG_PATH, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     remove_precommit_hook,
@@ -17,11 +17,6 @@ from repoma.utilities.pyproject import (
     load_pyproject,
     to_toml_array,
     write_pyproject,
-)
-from repoma.utilities.vscode import (
-    add_extension_recommendation,
-    set_setting,
-    set_sub_setting,
 )
 
 
@@ -42,14 +37,17 @@ def main(has_notebooks: bool) -> None:
         repo_url="https://github.com/psf/black",
     )
     executor(_update_precommit_repo, has_notebooks)
-    executor(add_extension_recommendation, "ms-python.black-formatter")
-    executor(set_setting, {"black-formatter.importStrategy": "fromEnvironment"})
+    executor(vscode.add_extension_recommendation, "ms-python.black-formatter")
     executor(
-        set_sub_setting,
-        "[python]",
+        vscode.update_settings, {"black-formatter.importStrategy": "fromEnvironment"}
+    )
+    executor(
+        vscode.update_settings,
         {
-            "editor.defaultFormatter": "ms-python.black-formatter",
-            "editor.rulers": [88],
+            "[python]": {
+                "editor.defaultFormatter": "ms-python.black-formatter",
+                "editor.rulers": [88],
+            },
         },
     )
     executor(remove_precommit_hook, "nbqa-black")
