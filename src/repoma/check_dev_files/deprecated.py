@@ -3,10 +3,9 @@
 import os
 
 from repoma.errors import PrecommitError
-from repoma.utilities import remove_configs, remove_from_gitignore
+from repoma.utilities import remove_configs, remove_from_gitignore, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import remove_precommit_hook
-from repoma.utilities.vscode import remove_extension_recommendation
 
 
 def remove_deprecated_tools(keep_issue_templates: bool) -> None:
@@ -33,7 +32,7 @@ def _remove_markdownlint() -> None:
     executor(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
     executor(remove_from_gitignore, ".markdownlint.json")
     executor(
-        remove_extension_recommendation,
+        vscode.remove_extension_recommendation,
         # cspell:ignore davidanson markdownlint
         extension_name="davidanson.vscode-markdownlint",
         unwanted=True,

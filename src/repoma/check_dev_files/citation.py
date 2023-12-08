@@ -15,16 +15,12 @@ from ruamel.yaml.scalarstring import (
 )
 
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH
+from repoma.utilities import CONFIG_PATH, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     find_repo,
     load_round_trip_precommit_config,
     update_single_hook_precommit_repo,
-)
-from repoma.utilities.vscode import (
-    add_extension_recommendation,
-    set_sub_setting,
 )
 
 
@@ -38,7 +34,7 @@ def main() -> None:
             executor(remove_zenodo_json)
         executor(check_citation_keys)
         executor(add_json_schema_precommit)
-        executor(add_extension_recommendation, "redhat.vscode-yaml")
+        executor(vscode.add_extension_recommendation, "redhat.vscode-yaml")
         executor(update_vscode_settings)
     executor.finalize()
 
@@ -219,9 +215,12 @@ def add_json_schema_precommit() -> None:
 
 
 def update_vscode_settings() -> None:
-    set_sub_setting(
-        key="yaml.schemas",
-        values={
-            "https://citation-file-format.github.io/1.2.0/schema.json": "CITATION.cff"
+    vscode.update_settings(
+        {
+            "yaml.schemas": {
+                "https://citation-file-format.github.io/1.2.0/schema.json": (
+                    "CITATION.cff"
+                )
+            }
         },
     )

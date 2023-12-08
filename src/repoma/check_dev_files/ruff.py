@@ -14,7 +14,7 @@ from repoma.check_dev_files.setup_cfg import (
     has_setup_cfg_build_system,
 )
 from repoma.errors import PrecommitError
-from repoma.utilities import CONFIG_PATH, natural_sorting, remove_configs
+from repoma.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
 from repoma.utilities.executor import Executor
 from repoma.utilities.precommit import (
     remove_precommit_hook,
@@ -34,12 +34,6 @@ from repoma.utilities.pyproject import (
     write_pyproject,
 )
 from repoma.utilities.readme import add_badge, remove_badge
-from repoma.utilities.vscode import (
-    add_extension_recommendation,
-    remove_extension_recommendation,
-    remove_settings,
-    set_setting,
-)
 
 if TYPE_CHECKING:
     from tomlkit.items import Array, Table
@@ -106,11 +100,11 @@ def _remove_flake8() -> None:
     executor(__remove_nbqa_option, "flake8")
     executor(__uninstall, "flake8")
     executor(__uninstall, "pep8-naming")
-    executor(remove_extension_recommendation, "ms-python.flake8", unwanted=True)
+    executor(vscode.remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
     executor(remove_precommit_hook, "nbqa-flake8")
-    executor(remove_settings, ["flake8.importStrategy"])
+    executor(vscode.remove_settings, ["flake8.importStrategy"])
     executor.finalize()
 
 
@@ -119,10 +113,10 @@ def _remove_isort() -> None:
     executor(__remove_isort_settings)
     executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
-    executor(remove_extension_recommendation, "ms-python.isort", unwanted=True)
+    executor(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
-    executor(remove_settings, ["isort.check", "isort.importStrategy"])
+    executor(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
     executor(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
     executor.finalize()
 
@@ -170,10 +164,10 @@ def _remove_pylint() -> None:
     executor = Executor()
     executor(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
     executor(__uninstall, "pylint")
-    executor(remove_extension_recommendation, "ms-python.pylint", unwanted=True)
+    executor(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
     executor(remove_precommit_hook, "nbqa-pylint")
-    executor(remove_settings, ["pylint.importStrategy"])
+    executor(vscode.remove_settings, ["pylint.importStrategy"])
     executor.finalize()
 
 
@@ -532,9 +526,9 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
 def _update_vscode_settings() -> None:
     # cspell:ignore charliermarsh
     executor = Executor()
-    executor(add_extension_recommendation, "charliermarsh.ruff")
+    executor(vscode.add_extension_recommendation, "charliermarsh.ruff")
     executor(
-        set_setting,
+        vscode.update_settings,
         {
             "ruff.enable": True,
             "ruff.organizeImports": True,

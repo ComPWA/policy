@@ -22,7 +22,6 @@ from repoma.utilities.precommit import (
     update_single_hook_precommit_repo,
 )
 from repoma.utilities.readme import add_badge, remove_badge
-from repoma.utilities.vscode import sort_case_insensitive
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -234,4 +233,4 @@ def __sort_section(content: Iterable[Any], section_name: str) -> list[str]:
         return sorted(content, key=sort_key)
     if section_name == "ignoreWords":
         return sorted(content)
-    return sort_case_insensitive(content)
+    return vscode.sort_case_insensitive(content)

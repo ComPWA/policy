@@ -36,7 +36,7 @@ def _update_extensions() -> None:
 def _update_settings(has_notebooks: bool) -> None:
     executor = Executor()
     executor(
-        vscode.set_setting,
+        vscode.update_settings,
         {
             "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
@@ -44,11 +44,12 @@ def _update_settings(has_notebooks: bool) -> None:
         },
     )
     executor(
-        vscode.set_sub_setting,
-        "[git-commit]",
+        vscode.update_settings,
         {
-            "editor.rulers": [72],
-            "rewrap.wrappingColumn": 72,
+            "[git-commit]": {
+                "editor.rulers": [72],
+                "rewrap.wrappingColumn": 72,
+            },
         },
     )
     executor(_remove_outdated_settings)
@@ -86,7 +87,7 @@ def _update_doc_settings() -> None:
         "livePreview.defaultPreviewPath": "docs/_build/html",
     }
     executor = Executor()
-    executor(vscode.set_setting, settings)
+    executor(vscode.update_settings, settings)
     executor(
         vscode.add_extension_recommendation,
         "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
@@ -102,7 +103,7 @@ def _update_notebook_settings() -> None:
     settings = {
         "notebook.gotoSymbols.showAllSymbols": True,
     }
-    vscode.set_setting(settings)
+    vscode.update_settings(settings)
 
 
 def _update_pytest_settings() -> None:
@@ -113,4 +114,4 @@ def _update_pytest_settings() -> None:
         "python.testing.pytestEnabled": True,
         "python.testing.unittestEnabled": False,
     }
-    vscode.set_setting(pytest_settings)
+    vscode.update_settings(pytest_settings)

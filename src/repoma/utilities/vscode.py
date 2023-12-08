@@ -17,6 +17,10 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+K = TypeVar("K")
+V = TypeVar("V")
+
+
 def remove_setting(key: str | dict) -> None:
     old = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new = deepcopy(old)
@@ -44,16 +48,57 @@ def remove_settings(keys: Iterable[str]) -> None:
     _update_settings_if_changed(settings, new=new_settings)
 
 
-def set_setting(values: dict) -> None:
-    settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    _update_settings_if_changed(settings, new={**settings, **values})
+def update_settings(new_settings: dict) -> None:
+    old = __load_config(CONFIG_PATH.vscode_settings, create=True)
+    updated = _update_dict_recursively(old, new_settings)
+    _update_settings_if_changed(old, updated)
 
 
-def set_sub_setting(key: str, values: dict) -> None:
-    settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new_settings = dict(settings)
-    new_settings[key] = {**settings.get(key, {}), **values}
-    _update_settings_if_changed(settings, new_settings)
+def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
+    """Update a `dict` recursively.
+
+    >>> old = {
+    ...     "k1": "old",
+    ...     "k2": {"s1": "old", "s2": "old"},
+    ...     "k5": [1, 2],
+    ... }
+    >>> new = {
+    ...     "k1": "new",
+    ...     "k2": {"s2": "new"},
+    ...     "k3": {"s": "a"},
+    ...     "k4": "b",
+    ...     "k5": [1, 2, 3],
+    ... }
+    >>> _update_dict_recursively(old, new, sort=True)
+    {'k1': 'new', 'k2': {'s1': 'old', 's2': 'new'}, 'k3': {'s': 'a'}, 'k4': 'b', 'k5': [1, 2, 3]}
+    >>> old  # check if unchanged
+    {'k1': 'old', 'k2': {'s1': 'old', 's2': 'old'}, 'k5': [1, 2]}
+    """
+    merged = dict(old)
+    for key, value in new.items():
+        if key in merged:
+            merged[key] = _determine_new_value(merged[key], value, key, sort)
+        else:
+            merged[key] = value
+    if sort:
+        return {k: merged[k] for k in sorted(merged)}
+    return merged
+
+
+def _determine_new_value(old: V, new: V, key: str | None, sort: bool = False) -> V:
+    if type(old) != type(new):
+        msg = (
+            f"Original value is of type {type(old).__name__}, new value is of"
+            f" type{type(new).__name__}"
+        )
+        if key is not None:
+            msg = f"{msg} (corresponding key: {key!r})"
+        raise TypeError(msg)
+    if isinstance(old, dict) and isinstance(new, dict):
+        return _update_dict_recursively(old, new, sort)  # type: ignore[return-value]
+    if isinstance(old, list) and isinstance(new, list):
+        return sorted({*old, *new})  # type: ignore[return-value]
+    return new
 
 
 def _update_settings_if_changed(old: dict, new: dict) -> None:
@@ -118,10 +163,6 @@ def __dump_config(config: dict, path: Path) -> None:
     with open(path, "w") as stream:
         json.dump(sort_case_insensitive(config), stream, indent=2)
         stream.write("\n")
-
-
-K = TypeVar("K")
-V = TypeVar("V")
 
 
 @overload
