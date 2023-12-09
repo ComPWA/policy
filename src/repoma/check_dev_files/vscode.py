@@ -40,6 +40,7 @@ def _update_settings(has_notebooks: bool) -> None:
         {
             "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
+            "multiDiffEditor.experimental.enabled": True,
             "rewrap.wrappingColumn": 88,  # black
         },
     )
