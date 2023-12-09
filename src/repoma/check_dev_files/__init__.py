@@ -33,6 +33,7 @@ from . import (
     ruff,
     setup_cfg,
     toml,
+    tox,
     update_pip_constraints,
     vscode,
 )
@@ -96,6 +97,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     executor(vscode.main, has_notebooks)
     executor(gitpod.main, args.no_gitpod, dev_python_version)
     executor(precommit.main)
+    executor(tox.main, has_notebooks)
     return executor.finalize(exception=False)
 
 
