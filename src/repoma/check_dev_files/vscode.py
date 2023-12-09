@@ -74,6 +74,7 @@ def _remove_outdated_settings() -> None:
         "python.linting.pydocstyleEnabled",
         "python.linting.pylamaEnabled",
         "python.linting.pylintEnabled",
+        "telemetry.enableCrashReporter",
         "telemetry.enableTelemetry",
         "telemetry.telemetryLevel",
     ]
