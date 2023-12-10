@@ -1,9 +1,5 @@
 name: Requirements
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   issue_comment:
     types:
