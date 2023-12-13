@@ -85,6 +85,8 @@ def _update_tomlsort_hook() -> None:
         excludes.append(r"labels/.*\.toml")
     if glob("labels*.toml"):
         excludes.append(r"labels.*\.toml")
+    if any(glob(f"**/{f}.toml", recursive=True) for f in ("Manifest", "Project")):
+        excludes.append(r".*(Manifest|Project)\.toml")
     if excludes:
         excludes = sorted(excludes, key=str.lower)
         expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
