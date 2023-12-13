@@ -5,10 +5,6 @@ See Also:
 - https://github.com/ComPWA/update-pre-commit
 """
 
-from __future__ import annotations
-
-from glob import glob
-
 from repoma.check_dev_files.github_workflows import remove_workflow, update_workflow
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH, REPOMA_DIR
@@ -47,9 +43,7 @@ def _update_requirement_workflow(frequency: str) -> None:
         )
         yaml = create_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)
-        paths: list[str] = expected_data["on"]["pull_request"]["paths"]
         expected_data["on"]["schedule"][0]["cron"] = cron_schedule
-        expected_data["on"]["pull_request"]["paths"] = [p for p in paths if glob(p)]
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
