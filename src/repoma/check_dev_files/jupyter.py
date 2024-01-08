@@ -1,7 +1,7 @@
 """Update the developer setup when using Jupyter notebooks."""
 
 from repoma.utilities.executor import Executor
-from repoma.utilities.project_info import get_supported_python_versions
+from repoma.utilities.project_info import get_supported_python_versions, is_package
 from repoma.utilities.pyproject import add_dependency
 
 
@@ -10,6 +10,8 @@ def main() -> None:
 
 
 def _update_dev_requirements() -> None:
+    if not is_package():
+        return
     if "3.6" in get_supported_python_versions():
         return
     hierarchy = ["jupyter", "dev"]
