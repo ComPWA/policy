@@ -80,19 +80,22 @@ class ProjectInfo:
 
 
 def get_project_info(pyproject: TOMLDocument | None = None) -> ProjectInfo:
+    project_info = _load_project_info(pyproject)
+    if project_info is None or project_info.is_empty():
+        msg = f"No valid {CONFIG_PATH.setup_cfg} or {CONFIG_PATH.pyproject} found"
+        raise PrecommitError(msg)
+    return project_info
+
+
+def _load_project_info(pyproject: TOMLDocument | None = None) -> ProjectInfo | None:
     if pyproject is not None or os.path.exists(CONFIG_PATH.pyproject):
         if pyproject is None:
             pyproject = load_pyproject()
-        project_info = ProjectInfo.from_pyproject_toml(pyproject)
-        if not project_info.is_empty():
-            return project_info
+        return ProjectInfo.from_pyproject_toml(pyproject)
     if os.path.exists(CONFIG_PATH.setup_cfg):
         cfg = open_config(CONFIG_PATH.setup_cfg)
-        project_info = ProjectInfo.from_setup_cfg(cfg)
-        if not project_info.is_empty():
-            return project_info
-    msg = f"No valid {CONFIG_PATH.setup_cfg} or {CONFIG_PATH.pyproject} found"
-    raise PrecommitError(msg)
+        return ProjectInfo.from_setup_cfg(cfg)
+    return None
 
 
 def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion] | None:
@@ -167,3 +170,8 @@ def get_constraints_file(python_version: PythonVersion) -> Path | None:
     if path.exists():
         return path
     return None
+
+
+def is_package() -> bool:
+    project_info = _load_project_info()
+    return project_info is not None and not project_info.is_empty()

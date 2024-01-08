@@ -8,7 +8,11 @@ from ruamel.yaml.scalarstring import PlainScalarString
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
-from repoma.utilities.project_info import PythonVersion, get_constraints_file
+from repoma.utilities.project_info import (
+    PythonVersion,
+    get_constraints_file,
+    is_package,
+)
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -17,6 +21,8 @@ if TYPE_CHECKING:
 
 def main(python_version: PythonVersion) -> None:
     if not CONFIG_PATH.conda.exists():
+        return
+    if not is_package():
         return
     yaml = create_prettier_round_trip_yaml()
     conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)
