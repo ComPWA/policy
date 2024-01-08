@@ -29,6 +29,7 @@ def _update_extensions() -> None:
         vscode.remove_extension_recommendation,
         "garaioag.garaio-vscode-unwanted-recommendations",
         # cspell:ignore garaio garaioag
+        unwanted=True,
     )
     executor(
         vscode.add_extension_recommendation,
