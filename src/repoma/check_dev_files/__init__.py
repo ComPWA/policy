@@ -90,7 +90,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.pin_requirements != "no":
         executor(
             update_pip_constraints.main,
-            cron_frequency=args.pin_requirements,
+            frequency=args.pin_requirements,
         )
     executor(readthedocs.main, dev_python_version)
     executor(remove_deprecated_tools, args.keep_issue_templates)
@@ -229,7 +229,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--pin-requirements",
-        choices=["no", "biweekly", "monthly", "bimonthly", "quarterly", "biannually"],
+        choices=update_pip_constraints.Frequency.__args__,  # type:ignore[attr-defined]
         default="no",
         help=(
             "Add a script to pin developer requirements to a constraint file."
