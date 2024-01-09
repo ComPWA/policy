@@ -88,13 +88,18 @@ def get_project_info(pyproject: TOMLDocument | None = None) -> ProjectInfo:
 
 
 def _load_project_info(pyproject: TOMLDocument | None = None) -> ProjectInfo | None:
-    if pyproject is not None or os.path.exists(CONFIG_PATH.pyproject):
-        if pyproject is None:
-            pyproject = load_pyproject()
+    if pyproject is not None:
         return ProjectInfo.from_pyproject_toml(pyproject)
+    candidates: list[ProjectInfo] = []
+    if os.path.exists(CONFIG_PATH.pyproject):
+        pyproject = load_pyproject()
+        candidates.append(ProjectInfo.from_pyproject_toml(pyproject))
     if os.path.exists(CONFIG_PATH.setup_cfg):
         cfg = open_config(CONFIG_PATH.setup_cfg)
-        return ProjectInfo.from_setup_cfg(cfg)
+        candidates.append(ProjectInfo.from_setup_cfg(cfg))
+    for project_info in candidates:
+        if not project_info.is_empty():
+            return project_info
     return None
 
 
