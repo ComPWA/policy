@@ -6,6 +6,7 @@ import os
 
 import tomlkit
 from ini2toml.api import Translator
+from tomlkit import string
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
@@ -21,6 +22,7 @@ def main() -> None:
     executor(_merge_coverage_into_pyproject)
     executor(_merge_pytest_into_pyproject)
     executor(_remove_pytest_ini)
+    executor(_update_settings)
     executor.finalize()
 
 
@@ -67,3 +69,25 @@ def _remove_pytest_ini() -> None:
     os.remove(__PYTEST_INI_PATH)
     msg = f"Removed {__PYTEST_INI_PATH}"
     raise PrecommitError(msg)
+
+
+def _update_settings() -> None:
+    pyproject = load_pyproject()
+    if pyproject.get("tool", {}).get("pytest", {}).get("ini_options") is None:
+        return
+    config = get_sub_table(pyproject, "tool.pytest.ini_options")
+    addopts: str = config.get("addopts", "")
+    options = {opt.strip() for opt in addopts.split()}
+    options = {opt for opt in options if opt and not opt.startswith("--color=")}
+    options.add("--color=yes")
+    if len(options) == 1:
+        expected = "".join(options)
+    else:
+        expected = string("\n" + "\n".join(sorted(options)) + "\n", multiline=True)
+    if "\n" in addopts and not addopts.startswith("\n"):
+        addopts = "\n" + addopts
+    if expected != addopts:
+        config["addopts"] = expected
+        write_pyproject(pyproject)
+        msg = f"Updated tool.pytest.ini_options.addopts under {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)

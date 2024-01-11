@@ -57,6 +57,7 @@
   "ignoreWords": [
     "MAINT",
     "PyPI",
+    "addopts",
     "argparse",
     "automethod",
     "autonumbering",
