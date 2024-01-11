@@ -56,7 +56,7 @@ def _update_precommit_ci_commit_msg() -> None:
     if precommit_ci is None:
         return
     if CONFIG_PATH.pip_constraints.exists():
-        expected_msg = "MAINT: autoupdate pre-commit hooks"
+        expected_msg = "MAINT: update pip constraints and pre-commit"
     else:
         expected_msg = "MAINT: autoupdate pre-commit hooks"
     key = "autoupdate_commit_msg"
