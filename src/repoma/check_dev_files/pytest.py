@@ -77,7 +77,7 @@ def _update_settings() -> None:
         return
     config = get_sub_table(pyproject, "tool.pytest.ini_options")
     addopts: str = config.get("addopts", "")
-    options = {opt.strip() for opt in addopts.split()}
+    options = {opt.strip() for opt in __split_options(addopts)}
     options = {opt for opt in options if opt and not opt.startswith("--color=")}
     options.add("--color=yes")
     if len(options) == 1:
@@ -91,3 +91,19 @@ def _update_settings() -> None:
         write_pyproject(pyproject)
         msg = f"Updated tool.pytest.ini_options.addopts under {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
+
+
+def __split_options(string: str) -> list[str]:
+    """Split a string of options into a list of options.
+
+    >>> __split_options('-abc def -ghi "j k l" -mno pqr')
+    ['-abc def', '-ghi "j k l"', '-mno pqr']
+    """
+    elements = string.split()
+    options: list[str] = []
+    for i in range(len(elements)):
+        if i > 0 and not elements[i].startswith("-"):
+            options[-1] += f" {elements[i]}"
+        else:
+            options.append(elements[i])
+    return options
