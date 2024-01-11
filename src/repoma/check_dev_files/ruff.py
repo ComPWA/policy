@@ -474,6 +474,13 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "S113",  # requests call without timeout
         }
         minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
+    conf_path = f"{docs_dir}/conf.py"
+    if os.path.exists(conf_path):
+        key = f"{conf_path}"
+        default_ignores = {
+            "D100",  # no module docstring
+        }
+        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
     tests_dir = "tests"
