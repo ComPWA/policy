@@ -11,7 +11,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.executor import Executor
-from repoma.utilities.precommit import PrecommitConfig
+from repoma.utilities.precommit import PrecommitConfig, load_round_trip_precommit_config
 from repoma.utilities.yaml import create_prettier_round_trip_yaml
 
 
@@ -20,6 +20,7 @@ def main() -> None:
     executor = Executor()
     executor(_sort_hooks)
     executor(_update_conda_environment, cfg)
+    executor(_update_precommit_ci_commit_msg)
     executor(_update_precommit_ci_skip, cfg)
     executor.finalize()
 
@@ -45,6 +46,26 @@ def __repo_def_sorting(repo_def: CommentedMap) -> tuple[int, str]:
     if len(hooks) > 1:
         return 1, repo_def["repo"]
     return (2, hooks[0]["id"])
+
+
+def _update_precommit_ci_commit_msg() -> None:
+    if not CONFIG_PATH.precommit.exists():
+        return
+    config, yaml = load_round_trip_precommit_config()
+    precommit_ci: CommentedMap | None = config.get("ci")
+    if precommit_ci is None:
+        return
+    if CONFIG_PATH.pip_constraints.exists():
+        expected_msg = "MAINT: autoupdate pre-commit hooks"
+    else:
+        expected_msg = "MAINT: autoupdate pre-commit hooks"
+    key = "autoupdate_commit_msg"
+    autoupdate_commit_msg = precommit_ci.get(key)
+    if autoupdate_commit_msg != expected_msg:
+        precommit_ci[key] = expected_msg
+        yaml.dump(config, CONFIG_PATH.precommit)
+        msg = f"Updated ci.{key} in {CONFIG_PATH.precommit} to {expected_msg!r}"
+        raise PrecommitError(msg)
 
 
 def _update_precommit_ci_skip(config: PrecommitConfig) -> None:
