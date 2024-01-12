@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from repoma.utilities.precommit import (
+from compwa_policy.utilities.precommit import (
     Hook,
     PrecommitCi,
     PrecommitConfig,

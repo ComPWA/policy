@@ -38,15 +38,15 @@ description = "Pre-commit hooks that ensure that ComPWA repositories have a simi
 dynamic = ["version"]
 license = {text = "BSD 3-Clause License"}
 maintainers = [{email = "compwa-admin@ep1.rub.de"}]
-name = "repo-maintenance"
+name = "compwa-policy"
 requires-python = ">=3.7"
 
 [project.optional-dependencies]
 dev = [
+    "compwa-policy[doc]",
+    "compwa-policy[sty]",
+    "compwa-policy[test]",
     "labels",
-    "repo-maintenance[doc]",
-    "repo-maintenance[sty]",
-    "repo-maintenance[test]",
     "sphinx-autobuild",
     "tox >=1.9", # for skip_install, use_develop
 ]
@@ -63,8 +63,8 @@ format = [
     "black",
 ]
 lint = [
+    "compwa-policy[mypy]",
     "radon",
-    "repo-maintenance[mypy]",
     "ruff",
 ]
 mypy = [
@@ -74,10 +74,10 @@ mypy = [
     "types-toml",
 ]
 sty = [
+    "compwa-policy[format]",
+    "compwa-policy[lint]",
+    "compwa-policy[test]", # for pytest type hints
     "pre-commit >=1.4.0",
-    "repo-maintenance[format]",
-    "repo-maintenance[lint]",
-    "repo-maintenance[test]", # for pytest type hints
 ]
 test = [
     "pytest",
@@ -90,17 +90,17 @@ content-type = "text/markdown"
 file = "README.md"
 
 [project.scripts]
-check-dev-files = "repoma.check_dev_files:main"
-colab-toc-visible = "repoma.colab_toc_visible:main"
-fix-nbformat-version = "repoma.fix_nbformat_version:main"
-format-setup-cfg = "repoma.format_setup_cfg:main"
-pin-nb-requirements = "repoma.pin_nb_requirements:main"
-repoma-self-check = "repoma.self_check:main"
-set-nb-cells = "repoma.set_nb_cells:main"
+check-dev-files = "compwa_policy.check_dev_files:main"
+colab-toc-visible = "compwa_policy.colab_toc_visible:main"
+fix-nbformat-version = "compwa_policy.fix_nbformat_version:main"
+format-setup-cfg = "compwa_policy.format_setup_cfg:main"
+pin-nb-requirements = "compwa_policy.pin_nb_requirements:main"
+self-check = "compwa_policy.self_check:main"
+set-nb-cells = "compwa_policy.set_nb_cells:main"
 
 [project.urls]
-Source = "https://github.com/ComPWA/repo-maintenance"
-Tracker = "https://github.com/ComPWA/repo-maintenance/issues"
+Source = "https://github.com/ComPWA/policy"
+Tracker = "https://github.com/ComPWA/policy/issues"
 
 [tool.setuptools]
 include-package-data = false
@@ -108,7 +108,7 @@ license-files = ["LICENSE"]
 package-dir = {"" = "src"}
 
 [tool.setuptools.package-data]
-repoma = [
+compwa_policy = [
     ".github/*",
     ".github/**/*",
     ".template/*",
@@ -121,7 +121,7 @@ namespaces = false
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/repoma/version.py"
+write_to = "src/compwa_policy/version.py"
 
 [tool.black]
 exclude = '''
@@ -155,7 +155,7 @@ source = ["src"]
 [tool.mypy]
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
-exclude = '.*/repoma/__init__\.py'
+exclude = '.*/compwa_policy/__init__\.py'
 files = ["**/*.py"]
 show_error_codes = true
 warn_unused_configs = true
@@ -294,7 +294,7 @@ target-version = "py37"
 task-tags = ["cspell"]
 
 [tool.ruff.isort]
-known-first-party = ["repoma"]
+known-first-party = ["compwa_policy"]
 
 [tool.ruff.per-file-ignores]
 "docs/*" = [

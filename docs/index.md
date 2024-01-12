@@ -1,9 +1,9 @@
-# ComPWA repo maintenance!
+# ComPWA repository policy
 
 :::{title} Welcome
 :::
 
-This package standardizes and synchronizes the developer environment of repositories by the [ComPWA organization](https://github.com/ComPWA). The maintenance is performed through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The [`check-dev-files`](./check-dev-files.md) in particular can be used as a **cookie cutter** for new repositories.
+This repository sets policies for [repositories of the ComPWA organization](https://github.com/orgs/ComPWA/repositories). The policies are enforced through [pre-commit](https://pre-commit.com) with the use of a number of pre-commit hooks as defined by [`.pre-commit-hooks.yaml`](../.pre-commit-hooks.yaml). The [`check-dev-files`](./check-dev-files.md) in particular can be used as a **cookie cutter** for new repositories.
 
 ## Usage
 
@@ -11,7 +11,7 @@ Add a [`.pre-commit-config.yaml`](https://pre-commit.com/index.html#adding-pre-c
 
 ```yaml
 repos:
-  - repo: https://github.com/ComPWA/repo-maintenance
+  - repo: https://github.com/ComPWA/policy
     rev: ""
     hooks:
       - id: check-dev-files
@@ -28,11 +28,11 @@ and install and activate [`pre-commit`](https://pre-commit.com/#install) as foll
 
 ```shell
 pip install pre-commit
-pre-commit autoupdate --repo=https://github.com/ComPWA/repo-maintenance
+pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 pre-commit install
 ```
 
-The `repo-maintenance` repository provides the following hooks:
+The **ComPWA/policy** repository provides the following hooks:
 
 - [`check-dev-files`](./check-dev-files.md)
 - {mod}`colab-toc-visible <.colab_toc_visible>`
@@ -44,8 +44,8 @@ The `repo-maintenance` repository provides the following hooks:
 ```{toctree}
 :hidden:
 check-dev-files
-API <api/repoma>
-Changelog <https://github.com/ComPWA/repoma/releases>
-Upcoming features <https://github.com/ComPWA/repoma/milestones?direction=asc&sort=title&state=open>
+API <api/compwa_policy>
+Changelog <https://github.com/ComPWA/policy/releases>
+Upcoming features <https://github.com/ComPWA/policy/milestones?direction=asc&sort=title&state=open>
 Help developing <https://compwa-org.rtfd.io/en/stable/develop.html>
 ```

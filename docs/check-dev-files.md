@@ -6,7 +6,7 @@ The `check-dev-files` hook can also be used as a **cookie cutter** for new repos
 
 ```yaml
 repos:
-  - repo: https://github.com/ComPWA/repo-maintenance
+  - repo: https://github.com/ComPWA/policy
     rev: ""
     hooks:
       - id: check-dev-files
@@ -17,7 +17,7 @@ repos:
 and running
 
 ```shell
-pre-commit autoupdate --repo=https://github.com/ComPWA/repo-maintenance
+pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 pre-commit run check-dev-files -a
 ```
 
@@ -28,7 +28,7 @@ For more implementation details of this hook, check the {mod}`.check_dev_files` 
 The `check-dev-files` hook can be configured with by adding any of the following flags to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file.
 
 ```{argparse}
-:module: repoma.check_dev_files
+:module: compwa_policy.check_dev_files
 :func: _create_argparse
 :prog: check-dev-files
 ```

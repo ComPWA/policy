@@ -1,4 +1,4 @@
-name: repo-maintenance
+name: compwa-policy
 channels:
   - defaults
 dependencies:
