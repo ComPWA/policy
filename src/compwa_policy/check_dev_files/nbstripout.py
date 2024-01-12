@@ -7,7 +7,7 @@ from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
     find_repo,
-    load_round_trip_precommit_config,
+    load_precommit_config,
     update_single_hook_precommit_repo,
 )
 
@@ -16,7 +16,7 @@ def main() -> None:
     # cspell:ignore nbconvert showmarkdowntxt
     if not CONFIG_PATH.precommit.exists():
         return
-    config, _ = load_round_trip_precommit_config()
+    config = load_precommit_config()
     repo_url = "https://github.com/kynan/nbstripout"
     idx_and_repo = find_repo(config, repo_url)
     if idx_and_repo is None:

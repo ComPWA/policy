@@ -13,10 +13,7 @@ from tomlkit.toml_document import TOMLDocument
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    find_repo,
-    load_round_trip_precommit_config,
-)
+from compwa_policy.utilities.precommit import find_repo, load_precommit_config
 
 if TYPE_CHECKING:
     from tomlkit.container import Container
@@ -184,7 +181,7 @@ def update_nbqa_settings(key: str, expected: Any) -> None:
 
 
 def __has_nbqa_precommit_repo() -> bool:
-    config, _ = load_round_trip_precommit_config()
+    config = load_precommit_config()
     nbqa_repo = find_repo(config, "https://github.com/nbQA-dev/nbQA")
     if nbqa_repo is None:
         return False

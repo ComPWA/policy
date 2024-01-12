@@ -22,7 +22,7 @@ from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
     find_repo,
-    load_round_trip_precommit_config,
+    load_roundtrip_precommit_config,
     update_single_hook_precommit_repo,
 )
 
@@ -185,7 +185,7 @@ def add_json_schema_precommit() -> None:
             "CITATION.cff",
         ],
     )
-    config, yaml = load_round_trip_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
     idx_and_repo = find_repo(config, repo_url)
     existing_repos = config["repos"]

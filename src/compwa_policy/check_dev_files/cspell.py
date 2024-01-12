@@ -18,7 +18,8 @@ from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
     find_repo,
-    load_round_trip_precommit_config,
+    load_precommit_config,
+    load_roundtrip_precommit_config,
     update_single_hook_precommit_repo,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
@@ -49,7 +50,7 @@ def main(no_cspell_update: bool) -> None:
     executor(_update_cspell_repo_url)
     has_cspell_hook = False
     if CONFIG_PATH.cspell.exists():
-        config, _ = load_round_trip_precommit_config()
+        config = load_precommit_config()
         has_cspell_hook = find_repo(config, __REPO_URL) is not None
     if not has_cspell_hook:
         executor(_remove_configuration)
@@ -67,7 +68,7 @@ def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
     old_url_patters = [
         r".*/mirrors-cspell(.git)?$",
     ]
-    config, yaml = load_round_trip_precommit_config(path)
+    config, yaml = load_roundtrip_precommit_config(path)
     for pattern in old_url_patters:
         repo_and_idx = find_repo(config, pattern)
         if repo_and_idx is None:

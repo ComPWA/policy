@@ -31,9 +31,16 @@ if TYPE_CHECKING:
     from ruamel.yaml import YAML
 
 
-def load_round_trip_precommit_config(
+def load_precommit_config(path: Path = CONFIG_PATH.precommit) -> PrecommitConfig:
+    """Load a **read-only** pre-commit config."""
+    config, _ = load_roundtrip_precommit_config(path)
+    return config
+
+
+def load_roundtrip_precommit_config(
     path: Path = CONFIG_PATH.precommit,
 ) -> tuple[PrecommitConfig, YAML]:
+    """Load the pre-commit config as a round-trip YAML object."""
     yaml_parser = create_prettier_round_trip_yaml()
     config = yaml_parser.load(path)
     return config, yaml_parser
@@ -50,7 +57,7 @@ def find_repo(config: PrecommitConfig, search_pattern: str) -> tuple[int, Repo] 
 
 
 def remove_precommit_hook(hook_id: str, repo_url: str | None = None) -> None:
-    config, yaml = load_round_trip_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     repo_and_hook_idx = __find_repo_and_hook_idx(config, hook_id, repo_url)
     if repo_and_hook_idx is None:
         return
@@ -90,7 +97,7 @@ def update_single_hook_precommit_repo(expected: Repo) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     expected_yaml = CommentedMap(expected)
-    config, yaml = load_round_trip_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     repos = config.get("repos", [])
     repo_url = expected["repo"]
     idx_and_repo = find_repo(config, repo_url)
@@ -157,7 +164,7 @@ def update_precommit_hook(repo_url: str, expected_hook: Hook) -> None:
     """
     if not CONFIG_PATH.precommit.exists():
         return
-    config, yaml = load_round_trip_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     idx_and_repo = find_repo(config, repo_url)
     if idx_and_repo is None:
         return

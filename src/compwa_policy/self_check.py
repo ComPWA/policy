@@ -9,13 +9,13 @@ import yaml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import Hook, load_round_trip_precommit_config
+from compwa_policy.utilities.precommit import Hook, load_precommit_config
 
 __HOOK_DEFINITION_FILE = ".pre-commit-hooks.yaml"
 
 
 def main() -> int:
-    cfg, _ = load_round_trip_precommit_config()
+    cfg = load_precommit_config()
     local_repos = [repo for repo in cfg["repos"] if repo["repo"] == "local"]
     hook_definitions = _load_precommit_hook_definitions()
     executor = Executor()

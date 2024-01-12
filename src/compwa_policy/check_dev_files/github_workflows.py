@@ -18,7 +18,7 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import load_round_trip_precommit_config
+from compwa_policy.utilities.precommit import load_precommit_config
 from compwa_policy.utilities.project_info import PythonVersion, get_pypi_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -181,8 +181,8 @@ def __update_style_section(config: CommentedMap, python_version: PythonVersion) 
 def __is_remove_style_job() -> bool:
     if not CONFIG_PATH.precommit.exists():
         return True
-    cfg, _ = load_round_trip_precommit_config()
-    precommit_ci = cfg.get("ci")
+    config = load_precommit_config()
+    precommit_ci = config.get("ci")
     if precommit_ci is not None and "skip" not in precommit_ci:
         return True
     return False

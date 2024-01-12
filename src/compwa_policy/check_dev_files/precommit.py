@@ -14,7 +14,8 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     PrecommitConfig,
     find_repo,
-    load_round_trip_precommit_config,
+    load_precommit_config,
+    load_roundtrip_precommit_config,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -54,7 +55,7 @@ def __repo_def_sorting(repo_def: CommentedMap) -> tuple[int, str]:
 def _update_precommit_ci_commit_msg() -> None:
     if not CONFIG_PATH.precommit.exists():
         return
-    config, yaml = load_round_trip_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     precommit_ci = config.get("ci")
     if precommit_ci is None:
         return
@@ -72,7 +73,7 @@ def _update_precommit_ci_commit_msg() -> None:
 
 
 def _update_precommit_ci_skip() -> None:
-    config, _ = load_round_trip_precommit_config()
+    config = load_precommit_config()
     if config.get("ci") is None:
         return
     local_hooks = get_local_hooks(config)
@@ -142,7 +143,7 @@ def _update_conda_environment() -> None:
     conda_env: CommentedMap = yaml.load(path)
     variables: CommentedMap = conda_env.get("variables", {})
     key = "PRETTIER_LEGACY_CLI"
-    precommit_config, _ = load_round_trip_precommit_config()
+    precommit_config = load_precommit_config()
     if __has_prettier_v4alpha(precommit_config):
         if key not in variables:
             variables[key] = DoubleQuotedScalarString("1")
