@@ -7,11 +7,14 @@ pre-commit hook
 
 from textwrap import dedent
 
-from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import FoldedScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.precommit import update_single_hook_precommit_repo
+from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
+    update_single_hook_precommit_repo,
+)
 
 
 def main(no_python: bool) -> None:
@@ -20,7 +23,7 @@ def main(no_python: bool) -> None:
 
 
 def _update_precommit_config(no_python: bool) -> None:
-    hook = CommentedMap(
+    hook = Hook(
         id="editorconfig-checker",
         name="editorconfig",
         alias="ec",
@@ -33,8 +36,9 @@ def _update_precommit_config(no_python: bool) -> None:
         """).strip()
         hook["exclude"] = FoldedScalarString(excludes)
 
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo="https://github.com/editorconfig-checker/editorconfig-checker.python",
+        rev="",
         hooks=[hook],
     )
     update_single_hook_precommit_repo(expected_hook)

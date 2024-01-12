@@ -1,10 +1,11 @@
 """Check the nbstripout hook in the pre-commit config."""
 
-from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import LiteralScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
     find_repo,
     load_round_trip_precommit_config,
     update_single_hook_precommit_repo,
@@ -39,10 +40,11 @@ def main() -> None:
         "metadata.varInspector",
         "metadata.vscode",
     ]
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo=repo_url,
+        rev="",
         hooks=[
-            CommentedMap(
+            Hook(
                 id="nbstripout",
                 args=[
                     "--extra-keys",

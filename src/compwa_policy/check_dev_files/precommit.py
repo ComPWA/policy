@@ -13,18 +13,18 @@ from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     PrecommitConfig,
+    find_repo,
     load_round_trip_precommit_config,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
 def main() -> None:
-    cfg = PrecommitConfig.load()
     executor = Executor()
     executor(_sort_hooks)
-    executor(_update_conda_environment, cfg)
+    executor(_update_conda_environment)
     executor(_update_precommit_ci_commit_msg)
-    executor(_update_precommit_ci_skip, cfg)
+    executor(_update_precommit_ci_skip)
     executor.finalize()
 
 
@@ -55,7 +55,7 @@ def _update_precommit_ci_commit_msg() -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     config, yaml = load_round_trip_precommit_config()
-    precommit_ci: CommentedMap | None = config.get("ci")
+    precommit_ci = config.get("ci")
     if precommit_ci is None:
         return
     if CONFIG_PATH.pip_constraints.exists():
@@ -65,23 +65,24 @@ def _update_precommit_ci_commit_msg() -> None:
     key = "autoupdate_commit_msg"
     autoupdate_commit_msg = precommit_ci.get(key)
     if autoupdate_commit_msg != expected_msg:
-        precommit_ci[key] = expected_msg
+        precommit_ci[key] = expected_msg  # type:ignore[literal-required]
         yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Updated ci.{key} in {CONFIG_PATH.precommit} to {expected_msg!r}"
         raise PrecommitError(msg)
 
 
-def _update_precommit_ci_skip(config: PrecommitConfig) -> None:
-    if config.ci is None:
+def _update_precommit_ci_skip() -> None:
+    config, _ = load_round_trip_precommit_config()
+    if config.get("ci") is None:
         return
     local_hooks = get_local_hooks(config)
     non_functional_hooks = get_non_functional_hooks(config)
     expected_skips = set(non_functional_hooks) | set(local_hooks)
     if not expected_skips:
-        if config.ci.skip is not None:
+        if config.get("ci", {}).get("skip") is not None:
             yaml = create_prettier_round_trip_yaml()
             contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
-            del contents["ci"]["skip"]
+            del contents.get("ci")["skip"]
             contents.yaml_set_comment_before_after_key("repos", before="\n")
             yaml.dump(contents, CONFIG_PATH.precommit)
             msg = f"No need for a ci.skip in {CONFIG_PATH.precommit}"
@@ -95,7 +96,7 @@ def _update_precommit_ci_skip(config: PrecommitConfig) -> None:
 def __update_precommit_ci_skip(expected_skips: Iterable[str]) -> None:
     yaml = create_prettier_round_trip_yaml()
     contents = yaml.load(CONFIG_PATH.precommit)
-    ci_section: CommentedMap = contents["ci"]
+    ci_section: CommentedMap = contents.get("ci")
     if "skip" in ci_section.ca.items:
         del ci_section.ca.items["skip"]
     skips = CommentedSeq(sorted(expected_skips))
@@ -107,29 +108,29 @@ def __update_precommit_ci_skip(expected_skips: Iterable[str]) -> None:
 
 
 def __get_precommit_ci_skips(config: PrecommitConfig) -> set[str]:
-    if config.ci is None:
+    precommit_ci = config.get("ci")
+    if precommit_ci is None:
         msg = "Pre-commit config does not contain a ci section"
         raise ValueError(msg)
-    if config.ci.skip is None:
-        return set()
-    return set(config.ci.skip)
+    return set(precommit_ci.get("skip", []))
 
 
 def get_local_hooks(config: PrecommitConfig) -> list[str]:
-    return [h.id for r in config.repos for h in r.hooks if r.repo == "local"]
+    repos = config["repos"]
+    return [h["id"] for r in repos for h in r["hooks"] if r["repo"] == "local"]
 
 
 def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
     return [
-        hook.id
-        for repo in config.repos
-        for hook in repo.hooks
-        if repo.repo
-        if hook.id in __get_skipped_hooks(config)
+        hook["id"]
+        for repo in config["repos"]
+        for hook in repo["hooks"]
+        if repo["repo"]
+        if hook["id"] in __get_skipped_hooks(config)
     ]
 
 
-def _update_conda_environment(precommit_config: PrecommitConfig) -> None:
+def _update_conda_environment() -> None:
     """Temporary fix for Prettier v4 alpha releases.
 
     https://prettier.io/blog/2023/11/30/cli-deep-dive#installation
@@ -141,6 +142,7 @@ def _update_conda_environment(precommit_config: PrecommitConfig) -> None:
     conda_env: CommentedMap = yaml.load(path)
     variables: CommentedMap = conda_env.get("variables", {})
     key = "PRETTIER_LEGACY_CLI"
+    precommit_config, _ = load_round_trip_precommit_config()
     if __has_prettier_v4alpha(precommit_config):
         if key not in variables:
             variables[key] = DoubleQuotedScalarString("1")
@@ -169,10 +171,9 @@ def __get_skipped_hooks(config: PrecommitConfig) -> set[str]:
 
 
 def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
-    repo = config.find_repo(r"^.*/mirrors-prettier$")
-    if repo is None:
+    idx_and_repo = find_repo(config, search_pattern=r"^.*/mirrors-prettier$")
+    if idx_and_repo is None:
         return False
-    if repo.rev is None:
-        return False
-    rev = repo.rev
+    _, repo = idx_and_repo
+    rev = repo.get("rev", "")
     return rev.startswith("v4") and "alpha" in rev

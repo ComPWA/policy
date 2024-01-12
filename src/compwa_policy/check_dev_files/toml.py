@@ -9,12 +9,15 @@ from typing import TYPE_CHECKING
 
 import tomlkit
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import update_single_hook_precommit_repo
+from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
+    update_single_hook_precommit_repo,
+)
 from compwa_policy.utilities.pyproject import (
     get_sub_table,
     load_pyproject,
@@ -76,9 +79,10 @@ def _update_tomlsort_config() -> None:
 
 
 def _update_tomlsort_hook() -> None:
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo="https://github.com/pappasam/toml-sort",
-        hooks=[CommentedMap(id="toml-sort", args=YAML(typ="rt").load("[--in-place]"))],
+        rev="",
+        hooks=[Hook(id="toml-sort", args=YAML(typ="rt").load("[--in-place]"))],
     )
     excludes = []
     if glob("labels/*.toml"):
@@ -128,9 +132,10 @@ def _update_taplo_config() -> None:
 
 
 def _update_precommit_repo() -> None:
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo="https://github.com/ComPWA/mirrors-taplo",
-        hooks=[CommentedMap(id="taplo")],
+        rev="",
+        hooks=[Hook(id="taplo")],
     )
     update_single_hook_precommit_repo(expected_hook)
 

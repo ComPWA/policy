@@ -5,7 +5,7 @@ import yaml
 
 from compwa_policy.check_dev_files.cspell import _update_cspell_repo_url
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.precommit import PrecommitConfig, fromdict
+from compwa_policy.utilities.precommit import PrecommitConfig
 
 
 @pytest.fixture(scope="session")
@@ -16,8 +16,7 @@ def test_config_dir(test_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def good_config(test_config_dir: Path) -> PrecommitConfig:
     with open(test_config_dir / ".pre-commit-config-good.yaml") as stream:
-        definition = yaml.safe_load(stream)
-    return fromdict(definition, PrecommitConfig)
+        return yaml.safe_load(stream)
 
 
 @pytest.mark.parametrize(
@@ -48,7 +47,8 @@ def test_update_cspell_repo_url(
         _update_cspell_repo_url(config_path)
 
     with open(config_path) as stream:
-        definition = yaml.safe_load(stream)
-    updated_config = fromdict(definition, PrecommitConfig)
+        definition: PrecommitConfig = yaml.safe_load(stream)
 
-    assert updated_config.repos[0].repo == good_config.repos[0].repo
+    imported = definition["repos"][0]["repo"]
+    expected = good_config["repos"][0]["repo"]
+    assert imported == expected

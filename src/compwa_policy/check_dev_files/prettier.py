@@ -8,15 +8,17 @@ from typing import Iterable
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import PrecommitConfig
+from compwa_policy.utilities.precommit import (
+    find_repo,
+    load_round_trip_precommit_config,
+)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 # cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
-
-# fmt: off
-__BADGE = "[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)"
-# fmt: on
+__BADGE = """
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+""".strip()
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
@@ -25,9 +27,8 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
 
 
 def main(no_prettierrc: bool) -> None:
-    config = PrecommitConfig.load()
-    repo = config.find_repo(r".*/mirrors-prettier")
-    if repo is None:
+    config, _ = load_round_trip_precommit_config()
+    if find_repo(config, r".*/mirrors-prettier") is None:
         _remove_configuration()
     else:
         executor = Executor()

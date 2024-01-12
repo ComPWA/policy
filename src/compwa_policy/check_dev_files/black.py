@@ -1,12 +1,13 @@
 """Update :file:`pyproject.toml` black configuration."""
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
     remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
@@ -89,15 +90,16 @@ def _update_black_settings() -> None:
 
 
 def _update_precommit_repo(has_notebooks: bool) -> None:
-    expected_hook = CommentedMap(
+    expected_repo = Repo(
         repo="https://github.com/psf/black-pre-commit-mirror",
-        hooks=[CommentedMap(id="black")],
+        rev="",
+        hooks=[Hook(id="black")],
     )
     if has_notebooks:
-        black_jupyter = CommentedMap(
+        black_jupyter = Hook(
             id="black-jupyter",
             args=YAML(typ="rt").load("[--line-length=85]"),
             types_or=YAML(typ="rt").load("[jupyter]"),
         )
-        expected_hook["hooks"].append(black_jupyter)
-    update_single_hook_precommit_repo(expected_hook)
+        expected_repo["hooks"].append(black_jupyter)
+    update_single_hook_precommit_repo(expected_repo)

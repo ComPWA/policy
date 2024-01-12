@@ -11,13 +11,13 @@ import os
 from glob import glob
 from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
-from ruamel.yaml.comments import CommentedMap
-
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
-    PrecommitConfig,
+    Hook,
+    Repo,
+    find_repo,
     load_round_trip_precommit_config,
     update_single_hook_precommit_repo,
 )
@@ -47,9 +47,11 @@ def main(no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
     executor = Executor()
     executor(_update_cspell_repo_url)
-    config = PrecommitConfig.load()
-    repo = config.find_repo(__REPO_URL)
-    if repo is None:
+    has_cspell_hook = False
+    if CONFIG_PATH.cspell.exists():
+        config, _ = load_round_trip_precommit_config()
+        has_cspell_hook = find_repo(config, __REPO_URL) is not None
+    if not has_cspell_hook:
         executor(_remove_configuration)
     else:
         executor(_update_precommit_repo)
@@ -65,14 +67,14 @@ def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
     old_url_patters = [
         r".*/mirrors-cspell(.git)?$",
     ]
-    config = PrecommitConfig.load(path)
+    config, yaml = load_round_trip_precommit_config(path)
     for pattern in old_url_patters:
-        repo_index = config.get_repo_index(pattern)
-        if repo_index is None:
+        repo_and_idx = find_repo(config, pattern)
+        if repo_and_idx is None:
             continue
-        config_dict, yaml_parser = load_round_trip_precommit_config(path)
-        config_dict["repos"][repo_index]["repo"] = __REPO_URL
-        yaml_parser.dump(config_dict, path)
+        _, repo_def = repo_and_idx
+        repo_def["repo"] = __REPO_URL
+        yaml.dump(config, path)
         msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
         raise PrecommitError(msg)
 
@@ -102,9 +104,10 @@ def _remove_configuration() -> None:
 
 
 def _update_precommit_repo() -> None:
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo=__REPO_URL,
-        hooks=[CommentedMap(id="cspell")],
+        rev="",
+        hooks=[Hook(id="cspell")],
     )
     update_single_hook_precommit_repo(expected_hook)
 
