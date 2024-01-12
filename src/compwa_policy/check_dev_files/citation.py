@@ -184,6 +184,7 @@ def add_json_schema_precommit() -> None:
             "https://citation-file-format.github.io/1.2.0/schema.json",
             "CITATION.cff",
         ],
+        pass_filenames=False,
     )
     config, yaml = load_roundtrip_precommit_config()
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
