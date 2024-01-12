@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Iterable
 
@@ -26,6 +27,7 @@ def main() -> None:
     executor(_update_conda_environment)
     executor(_update_precommit_ci_commit_msg)
     executor(_update_precommit_ci_skip)
+    executor(_update_repo_urls)
     executor.finalize()
 
 
@@ -177,3 +179,24 @@ def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
         return False
     rev = repo.get("rev", "")
     return rev.startswith("v4") and "alpha" in rev
+
+
+def _update_repo_urls() -> None:
+    redirects = {
+        r"^.*github\.com/ComPWA/repo-maintenance$": "https://github.com/ComPWA/policy",
+    }
+    config, yaml = load_roundtrip_precommit_config()
+    repos = config["repos"]
+    updated_repos: list[tuple[str, str]] = []
+    for repo in repos:
+        url = repo["repo"]
+        for redirect, new_url in redirects.items():
+            if re.match(redirect, url):
+                repo["repo"] = new_url
+                updated_repos.append((url, new_url))
+    if updated_repos:
+        yaml.dump(config, CONFIG_PATH.precommit)
+        msg = f"Updated repo urls in {CONFIG_PATH.precommit}:"
+        for url, new_url in updated_repos:
+            msg += f"\n  {url} -> {new_url}"
+        raise PrecommitError(msg)
