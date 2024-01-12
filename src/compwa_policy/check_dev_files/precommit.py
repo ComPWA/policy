@@ -172,9 +172,8 @@ def __get_skipped_hooks(config: PrecommitConfig) -> set[str]:
 
 
 def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
-    idx_and_repo = find_repo(config, search_pattern=r"^.*/mirrors-prettier$")
-    if idx_and_repo is None:
+    repo = find_repo(config, search_pattern=r"^.*/mirrors-prettier$")
+    if repo is None:
         return False
-    _, repo = idx_and_repo
     rev = repo.get("rev", "")
     return rev.startswith("v4") and "alpha" in rev

@@ -21,7 +21,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
-    find_repo,
+    find_repo_with_index,
     load_roundtrip_precommit_config,
     update_single_hook_precommit_repo,
 )
@@ -187,7 +187,7 @@ def add_json_schema_precommit() -> None:
     )
     config, yaml = load_roundtrip_precommit_config()
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
-    idx_and_repo = find_repo(config, repo_url)
+    idx_and_repo = find_repo_with_index(config, repo_url)
     existing_repos = config["repos"]
     if idx_and_repo is None:
         repo = Repo(

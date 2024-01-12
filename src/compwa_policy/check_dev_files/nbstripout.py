@@ -18,8 +18,7 @@ def main() -> None:
         return
     config = load_precommit_config()
     repo_url = "https://github.com/kynan/nbstripout"
-    idx_and_repo = find_repo(config, repo_url)
-    if idx_and_repo is None:
+    if find_repo(config, repo_url) is None:
         return
     extra_keys_argument = [
         "cell.attachments",
@@ -40,7 +39,7 @@ def main() -> None:
         "metadata.varInspector",
         "metadata.vscode",
     ]
-    expected_hook = Repo(
+    expected_repo = Repo(
         repo=repo_url,
         rev="",
         hooks=[
@@ -53,4 +52,4 @@ def main() -> None:
             )
         ],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    update_single_hook_precommit_repo(expected_repo)

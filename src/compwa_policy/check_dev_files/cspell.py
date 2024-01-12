@@ -70,11 +70,10 @@ def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
     ]
     config, yaml = load_roundtrip_precommit_config(path)
     for pattern in old_url_patters:
-        repo_and_idx = find_repo(config, pattern)
-        if repo_and_idx is None:
+        repo = find_repo(config, pattern)
+        if repo is None:
             continue
-        _, repo_def = repo_and_idx
-        repo_def["repo"] = __REPO_URL
+        repo["repo"] = __REPO_URL
         yaml.dump(config, path)
         msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
         raise PrecommitError(msg)

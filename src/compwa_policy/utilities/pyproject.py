@@ -182,7 +182,4 @@ def update_nbqa_settings(key: str, expected: Any) -> None:
 
 def __has_nbqa_precommit_repo() -> bool:
     config = load_precommit_config()
-    nbqa_repo = find_repo(config, "https://github.com/nbQA-dev/nbQA")
-    if nbqa_repo is None:
-        return False
-    return True
+    return find_repo(config, "https://github.com/nbQA-dev/nbQA") is not None

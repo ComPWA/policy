@@ -46,8 +46,20 @@ def load_roundtrip_precommit_config(
     return config, yaml_parser
 
 
-def find_repo(config: PrecommitConfig, search_pattern: str) -> tuple[int, Repo] | None:
-    """Find pre-commit hook definition and its index in pre-commit config."""
+def find_repo(config: PrecommitConfig, search_pattern: str) -> Repo | None:
+    """Find pre-commit repo definition in pre-commit config."""
+    repos = config.get("repos", [])
+    for repo in repos:
+        url = repo.get("repo", "")
+        if re.search(search_pattern, url):
+            return repo
+    return None
+
+
+def find_repo_with_index(
+    config: PrecommitConfig, search_pattern: str
+) -> tuple[int, Repo] | None:
+    """Find pre-commit repo definition and its index in pre-commit config."""
     repos = config.get("repos", [])
     for i, repo in enumerate(repos):
         url = repo.get("repo", "")
@@ -100,7 +112,7 @@ def update_single_hook_precommit_repo(expected: Repo) -> None:
     config, yaml = load_roundtrip_precommit_config()
     repos = config.get("repos", [])
     repo_url = expected["repo"]
-    idx_and_repo = find_repo(config, repo_url)
+    idx_and_repo = find_repo_with_index(config, repo_url)
     hook_id = expected["hooks"][0]["id"]
     if idx_and_repo is None:
         if not expected_yaml.get("rev"):
@@ -165,7 +177,7 @@ def update_precommit_hook(repo_url: str, expected_hook: Hook) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     config, yaml = load_roundtrip_precommit_config()
-    idx_and_repo = find_repo(config, repo_url)
+    idx_and_repo = find_repo_with_index(config, repo_url)
     if idx_and_repo is None:
         return
     repo_idx, repo = idx_and_repo
