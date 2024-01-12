@@ -281,3 +281,4 @@ class Hook(TypedDict):
     always_run: NotRequired[bool]
     verbose: NotRequired[bool]
     log_file: NotRequired[str]
+    pass_filenames: NotRequired[bool]
