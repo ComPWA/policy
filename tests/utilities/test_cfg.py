@@ -3,9 +3,9 @@ from textwrap import dedent
 
 import pytest
 
-from repoma.errors import PrecommitError
-from repoma.utilities.cfg import format_config, open_config
-from repoma.utilities.project_info import get_repo_url
+from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.cfg import format_config, open_config
+from compwa_policy.utilities.project_info import get_repo_url
 
 
 @pytest.mark.parametrize(
@@ -26,11 +26,11 @@ from repoma.utilities.project_info import get_repo_url
         (  # remove spaces before comments
             """\
             [metadata]
-            name = repo-maintenance    # comment
+            name = compwa-policy    # comment
             """,
             """\
             [metadata]
-            name = repo-maintenance  # comment
+            name = compwa-policy  # comment
             """,
         ),
         (  # remove trailing white-space
@@ -46,13 +46,13 @@ from repoma.utilities.project_info import get_repo_url
         (  # end file with one and only one newline
             """\
             [metadata]
-            name = repo-maintenance
+            name = compwa-policy
 
 
             """,
             """\
             [metadata]
-            name = repo-maintenance
+            name = compwa-policy
             """,
         ),
         (  # only two linebreaks
@@ -83,7 +83,7 @@ def test_format_config(unformatted: str, expected: str):
 
 
 def test_get_repo_url():
-    assert get_repo_url() == "https://github.com/ComPWA/repo-maintenance"
+    assert get_repo_url() == "https://github.com/ComPWA/policy"
 
 
 def test_open_config_exception():

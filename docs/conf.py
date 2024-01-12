@@ -3,8 +3,9 @@ from __future__ import annotations
 from sphinx_api_relink.helpers import get_package_version
 
 ORGANIZATION = "ComPWA"
-REPO_NAME = "repo-maintenance"
-PACKAGE_NAME = "repoma"
+REPO_NAME = "policy"
+REPO_TITLE = "ComPWA repository policy"
+PACKAGE_NAME = "compwa_policy"
 
 api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
@@ -54,7 +55,7 @@ html_sourcelink_suffix = ""
 html_static_path = ["_static"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
-    "logo": {"text": REPO_NAME},
+    "logo": {"text": "ComPWA policy"},
     "repository_url": f"https://github.com/{ORGANIZATION}/{REPO_NAME}",
     "repository_branch": "main",
     "path_to_docs": "docs",
@@ -62,7 +63,7 @@ html_theme_options = {
     "show_navbar_depth": 2,
     "show_toc_level": 2,
 }
-html_title = REPO_NAME
+html_title = REPO_TITLE
 intersphinx_mapping = {
     "attrs": ("https://www.attrs.org/en/stable", None),
     "nbformat": ("https://nbformat.readthedocs.io/en/stable", None),
@@ -81,6 +82,6 @@ nitpick_ignore_regex = [
 ]
 nitpicky = True
 primary_domain = "py"
-project = REPO_NAME
-release = get_package_version(REPO_NAME)
-version = get_package_version(REPO_NAME)
+project = PACKAGE_NAME
+release = get_package_version(PACKAGE_NAME)
+version = get_package_version(PACKAGE_NAME)

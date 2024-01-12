@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from repoma.format_setup_cfg import _format_setup_cfg
+from compwa_policy.format_setup_cfg import _format_setup_cfg
 
 
 @pytest.mark.parametrize(

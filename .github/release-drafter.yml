@@ -1,4 +1,4 @@
-name-template: ComPWA Repository Maintenance $NEXT_PATCH_VERSION
+name-template: ComPWA repository policy $NEXT_PATCH_VERSION
 tag-template: $NEXT_PATCH_VERSION
 
 references:
@@ -34,4 +34,4 @@ sort-direction: ascending
 template: |
   $CHANGES
 
-  _The full changelog as commits can be found [here](https://github.com/ComPWA/repo-maintenance/compare/$PREVIOUS_TAG...$NEXT_PATCH_VERSION)._
+  _The full changelog as commits can be found [here](https://github.com/ComPWA/policy/compare/$PREVIOUS_TAG...$NEXT_PATCH_VERSION)._

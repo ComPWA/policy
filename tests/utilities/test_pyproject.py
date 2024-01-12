@@ -7,8 +7,8 @@ from textwrap import dedent, indent
 import pytest
 from tomlkit.items import Table
 
-from repoma.errors import PrecommitError
-from repoma.utilities.pyproject import (
+from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.pyproject import (
     add_dependency,
     get_package_name_safe,
     get_sub_table,
@@ -17,7 +17,7 @@ from repoma.utilities.pyproject import (
     write_pyproject,
 )
 
-REPOMA_DIR = Path(__file__).absolute().parent.parent.parent
+POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
 
 
 def test_add_dependency():
@@ -136,7 +136,7 @@ def test_get_package_name_safe():
         _ = get_package_name_safe(io.StringIO())
 
 
-@pytest.mark.parametrize("path", [None, REPOMA_DIR / "pyproject.toml"])
+@pytest.mark.parametrize("path", [None, POLICY_REPO_DIR / "pyproject.toml"])
 def test_load_pyproject(path: Path | None):
     if path is None:
         pyproject = load_pyproject()

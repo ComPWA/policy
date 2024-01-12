@@ -1,7 +1,7 @@
 from textwrap import dedent
 
-from repoma.errors import PrecommitError
-from repoma.utilities.executor import Executor
+from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.executor import Executor
 
 
 class TestExecutor:

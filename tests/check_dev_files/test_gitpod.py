@@ -1,4 +1,7 @@
-from repoma.check_dev_files.gitpod import _extract_extensions, _generate_gitpod_config
+from compwa_policy.check_dev_files.gitpod import (
+    _extract_extensions,
+    _generate_gitpod_config,
+)
 
 
 def test_get_gitpod_content():

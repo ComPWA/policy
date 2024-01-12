@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from repoma.check_dev_files.cspell import _update_cspell_repo_url
-from repoma.errors import PrecommitError
-from repoma.utilities.precommit import PrecommitConfig, fromdict
+from compwa_policy.check_dev_files.cspell import _update_cspell_repo_url
+from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.precommit import PrecommitConfig, fromdict
 
 
 @pytest.fixture(scope="session")
