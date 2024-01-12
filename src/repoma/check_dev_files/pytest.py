@@ -3,16 +3,24 @@
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
 import tomlkit
 from ini2toml.api import Translator
-from tomlkit import string
 
 from repoma.errors import PrecommitError
 from repoma.utilities import CONFIG_PATH
 from repoma.utilities.cfg import open_config
 from repoma.utilities.executor import Executor
-from repoma.utilities.pyproject import get_sub_table, load_pyproject, write_pyproject
+from repoma.utilities.pyproject import (
+    get_sub_table,
+    load_pyproject,
+    to_toml_array,
+    write_pyproject,
+)
+
+if TYPE_CHECKING:
+    from tomlkit.items import Array
 
 __PYTEST_INI_PATH = "pytest.ini"
 
@@ -76,30 +84,32 @@ def _update_settings() -> None:
     if pyproject.get("tool", {}).get("pytest", {}).get("ini_options") is None:
         return
     config = get_sub_table(pyproject, "tool.pytest.ini_options")
-    addopts: str = config.get("addopts", "")
-    options = {opt.strip() for opt in __split_options(addopts)}
-    options = {opt for opt in options if opt and not opt.startswith("--color=")}
-    options.add("--color=yes")
-    if len(options) == 1:
-        expected = "".join(options)
-    else:
-        expected = string("\n" + "\n".join(sorted(options)) + "\n", multiline=True)
-    if "\n" in addopts and not addopts.startswith("\n"):
-        addopts = "\n" + addopts
-    if expected != addopts:
+    existing = config.get("addopts", "")
+    expected = __get_expected_addopts(existing)
+    if isinstance(existing, str) or sorted(existing) != sorted(expected):
         config["addopts"] = expected
         write_pyproject(pyproject)
         msg = f"Updated tool.pytest.ini_options.addopts under {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 
-def __split_options(string: str) -> list[str]:
+def __get_expected_addopts(existing: str | Array) -> Array:
+    if isinstance(existing, str):
+        options = {opt.strip() for opt in __split_options(existing)}
+    else:
+        options = set(existing)
+    options = {opt for opt in options if opt and not opt.startswith("--color=")}
+    options.add("--color=yes")
+    return to_toml_array(sorted(options))
+
+
+def __split_options(arg: str) -> list[str]:
     """Split a string of options into a list of options.
 
     >>> __split_options('-abc def -ghi "j k l" -mno pqr')
     ['-abc def', '-ghi "j k l"', '-mno pqr']
     """
-    elements = string.split()
+    elements = arg.split()
     options: list[str] = []
     for i in range(len(elements)):
         if i > 0 and not elements[i].startswith("-"):
