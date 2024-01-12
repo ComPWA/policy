@@ -7,7 +7,6 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Iterable
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap
 
 from compwa_policy.check_dev_files.setup_cfg import (
     has_pyproject_build_system,
@@ -17,6 +16,8 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
     remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
@@ -519,12 +520,13 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     yaml = YAML(typ="rt")
-    ruff_hook = CommentedMap(id="ruff", args=yaml.load("[--fix]"))
+    ruff_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
     if has_notebooks:
         types = yaml.load("[python, pyi, jupyter]")
         ruff_hook["types_or"] = types
-    expected_repo = CommentedMap(
+    expected_repo = Repo(
         repo="https://github.com/astral-sh/ruff-pre-commit",
+        rev="",
         hooks=[ruff_hook],
     )
     update_single_hook_precommit_repo(expected_repo)

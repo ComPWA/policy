@@ -12,6 +12,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
     "ConfigParser": "configparser.ConfigParser",
     "K": "typing.TypeVar",
+    "NotRequired": ("obj", "typing.NotRequired"),
     "P": "typing.ParamSpec",
     "P.args": ("attr", "typing.ParamSpec.args"),
     "P.kwargs": ("attr", "typing.ParamSpec.kwargs"),

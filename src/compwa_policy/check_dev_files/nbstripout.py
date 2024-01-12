@@ -1,12 +1,13 @@
 """Check the nbstripout hook in the pre-commit config."""
 
-from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import LiteralScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
     find_repo,
-    load_round_trip_precommit_config,
+    load_precommit_config,
     update_single_hook_precommit_repo,
 )
 
@@ -15,10 +16,9 @@ def main() -> None:
     # cspell:ignore nbconvert showmarkdowntxt
     if not CONFIG_PATH.precommit.exists():
         return
-    config, _ = load_round_trip_precommit_config()
+    config = load_precommit_config()
     repo_url = "https://github.com/kynan/nbstripout"
-    idx_and_repo = find_repo(config, repo_url)
-    if idx_and_repo is None:
+    if find_repo(config, repo_url) is None:
         return
     extra_keys_argument = [
         "cell.attachments",
@@ -39,10 +39,11 @@ def main() -> None:
         "metadata.varInspector",
         "metadata.vscode",
     ]
-    expected_hook = CommentedMap(
+    expected_repo = Repo(
         repo=repo_url,
+        rev="",
         hooks=[
-            CommentedMap(
+            Hook(
                 id="nbstripout",
                 args=[
                     "--extra-keys",
@@ -51,4 +52,4 @@ def main() -> None:
             )
         ],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    update_single_hook_precommit_repo(expected_repo)

@@ -1,11 +1,13 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
 from ruamel.yaml import YAML
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import natural_sorting
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
+    Hook,
+    Repo,
     remove_precommit_hook,
     update_precommit_hook,
     update_single_hook_precommit_repo,
@@ -24,10 +26,11 @@ def main(no_ruff: bool) -> None:
 
 
 def _update_precommit_repo() -> None:
-    expected_hook = CommentedMap(
+    expected_hook = Repo(
         repo="https://github.com/asottile/pyupgrade",
+        rev="",
         hooks=[
-            CommentedMap(
+            Hook(
                 id="pyupgrade",
                 args=__get_pyupgrade_version_argument(),
             )
@@ -39,7 +42,7 @@ def _update_precommit_repo() -> None:
 def _update_precommit_nbqa_hook() -> None:
     update_precommit_hook(
         repo_url="https://github.com/nbQA-dev/nbQA",
-        expected_hook=CommentedMap(
+        expected_hook=Hook(
             id="nbqa-pyupgrade",
             args=__get_pyupgrade_version_argument(),
         ),

@@ -18,7 +18,7 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import PrecommitConfig
+from compwa_policy.utilities.precommit import load_precommit_config
 from compwa_policy.utilities.project_info import PythonVersion, get_pypi_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -174,12 +174,18 @@ def __update_style_section(config: CommentedMap, python_version: PythonVersion) 
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
-    if not CONFIG_PATH.precommit.exists():
+    if __is_remove_style_job():
         del config["jobs"]["style"]
-    else:
-        cfg = PrecommitConfig.load()
-        if cfg.ci is not None and cfg.ci.skip is None:
-            del config["jobs"]["style"]
+
+
+def __is_remove_style_job() -> bool:
+    if not CONFIG_PATH.precommit.exists():
+        return True
+    config = load_precommit_config()
+    precommit_ci = config.get("ci")
+    if precommit_ci is not None and "skip" not in precommit_ci:
+        return True
+    return False
 
 
 def __update_pytest_section(
