@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 def main(
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    github_pages: bool,
     no_macos: bool,
     no_pypi: bool,
     no_version_branches: bool,
@@ -46,6 +47,7 @@ def main(
         _update_ci_workflow,
         allow_deprecated,
         doc_apt_packages,
+        github_pages,
         no_macos,
         python_version,
         single_threaded,
@@ -95,6 +97,7 @@ def _update_pr_linting() -> None:
 def _update_ci_workflow(
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
     single_threaded: bool,
@@ -105,6 +108,7 @@ def _update_ci_workflow(
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             doc_apt_packages,
+            github_pages,
             no_macos,
             python_version,
             single_threaded,
@@ -139,6 +143,7 @@ def _update_ci_workflow(
 def _get_ci_workflow(
     path: Path,
     doc_apt_packages: list[str],
+    github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
     single_threaded: bool,
@@ -147,14 +152,17 @@ def _get_ci_workflow(
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
-    __update_doc_section(config, doc_apt_packages, python_version)
+    __update_doc_section(config, doc_apt_packages, python_version, github_pages)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
     __update_style_section(config, python_version)
     return yaml, config
 
 
 def __update_doc_section(
-    config: CommentedMap, apt_packages: list[str], python_version: PythonVersion
+    config: CommentedMap,
+    apt_packages: list[str],
+    python_version: PythonVersion,
+    github_pages: bool,
 ) -> None:
     if not os.path.exists("docs/"):
         del config["jobs"]["doc"]
@@ -164,7 +172,7 @@ def __update_doc_section(
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
-        if not CONFIG_PATH.readthedocs.exists():
+        if not CONFIG_PATH.readthedocs.exists() or github_pages:
             with_section["gh-pages"] = True
         __update_with_section(config, job_name="doc")
 
