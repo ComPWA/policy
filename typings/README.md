@@ -1,9 +1,9 @@
 # Stubs for external libraries
 
 To speed up linting and code navigation, it's often useful to generate
-[stub files](https://mypy.readthedocs.io/en/stable/stubs.html) (`.pyi` files) for the
+[stub files](https://mypy.readthedocs.io/stubs.html) (`.pyi` files) for the
 external libraries. You can do this using
-[`stubgen`](https://mypy.readthedocs.io/en/stable/stubgen.html). For instance:
+[`stubgen`](https://mypy.readthedocs.io/stubgen.html). For instance:
 
 ```shell
 stubgen -p sympy -o typings

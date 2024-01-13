@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "PyYAML",
-    "attrs >=20.1.0", # https://www.attrs.org/en/stable/changelog.html#id82
+    "attrs >=20.1.0", # https://www.attrs.org/changelog.html#id82
     "html2text",
     "ini2toml",
     "nbformat",
