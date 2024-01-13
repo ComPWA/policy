@@ -63,6 +63,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             github_workflows.main,
             allow_deprecated=args.allow_deprecated_workflows,
             doc_apt_packages=_to_list(args.doc_apt_packages),
+            github_pages=args.github_pages,
             python_version=dev_python_version,
             no_macos=args.no_macos,
             no_pypi=args.no_pypi,
@@ -79,7 +80,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if is_python_repo:
         executor(black.main, has_notebooks)
         if not args.no_github_actions:
-            executor(release_drafter.main, args.repo_name, args.repo_title)
+            executor(
+                release_drafter.main,
+                args.repo_name,
+                args.repo_title,
+                github_pages=args.github_pages,
+            )
         executor(mypy.main)
         executor(pyright.main)
         executor(pytest.main)
@@ -132,6 +138,12 @@ def _create_argparse() -> ArgumentParser:
         ),
         required=False,
         type=str,
+    )
+    parser.add_argument(
+        "--github-pages",
+        action="store_true",
+        default=False,
+        help="Host documentation on GitHub Pages",
     )
     parser.add_argument(
         "--keep-issue-templates",
