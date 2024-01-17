@@ -168,7 +168,7 @@ def __update_doc_section(
         del config["jobs"]["doc"]
     else:
         with_section = config["jobs"]["doc"]["with"]
-        if python_version != "3.8":
+        if python_version != "3.9":
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
@@ -178,7 +178,7 @@ def __update_doc_section(
 
 
 def __update_style_section(config: CommentedMap, python_version: PythonVersion) -> None:
-    if python_version != "3.8":
+    if python_version != "3.9":
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
