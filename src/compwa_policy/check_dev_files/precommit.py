@@ -40,8 +40,8 @@ def _sort_hooks() -> None:
     if repos is None:
         return
     sorted_repos = sorted(repos, key=__repo_def_sorting)
-    config["repos"] = sorted_repos
     if sorted_repos != repos:
+        config["repos"] = sorted_repos
         yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Sorted pre-commit hooks in {CONFIG_PATH.precommit}"
         raise PrecommitError(msg)
