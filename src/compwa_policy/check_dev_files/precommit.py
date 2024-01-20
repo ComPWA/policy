@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, cast
 
-from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
@@ -14,6 +14,7 @@ from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     PrecommitConfig,
+    Repo,
     find_repo,
     load_precommit_config,
     load_roundtrip_precommit_config,
@@ -22,6 +23,8 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
 def main() -> None:
+    if not CONFIG_PATH.precommit.exists():
+        return
     executor = Executor()
     executor(_sort_hooks)
     executor(_update_conda_environment)
@@ -32,23 +35,22 @@ def main() -> None:
 
 
 def _sort_hooks() -> None:
-    yaml = create_prettier_round_trip_yaml()
-    contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
-    repos: CommentedSeq | None = contents.get("repos")
+    config, yaml = load_roundtrip_precommit_config()
+    repos = config.get("repos")
     if repos is None:
         return
-    sorted_repos: list[CommentedMap] = sorted(repos, key=__repo_def_sorting)
-    contents["repos"] = sorted_repos
+    sorted_repos = sorted(repos, key=__repo_def_sorting)
+    config["repos"] = sorted_repos
     if sorted_repos != repos:
-        yaml.dump(contents, CONFIG_PATH.precommit)
+        yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Sorted pre-commit hooks in {CONFIG_PATH.precommit}"
         raise PrecommitError(msg)
 
 
-def __repo_def_sorting(repo_def: CommentedMap) -> tuple[int, str]:
+def __repo_def_sorting(repo_def: Repo) -> tuple[int, str]:
     if repo_def["repo"] == "meta":
         return (0, "meta")
-    hooks: CommentedSeq = repo_def["hooks"]
+    hooks = repo_def["hooks"]
     if len(hooks) > 1:
         return 1, repo_def["repo"]
     return (2, hooks[0]["id"])
@@ -75,7 +77,7 @@ def _update_precommit_ci_commit_msg() -> None:
 
 
 def _update_precommit_ci_skip() -> None:
-    config = load_precommit_config()
+    config, yaml = load_roundtrip_precommit_config()
     if config.get("ci") is None:
         return
     local_hooks = get_local_hooks(config)
@@ -83,11 +85,9 @@ def _update_precommit_ci_skip() -> None:
     expected_skips = set(non_functional_hooks) | set(local_hooks)
     if not expected_skips:
         if config.get("ci", {}).get("skip") is not None:
-            yaml = create_prettier_round_trip_yaml()
-            contents: CommentedMap = yaml.load(CONFIG_PATH.precommit)
-            del contents.get("ci")["skip"]
-            contents.yaml_set_comment_before_after_key("repos", before="\n")
-            yaml.dump(contents, CONFIG_PATH.precommit)
+            yaml_config = cast(CommentedMap, config)
+            yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
+            yaml.dump(config, CONFIG_PATH.precommit)
             msg = f"No need for a ci.skip in {CONFIG_PATH.precommit}"
             raise PrecommitError(msg)
         return
@@ -97,15 +97,14 @@ def _update_precommit_ci_skip() -> None:
 
 
 def __update_precommit_ci_skip(expected_skips: Iterable[str]) -> None:
-    yaml = create_prettier_round_trip_yaml()
-    contents = yaml.load(CONFIG_PATH.precommit)
-    ci_section: CommentedMap = contents.get("ci")
-    if "skip" in ci_section.ca.items:
-        del ci_section.ca.items["skip"]
-    skips = CommentedSeq(sorted(expected_skips))
-    ci_section["skip"] = skips
-    contents.yaml_set_comment_before_after_key("repos", before="\n")
-    yaml.dump(contents, CONFIG_PATH.precommit)
+    config, yaml = load_roundtrip_precommit_config()
+    precommit_ci = config.get("ci")
+    if precommit_ci is None:
+        return
+    precommit_ci["skip"] = sorted(expected_skips)
+    yaml_config = cast(CommentedMap, config)
+    yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
+    yaml.dump(yaml_config, CONFIG_PATH.precommit)
     msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
     raise PrecommitError(msg)
 
