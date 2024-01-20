@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Iterable, cast
+from typing import cast
 
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
@@ -78,43 +78,25 @@ def _update_precommit_ci_commit_msg() -> None:
 
 def _update_precommit_ci_skip() -> None:
     config, yaml = load_roundtrip_precommit_config()
-    if config.get("ci") is None:
+    precommit_ci = config.get("ci")
+    if precommit_ci is None:
         return
     local_hooks = get_local_hooks(config)
     non_functional_hooks = get_non_functional_hooks(config)
-    expected_skips = set(non_functional_hooks) | set(local_hooks)
-    if not expected_skips:
-        if config.get("ci", {}).get("skip") is not None:
-            yaml_config = cast(CommentedMap, config)
-            yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
-            yaml.dump(config, CONFIG_PATH.precommit)
-            msg = f"No need for a ci.skip in {CONFIG_PATH.precommit}"
-            raise PrecommitError(msg)
-        return
-    existing_skips = __get_precommit_ci_skips(config)
+    expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
+    existing_skips = precommit_ci.get("skip")
+    if not expected_skips and existing_skips is not None:
+        del precommit_ci["skip"]
+        yaml.dump(config, CONFIG_PATH.precommit)
+        msg = f"Removed redundant ci.skip section from {CONFIG_PATH.precommit}"
+        raise PrecommitError(msg)
     if existing_skips != expected_skips:
-        __update_precommit_ci_skip(expected_skips)
-
-
-def __update_precommit_ci_skip(expected_skips: Iterable[str]) -> None:
-    config, yaml = load_roundtrip_precommit_config()
-    precommit_ci = config.get("ci")
-    if precommit_ci is None:
-        return
-    precommit_ci["skip"] = sorted(expected_skips)
-    yaml_config = cast(CommentedMap, config)
-    yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
-    yaml.dump(yaml_config, CONFIG_PATH.precommit)
-    msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
-    raise PrecommitError(msg)
-
-
-def __get_precommit_ci_skips(config: PrecommitConfig) -> set[str]:
-    precommit_ci = config.get("ci")
-    if precommit_ci is None:
-        msg = "Pre-commit config does not contain a ci section"
-        raise ValueError(msg)
-    return set(precommit_ci.get("skip", []))
+        precommit_ci["skip"] = sorted(expected_skips)
+        yaml_config = cast(CommentedMap, config)
+        yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
+        yaml.dump(yaml_config, CONFIG_PATH.precommit)
+        msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
+        raise PrecommitError(msg)
 
 
 def get_local_hooks(config: PrecommitConfig) -> list[str]:
