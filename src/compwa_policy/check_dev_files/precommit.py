@@ -57,7 +57,8 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
     if len(hooks) > 1:
         return 2, repo_url
     hook_id = hooks[0]["id"]
-    if hook_id in {"black", "blacken-docs", "isort", "prettier"}:
+    formatter_hooks = {"black", "blacken-docs", "isort", "prettier"}
+    if hook_id in formatter_hooks:
         return 3, hook_id
     return 4, hook_id
 
