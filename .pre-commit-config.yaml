@@ -71,6 +71,19 @@ repos:
     hooks:
       - id: prettier
 
+  - repo: https://github.com/ComPWA/mirrors-taplo
+    rev: v0.8.1
+    hooks:
+      - id: taplo
+
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort
+        args:
+          - --in-place
+        exclude: (?x)^(labels/.*\.toml)$
+
   - repo: https://github.com/streetsidesoftware/cspell-cli
     rev: v8.3.0
     hooks:
@@ -96,6 +109,7 @@ repos:
         require_serial: true
         types:
           - python
+
   - repo: https://github.com/ComPWA/mirrors-pyright
     rev: v1.1.345
     hooks:
@@ -106,16 +120,3 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-
-  - repo: https://github.com/ComPWA/mirrors-taplo
-    rev: v0.8.1
-    hooks:
-      - id: taplo
-
-  - repo: https://github.com/pappasam/toml-sort
-    rev: v0.23.1
-    hooks:
-      - id: toml-sort
-        args:
-          - --in-place
-        exclude: (?x)^(labels/.*\.toml)$
