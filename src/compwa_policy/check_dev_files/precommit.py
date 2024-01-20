@@ -52,9 +52,11 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
     if repo_url == "meta":
         return 0, "meta"
     hooks = repo["hooks"]
-    if len(hooks) > 1:
+    if any(hook["id"] == "nbstripout" for hook in hooks):
         return 1, repo_url
-    return 2, hooks[0]["id"]
+    if len(hooks) > 1:
+        return 2, repo_url
+    return 3, hooks[0]["id"]
 
 
 def _update_precommit_ci_commit_msg() -> None:
