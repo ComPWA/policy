@@ -39,7 +39,7 @@ def _sort_hooks() -> None:
     repos = config.get("repos")
     if repos is None:
         return
-    sorted_repos = sorted(repos, key=__repo_def_sorting)
+    sorted_repos = sorted(repos, key=__repo_sort_key)
     if sorted_repos != repos:
         config["repos"] = sorted_repos
         yaml.dump(config, CONFIG_PATH.precommit)
@@ -47,7 +47,7 @@ def _sort_hooks() -> None:
         raise PrecommitError(msg)
 
 
-def __repo_def_sorting(repo_def: Repo) -> tuple[int, str]:
+def __repo_sort_key(repo_def: Repo) -> tuple[int, str]:
     if repo_def["repo"] == "meta":
         return (0, "meta")
     hooks = repo_def["hooks"]
