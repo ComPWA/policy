@@ -47,13 +47,14 @@ def _sort_hooks() -> None:
         raise PrecommitError(msg)
 
 
-def __repo_sort_key(repo_def: Repo) -> tuple[int, str]:
-    if repo_def["repo"] == "meta":
-        return (0, "meta")
-    hooks = repo_def["hooks"]
+def __repo_sort_key(repo: Repo) -> tuple[int, str]:
+    repo_url = repo["repo"]
+    if repo_url == "meta":
+        return 0, "meta"
+    hooks = repo["hooks"]
     if len(hooks) > 1:
-        return 1, repo_def["repo"]
-    return (2, hooks[0]["id"])
+        return 1, repo_url
+    return 2, hooks[0]["id"]
 
 
 def _update_precommit_ci_commit_msg() -> None:
