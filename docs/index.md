@@ -47,5 +47,5 @@ check-dev-files
 API <api/compwa_policy>
 Changelog <https://github.com/ComPWA/policy/releases>
 Upcoming features <https://github.com/ComPWA/policy/milestones?direction=asc&sort=title&state=open>
-Help developing <https://compwa-org.rtfd.io/develop.html>
+Help developing <https://compwa.github.io/develop>
 ```

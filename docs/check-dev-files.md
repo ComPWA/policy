@@ -1,6 +1,6 @@
 # `check-dev-files`
 
-This hook is responsible for standardizing and synchronizing the [developer environment](https://compwa-org.rtfd.io/develop.html) of repositories by the [ComPWA organization](https://github.com/ComPWA). Coding conventions are enforced through automated checks instead of through a contribution guide. These conventions have to be regularly updated across all repositories as developer tools introduce new features and deprecate old ones.
+This hook is responsible for standardizing and synchronizing the [developer environment](https://compwa.github.io/develop) of repositories by the [ComPWA organization](https://github.com/ComPWA). Coding conventions are enforced through automated checks instead of through a contribution guide. These conventions have to be regularly updated across all repositories as developer tools introduce new features and deprecate old ones.
 
 The `check-dev-files` hook can also be used as a **cookie cutter** for new repositories by adding the following to your [`.pre-commit-config.yaml`](https://pre-commit.com/index.html#adding-pre-commit-plugins-to-your-project) file:
 

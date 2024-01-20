@@ -25,7 +25,7 @@ jobs:
           labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform
           labels sync --filename labels/default.toml --owner ComPWA --repo benchmarks
-          labels sync --filename labels/default.toml --owner ComPWA --repo compwa-org
+          labels sync --filename labels/default.toml --owner ComPWA --repo compwa.github.io
           labels sync --filename labels/default.toml --owner ComPWA --repo policy
           labels sync --filename labels/default.toml --owner ComPWA --repo qrules
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinxcontrib-hep-pdgref

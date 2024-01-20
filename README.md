@@ -9,7 +9,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-This repository sets the policies for developer environment in repositories if the [ComPWA organization](https://github.com/ComPWA) (See our [Help developing](https://compwa-org.readthedocs.io/develop.html) page). The policies are automatically enforced through [pre-commit](https://pre-commit.com).
+This repository sets the policies for developer environment in repositories if the [ComPWA organization](https://github.com/ComPWA) (See our [Help developing](https://compwa.github.io/develop) page). The policies are automatically enforced through [pre-commit](https://pre-commit.com).
 
 ## Usage
 
