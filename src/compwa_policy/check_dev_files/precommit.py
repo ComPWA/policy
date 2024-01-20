@@ -56,7 +56,10 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
         return 1, repo_url
     if len(hooks) > 1:
         return 2, repo_url
-    return 3, hooks[0]["id"]
+    hook_id = hooks[0]["id"]
+    if hook_id in {"black", "blacken-docs", "isort", "prettier"}:
+        return 3, hook_id
+    return 4, hook_id
 
 
 def _update_precommit_ci_commit_msg() -> None:
