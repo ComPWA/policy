@@ -22,6 +22,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "TOMLDocument": "tomlkit.TOMLDocument",
     "Table": "tomlkit.items.Table",
     "V": "typing.TypeVar",
+    "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
 }
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
