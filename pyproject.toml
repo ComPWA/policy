@@ -298,6 +298,9 @@ task-tags = ["cspell"]
 [tool.ruff.isort]
 known-first-party = ["compwa_policy"]
 
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
 [tool.ruff.per-file-ignores]
 "docs/*" = [
     "E402",
