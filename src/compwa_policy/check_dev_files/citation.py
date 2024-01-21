@@ -10,10 +10,7 @@ from typing import cast
 from html2text import HTML2Text
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
-from ruamel.yaml.scalarstring import (
-    FoldedScalarString,
-    PreservedScalarString,
-)
+from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
