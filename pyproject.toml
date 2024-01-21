@@ -285,6 +285,7 @@ ignore = [
     "SIM108",
     "UP036",
 ]
+preview = true
 show-fixes = true
 src = [
     "src",

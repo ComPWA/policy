@@ -289,6 +289,7 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
     minimal_settings = {
         "extend-select": __get_selected_ruff_rules(),
         "ignore": to_toml_array(ignores),
+        "preview": True,
         "show-fixes": True,
         "target-version": __get_target_version(),
         "task-tags": __get_task_tags(settings),
