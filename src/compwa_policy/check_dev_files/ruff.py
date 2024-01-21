@@ -281,6 +281,7 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
         "E501",  # line-width already handled by black
+        "PLW1514",  # allow missing encoding in open()
         "SIM108",  # allow if-else blocks
     ]
     if "3.6" in get_supported_python_versions():
@@ -493,6 +494,7 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "INP001",  # allow implicit-namespace-package
             "PGH001",  # allow eval
             "PLR2004",  # magic-value-comparison
+            "PLR6301",  # allow non-static method
             "S101",  # allow assert
             "T20",  # allow print and pprint
         }

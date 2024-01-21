@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from ruamel.yaml.main import YAML
 
 
-def main(
+def main(  # noqa: PLR0917
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     github_pages: bool,
@@ -94,7 +94,7 @@ def _update_pr_linting() -> None:
         raise PrecommitError(msg)
 
 
-def _update_ci_workflow(
+def _update_ci_workflow(  # noqa: PLR0917
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     github_pages: bool,
@@ -140,7 +140,7 @@ def _update_ci_workflow(
     executor.finalize()
 
 
-def _get_ci_workflow(
+def _get_ci_workflow(  # noqa: PLR0917
     path: Path,
     doc_apt_packages: list[str],
     github_pages: bool,
