@@ -53,7 +53,6 @@ def main(has_notebooks: bool) -> None:
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
     executor(_update_ruff_settings, has_notebooks)
-    executor(_update_ruff_pydocstyle_settings)
     executor(_update_precommit_hook, has_notebooks)
     executor(_update_pyproject)
     executor(_update_vscode_settings)
@@ -262,7 +261,9 @@ def __remove_nbqa_settings() -> None:
 def _update_ruff_settings(has_notebooks: bool) -> None:
     executor = Executor()
     executor(__update_ruff_settings, has_notebooks)
-    executor(_update_ruff_per_file_ignores, has_notebooks)
+    executor(__update_ruff_per_file_ignores, has_notebooks)
+    executor(__update_ruff_isort_settings)
+    executor(__update_ruff_pydocstyle_settings)
     executor(_remove_nbqa)
     executor.finalize()
 
@@ -433,7 +434,7 @@ def __get_target_version() -> str:
     return lowest_version
 
 
-def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
+def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
     minimal_settings = {}
@@ -503,7 +504,18 @@ def _update_ruff_per_file_ignores(has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def _update_ruff_pydocstyle_settings() -> None:
+def __update_ruff_isort_settings() -> None:
+    pyproject = load_pyproject()
+    settings = get_sub_table(pyproject, "tool.ruff.lint.isort", create=True)
+    minimal_settings = {"split-on-trailing-comma": False}
+    if not complies_with_subset(settings, minimal_settings):
+        settings.update(minimal_settings)
+        write_pyproject(pyproject)
+        msg = f"Updated Ruff isort settings in {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
+
+
+def __update_ruff_pydocstyle_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.pydocstyle", create=True)
     minimal_settings = {
