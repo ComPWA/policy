@@ -41,6 +41,7 @@
   },
   "git.rebaseWhenSync": true,
   "github-actions.workflows.pinned.workflows": [".github/workflows/ci.yml"],
+  "gitlens.telemetry.enabled": false,
   "livePreview.defaultPreviewPath": "docs/_build/html",
   "multiDiffEditor.experimental.enabled": true,
   "mypy-type-checker.args": ["--config-file=${workspaceFolder}/pyproject.toml"],
@@ -51,6 +52,7 @@
   "python.testing.pytestArgs": ["--color=no", "--no-cov", "-vv"],
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
+  "redhat.telemetry.enabled": false,
   "rewrap.wrappingColumn": 88,
   "ruff.enable": true,
   "ruff.organizeImports": true,
@@ -66,6 +68,7 @@
     "src/compwa_policy/.template/.gitpod.yml": true,
     "src/compwa_policy/.template/.prettierrc": true
   },
+  "telemetry.telemetryLevel": "off",
   "yaml.schemas": {
     "https://citation-file-format.github.io/1.2.0/schema.json": "CITATION.cff",
     "https://json.schemastore.org/github-workflow.json": [
