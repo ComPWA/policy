@@ -46,8 +46,11 @@ def _update_settings(has_notebooks: bool) -> None:
         {
             "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
+            "gitlens.telemetry.enabled": False,
             "multiDiffEditor.experimental.enabled": True,
+            "redhat.telemetry.enabled": False,
             "rewrap.wrappingColumn": 88,  # black
+            "telemetry.telemetryLevel": "off",
         },
     )
     executor(
@@ -83,7 +86,6 @@ def _remove_outdated_settings() -> None:
         "python.linting.pylintEnabled",
         "telemetry.enableCrashReporter",
         "telemetry.enableTelemetry",
-        "telemetry.telemetryLevel",
     ]
     vscode.remove_settings(outdated_settings)
 
