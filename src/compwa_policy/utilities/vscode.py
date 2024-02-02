@@ -119,7 +119,8 @@ def add_unwanted_extension(extension_name: str) -> None:
 
 def __add_extension(extension_name: str, key: str, msg: str) -> None:
     config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
-    recommended_extensions = config.get(key, [])
+    recommended_extensions = __to_lower(config.get(key, []))
+    extension_name = extension_name.lower()
     if extension_name not in set(recommended_extensions):
         recommended_extensions.append(extension_name)
         config[key] = sorted(recommended_extensions)
@@ -131,12 +132,13 @@ def __add_extension(extension_name: str, key: str, msg: str) -> None:
 def remove_extension_recommendation(
     extension_name: str, *, unwanted: bool = False
 ) -> None:
-    def _remove() -> None:
+    def _remove(extension_name: str) -> None:
         if not CONFIG_PATH.vscode_extensions.exists():
             return
         with open(CONFIG_PATH.vscode_extensions) as stream:
             config = json.load(stream)
-        recommended_extensions = list(config.get("recommendations", []))
+        recommended_extensions = __to_lower(config.get("recommendations", []))
+        extension_name = extension_name.lower()
         if extension_name in recommended_extensions:
             recommended_extensions.remove(extension_name)
             config["recommendations"] = sorted(recommended_extensions)
@@ -145,10 +147,14 @@ def remove_extension_recommendation(
             raise PrecommitError(msg)
 
     executor = Executor()
-    executor(_remove)
+    executor(_remove, extension_name)
     if unwanted:
         executor(add_unwanted_extension, extension_name)
     executor.finalize()
+
+
+def __to_lower(lst: list[str]) -> list[str]:
+    return [e.lower() for e in lst]
 
 
 def __dump_config(config: dict, path: Path) -> None:
