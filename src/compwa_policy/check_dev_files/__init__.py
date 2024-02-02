@@ -16,6 +16,7 @@ from . import (
     commitlint,
     conda,
     cspell,
+    dependabot,
     editorconfig,
     github_labels,
     github_workflows,
@@ -55,6 +56,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     executor(commitlint.main)
     executor(conda.main, dev_python_version)
     executor(cspell.main, args.no_cspell_update)
+    executor(dependabot.main, args.dependabot)
     executor(editorconfig.main, args.no_python)
     if not args.allow_labels:
         executor(github_labels.main)
@@ -128,6 +130,12 @@ def _create_argparse() -> ArgumentParser:
         help="Comma-separated list of extras that are required for running tests on CI",
         required=False,
         type=str,
+    )
+    parser.add_argument(
+        "--dependabot",
+        choices=dependabot.DependabotOption.__args__,  # type: ignore[attr-defined]
+        default=None,
+        help="Leave dependabot.yml untouched ('keep') or sync with ComPWA/policy",
     )
     parser.add_argument(
         "--doc-apt-packages",
