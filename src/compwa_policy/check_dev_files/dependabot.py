@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 DependabotOption = Literal["keep", "update"]
+"""Allowed options for the :code:`--dependabot` argument."""
 
 
 def main(allow_dependabot: DependabotOption | None) -> None:
