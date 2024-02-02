@@ -1,4 +1,4 @@
-"""Check `Ruff <https://ruff.rs>`_ configuration."""
+"""Check `Ruff <https://docs.astral.sh/ruff>`_ configuration."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Iterable
 
 from ruamel.yaml import YAML
+from tomlkit.items import Array, Table
 
 from compwa_policy.check_dev_files.setup_cfg import (
     has_pyproject_build_system,
@@ -37,7 +38,6 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from tomlkit.items import Array, Table
     from tomlkit.toml_document import TOMLDocument
 
 
@@ -52,9 +52,10 @@ def main(has_notebooks: bool) -> None:
     executor(_remove_isort)
     executor(_remove_pydocstyle)
     executor(_remove_pylint)
-    executor(_update_ruff_settings, has_notebooks)
+    executor(_move_ruff_lint_config)
+    executor(_update_ruff_config, has_notebooks)
     executor(_update_precommit_hook, has_notebooks)
-    executor(_update_pyproject)
+    executor(_update_lint_dependencies)
     executor(_update_vscode_settings)
     executor.finalize()
 
@@ -98,8 +99,8 @@ def _remove_flake8() -> None:
     executor = Executor()
     executor(remove_configs, [".flake8"])
     executor(__remove_nbqa_option, "flake8")
-    executor(__uninstall, "flake8")
-    executor(__uninstall, "pep8-naming")
+    executor(___uninstall, "flake8")
+    executor(___uninstall, "pep8-naming")
     executor(vscode.remove_extension_recommendation, "ms-python.flake8", unwanted=True)
     executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
     executor(remove_precommit_hook, "flake8")
@@ -155,7 +156,7 @@ def _remove_pydocstyle() -> None:
             "tests/.pydocstyle",
         ],
     )
-    executor(__uninstall, "pydocstyle")
+    executor(___uninstall, "pydocstyle")
     executor(remove_precommit_hook, "pydocstyle")
     executor.finalize()
 
@@ -163,7 +164,7 @@ def _remove_pydocstyle() -> None:
 def _remove_pylint() -> None:
     executor = Executor()
     executor(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
-    executor(__uninstall, "pylint")
+    executor(___uninstall, "pylint")
     executor(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
     executor(remove_precommit_hook, "pylint")
     executor(remove_precommit_hook, "nbqa-pylint")
@@ -171,12 +172,12 @@ def _remove_pylint() -> None:
     executor.finalize()
 
 
-def __uninstall(package: str) -> None:
-    __uninstall_from_setup_cfg(package)
-    __uninstall_from_pyproject_toml(package)
+def ___uninstall(package: str) -> None:
+    ___uninstall_from_setup_cfg(package)
+    ___uninstall_from_pyproject_toml(package)
 
 
-def __uninstall_from_setup_cfg(package: str) -> None:
+def ___uninstall_from_setup_cfg(package: str) -> None:
     if not os.path.exists(CONFIG_PATH.setup_cfg):
         return
     cfg = open_setup_cfg()
@@ -192,7 +193,7 @@ def __uninstall_from_setup_cfg(package: str) -> None:
         raise PrecommitError(msg)
 
 
-def __uninstall_from_pyproject_toml(package: str) -> None:
+def ___uninstall_from_pyproject_toml(package: str) -> None:
     if not os.path.exists(CONFIG_PATH.pyproject):
         return
     pyproject = load_pyproject()
@@ -216,62 +217,116 @@ def __uninstall_from_pyproject_toml(package: str) -> None:
         raise PrecommitError(msg)
 
 
-def _update_pyproject() -> None:
-    if not has_pyproject_build_system():
-        return
+def _move_ruff_lint_config() -> None:
+    """Migrate linting configuration to :code:`tool.ruff.lint`.
+
+    See `this blog <https://astral.sh/blog/ruff-v0.2.0>`_ for details.
+    """
+    lint_option_keys = {
+        "extend-select",
+        "ignore",
+        "task-tags",
+        "isort",
+        "pydocstyle",
+        "per-file-ignores",
+    }
     pyproject = load_pyproject()
-    project_info = get_project_info(pyproject)
-    package = project_info.name
-    if package is None:
+    global_settings = get_sub_table(pyproject, "tool.ruff", create=True)
+    lint_settings = {k: v for k, v in global_settings.items() if k in lint_option_keys}
+    lint_arrays = {k: v for k, v in lint_settings.items() if isinstance(v, Array)}
+    if lint_arrays:
+        lint_config = get_sub_table(pyproject, "tool.ruff.lint", create=True)
+        lint_config.update(lint_arrays)
+    lint_tables = {k: v for k, v in lint_settings.items() if isinstance(v, Table)}
+    for table in lint_tables:
+        lint_config = get_sub_table(pyproject, f"tool.ruff.lint.{table}", create=True)
+        lint_config.update(lint_tables[table])
+    for key in lint_settings:
+        del global_settings[key]
+    if lint_arrays or lint_tables:
+        write_pyproject(pyproject)
         msg = (
-            "Please specify a [project.name] for the package in"
-            f" [{CONFIG_PATH.pyproject}]"
+            "Moved linting configuration to [tool.ruff.lint] in"
+            f" {CONFIG_PATH.pyproject}"
         )
         raise PrecommitError(msg)
-    python_versions = project_info.supported_python_versions
-    if python_versions is not None and "3.6" in python_versions:
-        ruff = 'ruff; python_version >="3.7.0"'
-    else:
-        ruff = "ruff"
-    add_dependency(ruff, optional_key=["lint", "sty", "dev"])
 
 
-def _remove_nbqa() -> None:
+def _update_ruff_config(has_notebooks: bool) -> None:
     executor = Executor()
-    executor(__remove_nbqa_settings)
-    executor(remove_precommit_hook, "nbqa-ruff")
+    executor(__update_global_settings, has_notebooks)
+    executor(__update_lint_settings)
+    executor(__update_per_file_ignores, has_notebooks)
+    executor(__update_isort_settings)
+    executor(__update_pydocstyle_settings)
+    executor(__remove_nbqa)
     executor.finalize()
 
 
-def __remove_nbqa_settings() -> None:
-    # cspell:ignore addopts
+def __update_global_settings(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
-    nbqa_addopts = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
-    if "ruff" in nbqa_addopts:
-        del nbqa_addopts["ruff"]
-    if not nbqa_addopts:
-        tool_table = get_sub_table(pyproject, "tool", create=True)
-        del tool_table["nbqa"]
-    write_pyproject(pyproject)
-    if nbqa_addopts:
-        msg = f"Removed Ruff configuration for nbQA from {CONFIG_PATH.pyproject}"
+    settings = get_sub_table(pyproject, "tool.ruff", create=True)
+    minimal_settings = {
+        "preview": True,
+        "show-fixes": True,
+        "target-version": ___get_target_version(),
+    }
+    if has_notebooks:
+        key = "extend-include"
+        default_includes = ["*.ipynb"]
+        minimal_settings[key] = ___merge(default_includes, settings.get(key, []))
+    src_directories = ___get_src_directories()
+    if src_directories:
+        minimal_settings["src"] = src_directories
+    typings_dir = "typings"
+    if os.path.exists(typings_dir) and os.path.isdir(typings_dir):
+        key = "extend-exclude"
+        default_excludes = ["typings"]
+        minimal_settings[key] = ___merge(default_excludes, settings.get(key, []))
+    if not complies_with_subset(settings, minimal_settings):
+        settings.update(minimal_settings)
+        write_pyproject(pyproject)
+        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 
-def _update_ruff_settings(has_notebooks: bool) -> None:
-    executor = Executor()
-    executor(__update_ruff_settings, has_notebooks)
-    executor(__update_ruff_per_file_ignores, has_notebooks)
-    executor(__update_ruff_isort_settings)
-    executor(__update_ruff_pydocstyle_settings)
-    executor(_remove_nbqa)
-    executor.finalize()
+def ___get_target_version() -> str:
+    """Get minimal :code:`target-version` for Ruff.
+
+    >>> ___get_target_version()
+    'py37'
+    """
+    versions = {f'py{v.replace(".", "")}' for v in get_supported_python_versions()}
+    versions &= {"py37", "py38", "py39", "py310", "py311", "py312"}
+    lowest_version, *_ = sorted(versions, key=natural_sorting)
+    return lowest_version
 
 
-def __update_ruff_settings(has_notebooks: bool) -> None:
+def ___merge(*listings: Iterable[str], enforce_multiline: bool = False) -> Array:
+    merged = set()
+    for lst in listings:
+        merged |= set(lst)
+    return to_toml_array(sorted(merged), enforce_multiline)
+
+
+def ___get_src_directories() -> list[str]:
+    expected_directories = (
+        "src",
+        "tests",
+    )
+    directories = tuple(
+        path
+        for path in expected_directories
+        if os.path.exists(path)
+        if os.path.isdir(path)
+    )
+    return to_toml_array(sorted(directories))
+
+
+def __update_lint_settings() -> None:
     pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.ruff", create=True)
-    extend_ignore = [
+    settings = get_sub_table(pyproject, "tool.ruff.lint", create=True)
+    ignored_rules = [
         "D101",  # class docstring
         "D102",  # method docstring
         "D103",  # function docstring
@@ -286,28 +341,13 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         "SIM108",  # allow if-else blocks
     ]
     if "3.6" in get_supported_python_versions():
-        extend_ignore.append("UP036")
-    ignores = sorted({*settings.get("ignore", []), *extend_ignore})
+        ignored_rules.append("UP036")
+    ignored_rules = sorted({*settings.get("ignore", []), *ignored_rules})
     minimal_settings = {
-        "extend-select": __get_selected_ruff_rules(),
-        "ignore": to_toml_array(ignores),
-        "preview": True,
-        "show-fixes": True,
-        "target-version": __get_target_version(),
-        "task-tags": __get_task_tags(settings),
+        "extend-select": ___get_selected_ruff_rules(),
+        "ignore": to_toml_array(ignored_rules),
+        "task-tags": ___get_task_tags(settings),
     }
-    if has_notebooks:
-        key = "extend-include"
-        default_includes = ["*.ipynb"]
-        minimal_settings[key] = __merge(default_includes, settings.get(key, []))
-    src_directories = __get_src_directories()
-    if src_directories:
-        minimal_settings["src"] = src_directories
-    typings_dir = "typings"
-    if os.path.exists(typings_dir) and os.path.isdir(typings_dir):
-        key = "extend-exclude"
-        default_excludes = ["typings"]
-        minimal_settings[key] = __merge(default_excludes, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
@@ -315,56 +355,7 @@ def __update_ruff_settings(has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def __ban(
-    rules: Iterable[str], banned_rules: Iterable[str], enforce_multiline: bool = False
-) -> Array:
-    """Extend Ruff rules with new rules and filter out redundant ones.
-
-    >>> __ban(["C90", "B018"], banned_rules=["D10", "C"])
-    ['B018']
-    """
-    banned_set = tuple(banned_rules)
-    filtered = {
-        rule for rule in rules if not any(rule.startswith(r) for r in banned_set)
-    }
-    return to_toml_array(sorted(filtered), enforce_multiline)
-
-
-def __merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -> Array:
-    """Extend Ruff rules with new rules and filter out redundant ones.
-
-    >>> __merge_rules(["C90", "B018"], ["D10", "C"])
-    ['B018', 'C', 'D10']
-    """
-    merged = __merge(*rule_sets)
-    filtered = {
-        rule
-        for rule in merged
-        if not any(rule != r and rule.startswith(r) for r in merged)
-    }
-    return to_toml_array(sorted(filtered), enforce_multiline)
-
-
-def __merge(*listings: Iterable[str], enforce_multiline: bool = False) -> Array:
-    merged = set()
-    for lst in listings:
-        merged |= set(lst)
-    return to_toml_array(sorted(merged), enforce_multiline)
-
-
-def __get_existing_nbqa_ignores(pyproject: TOMLDocument) -> set[str]:
-    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
-    if not nbqa_table:
-        return set()
-    ruff_rules: list[str] = nbqa_table.get("ruff", [])
-    return {
-        r.replace("--extend-ignore=", "")
-        for r in ruff_rules
-        if r.startswith("--extend-ignore=")
-    }
-
-
-def __get_selected_ruff_rules() -> Array:
+def ___get_selected_ruff_rules() -> Array:
     rules = {
         "A",
         "B",
@@ -402,7 +393,7 @@ def __get_selected_ruff_rules() -> Array:
     return to_toml_array(sorted(rules))
 
 
-def __get_task_tags(ruff_settings: Table) -> Array:
+def ___get_task_tags(ruff_settings: Table) -> Array:
     existing: set[str] = set(ruff_settings.get("task-tags", set()))
     expected = {
         "cspell",
@@ -410,35 +401,9 @@ def __get_task_tags(ruff_settings: Table) -> Array:
     return to_toml_array(sorted(existing | expected))
 
 
-def __get_src_directories() -> list[str]:
-    expected_directories = (
-        "src",
-        "tests",
-    )
-    directories = tuple(
-        path
-        for path in expected_directories
-        if os.path.exists(path)
-        if os.path.isdir(path)
-    )
-    return to_toml_array(sorted(directories))
-
-
-def __get_target_version() -> str:
-    """Get minimal :code:`target-version` for Ruff.
-
-    >>> __get_target_version()
-    'py37'
-    """
-    versions = {f'py{v.replace(".", "")}' for v in get_supported_python_versions()}
-    versions &= {"py37", "py38", "py39", "py310", "py311", "py312"}
-    lowest_version, *_ = sorted(versions, key=natural_sorting)
-    return lowest_version
-
-
-def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
+def __update_per_file_ignores(has_notebooks: bool) -> None:
     pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.ruff.per-file-ignores", create=True)
+    settings = get_sub_table(pyproject, "tool.ruff.lint.per-file-ignores", create=True)
     minimal_settings = {}
     if has_notebooks:
         key = "*.ipynb"
@@ -458,16 +423,16 @@ def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "T20",  # print found
             "TCH00",  # type-checking block
         }
-        expected_rules = __merge_rules(
+        expected_rules = ___merge_rules(
             default_ignores,
-            __get_existing_nbqa_ignores(pyproject),
+            ___get_existing_nbqa_ignores(pyproject),
             settings.get(key, []),
         )
         banned_rules = {
             "F821",  # identify variables that are not defined
             "ISC003",  # explicit-string-concatenation
         }
-        minimal_settings[key] = __ban(expected_rules, banned_rules)
+        minimal_settings[key] = ___ban(expected_rules, banned_rules)
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
@@ -477,14 +442,14 @@ def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "S101",  # `assert` detected
             "S113",  # requests call without timeout
         }
-        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
+        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
     conf_path = f"{docs_dir}/conf.py"
     if os.path.exists(conf_path):
         key = f"{conf_path}"
         default_ignores = {
             "D100",  # no module docstring
         }
-        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
+        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
     tests_dir = "tests"
@@ -499,7 +464,7 @@ def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
             "S101",  # allow assert
             "T20",  # allow print and pprint
         }
-        minimal_settings[key] = __merge_rules(default_ignores, settings.get(key, []))
+        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
@@ -507,7 +472,49 @@ def __update_ruff_per_file_ignores(has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def __update_ruff_isort_settings() -> None:
+def ___merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -> Array:
+    """Extend Ruff rules with new rules and filter out redundant ones.
+
+    >>> ___merge_rules(["C90", "B018"], ["D10", "C"])
+    ['B018', 'C', 'D10']
+    """
+    merged = ___merge(*rule_sets)
+    filtered = {
+        rule
+        for rule in merged
+        if not any(rule != r and rule.startswith(r) for r in merged)
+    }
+    return to_toml_array(sorted(filtered), enforce_multiline)
+
+
+def ___get_existing_nbqa_ignores(pyproject: TOMLDocument) -> set[str]:
+    nbqa_table = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    if not nbqa_table:
+        return set()
+    ruff_rules: list[str] = nbqa_table.get("ruff", [])
+    return {
+        r.replace("--extend-ignore=", "")
+        for r in ruff_rules
+        if r.startswith("--extend-ignore=")
+    }
+
+
+def ___ban(
+    rules: Iterable[str], banned_rules: Iterable[str], enforce_multiline: bool = False
+) -> Array:
+    """Extend Ruff rules with new rules and filter out redundant ones.
+
+    >>> ___ban(["C90", "B018"], banned_rules=["D10", "C"])
+    ['B018']
+    """
+    banned_set = tuple(banned_rules)
+    filtered = {
+        rule for rule in rules if not any(rule.startswith(r) for r in banned_set)
+    }
+    return to_toml_array(sorted(filtered), enforce_multiline)
+
+
+def __update_isort_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.lint.isort", create=True)
     minimal_settings = {"split-on-trailing-comma": False}
@@ -518,9 +525,9 @@ def __update_ruff_isort_settings() -> None:
         raise PrecommitError(msg)
 
 
-def __update_ruff_pydocstyle_settings() -> None:
+def __update_pydocstyle_settings() -> None:
     pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.ruff.pydocstyle", create=True)
+    settings = get_sub_table(pyproject, "tool.ruff.lint.pydocstyle", create=True)
     minimal_settings = {
         "convention": "google",
     }
@@ -528,6 +535,28 @@ def __update_ruff_pydocstyle_settings() -> None:
         settings.update(minimal_settings)
         write_pyproject(pyproject)
         msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
+
+
+def __remove_nbqa() -> None:
+    executor = Executor()
+    executor(___remove_nbqa_settings)
+    executor(remove_precommit_hook, "nbqa-ruff")
+    executor.finalize()
+
+
+def ___remove_nbqa_settings() -> None:
+    # cspell:ignore addopts
+    pyproject = load_pyproject()
+    nbqa_addopts = get_sub_table(pyproject, "tool.nbqa.addopts", create=True)
+    if "ruff" in nbqa_addopts:
+        del nbqa_addopts["ruff"]
+    if not nbqa_addopts:
+        tool_table = get_sub_table(pyproject, "tool", create=True)
+        del tool_table["nbqa"]
+    write_pyproject(pyproject)
+    if nbqa_addopts:
+        msg = f"Removed Ruff configuration for nbQA from {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 
@@ -545,6 +574,26 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
         hooks=[ruff_hook],
     )
     update_single_hook_precommit_repo(expected_repo)
+
+
+def _update_lint_dependencies() -> None:
+    if not has_pyproject_build_system():
+        return
+    pyproject = load_pyproject()
+    project_info = get_project_info(pyproject)
+    package = project_info.name
+    if package is None:
+        msg = (
+            "Please specify a [project.name] for the package in"
+            f" [{CONFIG_PATH.pyproject}]"
+        )
+        raise PrecommitError(msg)
+    python_versions = project_info.supported_python_versions
+    if python_versions is not None and "3.6" in python_versions:
+        ruff = 'ruff; python_version >="3.7.0"'
+    else:
+        ruff = "ruff"
+    add_dependency(ruff, optional_key=["lint", "sty", "dev"])
 
 
 def _update_vscode_settings() -> None:
