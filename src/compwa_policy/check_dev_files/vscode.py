@@ -27,6 +27,11 @@ def _update_extensions() -> None:
     )
     executor(
         vscode.remove_extension_recommendation,
+        "tyriar.sort-lines",  # cspell:ignore tyriar
+        unwanted=True,
+    )
+    executor(
+        vscode.remove_extension_recommendation,
         "garaioag.garaio-vscode-unwanted-recommendations",
         # cspell:ignore garaio garaioag
         unwanted=True,
