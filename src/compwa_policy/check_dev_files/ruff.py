@@ -587,9 +587,9 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
     lint_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
     format_hook = Hook(id="ruff-format")
     if has_notebooks:
-        types = yaml.load("[python, pyi, jupyter]")
-        lint_hook["types_or"] = types
-        format_hook["types_or"] = types
+        types_str = "[python, pyi, jupyter]"
+        lint_hook["types_or"] = yaml.load(types_str)  # use twice to avoid YAML anchor
+        format_hook["types_or"] = yaml.load(types_str)
     expected_repo = Repo(
         repo="https://github.com/astral-sh/ruff-pre-commit",
         rev="",
