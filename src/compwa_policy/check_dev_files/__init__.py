@@ -288,11 +288,11 @@ def _create_argparse() -> ArgumentParser:
 def _to_list(arg: str) -> list[str]:
     """Create a comma-separated list from a string argument.
 
-    >>> _to_list('a c , test,b')
+    >>> _to_list("a c , test,b")
     ['a', 'b', 'c', 'test']
-    >>> _to_list(' ')
+    >>> _to_list(" ")
     []
-    >>> _to_list('')
+    >>> _to_list("")
     []
     """
     space_separated = arg.replace(",", " ")

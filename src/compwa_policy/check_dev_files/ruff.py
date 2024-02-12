@@ -279,7 +279,8 @@ def _move_ruff_lint_config() -> None:
 def _update_ruff_config(has_notebooks: bool) -> None:
     executor = Executor()
     executor(__update_global_settings, has_notebooks)
-    executor(__update_lint_settings)
+    executor(__update_ruff_format_settings)
+    executor(__update_ruff_lint_settings)
     executor(__update_per_file_ignores, has_notebooks)
     executor(__update_isort_settings)
     executor(__update_pydocstyle_settings)
@@ -347,7 +348,21 @@ def ___get_src_directories() -> list[str]:
     return to_toml_array(sorted(directories))
 
 
-def __update_lint_settings() -> None:
+def __update_ruff_format_settings() -> None:
+    pyproject = load_pyproject()
+    settings = get_sub_table(pyproject, "tool.ruff.format", create=True)
+    minimal_settings = {
+        "docstring-code-format": True,
+        "line-ending": "lf",
+    }
+    if not complies_with_subset(settings, minimal_settings):
+        settings.update(minimal_settings)
+        write_pyproject(pyproject)
+        msg = f"Updated Ruff formatter configuration in {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
+
+
+def __update_ruff_lint_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.lint", create=True)
     ignored_rules = [
@@ -376,7 +391,7 @@ def __update_lint_settings() -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
-        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        msg = f"Updated Ruff linting configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 

@@ -181,19 +181,16 @@ def sort_case_insensitive(dct):  # type: ignore[no-untyped-def]
     >>> import pytest, sys
     >>> if sys.version_info >= (3, 12):
     ...     pytest.skip()
-    ...
-    >>> sort_case_insensitive(
-    ...     {
-    ...         "cSpell.enabled": True,
-    ...         "coverage-gutters": ["test", "coverage.xml"],
-    ...     }
-    ... )
+    >>> sort_case_insensitive({
+    ...     "cSpell.enabled": True,
+    ...     "coverage-gutters": ["test", "coverage.xml"],
+    ... })
     OrderedDict([('coverage-gutters', ['coverage.xml', 'test']), ('cSpell.enabled', True)])
     """
     if isinstance(dct, abc.Mapping):
-        return collections.OrderedDict(
-            {k: sort_case_insensitive(dct[k]) for k in sorted(dct, key=str.lower)}
-        )
+        return collections.OrderedDict({
+            k: sort_case_insensitive(dct[k]) for k in sorted(dct, key=str.lower)
+        })
     if isinstance(dct, str):
         return dct
     if isinstance(dct, abc.Iterable):
