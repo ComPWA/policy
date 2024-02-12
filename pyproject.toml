@@ -59,9 +59,6 @@ doc = [
     "sphinx-book-theme",
     "sphinx-copybutton",
 ]
-format = [
-    "black",
-]
 lint = [
     "compwa-policy[mypy]",
     "radon",
@@ -74,7 +71,6 @@ mypy = [
     "types-toml",
 ]
 sty = [
-    "compwa-policy[format]",
     "compwa-policy[lint]",
     "compwa-policy[test]", # for pytest type hints
     "pre-commit >=1.4.0",

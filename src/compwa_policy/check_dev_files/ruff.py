@@ -48,6 +48,7 @@ def main(has_notebooks: bool) -> None:
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
     executor(_check_setup_cfg)
+    executor(_remove_black)
     executor(_remove_flake8)
     executor(_remove_isort)
     executor(_remove_pydocstyle)
@@ -93,6 +94,22 @@ def _check_setup_cfg() -> None:
     lint_section = cfg.get(extras_require, "lint")
     if not any("ruff" in line for line in lint_section.split("\n")):
         raise PrecommitError(msg)
+
+
+def _remove_black() -> None:
+    executor = Executor()
+    executor(
+        vscode.remove_extension_recommendation,
+        "ms-python.black-formatter",
+        unwanted=True,
+    )
+    executor(___uninstall, "black")
+    executor(remove_badge, r".*https://github\.com/psf.*/black.*")
+    executor(remove_precommit_hook, "black-jupyter")
+    executor(remove_precommit_hook, "black")
+    executor(remove_precommit_hook, "blacken-docs")
+    executor(vscode.remove_settings, ["black-formatter.importStrategy"])
+    executor.finalize()
 
 
 def _remove_flake8() -> None:
@@ -211,6 +228,10 @@ def ___uninstall_from_pyproject_toml(package: str) -> None:
             if package in values:
                 values.remove(package)
                 updated = True
+        if updated:
+            empty_sections = [k for k, v in optional_dependencies.items() if not v]
+            for section in empty_sections:
+                del optional_dependencies[section]
     if updated:
         write_pyproject(pyproject)
         msg = f"Removed {package} from {CONFIG_PATH.pyproject}"
@@ -565,14 +586,16 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     yaml = YAML(typ="rt")
-    ruff_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
+    lint_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
+    format_hook = Hook(id="ruff-format")
     if has_notebooks:
         types = yaml.load("[python, pyi, jupyter]")
-        ruff_hook["types_or"] = types
+        lint_hook["types_or"] = types
+        format_hook["types_or"] = types
     expected_repo = Repo(
         repo="https://github.com/astral-sh/ruff-pre-commit",
         rev="",
-        hooks=[ruff_hook],
+        hooks=[lint_hook, format_hook],
     )
     update_single_hook_precommit_repo(expected_repo)
 
@@ -607,7 +630,8 @@ def _update_vscode_settings() -> None:
             "[python]": {
                 "editor.codeActionsOnSave": {
                     "source.organizeImports": "explicit",
-                }
+                },
+                "editor.defaultFormatter": "charliermarsh.ruff",
             },
             "ruff.enable": True,
             "ruff.organizeImports": True,

@@ -19,6 +19,7 @@ def _update_dev_requirements() -> None:
         return
     hierarchy = ["jupyter", "dev"]
     dependencies = [
+        "black",
         "isort",
         "jupyterlab",
         "jupyterlab-code-formatter",
