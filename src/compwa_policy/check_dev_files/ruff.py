@@ -48,6 +48,7 @@ def main(has_notebooks: bool) -> None:
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
     executor(_check_setup_cfg)
+    executor(___uninstall, "radon")
     executor(_remove_black)
     executor(_remove_flake8)
     executor(_remove_isort)

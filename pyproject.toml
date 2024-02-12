@@ -61,7 +61,6 @@ doc = [
 ]
 lint = [
     "compwa-policy[mypy]",
-    "radon",
     "ruff",
 ]
 mypy = [
