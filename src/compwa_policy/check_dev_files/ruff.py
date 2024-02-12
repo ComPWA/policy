@@ -459,6 +459,7 @@ def __update_per_file_ignores(has_notebooks: bool) -> None:
             "D",  # no need for pydocstyle
             "INP001",  # allow implicit-namespace-package
             "PGH001",  # allow eval
+            "PLC2701",  # private module imports
             "PLR2004",  # magic-value-comparison
             "PLR6301",  # allow non-static method
             "S101",  # allow assert
