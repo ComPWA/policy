@@ -361,6 +361,7 @@ def __update_lint_settings() -> None:
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
         "E501",  # line-width already handled by black
+        "ISC001",  # conflicts with ruff formatter
         "PLW1514",  # allow missing encoding in open()
         "SIM108",  # allow if-else blocks
     ]
