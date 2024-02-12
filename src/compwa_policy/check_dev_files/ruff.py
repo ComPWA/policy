@@ -75,12 +75,9 @@ def _check_setup_cfg() -> None:
 
         [{extras_require}]
         ...
-        lint =
-            ruff
-            ...
         sty =
             ...
-            %(lint)s
+            ruff
             ...
         dev =
             ...
@@ -88,11 +85,11 @@ def _check_setup_cfg() -> None:
             ...
     """
     msg = dedent(msg).strip()
-    for section in ("dev", "lint", "sty"):
+    for section in ("dev", "sty"):
         if cfg.has_option(extras_require, section):
             continue
         raise PrecommitError(msg)
-    lint_section = cfg.get(extras_require, "lint")
+    lint_section = cfg.get(extras_require, "sty")
     if not any("ruff" in line for line in lint_section.split("\n")):
         raise PrecommitError(msg)
 
@@ -618,7 +615,7 @@ def _update_lint_dependencies() -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    add_dependency(ruff, optional_key=["lint", "sty", "dev"])
+    add_dependency(ruff, optional_key=["sty", "dev"])
 
 
 def _update_vscode_settings() -> None:

@@ -59,10 +59,6 @@ doc = [
     "sphinx-book-theme",
     "sphinx-copybutton",
 ]
-lint = [
-    "compwa-policy[mypy]",
-    "ruff",
-]
 mypy = [
     "mypy",
     "sphinx-api-relink >=0.0.3",
@@ -71,8 +67,10 @@ mypy = [
 ]
 sty = [
     "compwa-policy[lint]",
-    "compwa-policy[test]", # for pytest type hints
+    "compwa-policy[mypy]",
+    "compwa-policy[test]",
     "pre-commit >=1.4.0",
+    "ruff",
 ]
 test = [
     "pytest",
