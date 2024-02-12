@@ -21,14 +21,11 @@ POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
 
 
 def test_add_dependency():
-    stream = io.StringIO(
-        dedent(
-            """
+    msg = """
     [project]
     name = "my-package"
     """
-        )
-    )
+    stream = io.StringIO(dedent(msg))
     stream.seek(0)
     dependency = "attrs"
     with pytest.raises(
@@ -38,13 +35,12 @@ def test_add_dependency():
         add_dependency(dependency, source=stream)
     result = stream.getvalue()
     print(result)  # run with pytest -s
-    assert result == dedent(
-        """
+    msg = """
     [project]
     name = "my-package"
     dependencies = ["attrs"]
     """
-    )
+    assert result == dedent(msg)
 
 
 def test_add_dependency_nested():
