@@ -59,16 +59,9 @@ doc = [
     "sphinx-book-theme",
     "sphinx-copybutton",
 ]
-mypy = [
-    "mypy",
-    "sphinx-api-relink >=0.0.3",
-    "types-PyYAML",
-    "types-toml",
-]
 sty = [
-    "compwa-policy[lint]",
-    "compwa-policy[mypy]",
-    "compwa-policy[test]",
+    "compwa-policy[types]",
+    "mypy",
     "pre-commit >=1.4.0",
     "ruff",
 ]
@@ -76,6 +69,12 @@ test = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
+]
+types = [
+    "pytest",
+    "sphinx-api-relink >=0.0.3",
+    "types-PyYAML",
+    "types-toml",
 ]
 
 [project.readme]
