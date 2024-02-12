@@ -59,30 +59,22 @@ doc = [
     "sphinx-book-theme",
     "sphinx-copybutton",
 ]
-format = [
-    "black",
-]
-lint = [
-    "compwa-policy[mypy]",
-    "radon",
-    "ruff",
-]
-mypy = [
-    "mypy",
-    "sphinx-api-relink >=0.0.3",
-    "types-PyYAML",
-    "types-toml",
-]
 sty = [
-    "compwa-policy[format]",
-    "compwa-policy[lint]",
-    "compwa-policy[test]", # for pytest type hints
+    "compwa-policy[types]",
+    "mypy",
     "pre-commit >=1.4.0",
+    "ruff",
 ]
 test = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
+]
+types = [
+    "pytest",
+    "sphinx-api-relink >=0.0.3",
+    "types-PyYAML",
+    "types-toml",
 ]
 
 [project.readme]
@@ -122,31 +114,6 @@ where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/compwa_policy/version.py"
-
-[tool.black]
-exclude = '''
-/(
-    .*\.egg-info
-    | .*build
-    | \.eggs
-    | \.git
-    | \.pytest_cache
-    | \.tox
-    | \.venv
-    | \.vscode
-    | dist
-)/
-'''
-include = '\.pyi?$'
-preview = true
-target-version = [
-    "py310",
-    "py311",
-    "py312",
-    "py37",
-    "py38",
-    "py39",
-]
 
 [tool.coverage.run]
 branch = true
@@ -245,6 +212,10 @@ src = [
 ]
 target-version = "py37"
 
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+
 [tool.ruff.lint]
 extend-select = [
     "A",
@@ -290,6 +261,7 @@ ignore = [
     "D407",
     "D416",
     "E501",
+    "ISC001",
     "PLR0913",
     "PLW1514",
     "PLW2901",

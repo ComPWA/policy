@@ -48,6 +48,8 @@ def main(has_notebooks: bool) -> None:
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
     executor(_check_setup_cfg)
+    executor(___uninstall, "radon")
+    executor(_remove_black)
     executor(_remove_flake8)
     executor(_remove_isort)
     executor(_remove_pydocstyle)
@@ -73,12 +75,9 @@ def _check_setup_cfg() -> None:
 
         [{extras_require}]
         ...
-        lint =
-            ruff
-            ...
         sty =
             ...
-            %(lint)s
+            ruff
             ...
         dev =
             ...
@@ -86,13 +85,30 @@ def _check_setup_cfg() -> None:
             ...
     """
     msg = dedent(msg).strip()
-    for section in ("dev", "lint", "sty"):
+    for section in ("dev", "sty"):
         if cfg.has_option(extras_require, section):
             continue
         raise PrecommitError(msg)
-    lint_section = cfg.get(extras_require, "lint")
+    lint_section = cfg.get(extras_require, "sty")
     if not any("ruff" in line for line in lint_section.split("\n")):
         raise PrecommitError(msg)
+
+
+def _remove_black() -> None:
+    executor = Executor()
+    executor(
+        vscode.remove_extension_recommendation,
+        "ms-python.black-formatter",
+        unwanted=True,
+    )
+    executor(__remove_tool_table, "black")
+    executor(___uninstall, "black", ignore=["doc", "jupyter", "test"])
+    executor(remove_badge, r".*https://github\.com/psf.*/black.*")
+    executor(remove_precommit_hook, "black-jupyter")
+    executor(remove_precommit_hook, "black")
+    executor(remove_precommit_hook, "blacken-docs")
+    executor(vscode.remove_settings, ["black-formatter.importStrategy"])
+    executor.finalize()
 
 
 def _remove_flake8() -> None:
@@ -111,9 +127,9 @@ def _remove_flake8() -> None:
 
 def _remove_isort() -> None:
     executor = Executor()
-    executor(__remove_isort_settings)
     executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
+    executor(__remove_tool_table, "isort")
     executor(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
@@ -136,13 +152,13 @@ def __remove_nbqa_option(option: str) -> None:
     raise PrecommitError(msg)
 
 
-def __remove_isort_settings() -> None:
+def __remove_tool_table(tool_table: str) -> None:
     pyproject = load_pyproject()
-    if pyproject.get("tool", {}).get("isort") is None:
+    if pyproject.get("tool", {}).get(tool_table) is None:
         return
-    pyproject["tool"].remove("isort")  # type: ignore[union-attr]
+    pyproject["tool"].remove(tool_table)  # type: ignore[union-attr]
     write_pyproject(pyproject)
-    msg = f"Removed [tool.isort] section from {CONFIG_PATH.pyproject}"
+    msg = f"Removed [tool.{tool_table}] section from {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
 
 
@@ -172,28 +188,30 @@ def _remove_pylint() -> None:
     executor.finalize()
 
 
-def ___uninstall(package: str) -> None:
-    ___uninstall_from_setup_cfg(package)
-    ___uninstall_from_pyproject_toml(package)
+def ___uninstall(package: str, ignore: Iterable[str] | None = None) -> None:
+    ignored_sections = set() if ignore is None else set(ignore)
+    ___uninstall_from_setup_cfg(package, ignored_sections)
+    ___uninstall_from_pyproject_toml(package, ignored_sections)
 
 
-def ___uninstall_from_setup_cfg(package: str) -> None:
+def ___uninstall_from_setup_cfg(package: str, ignored_sections: set[str]) -> None:
     if not os.path.exists(CONFIG_PATH.setup_cfg):
         return
     cfg = open_setup_cfg()
     section = "options.extras_require"
     if not cfg.has_section(section):
         return
-    for option in cfg[section]:
-        if not cfg.has_option(section, option):
+    extras_require = cfg[section]
+    for option in extras_require:
+        if option in ignored_sections:
             continue
-        if package not in cfg.get(section, option):
+        if package not in cfg.get(section, option, raw=True):
             continue
         msg = f'Please remove {package} from the "{section}" section of setup.cfg'
         raise PrecommitError(msg)
 
 
-def ___uninstall_from_pyproject_toml(package: str) -> None:
+def ___uninstall_from_pyproject_toml(package: str, ignored_sections: set[str]) -> None:  # noqa: C901
     if not os.path.exists(CONFIG_PATH.pyproject):
         return
     pyproject = load_pyproject()
@@ -207,10 +225,16 @@ def ___uninstall_from_pyproject_toml(package: str) -> None:
         updated = True
     optional_dependencies = project.get("optional-dependencies")
     if optional_dependencies is not None:
-        for values in optional_dependencies.values():
+        for section, values in optional_dependencies.items():
+            if section in ignored_sections:
+                continue
             if package in values:
                 values.remove(package)
                 updated = True
+        if updated:
+            empty_sections = [k for k, v in optional_dependencies.items() if not v]
+            for section in empty_sections:
+                del optional_dependencies[section]
     if updated:
         write_pyproject(pyproject)
         msg = f"Removed {package} from {CONFIG_PATH.pyproject}"
@@ -255,7 +279,8 @@ def _move_ruff_lint_config() -> None:
 def _update_ruff_config(has_notebooks: bool) -> None:
     executor = Executor()
     executor(__update_global_settings, has_notebooks)
-    executor(__update_lint_settings)
+    executor(__update_ruff_format_settings)
+    executor(__update_ruff_lint_settings)
     executor(__update_per_file_ignores, has_notebooks)
     executor(__update_isort_settings)
     executor(__update_pydocstyle_settings)
@@ -323,7 +348,21 @@ def ___get_src_directories() -> list[str]:
     return to_toml_array(sorted(directories))
 
 
-def __update_lint_settings() -> None:
+def __update_ruff_format_settings() -> None:
+    pyproject = load_pyproject()
+    settings = get_sub_table(pyproject, "tool.ruff.format", create=True)
+    minimal_settings = {
+        "docstring-code-format": True,
+        "line-ending": "lf",
+    }
+    if not complies_with_subset(settings, minimal_settings):
+        settings.update(minimal_settings)
+        write_pyproject(pyproject)
+        msg = f"Updated Ruff formatter configuration in {CONFIG_PATH.pyproject}"
+        raise PrecommitError(msg)
+
+
+def __update_ruff_lint_settings() -> None:
     pyproject = load_pyproject()
     settings = get_sub_table(pyproject, "tool.ruff.lint", create=True)
     ignored_rules = [
@@ -337,6 +376,7 @@ def __update_lint_settings() -> None:
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
         "E501",  # line-width already handled by black
+        "ISC001",  # conflicts with ruff formatter
         "PLW1514",  # allow missing encoding in open()
         "SIM108",  # allow if-else blocks
     ]
@@ -351,7 +391,7 @@ def __update_lint_settings() -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         write_pyproject(pyproject)
-        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        msg = f"Updated Ruff linting configuration in {CONFIG_PATH.pyproject}"
         raise PrecommitError(msg)
 
 
@@ -565,14 +605,16 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
     if not CONFIG_PATH.precommit.exists():
         return
     yaml = YAML(typ="rt")
-    ruff_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
+    lint_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
+    format_hook = Hook(id="ruff-format")
     if has_notebooks:
-        types = yaml.load("[python, pyi, jupyter]")
-        ruff_hook["types_or"] = types
+        types_str = "[python, pyi, jupyter]"
+        lint_hook["types_or"] = yaml.load(types_str)  # use twice to avoid YAML anchor
+        format_hook["types_or"] = yaml.load(types_str)
     expected_repo = Repo(
         repo="https://github.com/astral-sh/ruff-pre-commit",
         rev="",
-        hooks=[ruff_hook],
+        hooks=[lint_hook, format_hook],
     )
     update_single_hook_precommit_repo(expected_repo)
 
@@ -594,7 +636,7 @@ def _update_lint_dependencies() -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    add_dependency(ruff, optional_key=["lint", "sty", "dev"])
+    add_dependency(ruff, optional_key=["sty", "dev"])
 
 
 def _update_vscode_settings() -> None:
@@ -607,7 +649,8 @@ def _update_vscode_settings() -> None:
             "[python]": {
                 "editor.codeActionsOnSave": {
                     "source.organizeImports": "explicit",
-                }
+                },
+                "editor.defaultFormatter": "charliermarsh.ruff",
             },
             "ruff.enable": True,
             "ruff.organizeImports": True,
