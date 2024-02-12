@@ -29,11 +29,12 @@ def _update_precommit_config(no_python: bool) -> None:
         alias="ec",
     )
     if not no_python:
-        excludes = dedent(R"""
+        msg = R"""
         (?x)^(
           .*\.py
         )$
-        """).strip()
+        """
+        excludes = dedent(msg).strip()
         hook["exclude"] = FoldedScalarString(excludes)
 
     expected_hook = Repo(

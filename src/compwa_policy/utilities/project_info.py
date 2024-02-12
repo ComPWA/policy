@@ -146,7 +146,7 @@ def get_supported_python_versions(
 def get_repo_url(pyproject: TOMLDocument | None = None) -> str:
     project_info = get_project_info(pyproject)
     if not project_info.urls:
-        msg = dedent("""
+        msg = """
             pyproject.toml or setup.cfg does not contain project URLSs. Should be
             something like:
 
@@ -154,7 +154,8 @@ def get_repo_url(pyproject: TOMLDocument | None = None) -> str:
             Documentation = "https://ampform.rtfd.io"
             Source = "https://github.com/ComPWA/ampform"
             Tracker = "https://github.com/ComPWA/ampform/issues"
-        """)
+        """
+        msg = dedent(msg)
         raise PrecommitError(msg)
     source_url = project_info.urls.get("Source")
     if source_url is None:

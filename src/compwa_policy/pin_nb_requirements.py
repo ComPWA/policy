@@ -126,11 +126,12 @@ def _check_pip_requirements(filename: str, requirements: list[str]) -> None:
             )
             for req in unpinned_requirements:
                 msg += f"\n   - {req}"
-            msg += dedent(f"""
+            msg_unformatted = f"""
             Get the currently installed versions with:
 
                 python3 -m pip freeze | grep -iE '{"|".join(sorted(unpinned_requirements))}'
-            """)
+            """
+            msg += dedent(msg_unformatted)
             raise PrecommitError(msg)
 
 

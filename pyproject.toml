@@ -192,6 +192,7 @@ exclude = [
     "**/__pycache__",
     "**/_build",
 ]
+reportArgumentType = false
 reportGeneralTypeIssues = false
 reportIncompatibleMethodOverride = false
 reportMissingParameterType = false
@@ -200,6 +201,7 @@ reportMissingTypeStubs = false
 reportOverlappingOverload = false
 reportPrivateImportUsage = false
 reportPrivateUsage = false
+reportReturnType = false
 reportUnboundVariable = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
@@ -315,6 +317,7 @@ split-on-trailing-comma = false
     "D",
     "INP001",
     "PGH001",
+    "PLC2701",
     "PLR0913",
     "PLR2004",
     "PLR6301",

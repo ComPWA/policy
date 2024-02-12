@@ -93,16 +93,17 @@ def test_open_config_exception():
 
 
 def test_open_config_from_stream():
-    content = dedent("""\
-        [section1]
-        option1 =
-            some_setting = false
-        option2 = two
+    msg = """\
+    [section1]
+    option1 =
+        some_setting = false
+    option2 = two
 
-        [section2]
-        option3 =
-            =src
-        """)
+    [section2]
+    option3 =
+        =src
+    """
+    content = dedent(msg)
     print(content)
     stream = io.StringIO(content)
     cfg = open_config(stream)

@@ -21,10 +21,11 @@ POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
 
 
 def test_add_dependency():
-    stream = io.StringIO(dedent("""
+    msg = """
     [project]
     name = "my-package"
-    """))
+    """
+    stream = io.StringIO(dedent(msg))
     stream.seek(0)
     dependency = "attrs"
     with pytest.raises(
@@ -34,24 +35,30 @@ def test_add_dependency():
         add_dependency(dependency, source=stream)
     result = stream.getvalue()
     print(result)  # run with pytest -s
-    assert result == dedent("""
+    msg = """
     [project]
     name = "my-package"
     dependencies = ["attrs"]
-    """)
+    """
+    assert result == dedent(msg)
 
 
 def test_add_dependency_nested():
-    stream = io.StringIO(dedent("""
+    stream = io.StringIO(
+        dedent(
+            """
     [project]
     name = "my-package"
-    """))
+    """
+        )
+    )
     stream.seek(0)
     with pytest.raises(PrecommitError):
         add_dependency("ruff", optional_key=["lint", "sty", "dev"], source=stream)
     result = stream.getvalue()
     print(result)  # run with pytest -s
-    assert result == dedent("""
+    assert result == dedent(
+        """
     [project]
     name = "my-package"
 
@@ -59,30 +66,38 @@ def test_add_dependency_nested():
     lint = ["ruff"]
     sty = ["my-package[lint]"]
     dev = ["my-package[sty]"]
-    """)
+    """
+    )
 
 
 def test_add_dependency_optional():
-    stream = io.StringIO(dedent("""
+    stream = io.StringIO(
+        dedent(
+            """
     [project]
     name = "my-package"
-    """))
+    """
+        )
+    )
     stream.seek(0)
     with pytest.raises(PrecommitError):
         add_dependency("ruff", optional_key="lint", source=stream)
     result = stream.getvalue()
     print(result)  # run with pytest -s
-    assert result == dedent("""
+    assert result == dedent(
+        """
     [project]
     name = "my-package"
 
     [project.optional-dependencies]
     lint = ["ruff"]
-    """)
+    """
+    )
 
 
 def test_edit_toml():
-    src = dedent("""
+    src = dedent(
+        """
     [owner]
     name = "John Smith"
     age = 30
@@ -90,7 +105,8 @@ def test_edit_toml():
     [owner.address]
     city = "Wonderland"
     street = "123 Main St"
-    """)
+    """
+    )
     config = load_pyproject(src)
 
     address = get_sub_table(config, "owner.address")
@@ -104,7 +120,8 @@ def test_edit_toml():
     write_pyproject(config, target=stream)
     result = stream.getvalue()
     print(indent(result, prefix=4 * " "))  # run with pytest -s
-    assert result == dedent("""
+    assert result == dedent(
+        """
     [owner]
     name = "John Smith"
     age = 30
@@ -120,14 +137,19 @@ def test_edit_toml():
     black = [
         "--line-length=79",
     ]
-    """)
+    """
+    )
 
 
 def test_get_package_name_safe():
-    correct_input = io.StringIO(dedent("""
+    correct_input = io.StringIO(
+        dedent(
+            """
     [project]
     name = "my-package"
-    """))
+    """
+        )
+    )
     assert get_package_name_safe(correct_input) == "my-package"
 
     with pytest.raises(PrecommitError, match=r"^Please provide a name for the package"):
@@ -147,7 +169,8 @@ def test_load_pyproject(path: Path | None):
 
 
 def test_load_pyproject_str():
-    src = dedent("""
+    src = dedent(
+        """
     [build-system]
     build-backend = "setuptools.build_meta"
     requires = [
@@ -162,7 +185,8 @@ def test_load_pyproject_str():
     ]
     name = "my-package"
     requires-python = ">=3.7"
-    """)
+    """
+    )
     pyproject = load_pyproject(src)
     assert isinstance(pyproject["build-system"], Table)
     assert pyproject["project"]["dependencies"] == ["attrs", "sympy >=1.10"]  # type: ignore[index]
