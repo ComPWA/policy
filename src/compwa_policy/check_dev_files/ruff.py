@@ -101,7 +101,7 @@ def _remove_black() -> None:
         "ms-python.black-formatter",
         unwanted=True,
     )
-    executor(___uninstall, "black", ignore=["jupyter"])
+    executor(___uninstall, "black", ignore=["doc", "jupyter"])
     executor(remove_badge, r".*https://github\.com/psf.*/black.*")
     executor(remove_precommit_hook, "black-jupyter")
     executor(remove_precommit_hook, "black")
