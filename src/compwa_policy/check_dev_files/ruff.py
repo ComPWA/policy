@@ -101,6 +101,7 @@ def _remove_black() -> None:
         "ms-python.black-formatter",
         unwanted=True,
     )
+    executor(__remove_tool_table, "black")
     executor(___uninstall, "black", ignore=["doc", "jupyter", "test"])
     executor(remove_badge, r".*https://github\.com/psf.*/black.*")
     executor(remove_precommit_hook, "black-jupyter")
@@ -126,9 +127,9 @@ def _remove_flake8() -> None:
 
 def _remove_isort() -> None:
     executor = Executor()
-    executor(__remove_isort_settings)
     executor(__remove_nbqa_option, "black")
     executor(__remove_nbqa_option, "isort")
+    executor(__remove_tool_table, "isort")
     executor(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
     executor(remove_precommit_hook, "isort")
     executor(remove_precommit_hook, "nbqa-isort")
@@ -151,13 +152,13 @@ def __remove_nbqa_option(option: str) -> None:
     raise PrecommitError(msg)
 
 
-def __remove_isort_settings() -> None:
+def __remove_tool_table(tool_table: str) -> None:
     pyproject = load_pyproject()
-    if pyproject.get("tool", {}).get("isort") is None:
+    if pyproject.get("tool", {}).get(tool_table) is None:
         return
-    pyproject["tool"].remove("isort")  # type: ignore[union-attr]
+    pyproject["tool"].remove(tool_table)  # type: ignore[union-attr]
     write_pyproject(pyproject)
-    msg = f"Removed [tool.isort] section from {CONFIG_PATH.pyproject}"
+    msg = f"Removed [tool.{tool_table}] section from {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
 
 
