@@ -101,7 +101,7 @@ def _remove_black() -> None:
         "ms-python.black-formatter",
         unwanted=True,
     )
-    executor(___uninstall, "black")
+    executor(___uninstall, "black", ignore=["jupyter"])
     executor(remove_badge, r".*https://github\.com/psf.*/black.*")
     executor(remove_precommit_hook, "black-jupyter")
     executor(remove_precommit_hook, "black")
@@ -187,28 +187,30 @@ def _remove_pylint() -> None:
     executor.finalize()
 
 
-def ___uninstall(package: str) -> None:
-    ___uninstall_from_setup_cfg(package)
-    ___uninstall_from_pyproject_toml(package)
+def ___uninstall(package: str, ignore: Iterable[str] | None = None) -> None:
+    ignored_sections = set() if ignore is None else set(ignore)
+    ___uninstall_from_setup_cfg(package, ignored_sections)
+    ___uninstall_from_pyproject_toml(package, ignored_sections)
 
 
-def ___uninstall_from_setup_cfg(package: str) -> None:
+def ___uninstall_from_setup_cfg(package: str, ignored_sections: set[str]) -> None:
     if not os.path.exists(CONFIG_PATH.setup_cfg):
         return
     cfg = open_setup_cfg()
     section = "options.extras_require"
     if not cfg.has_section(section):
         return
-    for option in cfg[section]:
-        if not cfg.has_option(section, option):
+    extras_require = cfg[section]
+    for option in extras_require:
+        if option in ignored_sections:
             continue
-        if package not in cfg.get(section, option):
+        if package not in cfg.get(section, option, raw=True):
             continue
         msg = f'Please remove {package} from the "{section}" section of setup.cfg'
         raise PrecommitError(msg)
 
 
-def ___uninstall_from_pyproject_toml(package: str) -> None:
+def ___uninstall_from_pyproject_toml(package: str, ignored_sections: set[str]) -> None:  # noqa: C901
     if not os.path.exists(CONFIG_PATH.pyproject):
         return
     pyproject = load_pyproject()
@@ -222,7 +224,9 @@ def ___uninstall_from_pyproject_toml(package: str) -> None:
         updated = True
     optional_dependencies = project.get("optional-dependencies")
     if optional_dependencies is not None:
-        for values in optional_dependencies.values():
+        for section, values in optional_dependencies.items():
+            if section in ignored_sections:
+                continue
             if package in values:
                 values.remove(package)
                 updated = True
