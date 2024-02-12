@@ -14,8 +14,14 @@ def main() -> None:
     if not os.path.exists(path):
         return
     os.remove(path)
-    msg = dedent(f"""
+    msg = (
+        dedent(
+            f"""
     Remove outdated {path}. Commitlint is now configured through
     https://github.com/ComPWA/commitlint-config.
-    """).strip().replace("\n", " ")
+    """
+        )
+        .strip()
+        .replace("\n", " ")
+    )
     raise PrecommitError(msg)

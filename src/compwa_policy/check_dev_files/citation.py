@@ -45,10 +45,12 @@ def convert_zenodo_json() -> None:
     citation_cff = _convert_zenodo(zenodo)
     _write_citation_cff(citation_cff)
     CONFIG_PATH.zenodo.unlink()
-    msg = dedent(f"""
+    msg = dedent(
+        f"""
     Converted {CONFIG_PATH.zenodo} to a {CONFIG_PATH.citation} config
       For more info, see https://citation-file-format.github.io
-    """).strip()
+    """
+    ).strip()
     raise PrecommitError(msg)
 
 
@@ -159,11 +161,13 @@ def check_citation_keys() -> None:
     missing_keys = expected - existing
     if missing_keys:
         sorted_keys = sorted(missing_keys)
-        msg = dedent(f"""
+        msg = dedent(
+            f"""
             {CONFIG_PATH.citation} is missing the following keys: {', '.join(sorted_keys)}
               More info on the keys can be found on
               https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
-        """).strip()
+        """
+        ).strip()
         raise PrecommitError(msg)
 
 

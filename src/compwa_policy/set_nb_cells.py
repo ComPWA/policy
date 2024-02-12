@@ -120,10 +120,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 @lru_cache(maxsize=1)
 def __get_install_cell() -> str:
     package_name = get_pypi_name()
-    return dedent(f"""
+    return dedent(
+        f"""
     # WARNING: advised to install a specific version, e.g. {package_name}==0.1.2
     %pip install -q {package_name}
-    """)
+    """
+    )
 
 
 def _update_cell(
