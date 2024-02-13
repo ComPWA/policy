@@ -646,6 +646,10 @@ def _update_vscode_settings() -> None:
     executor(
         vscode.update_settings,
         {
+            "notebook.codeActionsOnSave": {
+                "notebook.source.organizeImports": "explicit"
+            },
+            "notebook.formatOnSave.enabled": True,
             "[python]": {
                 "editor.codeActionsOnSave": {
                     "source.organizeImports": "explicit",
@@ -653,6 +657,7 @@ def _update_vscode_settings() -> None:
                 "editor.defaultFormatter": "charliermarsh.ruff",
             },
             "ruff.enable": True,
+            "ruff.importStrategy": "fromEnvironment",
             "ruff.organizeImports": True,
         },
     )
