@@ -646,6 +646,10 @@ def _update_vscode_settings() -> None:
     executor(
         vscode.update_settings,
         {
+            "notebook.codeActionsOnSave": {
+                "notebook.source.organizeImports": "explicit"
+            },
+            "notebook.formatOnSave.enabled": True,
             "[python]": {
                 "editor.codeActionsOnSave": {
                     "source.organizeImports": "explicit",
