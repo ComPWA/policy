@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -18,6 +17,7 @@ from .cfg import open_config
 
 if TYPE_CHECKING:
     from configparser import ConfigParser
+    from pathlib import Path
 
     from tomlkit import TOMLDocument
 
@@ -172,7 +172,7 @@ def open_setup_cfg() -> ConfigParser:
 
 
 def get_constraints_file(python_version: PythonVersion) -> Path | None:
-    path = Path(f".constraints/py{python_version}.txt")
+    path = CONFIG_PATH.pip_constraints / f"py{python_version}.txt"
     if path.exists():
         return path
     return None
