@@ -253,6 +253,7 @@ def _move_ruff_lint_config() -> None:
         "pep8-naming",
         "per-file-ignores",
         "pydocstyle",
+        "select",
         "task-tags",
     }
     pyproject = load_pyproject()
