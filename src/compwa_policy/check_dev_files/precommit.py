@@ -19,6 +19,7 @@ from compwa_policy.utilities.precommit import (
     load_precommit_config,
     load_roundtrip_precommit_config,
 )
+from compwa_policy.utilities.project_info import get_supported_python_versions
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
@@ -77,7 +78,7 @@ def _update_precommit_ci_commit_msg() -> None:
     precommit_ci = config.get("ci")
     if precommit_ci is None:
         return
-    if CONFIG_PATH.pip_constraints.exists():
+    if __has_constraint_files():
         expected_msg = "MAINT: update pip constraints and pre-commit"
     else:
         expected_msg = "MAINT: autoupdate pre-commit hooks"
@@ -88,6 +89,13 @@ def _update_precommit_ci_commit_msg() -> None:
         yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Updated ci.{key} in {CONFIG_PATH.precommit} to {expected_msg!r}"
         raise PrecommitError(msg)
+
+
+def __has_constraint_files() -> bool:
+    python_versions = get_supported_python_versions()
+    return any(
+        (CONFIG_PATH.pip_constraints / f"py{v}.txt").exists() for v in python_versions
+    )
 
 
 def _update_precommit_ci_skip() -> None:
