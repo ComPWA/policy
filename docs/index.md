@@ -20,7 +20,6 @@ repos:
       - id: colab-toc-visible
       - id: fix-nbformat-version
       - id: format-setup-cfg
-      - id: pin-nb-requirements
       - id: set-nb-cells
 ```
 
@@ -38,7 +37,6 @@ The **ComPWA/policy** repository provides the following hooks:
 - {mod}`colab-toc-visible <.colab_toc_visible>`
 - {mod}`fix-nbformat-version <.fix_nbformat_version>`
 - {mod}`format-setup-cfg <.format_setup_cfg>`
-- {mod}`pin-nb-requirements <.pin_nb_requirements>`
 - {mod}`set-nb-cells <.set_nb_cells>`
 
 ```{toctree}
