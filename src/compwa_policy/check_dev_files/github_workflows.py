@@ -29,10 +29,12 @@ if TYPE_CHECKING:
     from ruamel.yaml.main import YAML
 
 
-def main(  # noqa: PLR0917
+def main(
+    *,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     github_pages: bool,
+    keep_pr_linting: bool,
     no_macos: bool,
     no_pypi: bool,
     no_version_branches: bool,
@@ -54,7 +56,8 @@ def main(  # noqa: PLR0917
         skip_tests,
         test_extras,
     )
-    executor(_update_pr_linting)
+    if not keep_pr_linting:
+        executor(_update_pr_linting)
     executor(_recommend_vscode_extension)
     executor.finalize()
 
