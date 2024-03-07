@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import time
 from typing import Callable, TypeVar
 
 import attr
@@ -32,11 +33,19 @@ class Executor:
     ) -> T | None:
         """Execute a function and collect any `.PrecommitError` exceptions."""
         try:
-            return function(*args, **kwargs)
+            start_time = time.time()
+            result = function(*args, **kwargs)
+            end_time = time.time()
+            execution_time = end_time - start_time
+            if execution_time > 0.1:  # noqa: PLR2004
+                function_name = f"{function.__module__}.{function.__name__}"
+                print(f"{execution_time:>7.2f} s  {function_name}")  # noqa: T201
         except PrecommitError as exception:
             error_message = str("\n".join(exception.args))
-        self.error_messages.append(error_message)
-        return None
+            self.error_messages.append(error_message)
+            return None
+        else:
+            return result
 
     def finalize(self, exception: bool = True) -> int:
         error_msg = self.merge_messages()
