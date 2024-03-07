@@ -66,10 +66,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             allow_deprecated=args.allow_deprecated_workflows,
             doc_apt_packages=_to_list(args.doc_apt_packages),
             github_pages=args.github_pages,
-            python_version=dev_python_version,
+            keep_pr_linting=args.keep_pr_linting,
             no_macos=args.no_macos,
             no_pypi=args.no_pypi,
             no_version_branches=args.no_version_branches,
+            python_version=dev_python_version,
             single_threaded=args.pytest_single_threaded,
             skip_tests=_to_list(args.ci_skipped_tests),
             test_extras=_to_list(args.ci_test_extras),
@@ -157,6 +158,12 @@ def _create_argparse() -> ArgumentParser:
     parser.add_argument(
         "--keep-issue-templates",
         help="Do not remove the .github/ISSUE_TEMPLATE directory",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
+        "--keep-pr-linting",
+        help="Do not overwrite the PR linting workflow",
         action="store_true",
         default=False,
     )
