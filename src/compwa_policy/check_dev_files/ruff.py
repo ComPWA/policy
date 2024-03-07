@@ -249,11 +249,11 @@ def _move_ruff_lint_config() -> None:
     lint_option_keys = {
         "extend-select",
         "ignore",
-        "task-tags",
         "isort",
-        "pydocstyle",
         "pep8-naming",
         "per-file-ignores",
+        "pydocstyle",
+        "task-tags",
     }
     pyproject = load_pyproject()
     global_settings = get_sub_table(pyproject, "tool.ruff", create=True)
