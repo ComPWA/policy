@@ -9,11 +9,13 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.project_info import PythonVersion, get_constraints_file
+from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
+    from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
 def main(python_version: PythonVersion) -> None:

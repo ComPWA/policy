@@ -1,11 +1,7 @@
 """Update the developer setup when using Jupyter notebooks."""
 
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.project_info import (
-    get_supported_python_versions,
-    is_package,
-)
-from compwa_policy.utilities.pyproject import add_dependency
+from compwa_policy.utilities.pyproject import PyprojectTOML, get_build_system
 
 
 def main() -> None:
@@ -13,12 +9,14 @@ def main() -> None:
 
 
 def _update_dev_requirements() -> None:
-    if not is_package():
+    if get_build_system() is None:
         return
-    if "3.6" in get_supported_python_versions():
+    pyproject = PyprojectTOML.load()
+    supported_python_versions = pyproject.get_supported_python_versions()
+    if "3.6" in supported_python_versions:
         return
-    hierarchy = ["jupyter", "dev"]
-    dependencies = [
+    executor = Executor()
+    for package in [
         "black",
         "isort",
         "jupyterlab",
@@ -28,8 +26,6 @@ def _update_dev_requirements() -> None:
         "jupyterlab-myst",
         "python-lsp-ruff",
         "python-lsp-server[rope]",
-    ]
-    executor = Executor()
-    for dependency in dependencies:
-        executor(add_dependency, dependency, optional_key=hierarchy)
+    ]:
+        executor(pyproject.add_dependency, package, optional_key=["jupyter", "dev"])
     executor.finalize()

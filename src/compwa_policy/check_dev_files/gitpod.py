@@ -7,10 +7,10 @@ import yaml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
-from compwa_policy.utilities.project_info import (
+from compwa_policy.utilities.pyproject import (
+    PyprojectTOML,
     PythonVersion,
     get_constraints_file,
-    get_repo_url,
 )
 from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.yaml import write_yaml
@@ -37,7 +37,7 @@ def main(no_gitpod: bool, python_version: PythonVersion) -> None:
         error_message += ". Problem has been fixed."
         raise PrecommitError(error_message)
     try:
-        repo_url = get_repo_url()
+        repo_url = PyprojectTOML.load().get_repo_url()
         add_badge(
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )

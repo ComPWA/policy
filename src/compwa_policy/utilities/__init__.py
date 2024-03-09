@@ -29,6 +29,7 @@ class _ConfigFilePaths(NamedTuple):
     prettier: Path = Path(".prettierrc")
     prettier_ignore: Path = Path(".prettierignore")
     pyproject: Path = Path("pyproject.toml")
+    pytest_ini: Path = Path("pytest.ini")
     readme: Path = Path("README.md")
     readthedocs: Path = Path(".readthedocs.yml")
     release_drafter_config: Path = Path(".github/release-drafter.yml")

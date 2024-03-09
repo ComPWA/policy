@@ -2,7 +2,6 @@
 
 from ruamel.yaml import YAML
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
@@ -11,22 +10,17 @@ from compwa_policy.utilities.precommit import (
     remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.project_info import get_supported_python_versions
-from compwa_policy.utilities.pyproject import (
-    complies_with_subset,
-    get_sub_table,
-    load_pyproject,
-    to_toml_array,
-    write_pyproject,
-)
+from compwa_policy.utilities.pyproject import PyprojectTOML, complies_with_subset
+from compwa_policy.utilities.toml import to_toml_array
 
 
 def main(has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
+    pyproject = PyprojectTOML.load()
     executor = Executor()
-    executor(_remove_outdated_settings)
-    executor(_update_black_settings)
+    executor(_remove_outdated_settings, pyproject)
+    executor(_update_black_settings, pyproject)
     executor(
         remove_precommit_hook,
         hook_id="black",
@@ -52,12 +46,12 @@ def main(has_notebooks: bool) -> None:
         },
     )
     executor(remove_precommit_hook, "nbqa-black")
+    executor(pyproject.finalize)
     executor.finalize()
 
 
-def _remove_outdated_settings() -> None:
-    pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.black", create=True)
+def _remove_outdated_settings(pyproject: PyprojectTOML) -> None:
+    settings = pyproject.get_table("tool.black", create=True)
     forbidden_options = ("line-length",)
     removed_options = set()
     for option in forbidden_options:
@@ -65,18 +59,16 @@ def _remove_outdated_settings() -> None:
             removed_options.add(option)
             settings.remove(option)
     if removed_options:
-        write_pyproject(pyproject)
         msg = (
             f"Removed {', '.join(sorted(removed_options))} option from black"
             f" configuration in {CONFIG_PATH.pyproject}"
         )
-        raise PrecommitError(msg)
+        pyproject.modifications.append(msg)
 
 
-def _update_black_settings() -> None:
-    pyproject = load_pyproject()
-    settings = get_sub_table(pyproject, "tool.black", create=True)
-    versions = get_supported_python_versions()
+def _update_black_settings(pyproject: PyprojectTOML) -> None:
+    settings = pyproject.get_table("tool.black", create=True)
+    versions = pyproject.get_supported_python_versions()
     target_version = to_toml_array(sorted("py" + v.replace(".", "") for v in versions))
     minimal_settings = {
         "preview": True,
@@ -84,9 +76,8 @@ def _update_black_settings() -> None:
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        write_pyproject(pyproject)
         msg = f"Updated black configuration in {CONFIG_PATH.pyproject}"
-        raise PrecommitError(msg)
+        pyproject.modifications.append(msg)
 
 
 def _update_precommit_repo(has_notebooks: bool) -> None:

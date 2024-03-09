@@ -39,7 +39,7 @@ from . import (
 )
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.project_info import PythonVersion
+    from compwa_policy.utilities.pyproject import PythonVersion
 
 
 def main(argv: Sequence[str] | None = None) -> int:

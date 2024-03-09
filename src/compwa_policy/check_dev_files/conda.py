@@ -8,10 +8,10 @@ from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.project_info import (
+from compwa_policy.utilities.pyproject import (
     PythonVersion,
+    get_build_system,
     get_constraints_file,
-    is_package,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 def main(python_version: PythonVersion) -> None:
     if not CONFIG_PATH.conda.exists():
         return
-    if not is_package():
+    if get_build_system() is None:
         return
     yaml = create_prettier_round_trip_yaml()
     conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)

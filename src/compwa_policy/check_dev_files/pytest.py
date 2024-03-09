@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 import tomlkit
@@ -12,32 +11,27 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import (
-    get_sub_table,
-    load_pyproject,
-    to_toml_array,
-    write_pyproject,
-)
+from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from tomlkit.items import Array
 
-__PYTEST_INI_PATH = "pytest.ini"
-
 
 def main() -> None:
+    pyproject = PyprojectTOML.load()
     executor = Executor()
-    executor(_merge_coverage_into_pyproject)
-    executor(_merge_pytest_into_pyproject)
-    executor(_remove_pytest_ini)
-    executor(_update_settings)
+    executor(_merge_coverage_into_pyproject, pyproject)
+    executor(_merge_pytest_into_pyproject, pyproject)
+    executor(_update_settings, pyproject)
+    executor(pyproject.finalize)
     executor.finalize()
 
 
-def _merge_coverage_into_pyproject() -> None:
-    if not os.path.exists(__PYTEST_INI_PATH):
+def _merge_coverage_into_pyproject(pyproject: PyprojectTOML) -> None:
+    if not CONFIG_PATH.pytest_ini.exists():
         return
-    pytest_ini = open_config(__PYTEST_INI_PATH)
+    pytest_ini = open_config(CONFIG_PATH.pytest_ini)
     section_name = "coverage:run"
     if not pytest_ini.has_section(section_name):
         return
@@ -47,50 +41,37 @@ def _merge_coverage_into_pyproject() -> None:
             coverage_config[key] = bool(value)
         if key == "source" and isinstance(value, str):
             coverage_config[key] = [value]
-    pyproject = load_pyproject()
-    tool_table = get_sub_table(pyproject, "tool.coverage.run", create=True)
+    tool_table = pyproject.get_table("tool.coverage.run", create=True)
     tool_table.update(coverage_config)
-    write_pyproject(pyproject)
-    msg = f"Moved Coverage.py configuration to {CONFIG_PATH.pyproject}"
-    raise PrecommitError(msg)
+    msg = f"Merged Coverage.py configuration into {CONFIG_PATH.pyproject}"
+    pyproject.modifications.append(msg)
 
 
-def _merge_pytest_into_pyproject() -> None:
-    if not os.path.exists(__PYTEST_INI_PATH):
+def _merge_pytest_into_pyproject(pyproject: PyprojectTOML) -> None:
+    if not CONFIG_PATH.pytest_ini.exists():
         return
-    with open(__PYTEST_INI_PATH) as stream:
+    with open(CONFIG_PATH.pytest_ini) as stream:
         original_contents = stream.read()
-    toml_str = Translator().translate(original_contents, profile_name=__PYTEST_INI_PATH)
+    toml_str = Translator().translate(original_contents, profile_name="pytest.ini")
     config = tomlkit.parse(toml_str)
     config.pop("coverage:run", None)
-    pyproject = load_pyproject()
-    tool_table = get_sub_table(pyproject, "tool", create=True)
+    tool_table = pyproject.get_table("tool", create=True)
     tool_table.update(config)
-    write_pyproject(pyproject)
+    CONFIG_PATH.pytest_ini.unlink()
     msg = f"Moved pytest configuration to {CONFIG_PATH.pyproject}"
     raise PrecommitError(msg)
 
 
-def _remove_pytest_ini() -> None:
-    if not os.path.exists(__PYTEST_INI_PATH):
+def _update_settings(pyproject: PyprojectTOML) -> None:
+    if not pyproject.has_table("tool.pytest.ini_options"):
         return
-    os.remove(__PYTEST_INI_PATH)
-    msg = f"Removed {__PYTEST_INI_PATH}"
-    raise PrecommitError(msg)
-
-
-def _update_settings() -> None:
-    pyproject = load_pyproject()
-    if pyproject.get("tool", {}).get("pytest", {}).get("ini_options") is None:
-        return
-    config = get_sub_table(pyproject, "tool.pytest.ini_options")
+    config = pyproject.get_table("tool.pytest.ini_options")
     existing = config.get("addopts", "")
     expected = __get_expected_addopts(existing)
     if isinstance(existing, str) or sorted(existing) != sorted(expected):
         config["addopts"] = expected
-        write_pyproject(pyproject)
         msg = f"Updated tool.pytest.ini_options.addopts under {CONFIG_PATH.pyproject}"
-        raise PrecommitError(msg)
+        pyproject.modifications.append(msg)
 
 
 def __get_expected_addopts(existing: str | Array) -> Array:

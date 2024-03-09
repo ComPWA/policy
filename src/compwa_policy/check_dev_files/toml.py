@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 from glob import glob
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import tomlkit
 from ruamel.yaml import YAML
@@ -18,28 +17,21 @@ from compwa_policy.utilities.precommit import (
     Repo,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.pyproject import (
-    get_sub_table,
-    load_pyproject,
-    to_toml_array,
-    write_pyproject,
-)
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.toml import to_toml_array
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
-    "taplo.toml",
-]
-__TRIGGER_FILES: list[Path | str] = [
-    "pyproject.toml",
-    CONFIG_PATH.taplo,
-    *__INCORRECT_TAPLO_CONFIG_PATHS,
+    Path("taplo.toml"),
 ]
 
 
 def main() -> None:
-    if not any(os.path.exists(f) for f in __TRIGGER_FILES):
+    trigger_files = [
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.taplo,
+        *__INCORRECT_TAPLO_CONFIG_PATHS,
+    ]
+    if not any(f.exists() for f in trigger_files):
         return
     executor = Executor()
     executor(_rename_taplo_config)
@@ -52,8 +44,7 @@ def main() -> None:
 
 
 def _update_tomlsort_config() -> None:
-    # cspell:ignore tomlsort
-    pyproject = load_pyproject()
+    pyproject = PyprojectTOML.load()
     sort_first = [
         "build-system",
         "project",
@@ -69,13 +60,12 @@ def _update_tomlsort_config() -> None:
         spaces_indent_inline_array=4,
         trailing_comma_inline_array=True,
     )
-    tool_table = get_sub_table(pyproject, "tool", create=True)
+    tool_table = pyproject.get_table("tool", create=True)
     if tool_table.get("tomlsort") == expected_config:
         return
     tool_table["tomlsort"] = expected_config
-    write_pyproject(pyproject)
-    msg = "Updated toml-sort configuration"
-    raise PrecommitError(msg)
+    pyproject.modifications.append("Updated toml-sort configuration")
+    pyproject.finalize()
 
 
 def _update_tomlsort_hook() -> None:
@@ -99,7 +89,7 @@ def _update_tomlsort_hook() -> None:
 
 def _rename_taplo_config() -> None:
     for path in __INCORRECT_TAPLO_CONFIG_PATHS:
-        if not os.path.exists(path):
+        if not path.exists():
             continue
         shutil.move(path, CONFIG_PATH.taplo)
         msg = f"Renamed {path} to {CONFIG_PATH.taplo}"
