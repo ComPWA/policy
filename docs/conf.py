@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from sphinx_api_relink.helpers import get_package_version
+from sphinx_api_relink.helpers import get_branch_name, get_package_version
 
+BRANCH = get_branch_name()
 ORGANIZATION = "ComPWA"
 REPO_NAME = "policy"
 REPO_TITLE = "ComPWA repository policy"
@@ -63,13 +64,30 @@ html_sourcelink_suffix = ""
 html_static_path = ["_static"]
 html_theme = "sphinx_book_theme"
 html_theme_options = {
+    "icon_links": [
+        {
+            "name": "Common Partial Wave Analysis",
+            "url": "https://compwa.github.io",
+            "icon": "_static/favicon.ico",
+            "type": "local",
+        },
+        {
+            "name": "GitHub",
+            "url": f"https://github.com/{ORGANIZATION}/{REPO_NAME}",
+            "icon": "fa-brands fa-github",
+        },
+    ],
     "logo": {"text": "ComPWA policy"},
-    "repository_url": f"https://github.com/{ORGANIZATION}/{REPO_NAME}",
-    "repository_branch": "main",
     "path_to_docs": "docs",
-    "use_repository_button": True,
+    "repository_branch": BRANCH,
+    "repository_url": f"https://github.com/{ORGANIZATION}/{REPO_NAME}",
     "show_navbar_depth": 2,
     "show_toc_level": 2,
+    "use_download_button": False,
+    "use_edit_page_button": True,
+    "use_issues_button": True,
+    "use_repository_button": True,
+    "use_source_button": True,
 }
 html_title = REPO_TITLE
 intersphinx_mapping = {
