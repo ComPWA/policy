@@ -3,16 +3,11 @@
 from __future__ import annotations
 
 import os
-from textwrap import dedent
 from typing import TYPE_CHECKING, Iterable
 
 from ruamel.yaml import YAML
 from tomlkit.items import Array, Table
 
-from compwa_policy.check_dev_files.setup_cfg import (
-    has_pyproject_build_system,
-    has_setup_cfg_build_system,
-)
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
@@ -23,9 +18,9 @@ from compwa_policy.utilities.precommit import (
     update_single_hook_precommit_repo,
 )
 from compwa_policy.utilities.project_info import (
+    get_build_system,
     get_project_info,
     get_supported_python_versions,
-    open_setup_cfg,
 )
 from compwa_policy.utilities.pyproject import (
     add_dependency,
@@ -47,7 +42,6 @@ def main(has_notebooks: bool) -> None:
         add_badge,
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
     )
-    executor(_check_setup_cfg)
     executor(___uninstall, "radon")
     executor(_remove_black)
     executor(_remove_flake8)
@@ -60,38 +54,6 @@ def main(has_notebooks: bool) -> None:
     executor(_update_lint_dependencies)
     executor(_update_vscode_settings)
     executor.finalize()
-
-
-def _check_setup_cfg() -> None:
-    if not has_setup_cfg_build_system():
-        return
-    cfg = open_setup_cfg()
-    extras_require = "options.extras_require"
-    if not cfg.has_section(extras_require):
-        msg = f"Please list ruff under a section [{extras_require}] in setup.cfg"
-        raise PrecommitError(msg)
-    msg = f"""\
-        Section [{extras_require}] in setup.cfg should look like this:
-
-        [{extras_require}]
-        ...
-        sty =
-            ...
-            ruff
-            ...
-        dev =
-            ...
-            %(sty)s
-            ...
-    """
-    msg = dedent(msg).strip()
-    for section in ("dev", "sty"):
-        if cfg.has_option(extras_require, section):
-            continue
-        raise PrecommitError(msg)
-    lint_section = cfg.get(extras_require, "sty")
-    if not any("ruff" in line for line in lint_section.split("\n")):
-        raise PrecommitError(msg)
 
 
 def _remove_black() -> None:
@@ -190,25 +152,7 @@ def _remove_pylint() -> None:
 
 def ___uninstall(package: str, ignore: Iterable[str] | None = None) -> None:
     ignored_sections = set() if ignore is None else set(ignore)
-    ___uninstall_from_setup_cfg(package, ignored_sections)
     ___uninstall_from_pyproject_toml(package, ignored_sections)
-
-
-def ___uninstall_from_setup_cfg(package: str, ignored_sections: set[str]) -> None:
-    if not os.path.exists(CONFIG_PATH.setup_cfg):
-        return
-    cfg = open_setup_cfg()
-    section = "options.extras_require"
-    if not cfg.has_section(section):
-        return
-    extras_require = cfg[section]
-    for option in extras_require:
-        if option in ignored_sections:
-            continue
-        if package not in cfg.get(section, option, raw=True):
-            continue
-        msg = f'Please remove {package} from the "{section}" section of setup.cfg'
-        raise PrecommitError(msg)
 
 
 def ___uninstall_from_pyproject_toml(package: str, ignored_sections: set[str]) -> None:  # noqa: C901
@@ -622,7 +566,7 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
 
 
 def _update_lint_dependencies() -> None:
-    if not has_pyproject_build_system():
+    if get_build_system() is None:
         return
     pyproject = load_pyproject()
     project_info = get_project_info(pyproject)

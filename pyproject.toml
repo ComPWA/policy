@@ -86,7 +86,6 @@ file = "README.md"
 check-dev-files = "compwa_policy.check_dev_files:main"
 colab-toc-visible = "compwa_policy.colab_toc_visible:main"
 fix-nbformat-version = "compwa_policy.fix_nbformat_version:main"
-format-setup-cfg = "compwa_policy.format_setup_cfg:main"
 self-check = "compwa_policy.self_check:main"
 set-nb-cells = "compwa_policy.set_nb_cells:main"
 

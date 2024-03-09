@@ -36,7 +36,6 @@ The **ComPWA/policy** repository provides the following hooks:
 - [`check-dev-files`](./check-dev-files.md)
 - {mod}`colab-toc-visible <.colab_toc_visible>`
 - {mod}`fix-nbformat-version <.fix_nbformat_version>`
-- {mod}`format-setup-cfg <.format_setup_cfg>`
 - {mod}`set-nb-cells <.set_nb_cells>`
 
 ```{toctree}
