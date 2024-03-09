@@ -32,7 +32,6 @@ from . import (
     readthedocs,
     release_drafter,
     ruff,
-    setup_cfg,
     toml,
     tox,
     update_pip_constraints,
@@ -96,7 +95,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         executor(pyupgrade.main, args.no_ruff)
         if not args.no_ruff:
             executor(ruff.main, has_notebooks)
-        executor(setup_cfg.main, args.ignore_author)
     if args.pin_requirements != "no":
         executor(
             update_pip_constraints.main,
@@ -166,12 +164,6 @@ def _create_argparse() -> ArgumentParser:
         help="Do not overwrite the PR linting workflow",
         action="store_true",
         default=False,
-    )
-    parser.add_argument(
-        "--ignore-author",
-        action="store_true",
-        default=False,
-        help="Do not update author info in setup.cfg.",
     )
     parser.add_argument(
         "--no-cspell-update",

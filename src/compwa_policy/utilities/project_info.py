@@ -1,4 +1,4 @@
-"""Helper functions for reading from and writing to :file:`setup.cfg`."""
+"""Get information about a Python package in a local directory."""
 
 from __future__ import annotations
 
@@ -113,7 +113,7 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion] | No
 
 
 def get_pypi_name(pyproject: TOMLDocument | None = None) -> str:
-    """Extract package name for PyPI from :file:`setup.cfg`.
+    """Extract package name for PyPI from :file:`setup.cfg` or :file:`pyproject.toml`.
 
     >>> get_pypi_name()
     'compwa-policy'
@@ -164,13 +164,6 @@ def get_repo_url(pyproject: TOMLDocument | None = None) -> str:
     return source_url
 
 
-def open_setup_cfg() -> ConfigParser:
-    if not CONFIG_PATH.setup_cfg.exists():
-        msg = "This repository contains no setup.cfg file"
-        raise PrecommitError(msg)
-    return open_config(CONFIG_PATH.setup_cfg)
-
-
 def get_constraints_file(python_version: PythonVersion) -> Path | None:
     path = CONFIG_PATH.pip_constraints / f"py{python_version}.txt"
     if path.exists():
@@ -181,3 +174,22 @@ def get_constraints_file(python_version: PythonVersion) -> Path | None:
 def is_package() -> bool:
     project_info = _load_project_info()
     return project_info is not None and not project_info.is_empty()
+
+
+def get_build_system() -> Literal["pyproject", "setup.cfg"] | None:
+    if _has_setup_cfg_build_system():
+        return "setup.cfg"
+    if not CONFIG_PATH.pyproject.exists():
+        return None
+    pyproject = load_pyproject()
+    project_info = ProjectInfo.from_pyproject_toml(pyproject)
+    if project_info.is_empty():
+        return None
+    return "pyproject"
+
+
+def _has_setup_cfg_build_system() -> bool:
+    if not CONFIG_PATH.setup_cfg.exists():
+        return False
+    cfg = open_config(CONFIG_PATH.setup_cfg)
+    return cfg.has_section("metadata")

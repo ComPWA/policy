@@ -19,12 +19,6 @@
   types:
     - jupyter
 
-- id: format-setup-cfg
-  name: Format setup.cfg
-  entry: format-setup-cfg
-  language: python
-  files: ^setup.cfg$
-
 - id: set-nb-cells
   name: Add or update default cells in a Jupyter notebook
   description: >
