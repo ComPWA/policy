@@ -32,19 +32,21 @@ author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
 autodoc_typehints_format = "short"
 autosectionlabel_prefix_document = True
+codeautolink_concat_default = True
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
 default_role = "py:obj"
 extensions = [
     "myst_parser",
+    "sphinx_api_relink",
+    "sphinx_codeautolink",
+    "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinx_api_relink",
-    "sphinx_copybutton",
     "sphinxarg.ext",
 ]
 generate_apidoc_package_path = f"../src/{PACKAGE_NAME}"

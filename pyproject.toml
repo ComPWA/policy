@@ -57,6 +57,7 @@ doc = [
     "sphinx-api-relink",
     "sphinx-argparse",
     "sphinx-book-theme",
+    "sphinx-codeautolink",
     "sphinx-copybutton",
 ]
 sty = [

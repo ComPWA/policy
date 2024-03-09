@@ -178,7 +178,8 @@ def sort_case_insensitive(dct):  # type: ignore[no-untyped-def]
     sorting that is the same as `the one used by VS Code
     <https://code.visualstudio.com/updates/v1_76#_jsonc-document-sorting>`_.
 
-    >>> import pytest, sys
+    >>> import sys
+    >>> import pytest
     >>> if sys.version_info >= (3, 12):
     ...     pytest.skip()
     >>> sort_case_insensitive({
