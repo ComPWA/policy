@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 def add_dependency(  # noqa: C901, PLR0912
     package: str,
     optional_key: str | Sequence[str] | None = None,
-    source: IO | (Path | (TOMLDocument | str)) = CONFIG_PATH.pyproject,
-    target: IO | (Path | str) | None = None,
+    source: IO | Path | TOMLDocument | str = CONFIG_PATH.pyproject,
+    target: IO | Path | str | None = None,
 ) -> None:
     if isinstance(source, TOMLDocument):
         pyproject = source
