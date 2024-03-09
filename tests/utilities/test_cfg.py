@@ -5,7 +5,6 @@ import pytest
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.cfg import format_config, open_config
-from compwa_policy.utilities.project_info import get_repo_url
 
 
 @pytest.mark.parametrize(
@@ -80,10 +79,6 @@ def test_format_config(unformatted: str, expected: str):
     format_config(input=io.StringIO(unformatted), output=formatted)
     formatted.seek(0)
     assert formatted.read() == dedent(expected)
-
-
-def test_get_repo_url():
-    assert get_repo_url() == "https://github.com/ComPWA/policy"
 
 
 def test_open_config_exception():

@@ -3,7 +3,6 @@
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
-from compwa_policy.utilities import natural_sorting
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
@@ -12,7 +11,7 @@ from compwa_policy.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.project_info import get_supported_python_versions
+from compwa_policy.utilities.pyproject import PyprojectTOML
 
 
 def main(no_ruff: bool) -> None:
@@ -55,13 +54,11 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     >>> __get_pyupgrade_version_argument()
     ['--py37-plus']
     """
-    supported_python_versions = sorted(
-        (v.replace(".", "") for v in get_supported_python_versions()),
-        key=natural_sorting,
-    )
+    supported_python_versions = PyprojectTOML.load().get_supported_python_versions()
     lowest_version = supported_python_versions[0]
+    version_repr = lowest_version.replace(".", "")
     yaml = YAML(typ="rt")
-    return yaml.load(f"[--py{lowest_version}-plus]")
+    return yaml.load(f"[--py{version_repr}-plus]")
 
 
 def _remove_pyupgrade() -> None:

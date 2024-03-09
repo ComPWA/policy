@@ -37,7 +37,7 @@ class Executor:
             result = function(*args, **kwargs)
             end_time = time.time()
             execution_time = end_time - start_time
-            if execution_time > 0.1:  # noqa: PLR2004
+            if execution_time > 0.05:  # noqa: PLR2004
                 function_name = f"{function.__module__}.{function.__name__}"
                 print(f"{execution_time:>7.2f} s  {function_name}")  # noqa: T201
         except PrecommitError as exception:

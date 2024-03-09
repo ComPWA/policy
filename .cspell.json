@@ -103,6 +103,7 @@
     "showtags",
     "taplo",
     "tomlkit",
+    "tomlsort",
     "unittests",
     "venv"
   ]

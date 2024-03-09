@@ -1,197 +1,88 @@
 from __future__ import annotations
 
-import io
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import dedent
 
 import pytest
 from tomlkit.items import Table
 
-from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.pyproject import (
-    add_dependency,
-    get_package_name_safe,
-    get_sub_table,
-    load_pyproject,
-    to_toml_array,
-    write_pyproject,
-)
+from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.toml import to_toml_array
 
 POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
 
 
-def test_add_dependency():
-    msg = """
-    [project]
-    name = "my-package"
-    """
-    stream = io.StringIO(dedent(msg))
-    stream.seek(0)
-    dependency = "attrs"
-    with pytest.raises(
-        PrecommitError,
-        match=f"Listed {dependency} as a dependency under pyproject.toml",
-    ):
-        add_dependency(dependency, source=stream)
-    result = stream.getvalue()
-    print(result)  # run with pytest -s
-    msg = """
-    [project]
-    name = "my-package"
-    dependencies = ["attrs"]
-    """
-    assert result == dedent(msg)
+class TestPyprojectToml:
+    @pytest.mark.parametrize("path", [None, POLICY_REPO_DIR / "pyproject.toml"])
+    def test_load_from_path(self, path: Path | None):
+        if path is None:
+            pyproject = PyprojectTOML.load()
+        else:
+            pyproject = PyprojectTOML.load(path)
+        assert "build-system" in pyproject.document
+        assert "tool" in pyproject.document
+
+    def test_load_from_str(self):
+        pyproject = PyprojectTOML.load("""
+            [build-system]
+            build-backend = "setuptools.build_meta"
+            requires = [
+                "setuptools>=61.2",
+                "setuptools_scm",
+            ]
+
+            [project]
+            dependencies = [
+                "attrs",
+                "sympy >=1.10",
+            ]
+            name = "my-package"
+            requires-python = ">=3.7"
+        """)
+        assert isinstance(pyproject.document["build-system"], Table)
+        assert pyproject.document["project"]["dependencies"] == [  # type: ignore[index]
+            "attrs",
+            "sympy >=1.10",
+        ]
+
+    def test_load_type_error(self):
+        with pytest.raises(TypeError, match="Source of type int is not supported"):
+            _ = PyprojectTOML.load(1)  # type: ignore[arg-type]
 
 
-def test_add_dependency_nested():
-    stream = io.StringIO(
-        dedent(
-            """
-    [project]
-    name = "my-package"
-    """
-        )
-    )
-    stream.seek(0)
-    with pytest.raises(PrecommitError):
-        add_dependency("ruff", optional_key=["lint", "sty", "dev"], source=stream)
-    result = stream.getvalue()
-    print(result)  # run with pytest -s
-    assert result == dedent(
-        """
-    [project]
-    name = "my-package"
+def test_edit_and_dump():
+    src = dedent("""
+        [owner]
+        name = "John Smith"
+        age = 30
+        [owner.address]
+        city = "Wonderland"
+        street = "123 Main St"
+    """)
+    pyproject = PyprojectTOML.load(src)
 
-    [project.optional-dependencies]
-    lint = ["ruff"]
-    sty = ["my-package[lint]"]
-    dev = ["my-package[sty]"]
-    """
-    )
-
-
-def test_add_dependency_optional():
-    stream = io.StringIO(
-        dedent(
-            """
-    [project]
-    name = "my-package"
-    """
-        )
-    )
-    stream.seek(0)
-    with pytest.raises(PrecommitError):
-        add_dependency("ruff", optional_key="lint", source=stream)
-    result = stream.getvalue()
-    print(result)  # run with pytest -s
-    assert result == dedent(
-        """
-    [project]
-    name = "my-package"
-
-    [project.optional-dependencies]
-    lint = ["ruff"]
-    """
-    )
-
-
-def test_edit_toml():
-    src = dedent(
-        """
-    [owner]
-    name = "John Smith"
-    age = 30
-
-    [owner.address]
-    city = "Wonderland"
-    street = "123 Main St"
-    """
-    )
-    config = load_pyproject(src)
-
-    address = get_sub_table(config, "owner.address")
+    address = pyproject.get_table("owner.address")
     address["city"] = "New York"
-    work = get_sub_table(config, "owner.work", create=True)
+    work = pyproject.get_table("owner.work", create=True)
     work["type"] = "scientist"
-    tools = get_sub_table(config, "tool", create=True)
+    tools = pyproject.get_table("tool", create=True)
     tools["black"] = to_toml_array(["--line-length=79"], enforce_multiline=True)
 
-    stream = io.StringIO()
-    write_pyproject(config, target=stream)
-    result = stream.getvalue()
-    print(indent(result, prefix=4 * " "))  # run with pytest -s
-    assert result == dedent(
-        """
-    [owner]
-    name = "John Smith"
-    age = 30
+    new_content = pyproject.dumps()
+    expected = dedent("""
+        [owner]
+        name = "John Smith"
+        age = 30
+        [owner.address]
+        city = "New York"
+        street = "123 Main St"
 
-    [owner.address]
-    city = "New York"
-    street = "123 Main St"
+        [owner.work]
+        type = "scientist"
 
-    [owner.work]
-    type = "scientist"
-
-    [tool]
-    black = [
-        "--line-length=79",
-    ]
-    """
-    )
-
-
-def test_get_package_name_safe():
-    correct_input = io.StringIO(
-        dedent(
-            """
-    [project]
-    name = "my-package"
-    """
-        )
-    )
-    assert get_package_name_safe(correct_input) == "my-package"
-
-    with pytest.raises(PrecommitError, match=r"^Please provide a name for the package"):
-        _ = get_package_name_safe(io.StringIO("[project]"))
-    with pytest.raises(PrecommitError, match=r"^Please provide a name for the package"):
-        _ = get_package_name_safe(io.StringIO())
-
-
-@pytest.mark.parametrize("path", [None, POLICY_REPO_DIR / "pyproject.toml"])
-def test_load_pyproject(path: Path | None):
-    if path is None:
-        pyproject = load_pyproject()
-    else:
-        pyproject = load_pyproject(path)
-    assert "build-system" in pyproject
-    assert "tool" in pyproject
-
-
-def test_load_pyproject_str():
-    src = dedent(
-        """
-    [build-system]
-    build-backend = "setuptools.build_meta"
-    requires = [
-        "setuptools>=61.2",
-        "setuptools_scm",
-    ]
-
-    [project]
-    dependencies = [
-        "attrs",
-        "sympy >=1.10",
-    ]
-    name = "my-package"
-    requires-python = ">=3.7"
-    """
-    )
-    pyproject = load_pyproject(src)
-    assert isinstance(pyproject["build-system"], Table)
-    assert pyproject["project"]["dependencies"] == ["attrs", "sympy >=1.10"]  # type: ignore[index]
-
-
-def test_load_pyproject_type_error():
-    with pytest.raises(TypeError, match="Source of type int is not supported"):
-        _ = load_pyproject(1)  # type: ignore[arg-type]
+        [tool]
+        black = [
+            "--line-length=79",
+        ]
+    """)
+    assert new_content.strip() == expected.strip()
