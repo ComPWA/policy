@@ -7,7 +7,17 @@ import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import IO, TYPE_CHECKING, Iterable, Sequence, TypeVar, overload
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    TypeVar,
+    overload,
+)
 
 import tomlkit
 from attrs import field, frozen
@@ -22,6 +32,7 @@ from compwa_policy.utilities.pyproject.getters import (
     get_sub_table,
     get_supported_python_versions,
     has_sub_table,
+    load_pyproject_toml,
 )
 from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
@@ -40,8 +51,7 @@ else:
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from tomlkit.items import Table
-    from tomlkit.toml_document import TOMLDocument
+    from compwa_policy.utilities.pyproject._struct import PyprojectTOML
 
 T = TypeVar("T", bound="Pyproject")
 
@@ -50,34 +60,24 @@ T = TypeVar("T", bound="Pyproject")
 class Pyproject:
     """Read-only representation of a :code:`pyproject.toml` file."""
 
-    _document: TOMLDocument
+    _document: PyprojectTOML
     _source: IO | Path | None = field(default=None)
 
     @final
     @classmethod
     def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
-        if isinstance(source, io.IOBase):
-            current_position = source.tell()
-            source.seek(0)
-            document = tomlkit.load(source)  # type:ignore[arg-type]
-            source.seek(current_position)
-            return cls(document, source)
-        if isinstance(source, Path):
-            with open(source) as stream:
-                document = tomlkit.load(stream)
-            return cls(document, source)
+        document = load_pyproject_toml(source)
         if isinstance(source, str):
-            return cls(tomlkit.loads(source))
-        msg = f"Source of type {type(source).__name__} is not supported"
-        raise TypeError(msg)
+            return cls(document)
+        return cls(document, source)
 
     @final
     def dumps(self) -> str:
         src = tomlkit.dumps(self._document, sort_keys=True)
         return f"{src.strip()}\n"
 
-    def get_table(self, dotted_header: str, create: bool = False) -> Table:
+    def get_table(self, dotted_header: str, create: bool = False) -> Mapping[str, Any]:
         if create:
             msg = "Cannot create sub-tables in a read-only pyproject.toml"
             raise TypeError(msg)
@@ -166,11 +166,13 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             raise TypeError(msg)
 
     @override
-    def get_table(self, dotted_header: str, create: bool = False) -> Table:
+    def get_table(
+        self, dotted_header: str, create: bool = False
+    ) -> MutableMapping[str, Any]:
         self.__assert_is_in_context()
         if create:
             create_sub_table(self._document, dotted_header)
-        return super().get_table(dotted_header)
+        return super().get_table(dotted_header)  # type:ignore[return-value]
 
     def add_dependency(
         self, package: str, optional_key: str | Sequence[str] | None = None
@@ -200,7 +202,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         self._changelog.append(message)
 
 
-def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:
+def complies_with_subset(settings: Mapping, minimal_settings: Mapping) -> bool:
     return all(settings.get(key) == value for key, value in minimal_settings.items())
 
 

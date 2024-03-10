@@ -3,26 +3,28 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import TYPE_CHECKING, Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping, Sequence, cast
 
 import tomlkit
-from tomlkit import TOMLDocument
 
-from compwa_policy.utilities.pyproject.getters import get_package_name, get_sub_table
+from compwa_policy.utilities.pyproject.getters import get_package_name
+from compwa_policy.utilities.pyproject.getters import (
+    get_sub_table as get_immutable_sub_table,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from tomlkit.container import Container
     from tomlkit.items import Table
+
+    from compwa_policy.utilities.pyproject._struct import PyprojectTOML
 
 
 def add_dependency(
-    pyproject: TOMLDocument,
+    pyproject: PyprojectTOML,
     package: str,
     optional_key: str | Sequence[str] | None = None,
 ) -> bool:
     if optional_key is None:
-        create_sub_table(pyproject, "project")
         project = get_sub_table(pyproject, "project")
         existing_dependencies: set[str] = set(project.get("dependencies", []))
         if package in existing_dependencies:
@@ -32,7 +34,6 @@ def add_dependency(
         return True
     if isinstance(optional_key, str):
         table_key = "project.optional-dependencies"
-        create_sub_table(pyproject, table_key)
         optional_dependencies = get_sub_table(pyproject, table_key)
         existing_dependencies = set(optional_dependencies.get(optional_key, []))
         if package in existing_dependencies:
@@ -63,7 +64,7 @@ def _sort_taplo(items: Iterable[str]) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
 
-def create_sub_table(config: Container, dotted_header: str) -> Table:
+def create_sub_table(config: Mapping[str, Any], dotted_header: str) -> Table:
     """Create a TOML sub-table through a dotted header key."""
     current_table: Any = config
     for header in dotted_header.split("."):
@@ -73,8 +74,16 @@ def create_sub_table(config: Container, dotted_header: str) -> Table:
     return current_table
 
 
+def get_sub_table(
+    config: Mapping[str, Any], dotted_header: str
+) -> MutableMapping[str, Any]:
+    create_sub_table(config, dotted_header)
+    table = get_immutable_sub_table(config, dotted_header)
+    return cast(MutableMapping[str, Any], table)
+
+
 def remove_dependency(
-    pyproject: TOMLDocument,
+    pyproject: PyprojectTOML,
     package: str,
     ignored_sections: Iterable[str] | None = None,
 ) -> bool:

@@ -2,8 +2,9 @@ from textwrap import dedent
 
 import pytest
 import tomlkit
-from tomlkit import TOMLDocument
 
+from compwa_policy.utilities.pyproject._struct import PyprojectTOML
+from compwa_policy.utilities.pyproject.getters import load_pyproject_toml
 from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
     create_sub_table,
@@ -12,7 +13,7 @@ from compwa_policy.utilities.pyproject.setters import (
 
 
 def test_add_dependency():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project]
         name = "my-package"
     """)
@@ -29,7 +30,7 @@ def test_add_dependency():
 
 
 def test_add_dependency_existing():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project]
         dependencies = ["attrs"]
 
@@ -49,7 +50,7 @@ def test_add_dependency_nested():
         name = "my-package"
     """)
 
-    pyproject = tomlkit.loads(src)
+    pyproject = load_pyproject_toml(src)
     add_dependency(pyproject, "ruff", optional_key=["lint", "sty", "dev"])
 
     new_content = tomlkit.dumps(pyproject)
@@ -70,7 +71,7 @@ def test_add_dependency_optional():
         [project]
         name = "my-package"
     """)
-    pyproject = tomlkit.loads(src)
+    pyproject = load_pyproject_toml(src)
     add_dependency(pyproject, "ruff", optional_key="lint")
 
     new_content = tomlkit.dumps(pyproject)
@@ -85,7 +86,7 @@ def test_add_dependency_optional():
 
 
 @pytest.fixture(scope="function")
-def pyproject_example() -> TOMLDocument:
+def pyproject_example() -> PyprojectTOML:
     src = dedent("""
         [project]
         name = "my-package"
@@ -98,10 +99,10 @@ def pyproject_example() -> TOMLDocument:
         ]
         sty = ["ruff"]
     """)
-    return tomlkit.loads(src)
+    return load_pyproject_toml(src)
 
 
-def test_remove_dependency(pyproject_example: TOMLDocument):
+def test_remove_dependency(pyproject_example: PyprojectTOML):
     remove_dependency(pyproject_example, "attrs")
     expected = dedent("""
         [project]
@@ -119,7 +120,7 @@ def test_remove_dependency(pyproject_example: TOMLDocument):
     assert new_content == expected
 
 
-def test_remove_dependency_nested(pyproject_example: TOMLDocument):
+def test_remove_dependency_nested(pyproject_example: PyprojectTOML):
     remove_dependency(pyproject_example, "ruff", ignored_sections=["sty"])
     new_content = tomlkit.dumps(pyproject_example)
     expected = dedent("""
@@ -138,7 +139,7 @@ def test_remove_dependency_nested(pyproject_example: TOMLDocument):
 
 @pytest.mark.parametrize("table_key", ["project", "project.optional-dependencies"])
 def test_create_sub_table(table_key: str):
-    pyproject = tomlkit.loads("")
+    pyproject = load_pyproject_toml("")
     dependencies = create_sub_table(pyproject, table_key)
 
     new_content = tomlkit.dumps(pyproject)
