@@ -9,13 +9,12 @@ from compwa_policy.utilities.precommit import remove_precommit_hook
 
 
 def remove_deprecated_tools(keep_issue_templates: bool) -> None:
-    executor = Executor()
-    if not keep_issue_templates:
-        executor(_remove_github_issue_templates)
-    executor(_remove_markdownlint)
-    for directory in ["docs", "doc"]:
-        executor(_remove_relink_references, directory)
-    executor.finalize()
+    with Executor() as do:
+        if not keep_issue_templates:
+            do(_remove_github_issue_templates)
+        do(_remove_markdownlint)
+        for directory in ["docs", "doc"]:
+            do(_remove_relink_references, directory)
 
 
 def _remove_github_issue_templates() -> None:
@@ -26,17 +25,16 @@ def _remove_github_issue_templates() -> None:
 
 
 def _remove_markdownlint() -> None:
-    executor = Executor()
-    executor(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
-    executor(remove_from_gitignore, ".markdownlint.json")
-    executor(
-        vscode.remove_extension_recommendation,
-        # cspell:ignore davidanson markdownlint
-        extension_name="davidanson.vscode-markdownlint",
-        unwanted=True,
-    )
-    executor(remove_precommit_hook, "markdownlint")
-    executor.finalize()
+    with Executor() as do:
+        do(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
+        do(remove_from_gitignore, ".markdownlint.json")
+        do(
+            vscode.remove_extension_recommendation,
+            # cspell:ignore davidanson markdownlint
+            extension_name="davidanson.vscode-markdownlint",
+            unwanted=True,
+        )
+        do(remove_precommit_hook, "markdownlint")
 
 
 def _remove_relink_references(directory: str) -> None:

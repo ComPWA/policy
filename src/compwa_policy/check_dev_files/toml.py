@@ -33,14 +33,13 @@ def main() -> None:
     ]
     if not any(f.exists() for f in trigger_files):
         return
-    executor = Executor()
-    executor(_rename_taplo_config)
-    executor(_update_taplo_config)
-    executor(_update_precommit_repo)
-    executor(_update_tomlsort_config)
-    executor(_update_tomlsort_hook)
-    executor(_update_vscode_extensions)
-    executor.finalize()
+    with Executor() as do:
+        do(_rename_taplo_config)
+        do(_update_taplo_config)
+        do(_update_precommit_repo)
+        do(_update_tomlsort_config)
+        do(_update_tomlsort_hook)
+        do(_update_vscode_extensions)
 
 
 def _update_tomlsort_config() -> None:
@@ -132,9 +131,6 @@ def _update_precommit_repo() -> None:
 
 def _update_vscode_extensions() -> None:
     # cspell:ignore bungcip tamasfe
-    executor = Executor()
-    executor(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
-    executor(
-        vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True
-    )
-    executor.finalize()
+    with Executor() as do:
+        do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
+        do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)

@@ -28,12 +28,11 @@ def main(no_prettierrc: bool) -> None:
     if find_repo(config, r".*/mirrors-prettier") is None:
         _remove_configuration()
     else:
-        executor = Executor()
-        executor(_fix_config_content, no_prettierrc)
-        executor(add_badge, __BADGE)
-        executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
-        executor(_update_prettier_ignore)
-        executor.finalize()
+        with Executor() as do:
+            do(_fix_config_content, no_prettierrc)
+            do(add_badge, __BADGE)
+            do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
+            do(_update_prettier_ignore)
 
 
 def _remove_configuration() -> None:
@@ -47,10 +46,9 @@ def _remove_configuration() -> None:
 
 def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
-        executor = Executor()
-        executor(__remove_prettierrc)
-        executor(vscode.remove_setting, {"[markdown]": "editor.wordWrap"})
-        executor.finalize()
+        with Executor() as do:
+            do(__remove_prettierrc)
+            do(vscode.remove_setting, {"[markdown]": "editor.wordWrap"})
     else:
         if not CONFIG_PATH.prettier.exists():
             existing_content = ""

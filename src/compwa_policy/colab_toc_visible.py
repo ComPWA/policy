@@ -26,10 +26,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Paths to the notebooks of which the metadata should be updated.",
     )
     args = parser.parse_args(argv)
-    executor = Executor()
-    for filename in args.filenames:
-        executor(_update_metadata, filename)
-    return executor.finalize(exception=False)
+    with Executor(raise_exception=False) as do:
+        for filename in args.filenames:
+            do(_update_metadata, filename)
+    return 1 if do.error_messages else 0
 
 
 def _update_metadata(path: str) -> None:

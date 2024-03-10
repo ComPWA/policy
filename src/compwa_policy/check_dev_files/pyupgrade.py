@@ -15,13 +15,12 @@ from compwa_policy.utilities.pyproject import PyprojectTOML
 
 
 def main(no_ruff: bool) -> None:
-    executor = Executor()
-    if no_ruff:
-        executor(_update_precommit_repo)
-        executor(_update_precommit_nbqa_hook)
-    else:
-        executor(_remove_pyupgrade)
-    executor.finalize()
+    with Executor() as do:
+        if no_ruff:
+            do(_update_precommit_repo)
+            do(_update_precommit_nbqa_hook)
+        else:
+            do(_remove_pyupgrade)
 
 
 def _update_precommit_repo() -> None:
@@ -62,7 +61,6 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
 
 
 def _remove_pyupgrade() -> None:
-    executor = Executor()
-    executor(remove_precommit_hook, "nbqa-pyupgrade")
-    executor(remove_precommit_hook, "pyupgrade")
-    executor.finalize()
+    with Executor() as do:
+        do(remove_precommit_hook, "nbqa-pyupgrade")
+        do(remove_precommit_hook, "pyupgrade")

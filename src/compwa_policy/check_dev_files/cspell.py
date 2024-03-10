@@ -46,22 +46,21 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 
 def main(no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
-    executor = Executor()
-    executor(_update_cspell_repo_url)
-    has_cspell_hook = False
-    if CONFIG_PATH.cspell.exists():
-        config = load_precommit_config()
-        has_cspell_hook = find_repo(config, __REPO_URL) is not None
-    if not has_cspell_hook:
-        executor(_remove_configuration)
-    else:
-        executor(_update_precommit_repo)
-        if not no_cspell_update:
-            executor(_update_config_content)
-        executor(_sort_config_entries)
-        executor(add_badge, __BADGE)
-        executor(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    executor.finalize()
+    with Executor() as do:
+        do(_update_cspell_repo_url)
+        has_cspell_hook = False
+        if CONFIG_PATH.cspell.exists():
+            config = load_precommit_config()
+            has_cspell_hook = find_repo(config, __REPO_URL) is not None
+        if not has_cspell_hook:
+            do(_remove_configuration)
+        else:
+            do(_update_precommit_repo)
+            if not no_cspell_update:
+                do(_update_config_content)
+            do(_sort_config_entries)
+            do(add_badge, __BADGE)
+            do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
 def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
@@ -97,10 +96,9 @@ def _remove_configuration() -> None:
                 " required and has been removed"
             )
             raise PrecommitError(msg)
-    executor = Executor()
-    executor(remove_badge, __BADGE_PATTERN)
-    executor(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
-    executor.finalize()
+    with Executor() as do:
+        do(remove_badge, __BADGE_PATTERN)
+        do(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
 def _update_precommit_repo() -> None:

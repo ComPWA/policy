@@ -84,10 +84,9 @@ def write(content: str, target: Path | (io.TextIOBase | str)) -> None:
 
 
 def remove_configs(paths: list[str]) -> None:
-    executor = Executor()
-    for path in paths:
-        executor(__remove_file, path)
-    executor.finalize()
+    with Executor() as do:
+        for path in paths:
+            do(__remove_file, path)
 
 
 def __remove_file(path: str) -> None:

@@ -27,72 +27,68 @@ from compwa_policy.utilities.toml import to_toml_array
 
 def main(has_notebooks: bool) -> None:
     pyproject = PyprojectTOML.load()
-    executor = Executor()
-    executor(
-        add_badge,
-        "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
-    )
-    executor(pyproject.remove_dependency, "radon")
-    executor(_remove_black, pyproject)
-    executor(_remove_flake8, pyproject)
-    executor(_remove_isort, pyproject)
-    executor(_remove_pydocstyle, pyproject)
-    executor(_remove_pylint, pyproject)
-    executor(_move_ruff_lint_config, pyproject)
-    executor(_update_ruff_config, pyproject, has_notebooks)
-    executor(_update_precommit_hook, has_notebooks)
-    executor(_update_lint_dependencies, pyproject)
-    executor(_update_vscode_settings)
-    executor(pyproject.finalize)
-    executor.finalize()
+    with Executor() as do:
+        do(
+            add_badge,
+            "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
+        )
+        do(pyproject.remove_dependency, "radon")
+        do(_remove_black, pyproject)
+        do(_remove_flake8, pyproject)
+        do(_remove_isort, pyproject)
+        do(_remove_pydocstyle, pyproject)
+        do(_remove_pylint, pyproject)
+        do(_move_ruff_lint_config, pyproject)
+        do(_update_ruff_config, pyproject, has_notebooks)
+        do(_update_precommit_hook, has_notebooks)
+        do(_update_lint_dependencies, pyproject)
+        do(_update_vscode_settings)
+        do(pyproject.finalize)
 
 
 def _remove_black(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(
-        vscode.remove_extension_recommendation,
-        "ms-python.black-formatter",
-        unwanted=True,
-    )
-    executor(__remove_tool_table, pyproject, "black")
-    executor(
-        pyproject.remove_dependency,
-        package="black",
-        ignored_sections=["doc", "jupyter", "test"],
-    )
-    executor(remove_badge, r".*https://github\.com/psf.*/black.*")
-    executor(remove_precommit_hook, "black-jupyter")
-    executor(remove_precommit_hook, "black")
-    executor(remove_precommit_hook, "blacken-docs")
-    executor(vscode.remove_settings, ["black-formatter.importStrategy"])
-    executor.finalize()
+    with Executor() as do:
+        do(
+            vscode.remove_extension_recommendation,
+            "ms-python.black-formatter",
+            unwanted=True,
+        )
+        do(__remove_tool_table, pyproject, "black")
+        do(
+            pyproject.remove_dependency,
+            package="black",
+            ignored_sections=["doc", "jupyter", "test"],
+        )
+        do(remove_badge, r".*https://github\.com/psf.*/black.*")
+        do(remove_precommit_hook, "black-jupyter")
+        do(remove_precommit_hook, "black")
+        do(remove_precommit_hook, "blacken-docs")
+        do(vscode.remove_settings, ["black-formatter.importStrategy"])
 
 
 def _remove_flake8(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(remove_configs, [".flake8"])
-    executor(__remove_nbqa_option, pyproject, "flake8")
-    executor(pyproject.remove_dependency, "flake8")
-    executor(pyproject.remove_dependency, "pep8-naming")
-    executor(vscode.remove_extension_recommendation, "ms-python.flake8", unwanted=True)
-    executor(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
-    executor(remove_precommit_hook, "flake8")
-    executor(remove_precommit_hook, "nbqa-flake8")
-    executor(vscode.remove_settings, ["flake8.importStrategy"])
-    executor.finalize()
+    with Executor() as do:
+        do(remove_configs, [".flake8"])
+        do(__remove_nbqa_option, pyproject, "flake8")
+        do(pyproject.remove_dependency, "flake8")
+        do(pyproject.remove_dependency, "pep8-naming")
+        do(vscode.remove_extension_recommendation, "ms-python.flake8", unwanted=True)
+        do(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
+        do(remove_precommit_hook, "flake8")
+        do(remove_precommit_hook, "nbqa-flake8")
+        do(vscode.remove_settings, ["flake8.importStrategy"])
 
 
 def _remove_isort(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(__remove_nbqa_option, pyproject, "black")
-    executor(__remove_nbqa_option, pyproject, "isort")
-    executor(__remove_tool_table, pyproject, "isort")
-    executor(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
-    executor(remove_precommit_hook, "isort")
-    executor(remove_precommit_hook, "nbqa-isort")
-    executor(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
-    executor(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
-    executor.finalize()
+    with Executor() as do:
+        do(__remove_nbqa_option, pyproject, "black")
+        do(__remove_nbqa_option, pyproject, "isort")
+        do(__remove_tool_table, pyproject, "isort")
+        do(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
+        do(remove_precommit_hook, "isort")
+        do(remove_precommit_hook, "nbqa-isort")
+        do(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
+        do(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
 
 
 def __remove_nbqa_option(pyproject: PyprojectTOML, option: str) -> None:
@@ -118,29 +114,27 @@ def __remove_tool_table(pyproject: PyprojectTOML, tool_table: str) -> None:
 
 
 def _remove_pydocstyle(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(
-        remove_configs,
-        [
-            ".pydocstyle",
-            "docs/.pydocstyle",
-            "tests/.pydocstyle",
-        ],
-    )
-    executor(pyproject.remove_dependency, "pydocstyle")
-    executor(remove_precommit_hook, "pydocstyle")
-    executor.finalize()
+    with Executor() as do:
+        do(
+            remove_configs,
+            [
+                ".pydocstyle",
+                "docs/.pydocstyle",
+                "tests/.pydocstyle",
+            ],
+        )
+        do(pyproject.remove_dependency, "pydocstyle")
+        do(remove_precommit_hook, "pydocstyle")
 
 
 def _remove_pylint(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
-    executor(pyproject.remove_dependency, "pylint")
-    executor(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
-    executor(remove_precommit_hook, "pylint")
-    executor(remove_precommit_hook, "nbqa-pylint")
-    executor(vscode.remove_settings, ["pylint.importStrategy"])
-    executor.finalize()
+    with Executor() as do:
+        do(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
+        do(pyproject.remove_dependency, "pylint")
+        do(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
+        do(remove_precommit_hook, "pylint")
+        do(remove_precommit_hook, "nbqa-pylint")
+        do(vscode.remove_settings, ["pylint.importStrategy"])
 
 
 def _move_ruff_lint_config(pyproject: PyprojectTOML) -> None:
@@ -177,15 +171,14 @@ def _move_ruff_lint_config(pyproject: PyprojectTOML) -> None:
 
 
 def _update_ruff_config(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
-    executor = Executor()
-    executor(__update_global_settings, pyproject, has_notebooks)
-    executor(__update_ruff_format_settings, pyproject)
-    executor(__update_ruff_lint_settings, pyproject)
-    executor(__update_per_file_ignores, pyproject, has_notebooks)
-    executor(__update_isort_settings, pyproject)
-    executor(__update_pydocstyle_settings, pyproject)
-    executor(__remove_nbqa, pyproject)
-    executor.finalize()
+    with Executor() as do:
+        do(__update_global_settings, pyproject, has_notebooks)
+        do(__update_ruff_format_settings, pyproject)
+        do(__update_ruff_lint_settings, pyproject)
+        do(__update_per_file_ignores, pyproject, has_notebooks)
+        do(__update_isort_settings, pyproject)
+        do(__update_pydocstyle_settings, pyproject)
+        do(__remove_nbqa, pyproject)
 
 
 def __update_global_settings(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
@@ -469,10 +462,9 @@ def __update_pydocstyle_settings(pyproject: PyprojectTOML) -> None:
 
 
 def __remove_nbqa(pyproject: PyprojectTOML) -> None:
-    executor = Executor()
-    executor(___remove_nbqa_settings, pyproject)
-    executor(remove_precommit_hook, "nbqa-ruff")
-    executor.finalize()
+    with Executor() as do:
+        do(___remove_nbqa_settings, pyproject)
+        do(remove_precommit_hook, "nbqa-ruff")
 
 
 def ___remove_nbqa_settings(pyproject: PyprojectTOML) -> None:
@@ -518,24 +510,23 @@ def _update_lint_dependencies(pyproject: PyprojectTOML) -> None:
 
 def _update_vscode_settings() -> None:
     # cspell:ignore charliermarsh
-    executor = Executor()
-    executor(vscode.add_extension_recommendation, "charliermarsh.ruff")
-    executor(
-        vscode.update_settings,
-        {
-            "notebook.codeActionsOnSave": {
-                "notebook.source.organizeImports": "explicit"
-            },
-            "notebook.formatOnSave.enabled": True,
-            "[python]": {
-                "editor.codeActionsOnSave": {
-                    "source.organizeImports": "explicit",
+    with Executor() as do:
+        do(vscode.add_extension_recommendation, "charliermarsh.ruff")
+        do(
+            vscode.update_settings,
+            {
+                "notebook.codeActionsOnSave": {
+                    "notebook.source.organizeImports": "explicit"
                 },
-                "editor.defaultFormatter": "charliermarsh.ruff",
+                "notebook.formatOnSave.enabled": True,
+                "[python]": {
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": "explicit",
+                    },
+                    "editor.defaultFormatter": "charliermarsh.ruff",
+                },
+                "ruff.enable": True,
+                "ruff.importStrategy": "fromEnvironment",
+                "ruff.organizeImports": True,
             },
-            "ruff.enable": True,
-            "ruff.importStrategy": "fromEnvironment",
-            "ruff.organizeImports": True,
-        },
-    )
-    executor.finalize()
+        )

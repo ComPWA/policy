@@ -47,23 +47,22 @@ def main(
     skip_tests: list[str],
     test_extras: list[str],
 ) -> None:
-    executor = Executor()
-    executor(_update_cd_workflow, no_pypi, no_version_branches)
-    executor(
-        _update_ci_workflow,
-        allow_deprecated,
-        doc_apt_packages,
-        github_pages,
-        no_macos,
-        python_version,
-        single_threaded,
-        skip_tests,
-        test_extras,
-    )
-    if not keep_pr_linting:
-        executor(_update_pr_linting)
-    executor(_recommend_vscode_extension)
-    executor.finalize()
+    with Executor() as do:
+        do(_update_cd_workflow, no_pypi, no_version_branches)
+        do(
+            _update_ci_workflow,
+            allow_deprecated,
+            doc_apt_packages,
+            github_pages,
+            no_macos,
+            python_version,
+            single_threaded,
+            skip_tests,
+            test_extras,
+        )
+        if not keep_pr_linting:
+            do(_update_pr_linting)
+        do(_recommend_vscode_extension)
 
 
 def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
@@ -84,10 +83,9 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
         if existing_data != expected_data:
             update_workflow(yaml, expected_data, workflow_path)
 
-    executor = Executor()
-    executor(update)
-    executor(remove_workflow, "milestone.yml")
-    executor.finalize()
+    with Executor() as do:
+        do(update)
+        do(remove_workflow, "milestone.yml")
 
 
 def _update_pr_linting() -> None:
@@ -135,16 +133,15 @@ def _update_ci_workflow(  # noqa: PLR0917
             if existing_data != expected_data:
                 update_workflow(yaml, expected_data, workflow_path)
 
-    executor = Executor()
-    executor(update)
-    if not allow_deprecated:
-        executor(remove_workflow, "ci-docs.yml")
-        executor(remove_workflow, "ci-style.yml")
-        executor(remove_workflow, "ci-tests.yml")
-        executor(remove_workflow, "linkcheck.yml")
-    executor(_copy_workflow_file, "clean-caches.yml")
-    executor(remove_workflow, "clean-cache.yml")
-    executor.finalize()
+    with Executor() as do:
+        do(update)
+        if not allow_deprecated:
+            do(remove_workflow, "ci-docs.yml")
+            do(remove_workflow, "ci-style.yml")
+            do(remove_workflow, "ci-tests.yml")
+            do(remove_workflow, "linkcheck.yml")
+        do(_copy_workflow_file, "clean-caches.yml")
+        do(remove_workflow, "clean-cache.yml")
 
 
 def _get_ci_workflow(  # noqa: PLR0917
@@ -298,16 +295,15 @@ def _recommend_vscode_extension() -> None:
     if not CONFIG_PATH.github_workflow_dir.exists():
         return
     # cspell:ignore cschleiden
-    executor = Executor()
-    executor(vscode.remove_extension_recommendation, "cschleiden.vscode-github-actions")
-    executor(vscode.add_extension_recommendation, "github.vscode-github-actions")
-    ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
-    if ci_workflow.exists():
-        action_settings = {
-            "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
-        }
-        vscode.update_settings(action_settings)
-    executor.finalize()
+    with Executor() as do:
+        do(vscode.remove_extension_recommendation, "cschleiden.vscode-github-actions")
+        do(vscode.add_extension_recommendation, "github.vscode-github-actions")
+        ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
+        if ci_workflow.exists():
+            action_settings = {
+                "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
+            }
+            vscode.update_settings(action_settings)
 
 
 def remove_workflow(filename: str) -> None:

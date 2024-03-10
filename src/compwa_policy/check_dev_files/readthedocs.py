@@ -21,11 +21,10 @@ if TYPE_CHECKING:
 def main(python_version: PythonVersion) -> None:
     if not CONFIG_PATH.readthedocs.exists():
         return
-    executor = Executor()
-    executor(_update_os)
-    executor(_update_python_version, python_version)
-    executor(_update_install_step, python_version)
-    executor.finalize()
+    with Executor() as do:
+        do(_update_os)
+        do(_update_python_version, python_version)
+        do(_update_install_step, python_version)
 
 
 def _update_os() -> None:

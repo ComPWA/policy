@@ -18,11 +18,11 @@ def main() -> int:
     cfg = load_precommit_config()
     local_repos = [repo for repo in cfg["repos"] if repo["repo"] == "local"]
     hook_definitions = _load_precommit_hook_definitions()
-    executor = Executor()
-    for repo in local_repos:
-        for hook in repo["hooks"]:
-            executor(_check_hook_definition, hook, hook_definitions)
-    return executor.finalize(exception=False)
+    with Executor(raise_exception=False) as do:
+        for repo in local_repos:
+            for hook in repo["hooks"]:
+                do(_check_hook_definition, hook, hook_definitions)
+    return 1 if do.error_messages else 0
 
 
 def _load_precommit_hook_definitions() -> dict[str, Hook]:

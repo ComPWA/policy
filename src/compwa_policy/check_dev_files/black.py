@@ -18,36 +18,36 @@ def main(has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     pyproject = PyprojectTOML.load()
-    executor = Executor()
-    executor(_remove_outdated_settings, pyproject)
-    executor(_update_black_settings, pyproject)
-    executor(
-        remove_precommit_hook,
-        hook_id="black",
-        repo_url="https://github.com/psf/black",
-    )
-    executor(
-        remove_precommit_hook,
-        hook_id="black-jupyter",
-        repo_url="https://github.com/psf/black",
-    )
-    executor(_update_precommit_repo, has_notebooks)
-    executor(vscode.add_extension_recommendation, "ms-python.black-formatter")
-    executor(
-        vscode.update_settings, {"black-formatter.importStrategy": "fromEnvironment"}
-    )
-    executor(
-        vscode.update_settings,
-        {
-            "[python]": {
-                "editor.defaultFormatter": "ms-python.black-formatter",
-                "editor.rulers": [88],
+    with Executor() as do:
+        do(_remove_outdated_settings, pyproject)
+        do(_update_black_settings, pyproject)
+        do(
+            remove_precommit_hook,
+            hook_id="black",
+            repo_url="https://github.com/psf/black",
+        )
+        do(
+            remove_precommit_hook,
+            hook_id="black-jupyter",
+            repo_url="https://github.com/psf/black",
+        )
+        do(_update_precommit_repo, has_notebooks)
+        do(vscode.add_extension_recommendation, "ms-python.black-formatter")
+        do(
+            vscode.update_settings,
+            {"black-formatter.importStrategy": "fromEnvironment"},
+        )
+        do(
+            vscode.update_settings,
+            {
+                "[python]": {
+                    "editor.defaultFormatter": "ms-python.black-formatter",
+                    "editor.rulers": [88],
+                },
             },
-        },
-    )
-    executor(remove_precommit_hook, "nbqa-black")
-    executor(pyproject.finalize)
-    executor.finalize()
+        )
+        do(remove_precommit_hook, "nbqa-black")
+        do(pyproject.finalize)
 
 
 def _remove_outdated_settings(pyproject: PyprojectTOML) -> None:

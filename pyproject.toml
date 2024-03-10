@@ -189,6 +189,7 @@ addopts = [
     "--color=yes",
     "--doctest-continue-on-failure",
     "--doctest-modules",
+    "--durations-min=0",
     "--durations=3",
 ]
 filterwarnings = [

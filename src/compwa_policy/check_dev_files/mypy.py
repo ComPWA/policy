@@ -13,33 +13,31 @@ from compwa_policy.utilities.pyproject import PyprojectTOML
 
 def main() -> None:
     pyproject = PyprojectTOML.load()
-    executor = Executor()
-    executor(_merge_mypy_into_pyproject, pyproject)
-    executor(_update_vscode_settings, pyproject)
-    executor(pyproject.finalize)
-    executor.finalize()
+    with Executor() as do:
+        do(_merge_mypy_into_pyproject, pyproject)
+        do(_update_vscode_settings, pyproject)
+        do(pyproject.finalize)
 
 
 def _update_vscode_settings(pyproject: PyprojectTOML) -> None:
     mypy_config = pyproject.get_table("tool.mypy")
-    executor = Executor()
-    if not mypy_config:
-        executor(
-            vscode.remove_extension_recommendation,
-            "ms-python.mypy-type-checker",
-            unwanted=True,
-        )
-        executor(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
-    else:
-        executor(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
-        settings = {
-            "mypy-type-checker.args": [
-                f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
-            ],
-            "mypy-type-checker.importStrategy": "fromEnvironment",
-        }
-        executor(vscode.update_settings, settings)
-    executor.finalize()
+    with Executor() as do:
+        if not mypy_config:
+            do(
+                vscode.remove_extension_recommendation,
+                "ms-python.mypy-type-checker",
+                unwanted=True,
+            )
+            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
+        else:
+            do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
+            settings = {
+                "mypy-type-checker.args": [
+                    f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
+                ],
+                "mypy-type-checker.importStrategy": "fromEnvironment",
+            }
+            do(vscode.update_settings, settings)
 
 
 def _merge_mypy_into_pyproject(pyproject: PyprojectTOML) -> None:

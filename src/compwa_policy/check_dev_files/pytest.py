@@ -20,12 +20,11 @@ if TYPE_CHECKING:
 
 def main() -> None:
     pyproject = PyprojectTOML.load()
-    executor = Executor()
-    executor(_merge_coverage_into_pyproject, pyproject)
-    executor(_merge_pytest_into_pyproject, pyproject)
-    executor(_update_settings, pyproject)
-    executor(pyproject.finalize)
-    executor.finalize()
+    with Executor() as do:
+        do(_merge_coverage_into_pyproject, pyproject)
+        do(_merge_pytest_into_pyproject, pyproject)
+        do(_update_settings, pyproject)
+        do(pyproject.finalize)
 
 
 def _merge_coverage_into_pyproject(pyproject: PyprojectTOML) -> None:
