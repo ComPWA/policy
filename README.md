@@ -21,7 +21,6 @@ repos:
     hooks:
       - id: check-dev-files
       - id: fix-nbformat-version
-      - id: format-setup-cfg
       - id: set-nb-cells
 ```
 

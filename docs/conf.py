@@ -8,6 +8,7 @@ REPO_NAME = "policy"
 REPO_TITLE = "ComPWA repository policy"
 PACKAGE_NAME = "compwa_policy"
 
+add_module_names = False
 api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
