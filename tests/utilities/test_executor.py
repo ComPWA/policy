@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 
 
 class TestExecutor:
@@ -22,20 +22,20 @@ class TestExecutor:
         def no_error() -> None:
             pass
 
-        executor = Executor()
-        executor(do_without_args)
-        executor(do_with_positional_args, ["one", "two", "three"])
-        executor(do_with_keyword_args, "given as positional argument")
-        executor(do_with_keyword_args, text="given as key-word argument")
-        executor(no_error)
-        assert executor.error_messages == [
-            "Function did not have arguments",
-            "\nList contains one, two, three",
-            "Text is given as positional argument",
-            "Text is given as key-word argument",
-        ]
+        with executor(raise_exception=False) as do:
+            do(do_without_args)
+            do(do_with_positional_args, ["one", "two", "three"])
+            do(do_with_keyword_args, "given as positional argument")
+            do(do_with_keyword_args, text="given as key-word argument")
+            do(no_error)
+            assert do.error_messages == (
+                "Function did not have arguments",
+                "\nList contains one, two, three",
+                "Text is given as positional argument",
+                "Text is given as key-word argument",
+            )
+            merged_message = do.merge_messages()
 
-        merged_message = executor.merge_messages()
         expected_message = """
             Function did not have arguments
             --------------------

@@ -8,7 +8,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -21,11 +21,10 @@ if TYPE_CHECKING:
 def main(python_version: PythonVersion) -> None:
     if not CONFIG_PATH.readthedocs.exists():
         return
-    executor = Executor()
-    executor(_update_os)
-    executor(_update_python_version, python_version)
-    executor(_update_install_step, python_version)
-    executor.finalize()
+    with executor() as do:
+        do(_update_os)
+        do(_update_python_version, python_version)
+        do(_update_install_step, python_version)
 
 
 def _update_os() -> None:

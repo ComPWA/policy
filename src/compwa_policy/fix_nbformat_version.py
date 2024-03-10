@@ -16,7 +16,7 @@ import nbformat
 from compwa_policy.utilities.notebook import load_notebook
 
 from .errors import PrecommitError
-from .utilities.executor import Executor
+from .utilities.executor import executor
 
 BINARY_CELL_OUTPUT = [
     "image/jpeg",
@@ -29,12 +29,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("filenames", nargs="*", help="Filenames to fix.")
     args = parser.parse_args(argv)
-    executor = Executor()
-    for filename in args.filenames:
-        executor(set_nbformat_version, filename)
-        executor(remove_cell_ids, filename)
-        executor(check_svg_output_cells, filename)
-    return executor.finalize(exception=False)
+    with executor(raise_exception=False) as do:
+        for filename in args.filenames:
+            do(set_nbformat_version, filename)
+            do(remove_cell_ids, filename)
+            do(check_svg_output_cells, filename)
+    return 1 if do.error_messages else 0
 
 
 def set_nbformat_version(filename: str) -> None:

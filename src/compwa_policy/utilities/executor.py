@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Callable, TypeVar
-
-import attr
+from contextlib import AbstractContextManager
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from compwa_policy.errors import PrecommitError
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
@@ -19,19 +21,29 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-@attr.s(on_setattr=attr.setters.frozen)
-class Executor:
+class executor(AbstractContextManager):  # noqa: N801
     """Execute functions and collect any `.PrecommitError` exceptions.
 
     .. automethod:: __call__
     """
 
-    error_messages: list[str] = attr.ib(factory=list, init=False)
+    def __init__(self, raise_exception: bool = True) -> None:
+        self._raise_exception = raise_exception
+        self.__error_messages: list[str] = []
+        self.__is_in_context = False
+
+    @property
+    def error_messages(self) -> tuple[str, ...]:
+        """View the collected error messages."""
+        return tuple(self.__error_messages)
 
     def __call__(
         self, function: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> T | None:
         """Execute a function and collect any `.PrecommitError` exceptions."""
+        if not self.__is_in_context:
+            msg = "The __call__ method can only be used within a context manager."
+            raise RuntimeError(msg)
         try:
             start_time = time.time()
             result = function(*args, **kwargs)
@@ -42,20 +54,27 @@ class Executor:
                 print(f"{execution_time:>7.2f} s  {function_name}")  # noqa: T201
         except PrecommitError as exception:
             error_message = str("\n".join(exception.args))
-            self.error_messages.append(error_message)
+            self.__error_messages.append(error_message)
             return None
         else:
             return result
 
-    def finalize(self, exception: bool = True) -> int:
+    def __enter__(self) -> executor:
+        self.__is_in_context = True
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         error_msg = self.merge_messages()
         if error_msg:
-            if exception:
-                raise PrecommitError(error_msg)
+            if self._raise_exception:
+                raise PrecommitError(error_msg) from exc_value
             print(error_msg)  # noqa: T201
-            return 1
-        return 0
 
     def merge_messages(self) -> str:
-        stripped_messages = (s.strip() for s in self.error_messages)
+        stripped_messages = (s.strip() for s in self.__error_messages)
         return "\n--------------------\n".join(stripped_messages)

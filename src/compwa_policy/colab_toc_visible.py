@@ -15,7 +15,7 @@ import nbformat
 from compwa_policy.utilities.notebook import load_notebook
 
 from .errors import PrecommitError
-from .utilities.executor import Executor
+from .utilities.executor import executor
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -26,10 +26,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Paths to the notebooks of which the metadata should be updated.",
     )
     args = parser.parse_args(argv)
-    executor = Executor()
-    for filename in args.filenames:
-        executor(_update_metadata, filename)
-    return executor.finalize(exception=False)
+    with executor(raise_exception=False) as do:
+        for filename in args.filenames:
+            do(_update_metadata, filename)
+    return 1 if do.error_messages else 0
 
 
 def _update_metadata(path: str) -> None:

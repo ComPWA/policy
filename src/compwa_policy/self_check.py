@@ -8,7 +8,7 @@ from textwrap import dedent, indent
 import yaml
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 from compwa_policy.utilities.precommit import Hook, load_precommit_config
 
 __HOOK_DEFINITION_FILE = ".pre-commit-hooks.yaml"
@@ -18,11 +18,11 @@ def main() -> int:
     cfg = load_precommit_config()
     local_repos = [repo for repo in cfg["repos"] if repo["repo"] == "local"]
     hook_definitions = _load_precommit_hook_definitions()
-    executor = Executor()
-    for repo in local_repos:
-        for hook in repo["hooks"]:
-            executor(_check_hook_definition, hook, hook_definitions)
-    return executor.finalize(exception=False)
+    with executor(raise_exception=False) as do:
+        for repo in local_repos:
+            for hook in repo["hooks"]:
+                do(_check_hook_definition, hook, hook_definitions)
+    return 1 if do.error_messages else 0
 
 
 def _load_precommit_hook_definitions() -> dict[str, Hook]:

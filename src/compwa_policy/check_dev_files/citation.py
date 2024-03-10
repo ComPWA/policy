@@ -14,7 +14,7 @@ from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -25,18 +25,17 @@ from compwa_policy.utilities.precommit import (
 
 
 def main() -> None:
-    executor = Executor()
-    if CONFIG_PATH.zenodo.exists():
-        executor(convert_zenodo_json)
-        executor(remove_zenodo_json)
-    if CONFIG_PATH.citation.exists():
+    with executor() as do:
         if CONFIG_PATH.zenodo.exists():
-            executor(remove_zenodo_json)
-        executor(check_citation_keys)
-        executor(add_json_schema_precommit)
-        executor(vscode.add_extension_recommendation, "redhat.vscode-yaml")
-        executor(update_vscode_settings)
-    executor.finalize()
+            do(convert_zenodo_json)
+            do(remove_zenodo_json)
+        if CONFIG_PATH.citation.exists():
+            if CONFIG_PATH.zenodo.exists():
+                do(remove_zenodo_json)
+            do(check_citation_keys)
+            do(add_json_schema_precommit)
+            do(vscode.add_extension_recommendation, "redhat.vscode-yaml")
+            do(update_vscode_settings)
 
 
 def convert_zenodo_json() -> None:
@@ -162,7 +161,7 @@ def check_citation_keys() -> None:
         sorted_keys = sorted(missing_keys)
         msg = f"""
             {CONFIG_PATH.citation} is missing the following keys:
-            {', '.join(sorted_keys)}. More info on the keys can be found on
+            {", ".join(sorted_keys)}. More info on the keys can be found on
             https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
         """
         msg = dedent(msg).strip()

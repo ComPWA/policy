@@ -3,76 +3,73 @@
 import os
 
 from compwa_policy.utilities import vscode
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 
 
 def main(has_notebooks: bool) -> None:
-    executor = Executor()
-    executor(_update_extensions)
-    executor(_update_settings, has_notebooks)
-    executor.finalize()
+    with executor() as do:
+        do(_update_extensions)
+        do(_update_settings, has_notebooks)
 
 
 def _update_extensions() -> None:
-    executor = Executor()
-    executor(
-        vscode.add_extension_recommendation,
-        "stkb.rewrap",  # cspell:ignore stkb
-    )
-    executor(
-        vscode.remove_extension_recommendation,
-        "travisillig.vscode-json-stable-stringify",
-        # cspell:ignore travisillig
-        unwanted=True,
-    )
-    executor(
-        vscode.remove_extension_recommendation,
-        "tyriar.sort-lines",  # cspell:ignore tyriar
-        unwanted=True,
-    )
-    executor(
-        vscode.remove_extension_recommendation,
-        "garaioag.garaio-vscode-unwanted-recommendations",
-        # cspell:ignore garaio garaioag
-        unwanted=True,
-    )
-    executor(
-        vscode.add_extension_recommendation,
-        "Soulcode.vscode-unwanted-extensions",
-        # cspell:ignore Soulcode
-    )
-    executor.finalize()
+    with executor() as do:
+        do(
+            vscode.add_extension_recommendation,
+            "stkb.rewrap",  # cspell:ignore stkb
+        )
+        do(
+            vscode.remove_extension_recommendation,
+            "travisillig.vscode-json-stable-stringify",
+            # cspell:ignore travisillig
+            unwanted=True,
+        )
+        do(
+            vscode.remove_extension_recommendation,
+            "tyriar.sort-lines",  # cspell:ignore tyriar
+            unwanted=True,
+        )
+        do(
+            vscode.remove_extension_recommendation,
+            "garaioag.garaio-vscode-unwanted-recommendations",
+            # cspell:ignore garaio garaioag
+            unwanted=True,
+        )
+        do(
+            vscode.add_extension_recommendation,
+            "Soulcode.vscode-unwanted-extensions",
+            # cspell:ignore Soulcode
+        )
 
 
 def _update_settings(has_notebooks: bool) -> None:
-    executor = Executor()
-    executor(
-        vscode.update_settings,
-        {
-            "diffEditor.experimental.showMoves": True,
-            "editor.formatOnSave": True,
-            "gitlens.telemetry.enabled": False,
-            "multiDiffEditor.experimental.enabled": True,
-            "redhat.telemetry.enabled": False,
-            "rewrap.wrappingColumn": 88,  # black
-            "telemetry.telemetryLevel": "off",
-        },
-    )
-    executor(
-        vscode.update_settings,
-        {
-            "[git-commit]": {
-                "editor.rulers": [72],
-                "rewrap.wrappingColumn": 72,
+    with executor() as do:
+        do(
+            vscode.update_settings,
+            {
+                "diffEditor.experimental.showMoves": True,
+                "editor.formatOnSave": True,
+                "gitlens.telemetry.enabled": False,
+                "multiDiffEditor.experimental.enabled": True,
+                "redhat.telemetry.enabled": False,
+                "rewrap.wrappingColumn": 88,  # black
+                "telemetry.telemetryLevel": "off",
             },
-        },
-    )
-    executor(_remove_outdated_settings)
-    executor(_update_doc_settings)
-    if has_notebooks:
-        executor(_update_notebook_settings)
-    executor(_update_pytest_settings)
-    executor.finalize()
+        )
+        do(
+            vscode.update_settings,
+            {
+                "[git-commit]": {
+                    "editor.rulers": [72],
+                    "rewrap.wrappingColumn": 72,
+                },
+            },
+        )
+        do(_remove_outdated_settings)
+        do(_update_doc_settings)
+        if has_notebooks:
+            do(_update_notebook_settings)
+        do(_update_pytest_settings)
 
 
 def _remove_outdated_settings() -> None:
@@ -101,14 +98,13 @@ def _update_doc_settings() -> None:
     settings = {
         "livePreview.defaultPreviewPath": "docs/_build/html",
     }
-    executor = Executor()
-    executor(vscode.update_settings, settings)
-    executor(
-        vscode.add_extension_recommendation,
-        "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
-    )
-    executor(vscode.add_extension_recommendation, "ms-vscode.live-server")
-    executor.finalize()
+    with executor() as do:
+        do(vscode.update_settings, settings)
+        do(
+            vscode.add_extension_recommendation,
+            "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
+        )
+        do(vscode.add_extension_recommendation, "ms-vscode.live-server")
 
 
 def _update_notebook_settings() -> None:

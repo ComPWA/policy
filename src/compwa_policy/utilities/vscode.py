@@ -9,7 +9,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable, OrderedDict, TypeVar, overload
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 
 from . import CONFIG_PATH
 
@@ -146,11 +146,10 @@ def remove_extension_recommendation(
             msg = f'Removed VS Code extension recommendation "{extension_name}"'
             raise PrecommitError(msg)
 
-    executor = Executor()
-    executor(_remove, extension_name)
-    if unwanted:
-        executor(add_unwanted_extension, extension_name)
-    executor.finalize()
+    with executor() as do:
+        do(_remove, extension_name)
+        if unwanted:
+            do(add_unwanted_extension, extension_name)
 
 
 def __to_lower(lst: list[str]) -> list[str]:

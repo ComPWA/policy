@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Any, Sequence
 
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.executor import executor
 
 from . import (
     black,
@@ -50,63 +50,63 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
     dev_python_version = __get_python_version(args.dev_python_version)
-    executor = Executor()
-    executor(citation.main)
-    executor(commitlint.main)
-    executor(conda.main, dev_python_version)
-    executor(cspell.main, args.no_cspell_update)
-    executor(dependabot.main, args.dependabot)
-    executor(editorconfig.main, args.no_python)
-    if not args.allow_labels:
-        executor(github_labels.main)
-    if not args.no_github_actions:
-        executor(
-            github_workflows.main,
-            allow_deprecated=args.allow_deprecated_workflows,
-            doc_apt_packages=_to_list(args.doc_apt_packages),
-            github_pages=args.github_pages,
-            keep_pr_linting=args.keep_pr_linting,
-            no_macos=args.no_macos,
-            no_pypi=args.no_pypi,
-            no_version_branches=args.no_version_branches,
-            python_version=dev_python_version,
-            single_threaded=args.pytest_single_threaded,
-            skip_tests=_to_list(args.ci_skipped_tests),
-            test_extras=_to_list(args.ci_test_extras),
-        )
-    if has_notebooks:
-        executor(jupyter.main)
-    executor(nbstripout.main)
-    executor(toml.main)  # has to run before pre-commit
-    executor(prettier.main, args.no_prettierrc)
-    if is_python_repo:
-        if args.no_ruff:
-            executor(black.main, has_notebooks)
+    with executor(raise_exception=False) as do:
+        do(citation.main)
+        do(commitlint.main)
+        do(conda.main, dev_python_version)
+        do(cspell.main, args.no_cspell_update)
+        do(dependabot.main, args.dependabot)
+        do(editorconfig.main, args.no_python)
+        if not args.allow_labels:
+            do(github_labels.main)
         if not args.no_github_actions:
-            executor(
-                release_drafter.main,
-                args.repo_name,
-                args.repo_title,
+            do(
+                github_workflows.main,
+                allow_deprecated=args.allow_deprecated_workflows,
+                doc_apt_packages=_to_list(args.doc_apt_packages),
                 github_pages=args.github_pages,
+                keep_pr_linting=args.keep_pr_linting,
+                no_macos=args.no_macos,
+                no_pypi=args.no_pypi,
+                no_version_branches=args.no_version_branches,
+                python_version=dev_python_version,
+                single_threaded=args.pytest_single_threaded,
+                skip_tests=_to_list(args.ci_skipped_tests),
+                test_extras=_to_list(args.ci_test_extras),
             )
-        executor(mypy.main)
-        executor(pyright.main)
-        executor(pytest.main)
-        executor(pyupgrade.main, args.no_ruff)
-        if not args.no_ruff:
-            executor(ruff.main, has_notebooks)
-    if args.pin_requirements != "no":
-        executor(
-            update_pip_constraints.main,
-            frequency=args.pin_requirements,
-        )
-    executor(readthedocs.main, dev_python_version)
-    executor(remove_deprecated_tools, args.keep_issue_templates)
-    executor(vscode.main, has_notebooks)
-    executor(gitpod.main, args.no_gitpod, dev_python_version)
-    executor(precommit.main)
-    executor(tox.main, has_notebooks)
-    return executor.finalize(exception=False)
+        if has_notebooks:
+            do(jupyter.main)
+        do(nbstripout.main)
+        do(toml.main)  # has to run before pre-commit
+        do(prettier.main, args.no_prettierrc)
+        if is_python_repo:
+            if args.no_ruff:
+                do(black.main, has_notebooks)
+            if not args.no_github_actions:
+                do(
+                    release_drafter.main,
+                    args.repo_name,
+                    args.repo_title,
+                    github_pages=args.github_pages,
+                )
+            do(mypy.main)
+            do(pyright.main)
+            do(pytest.main)
+            do(pyupgrade.main, args.no_ruff)
+            if not args.no_ruff:
+                do(ruff.main, has_notebooks)
+        if args.pin_requirements != "no":
+            do(
+                update_pip_constraints.main,
+                frequency=args.pin_requirements,
+            )
+        do(readthedocs.main, dev_python_version)
+        do(remove_deprecated_tools, args.keep_issue_templates)
+        do(vscode.main, has_notebooks)
+        do(gitpod.main, args.no_gitpod, dev_python_version)
+        do(precommit.main)
+        do(tox.main, has_notebooks)
+    return 1 if do.error_messages else 0
 
 
 def _create_argparse() -> ArgumentParser:

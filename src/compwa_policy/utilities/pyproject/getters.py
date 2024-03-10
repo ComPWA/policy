@@ -6,11 +6,16 @@ As opposed to :mod:`.setters`, :mod:`.getters` leave the state of the
 
 from __future__ import annotations
 
+import io
 import sys
+from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, overload
+from typing import IO, TYPE_CHECKING, Any, overload
+
+import tomlkit
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities import CONFIG_PATH
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal
@@ -138,3 +143,22 @@ def has_sub_table(config: Container, dotted_header: str) -> bool:
         else:
             return False
     return True
+
+
+def load_pyproject_toml(
+    source: IO | Path | str = CONFIG_PATH.pyproject,
+) -> TOMLDocument:
+    """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+    if isinstance(source, io.IOBase):
+        current_position = source.tell()
+        source.seek(0)
+        document = tomlkit.load(source)  # type:ignore[arg-type]
+        source.seek(current_position)
+        return document
+    if isinstance(source, Path):
+        with open(source) as stream:
+            return tomlkit.load(stream)
+    if isinstance(source, str):
+        return tomlkit.loads(source)
+    msg = f"Source of type {type(source).__name__} is not supported"
+    raise TypeError(msg)
