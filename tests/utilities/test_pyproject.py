@@ -6,7 +6,7 @@ from textwrap import dedent
 import pytest
 from tomlkit.items import Table
 
-from compwa_policy.utilities.pyproject import Pyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
@@ -19,8 +19,8 @@ class TestPyprojectToml:
             pyproject = Pyproject.load()
         else:
             pyproject = Pyproject.load(path)
-        assert "build-system" in pyproject.document
-        assert "tool" in pyproject.document
+        assert "build-system" in pyproject._document
+        assert "tool" in pyproject._document
 
     def test_load_from_str(self):
         pyproject = Pyproject.load("""
@@ -39,8 +39,8 @@ class TestPyprojectToml:
             name = "my-package"
             requires-python = ">=3.7"
         """)
-        assert isinstance(pyproject.document["build-system"], Table)
-        assert pyproject.document["project"]["dependencies"] == [  # type: ignore[index]
+        assert isinstance(pyproject._document["build-system"], Table)
+        assert pyproject._document["project"]["dependencies"] == [  # type: ignore[index]
             "attrs",
             "sympy >=1.10",
         ]
@@ -59,14 +59,13 @@ def test_edit_and_dump():
         city = "Wonderland"
         street = "123 Main St"
     """)
-    pyproject = Pyproject.load(src)
-
-    address = pyproject.get_table("owner.address")
-    address["city"] = "New York"
-    work = pyproject.get_table("owner.work", create=True)
-    work["type"] = "scientist"
-    tools = pyproject.get_table("tool", create=True)
-    tools["black"] = to_toml_array(["--line-length=79"], enforce_multiline=True)
+    with ModifiablePyproject.load(src) as pyproject:
+        address = pyproject.get_table("owner.address")
+        address["city"] = "New York"
+        work = pyproject.get_table("owner.work", create=True)
+        work["type"] = "scientist"
+        tools = pyproject.get_table("tool", create=True)
+        tools["black"] = to_toml_array(["--line-length=79"], enforce_multiline=True)
 
     new_content = pyproject.dumps()
     expected = dedent("""

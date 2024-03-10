@@ -6,17 +6,17 @@ import json
 import os
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.pyproject import Pyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
 def main() -> None:
-    with Pyproject.load() as pyproject:
+    with ModifiablePyproject.load() as pyproject:
         _merge_config_into_pyproject(pyproject)
         _update_settings(pyproject)
 
 
-def _merge_config_into_pyproject(pyproject: Pyproject) -> None:
+def _merge_config_into_pyproject(pyproject: ModifiablePyproject) -> None:
     config_path = "pyrightconfig.json"  # cspell:ignore pyrightconfig
     if not os.path.exists(config_path):
         return
@@ -29,10 +29,10 @@ def _merge_config_into_pyproject(pyproject: Pyproject) -> None:
     tool_table.update(existing_config)
     os.remove(config_path)
     msg = f"Moved pyright configuration to {CONFIG_PATH.pyproject}"
-    pyproject.modifications.append(msg)
+    pyproject.append_to_changelog(msg)
 
 
-def _update_settings(pyproject: Pyproject) -> None:
+def _update_settings(pyproject: ModifiablePyproject) -> None:
     table_key = "tool.pyright"
     if not pyproject.has_table(table_key):
         return
@@ -43,4 +43,4 @@ def _update_settings(pyproject: Pyproject) -> None:
     if not complies_with_subset(pyright_settings, minimal_settings):
         pyright_settings.update(minimal_settings)
         msg = f"Updated pyright configuration in {CONFIG_PATH.pyproject}"
-        pyproject.modifications.append(msg)
+        pyproject.append_to_changelog(msg)

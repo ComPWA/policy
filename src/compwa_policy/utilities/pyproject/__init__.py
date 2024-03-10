@@ -7,7 +7,7 @@ import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import IO, TYPE_CHECKING, Iterable, Sequence, overload
+from typing import IO, TYPE_CHECKING, Iterable, Sequence, TypeVar, overload
 
 import tomlkit
 from attrs import field, frozen
@@ -30,42 +30,32 @@ from compwa_policy.utilities.pyproject.setters import (
 )
 
 if sys.version_info < (3, 8):
-    from typing_extensions import Literal
+    from typing_extensions import Literal, final
 else:
-    from typing import Literal
+    from typing import Literal, final
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
 if TYPE_CHECKING:
     from types import TracebackType
 
     from tomlkit.items import Table
     from tomlkit.toml_document import TOMLDocument
 
+T = TypeVar("T", bound="Pyproject")
+
 
 @frozen
-class Pyproject(AbstractContextManager):
-    """Stateful representation of a :code:`pyproject.toml` file.
+class Pyproject:
+    """Read-only representation of a :code:`pyproject.toml` file."""
 
-    Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
-    separate sub-hooks. The :meth:`.finalize` method should be called after all the
-    modifications have been applied.
-    """
+    _document: TOMLDocument
+    _source: IO | Path | None = field(default=None)
 
-    document: TOMLDocument
-    source: IO | Path | None = field(default=None)
-    modifications: list[str] = field(factory=list, init=False)
-
-    def __enter__(self) -> Pyproject:
-        return self
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
-        self.finalize()
-
+    @final
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Pyproject:
+    def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         if isinstance(source, io.IOBase):
             current_position = source.tell()
@@ -82,14 +72,90 @@ class Pyproject(AbstractContextManager):
         msg = f"Source of type {type(source).__name__} is not supported"
         raise TypeError(msg)
 
+    @final
+    def dumps(self) -> str:
+        src = tomlkit.dumps(self._document, sort_keys=True)
+        return f"{src.strip()}\n"
+
+    def get_table(self, dotted_header: str, create: bool = False) -> Table:
+        if create:
+            msg = "Cannot create sub-tables in a read-only pyproject.toml"
+            raise TypeError(msg)
+        return get_sub_table(self._document, dotted_header)
+
+    @final
+    def has_table(self, dotted_header: str) -> bool:
+        return has_sub_table(self._document, dotted_header)
+
+    @overload
+    def get_package_name(self) -> str | None: ...
+    @overload
+    def get_package_name(self, *, raise_on_missing: Literal[False]) -> str | None: ...
+    @overload
+    def get_package_name(self, *, raise_on_missing: Literal[True]) -> str: ...
+    @final
+    def get_package_name(self, *, raise_on_missing: bool = False):  # type:ignore[no-untyped-def]
+        return get_package_name(self._document, raise_on_missing)  # type:ignore[call-overload,reportCallIssue]
+
+    @final
+    def get_repo_url(self) -> str:
+        """Extract the source URL from the project table in pyproject.toml.
+
+        >>> Pyproject.load().get_repo_url()
+        'https://github.com/ComPWA/policy'
+        """
+        return get_source_url(self._document)
+
+    @final
+    def get_supported_python_versions(self) -> list[PythonVersion]:
+        """Extract sorted, supported Python versions from package classifiers.
+
+        >>> Pyproject.load().get_supported_python_versions()
+        ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        """
+        return get_supported_python_versions(self._document)
+
+
+@frozen
+class ModifiablePyproject(Pyproject, AbstractContextManager):
+    """Stateful representation of a :code:`pyproject.toml` file.
+
+    Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
+    separate sub-hooks. The modifications are dumped once the context is exited.
+    """
+
+    _is_in_context = False
+    _changelog: list[str] = field(factory=list)
+
+    def __enter__(self) -> ModifiablePyproject:
+        object.__setattr__(self, "_is_in_context", True)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        if not self._changelog:
+            return
+        if self._source is None:
+            self.dump(self._source)
+        msg = "Following modifications were made"
+        if isinstance(self._source, (Path, str)):
+            msg = f" to {self._source}"
+        msg += ":\n\n"
+        modifications = indent("\n".join(self._changelog), prefix="   - ")
+        raise PrecommitError(modifications)
+
     def dump(self, target: IO | Path | str | None = None) -> None:
-        if target is None and self.source is None:
+        if target is None and self._source is None:
             msg = "Target required when source is not a file or I/O stream"
             raise ValueError(msg)
         if isinstance(target, io.IOBase):
             current_position = target.tell()
             target.seek(0)
-            tomlkit.dump(self.document, target, sort_keys=True)
+            tomlkit.dump(self._document, target, sort_keys=True)
             target.seek(current_position)
         elif isinstance(target, (Path, str)):
             src = self.dumps()
@@ -99,76 +165,39 @@ class Pyproject(AbstractContextManager):
             msg = f"Target of type {type(target).__name__} is not supported"
             raise TypeError(msg)
 
-    def dumps(self) -> str:
-        src = tomlkit.dumps(self.document, sort_keys=True)
-        return f"{src.strip()}\n"
-
-    def finalize(self) -> None:
-        """If `modifications` were made, :meth:`dump` and raise `.PrecommitError`."""
-        if not self.modifications:
-            return
-        self.dump(self.source)
-        msg = "Following modifications were made"
-        if isinstance(self.source, (Path, str)):
-            msg = f" to {self.source}"
-        msg += ":\n\n"
-        modifications = indent("\n".join(self.modifications), prefix="   - ")
-        self.modifications.clear()
-        raise PrecommitError(modifications)
-
-    def __del__(self) -> None:
-        if self.modifications:
-            msg = "Modifications were made, but finalize was not called"
-            raise RuntimeError(msg)
-
+    @override
     def get_table(self, dotted_header: str, create: bool = False) -> Table:
+        self.__assert_is_in_context()
         if create:
-            create_sub_table(self.document, dotted_header)
-        return get_sub_table(self.document, dotted_header)
-
-    def has_table(self, dotted_header: str) -> bool:
-        return has_sub_table(self.document, dotted_header)
-
-    @overload
-    def get_package_name(self) -> str | None: ...
-    @overload
-    def get_package_name(self, *, raise_on_missing: Literal[False]) -> str | None: ...
-    @overload
-    def get_package_name(self, *, raise_on_missing: Literal[True]) -> str: ...
-    def get_package_name(self, *, raise_on_missing: bool = False):  # type:ignore[no-untyped-def]
-        return get_package_name(self.document, raise_on_missing)  # type:ignore[call-overload,reportCallIssue]
-
-    def get_repo_url(self) -> str:
-        """Extract the source URL from the project table in pyproject.toml.
-
-        >>> Pyproject.load().get_repo_url()
-        'https://github.com/ComPWA/policy'
-        """
-        return get_source_url(self.document)
-
-    def get_supported_python_versions(self) -> list[PythonVersion]:
-        """Extract sorted, supported Python versions from package classifiers.
-
-        >>> Pyproject.load().get_supported_python_versions()
-        ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
-        """
-        return get_supported_python_versions(self.document)
+            create_sub_table(self._document, dotted_header)
+        return super().get_table(dotted_header)
 
     def add_dependency(
         self, package: str, optional_key: str | Sequence[str] | None = None
     ) -> None:
-        updated = add_dependency(self.document, package, optional_key)
+        self.__assert_is_in_context()
+        updated = add_dependency(self._document, package, optional_key)
         if updated:
             msg = f"Listed {package} as a dependency"
-            self.modifications.append(msg)
+            self._changelog.append(msg)
 
     def remove_dependency(
         self, package: str, ignored_sections: Iterable[str] | None = None
     ) -> None:
-        updated = remove_dependency(self.document, package, ignored_sections)
+        self.__assert_is_in_context()
+        updated = remove_dependency(self._document, package, ignored_sections)
         if updated:
             msg = f"Removed {package} from dependencies"
-            self.modifications.append(msg)
+            self._changelog.append(msg)
+
+    def __assert_is_in_context(self) -> None:
+        if not self._is_in_context:
+            msg = "Modifications can only be made within a context"
+            raise RuntimeError(msg)
+
+    def append_to_changelog(self, message: str) -> None:
+        self.__assert_is_in_context()
+        self._changelog.append(message)
 
 
 def complies_with_subset(settings: dict, minimal_settings: dict) -> bool:

@@ -5,18 +5,15 @@ import os
 import tomlkit
 from ini2toml.api import Translator
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import Pyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 
 
 def main() -> None:
-    pyproject = Pyproject.load()
-    with Executor() as do:
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_merge_mypy_into_pyproject, pyproject)
         do(_update_vscode_settings, pyproject)
-        do(pyproject.finalize)
 
 
 def _update_vscode_settings(pyproject: Pyproject) -> None:
@@ -40,7 +37,7 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
             do(vscode.update_settings, settings)
 
 
-def _merge_mypy_into_pyproject(pyproject: Pyproject) -> None:
+def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     config_path = ".mypy.ini"
     if not os.path.exists(config_path):
         return
@@ -52,4 +49,4 @@ def _merge_mypy_into_pyproject(pyproject: Pyproject) -> None:
     tool_table.update(mypy_config)
     os.remove(config_path)
     msg = f"Moved mypy configuration to {CONFIG_PATH.pyproject}"
-    raise PrecommitError(msg)
+    pyproject.append_to_changelog(msg)
