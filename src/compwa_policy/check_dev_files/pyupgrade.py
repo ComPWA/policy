@@ -11,7 +11,7 @@ from compwa_policy.utilities.precommit import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.pyproject import Pyproject
 
 
 def main(no_ruff: bool) -> None:
@@ -53,7 +53,7 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     >>> __get_pyupgrade_version_argument()
     ['--py37-plus']
     """
-    supported_python_versions = PyprojectTOML.load().get_supported_python_versions()
+    supported_python_versions = Pyproject.load().get_supported_python_versions()
     lowest_version = supported_python_versions[0]
     version_repr = lowest_version.replace(".", "")
     yaml = YAML(typ="rt")

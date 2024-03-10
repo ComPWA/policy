@@ -6,17 +6,17 @@ import json
 import os
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.pyproject import PyprojectTOML, complies_with_subset
+from compwa_policy.utilities.pyproject import Pyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
 def main() -> None:
-    with PyprojectTOML.load() as pyproject:
+    with Pyproject.load() as pyproject:
         _merge_config_into_pyproject(pyproject)
         _update_settings(pyproject)
 
 
-def _merge_config_into_pyproject(pyproject: PyprojectTOML) -> None:
+def _merge_config_into_pyproject(pyproject: Pyproject) -> None:
     config_path = "pyrightconfig.json"  # cspell:ignore pyrightconfig
     if not os.path.exists(config_path):
         return
@@ -32,7 +32,7 @@ def _merge_config_into_pyproject(pyproject: PyprojectTOML) -> None:
     pyproject.modifications.append(msg)
 
 
-def _update_settings(pyproject: PyprojectTOML) -> None:
+def _update_settings(pyproject: Pyproject) -> None:
     table_key = "tool.pyright"
     if not pyproject.has_table(table_key):
         return

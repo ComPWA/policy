@@ -17,7 +17,7 @@ from compwa_policy.utilities.precommit import (
     Repo,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
@@ -43,7 +43,7 @@ def main() -> None:
 
 
 def _update_tomlsort_config() -> None:
-    pyproject = PyprojectTOML.load()
+    pyproject = Pyproject.load()
     sort_first = [
         "build-system",
         "project",

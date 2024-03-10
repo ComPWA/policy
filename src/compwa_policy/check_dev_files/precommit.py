@@ -19,7 +19,7 @@ from compwa_policy.utilities.precommit import (
     load_precommit_config,
     load_roundtrip_precommit_config,
 )
-from compwa_policy.utilities.pyproject import PyprojectTOML, get_constraints_file
+from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
@@ -91,7 +91,7 @@ def _update_precommit_ci_commit_msg() -> None:
 
 
 def __has_constraint_files() -> bool:
-    python_versions = PyprojectTOML.load().get_supported_python_versions()
+    python_versions = Pyproject.load().get_supported_python_versions()
     constraint_files = [get_constraints_file(v) for v in python_versions]
     constraint_paths = [Path(path) for path in constraint_files if path is not None]
     return any(path.exists() for path in constraint_paths)

@@ -11,7 +11,7 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def main() -> None:
-    pyproject = PyprojectTOML.load()
+    pyproject = Pyproject.load()
     with Executor() as do:
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
@@ -27,7 +27,7 @@ def main() -> None:
         do(pyproject.finalize)
 
 
-def _merge_coverage_into_pyproject(pyproject: PyprojectTOML) -> None:
+def _merge_coverage_into_pyproject(pyproject: Pyproject) -> None:
     if not CONFIG_PATH.pytest_ini.exists():
         return
     pytest_ini = open_config(CONFIG_PATH.pytest_ini)
@@ -46,7 +46,7 @@ def _merge_coverage_into_pyproject(pyproject: PyprojectTOML) -> None:
     pyproject.modifications.append(msg)
 
 
-def _merge_pytest_into_pyproject(pyproject: PyprojectTOML) -> None:
+def _merge_pytest_into_pyproject(pyproject: Pyproject) -> None:
     if not CONFIG_PATH.pytest_ini.exists():
         return
     with open(CONFIG_PATH.pytest_ini) as stream:
@@ -61,7 +61,7 @@ def _merge_pytest_into_pyproject(pyproject: PyprojectTOML) -> None:
     raise PrecommitError(msg)
 
 
-def _update_settings(pyproject: PyprojectTOML) -> None:
+def _update_settings(pyproject: Pyproject) -> None:
     if not pyproject.has_table("tool.pytest.ini_options"):
         return
     config = pyproject.get_table("tool.pytest.ini_options")

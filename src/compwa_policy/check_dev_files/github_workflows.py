@@ -19,11 +19,7 @@ from compwa_policy.utilities import (
 )
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import load_precommit_config
-from compwa_policy.utilities.pyproject import (
-    PyprojectTOML,
-    PythonVersion,
-    get_build_system,
-)
+from compwa_policy.utilities.pyproject import Pyproject, PythonVersion, get_build_system
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -238,7 +234,7 @@ def __update_with_section(config: dict, job_name: str) -> None:
 
 
 def __get_package_name() -> str:
-    pypi_name = PyprojectTOML.load().get_package_name(raise_on_missing=True)
+    pypi_name = Pyproject.load().get_package_name(raise_on_missing=True)
     package_name = pypi_name.replace("-", "_").lower()
     if os.path.exists(f"src/{package_name}/"):
         return package_name

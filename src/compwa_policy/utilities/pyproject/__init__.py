@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 
 @frozen
-class PyprojectTOML(AbstractContextManager):
+class Pyproject(AbstractContextManager):
     """Stateful representation of a :code:`pyproject.toml` file.
 
     Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
@@ -53,7 +53,7 @@ class PyprojectTOML(AbstractContextManager):
     source: IO | Path | None = field(default=None)
     modifications: list[str] = field(factory=list, init=False)
 
-    def __enter__(self) -> PyprojectTOML:
+    def __enter__(self) -> Pyproject:
         return self
 
     def __exit__(
@@ -65,7 +65,7 @@ class PyprojectTOML(AbstractContextManager):
         self.finalize()
 
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> PyprojectTOML:
+    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Pyproject:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         if isinstance(source, io.IOBase):
             current_position = source.tell()
@@ -141,7 +141,7 @@ class PyprojectTOML(AbstractContextManager):
     def get_repo_url(self) -> str:
         """Extract the source URL from the project table in pyproject.toml.
 
-        >>> PyprojectTOML.load().get_repo_url()
+        >>> Pyproject.load().get_repo_url()
         'https://github.com/ComPWA/policy'
         """
         return get_source_url(self.document)
@@ -149,7 +149,7 @@ class PyprojectTOML(AbstractContextManager):
     def get_supported_python_versions(self) -> list[PythonVersion]:
         """Extract sorted, supported Python versions from package classifiers.
 
-        >>> PyprojectTOML.load().get_supported_python_versions()
+        >>> Pyproject.load().get_supported_python_versions()
         ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         """
         return get_supported_python_versions(self.document)
@@ -180,7 +180,7 @@ def get_build_system() -> Literal["pyproject", "setup.cfg"] | None:
         return "setup.cfg"
     if not CONFIG_PATH.pyproject.exists():
         return None
-    pyproject = PyprojectTOML.load()
+    pyproject = Pyproject.load()
     if pyproject.get_package_name() is None:
         return None
     return "pyproject"

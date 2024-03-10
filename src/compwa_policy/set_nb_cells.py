@@ -29,7 +29,7 @@ from typing import Sequence
 import nbformat
 
 from compwa_policy.utilities.notebook import load_notebook
-from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.pyproject import Pyproject
 
 __CONFIG_CELL_CONTENT = """
 import os
@@ -119,7 +119,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 @lru_cache(maxsize=1)
 def __get_install_cell() -> str:
-    package_name = PyprojectTOML.load().get_package_name(raise_on_missing=True)
+    package_name = Pyproject.load().get_package_name(raise_on_missing=True)
     msg = f"""
     # WARNING: advised to install a specific version, e.g. {package_name}==0.1.2
     %pip install -q {package_name}

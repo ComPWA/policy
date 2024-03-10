@@ -17,7 +17,7 @@ from compwa_policy.utilities.precommit import (
     update_single_hook_precommit_repo,
 )
 from compwa_policy.utilities.pyproject import (
-    PyprojectTOML,
+    Pyproject,
     complies_with_subset,
     get_build_system,
 )
@@ -26,7 +26,7 @@ from compwa_policy.utilities.toml import to_toml_array
 
 
 def main(has_notebooks: bool) -> None:
-    pyproject = PyprojectTOML.load()
+    pyproject = Pyproject.load()
     with Executor() as do:
         do(
             add_badge,
@@ -46,7 +46,7 @@ def main(has_notebooks: bool) -> None:
         do(pyproject.finalize)
 
 
-def _remove_black(pyproject: PyprojectTOML) -> None:
+def _remove_black(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(
             vscode.remove_extension_recommendation,
@@ -66,7 +66,7 @@ def _remove_black(pyproject: PyprojectTOML) -> None:
         do(vscode.remove_settings, ["black-formatter.importStrategy"])
 
 
-def _remove_flake8(pyproject: PyprojectTOML) -> None:
+def _remove_flake8(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(remove_configs, [".flake8"])
         do(__remove_nbqa_option, pyproject, "flake8")
@@ -79,7 +79,7 @@ def _remove_flake8(pyproject: PyprojectTOML) -> None:
         do(vscode.remove_settings, ["flake8.importStrategy"])
 
 
-def _remove_isort(pyproject: PyprojectTOML) -> None:
+def _remove_isort(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(__remove_nbqa_option, pyproject, "black")
         do(__remove_nbqa_option, pyproject, "isort")
@@ -91,7 +91,7 @@ def _remove_isort(pyproject: PyprojectTOML) -> None:
         do(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
 
 
-def __remove_nbqa_option(pyproject: PyprojectTOML, option: str) -> None:
+def __remove_nbqa_option(pyproject: Pyproject, option: str) -> None:
     # cspell:ignore addopts
     table_key = "tool.nbqa.addopts"
     if not pyproject.has_table(table_key):
@@ -104,7 +104,7 @@ def __remove_nbqa_option(pyproject: PyprojectTOML, option: str) -> None:
     pyproject.modifications.append(msg)
 
 
-def __remove_tool_table(pyproject: PyprojectTOML, tool_table: str) -> None:
+def __remove_tool_table(pyproject: Pyproject, tool_table: str) -> None:
     table_key = f"tool.{tool_table}"
     if not pyproject.has_table(table_key):
         return
@@ -113,7 +113,7 @@ def __remove_tool_table(pyproject: PyprojectTOML, tool_table: str) -> None:
     pyproject.modifications.append(msg)
 
 
-def _remove_pydocstyle(pyproject: PyprojectTOML) -> None:
+def _remove_pydocstyle(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(
             remove_configs,
@@ -127,7 +127,7 @@ def _remove_pydocstyle(pyproject: PyprojectTOML) -> None:
         do(remove_precommit_hook, "pydocstyle")
 
 
-def _remove_pylint(pyproject: PyprojectTOML) -> None:
+def _remove_pylint(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
         do(pyproject.remove_dependency, "pylint")
@@ -137,7 +137,7 @@ def _remove_pylint(pyproject: PyprojectTOML) -> None:
         do(vscode.remove_settings, ["pylint.importStrategy"])
 
 
-def _move_ruff_lint_config(pyproject: PyprojectTOML) -> None:
+def _move_ruff_lint_config(pyproject: Pyproject) -> None:
     """Migrate linting configuration to :code:`tool.ruff.lint`.
 
     See `this blog <https://astral.sh/blog/ruff-v0.2.0>`_ for details.
@@ -170,7 +170,7 @@ def _move_ruff_lint_config(pyproject: PyprojectTOML) -> None:
         )
 
 
-def _update_ruff_config(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
+def _update_ruff_config(pyproject: Pyproject, has_notebooks: bool) -> None:
     with Executor() as do:
         do(__update_global_settings, pyproject, has_notebooks)
         do(__update_ruff_format_settings, pyproject)
@@ -181,7 +181,7 @@ def _update_ruff_config(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
         do(__remove_nbqa, pyproject)
 
 
-def __update_global_settings(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
+def __update_global_settings(pyproject: Pyproject, has_notebooks: bool) -> None:
     settings = pyproject.get_table("tool.ruff", create=True)
     minimal_settings = {
         "preview": True,
@@ -206,10 +206,10 @@ def __update_global_settings(pyproject: PyprojectTOML, has_notebooks: bool) -> N
         pyproject.modifications.append(msg)
 
 
-def ___get_target_version(pyproject: PyprojectTOML) -> str:
+def ___get_target_version(pyproject: Pyproject) -> str:
     """Get minimal :code:`target-version` for Ruff.
 
-    >>> pyproject = PyprojectTOML.load()
+    >>> pyproject = Pyproject.load()
     >>> ___get_target_version(pyproject)
     'py37'
     """
@@ -241,7 +241,7 @@ def ___get_src_directories() -> list[str]:
     return to_toml_array(sorted(directories))
 
 
-def __update_ruff_format_settings(pyproject: PyprojectTOML) -> None:
+def __update_ruff_format_settings(pyproject: Pyproject) -> None:
     settings = pyproject.get_table("tool.ruff.format", create=True)
     minimal_settings = {
         "docstring-code-format": True,
@@ -253,7 +253,7 @@ def __update_ruff_format_settings(pyproject: PyprojectTOML) -> None:
         pyproject.modifications.append(msg)
 
 
-def __update_ruff_lint_settings(pyproject: PyprojectTOML) -> None:
+def __update_ruff_lint_settings(pyproject: Pyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
     ignored_rules = [
         "D101",  # class docstring
@@ -284,7 +284,7 @@ def __update_ruff_lint_settings(pyproject: PyprojectTOML) -> None:
         pyproject.modifications.append(msg)
 
 
-def ___get_selected_ruff_rules(pyproject: PyprojectTOML) -> Array:
+def ___get_selected_ruff_rules(pyproject: Pyproject) -> Array:
     rules = {
         "A",
         "B",
@@ -329,7 +329,7 @@ def ___get_task_tags(ruff_settings: Table) -> Array:
     return to_toml_array(sorted(existing | expected))
 
 
-def __update_per_file_ignores(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
+def __update_per_file_ignores(pyproject: Pyproject, has_notebooks: bool) -> None:
     settings = pyproject.get_table("tool.ruff.lint.per-file-ignores", create=True)
     minimal_settings = {}
     if has_notebooks:
@@ -414,7 +414,7 @@ def ___merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -
     return to_toml_array(sorted(filtered), enforce_multiline)
 
 
-def ___get_existing_nbqa_ignores(pyproject: PyprojectTOML) -> set[str]:
+def ___get_existing_nbqa_ignores(pyproject: Pyproject) -> set[str]:
     nbqa_table = pyproject.get_table("tool.nbqa.addopts", create=True)
     if not nbqa_table:
         return set()
@@ -441,7 +441,7 @@ def ___ban(
     return to_toml_array(sorted(filtered), enforce_multiline)
 
 
-def __update_isort_settings(pyproject: PyprojectTOML) -> None:
+def __update_isort_settings(pyproject: Pyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint.isort", create=True)
     minimal_settings = {"split-on-trailing-comma": False}
     if not complies_with_subset(settings, minimal_settings):
@@ -450,7 +450,7 @@ def __update_isort_settings(pyproject: PyprojectTOML) -> None:
         pyproject.modifications.append(msg)
 
 
-def __update_pydocstyle_settings(pyproject: PyprojectTOML) -> None:
+def __update_pydocstyle_settings(pyproject: Pyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint.pydocstyle", create=True)
     minimal_settings = {
         "convention": "google",
@@ -461,13 +461,13 @@ def __update_pydocstyle_settings(pyproject: PyprojectTOML) -> None:
         pyproject.modifications.append(msg)
 
 
-def __remove_nbqa(pyproject: PyprojectTOML) -> None:
+def __remove_nbqa(pyproject: Pyproject) -> None:
     with Executor() as do:
         do(___remove_nbqa_settings, pyproject)
         do(remove_precommit_hook, "nbqa-ruff")
 
 
-def ___remove_nbqa_settings(pyproject: PyprojectTOML) -> None:
+def ___remove_nbqa_settings(pyproject: Pyproject) -> None:
     nbqa_addopts = pyproject.get_table("tool.nbqa.addopts", create=True)
     if "ruff" in nbqa_addopts:
         del nbqa_addopts["ruff"]
@@ -497,7 +497,7 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
     update_single_hook_precommit_repo(expected_repo)
 
 
-def _update_lint_dependencies(pyproject: PyprojectTOML) -> None:
+def _update_lint_dependencies(pyproject: Pyproject) -> None:
     if get_build_system() is None:
         return
     python_versions = pyproject.get_supported_python_versions()
