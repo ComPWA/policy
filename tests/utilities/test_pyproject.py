@@ -4,7 +4,6 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from tomlkit.items import Table
 
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_toml_array
@@ -39,8 +38,12 @@ class TestPyprojectToml:
             name = "my-package"
             requires-python = ">=3.7"
         """)
-        assert isinstance(pyproject._document["build-system"], Table)
-        assert pyproject._document["project"]["dependencies"] == [  # type: ignore[index]
+        assert set(pyproject._document) == {
+            "build-system",
+            "project",
+        }
+        project = pyproject.get_table("project")
+        assert project.get("dependencies") == [
             "attrs",
             "sympy >=1.10",
         ]

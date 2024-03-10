@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import tomlkit
 from ini2toml.api import Translator
@@ -70,7 +70,7 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def __get_expected_addopts(existing: str | Array) -> Array:
+def __get_expected_addopts(existing: str | Iterable) -> Array:
     if isinstance(existing, str):
         options = {opt.strip() for opt in __split_options(existing)}
     else:

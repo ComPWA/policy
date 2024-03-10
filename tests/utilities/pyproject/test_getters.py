@@ -1,5 +1,4 @@
 import pytest
-import tomlkit
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.pyproject.getters import (
@@ -9,11 +8,12 @@ from compwa_policy.utilities.pyproject.getters import (
     get_sub_table,
     get_supported_python_versions,
     has_sub_table,
+    load_pyproject_toml,
 )
 
 
 def test_get_package_name():
-    src = tomlkit.loads("""
+    src = load_pyproject_toml("""
         [project]
         name = "my-package"
     """)
@@ -22,7 +22,7 @@ def test_get_package_name():
 
 
 def test_get_package_name_missing():
-    src = tomlkit.loads("""
+    src = load_pyproject_toml("""
         [server]
         ip = "192.168.1.1"
         port = 8000
@@ -43,7 +43,7 @@ def test_get_package_name_missing():
 
 
 def test_get_project_urls():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project]
         name = "my-package"
 
@@ -61,7 +61,7 @@ def test_get_project_urls():
 
 
 def test_get_project_urls_missing():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project]
         name = "my-package"
     """)
@@ -73,7 +73,7 @@ def test_get_project_urls_missing():
 
 
 def test_get_source_url_missing():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project.urls]
         Documentation = "https://ampform.rtfd.io"
     """)
@@ -85,7 +85,7 @@ def test_get_source_url_missing():
 
 
 def test_get_supported_python_versions():
-    pyproject = tomlkit.loads("""
+    pyproject = load_pyproject_toml("""
         [project]
         name = "my-package"
         classifiers = [
@@ -100,7 +100,7 @@ def test_get_supported_python_versions():
 
 
 def test_get_sub_table():
-    document = tomlkit.loads("""
+    document = load_pyproject_toml("""
         [project]
         name = "my-package"
 
@@ -124,7 +124,7 @@ def test_get_sub_table():
 
 
 def test_has_sub_table():
-    document = tomlkit.loads("""
+    document = load_pyproject_toml("""
         [project]
         name = "my-package"
 

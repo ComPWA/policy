@@ -17,18 +17,24 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
         "obj",
         "compwa_policy.check_dev_files.dependabot.DependabotOption",
     ),
+    "IO": "typing.IO",
+    "Iterable": "typing.Iterable",
     "K": "typing.TypeVar",
+    "Mapping": "collections.abc.Mapping",
     "NotRequired": ("obj", "typing.NotRequired"),
-    "P": "typing.ParamSpec",
     "P.args": ("attr", "typing.ParamSpec.args"),
     "P.kwargs": ("attr", "typing.ParamSpec.kwargs"),
+    "P": "typing.ParamSpec",
     "Path": "pathlib.Path",
-    "PythonVersion": "typing.TypeVar",
+    "ProjectURLs": "list",
+    "PyprojectTOML": "dict",
+    "PythonVersion": "str",
+    "Sequence": "typing.Sequence",
     "T": "typing.TypeVar",
-    "TOMLDocument": "tomlkit.TOMLDocument",
     "Table": "tomlkit.items.Table",
-    "V": "typing.TypeVar",
+    "TOMLDocument": "tomlkit.TOMLDocument",
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
+    "V": "typing.TypeVar",
 }
 author = "Common Partial Wave Analysis"
 autodoc_member_order = "bysource"
@@ -102,6 +108,7 @@ myst_enable_extensions = [
 ]
 nitpick_ignore = [
     ("py:class", "CommentedMap"),
+    ("py:class", "ProjectURLs"),
 ]
 nitpick_ignore_regex = [
     ("py:class", r"^.*.[A-Z]$"),

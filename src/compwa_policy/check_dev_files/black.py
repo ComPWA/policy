@@ -54,8 +54,8 @@ def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
     removed_options = set()
     for option in forbidden_options:
         if option in settings:
+            settings.pop(option)
             removed_options.add(option)
-            settings.remove(option)
     if removed_options:
         msg = (
             f"Removed {', '.join(sorted(removed_options))} option from black"

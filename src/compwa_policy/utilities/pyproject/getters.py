@@ -13,28 +13,29 @@ import tomlkit
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from compwa_policy.utilities.pyproject._struct import ProjectURLs, PyprojectTOML
+
 if sys.version_info < (3, 8):
     from typing_extensions import Literal
 else:
     from typing import Literal
-if TYPE_CHECKING:
-    from tomlkit.container import Container
-    from tomlkit.items import Table
-    from tomlkit.toml_document import TOMLDocument
 
 
 PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
 
 
 @overload
-def get_package_name(doc: TOMLDocument) -> str | None: ...
+def get_package_name(doc: PyprojectTOML) -> str | None: ...
 @overload
 def get_package_name(
-    doc: TOMLDocument, raise_on_missing: Literal[False]
+    doc: PyprojectTOML, raise_on_missing: Literal[False]
 ) -> str | None: ...
 @overload
-def get_package_name(doc: TOMLDocument, raise_on_missing: Literal[True]) -> str: ...
-def get_package_name(doc: TOMLDocument, raise_on_missing: bool = False):  # type: ignore[no-untyped-def]
+def get_package_name(doc: PyprojectTOML, raise_on_missing: Literal[True]) -> str: ...
+def get_package_name(doc: PyprojectTOML, raise_on_missing: bool = False):  # type: ignore[no-untyped-def]
     if not has_sub_table(doc, "project"):
         if raise_on_missing:
             msg = "Please provide a name for the package under the [project] table in pyproject.toml"
@@ -47,7 +48,7 @@ def get_package_name(doc: TOMLDocument, raise_on_missing: bool = False):  # type
     return package_name
 
 
-def get_project_urls(pyproject: TOMLDocument) -> Table:
+def get_project_urls(pyproject: PyprojectTOML) -> ProjectURLs:
     project_table = get_sub_table(pyproject, "project")
     urls = project_table.get("urls")
     if urls is None:
@@ -64,7 +65,7 @@ def get_project_urls(pyproject: TOMLDocument) -> Table:
     return urls
 
 
-def get_source_url(pyproject: TOMLDocument) -> str:
+def get_source_url(pyproject: PyprojectTOML) -> str:
     urls = get_project_urls(pyproject)
     source_url = urls.get("Source")
     if source_url is None:
@@ -73,7 +74,7 @@ def get_source_url(pyproject: TOMLDocument) -> str:
     return source_url
 
 
-def get_supported_python_versions(pyproject: TOMLDocument) -> list[PythonVersion]:
+def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersion]:
     """Extract sorted list of supported Python versions from package classifiers.
 
     >>> import tomlkit
@@ -120,9 +121,9 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
     return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
 
 
-def get_sub_table(config: Container, dotted_header: str) -> Table:
+def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str, Any]:
     """Get a TOML sub-table through a dotted header key."""
-    current_table: Any = config
+    current_table = config
     for header in dotted_header.split("."):
         if header not in current_table:
             msg = f"TOML data does not contain {dotted_header!r}"
@@ -131,7 +132,7 @@ def get_sub_table(config: Container, dotted_header: str) -> Table:
     return current_table
 
 
-def has_sub_table(config: Container, dotted_header: str) -> bool:
+def has_sub_table(config: Mapping[str, Any], dotted_header: str) -> bool:
     current_table: Any = config
     for header in dotted_header.split("."):
         if header in current_table:
@@ -143,7 +144,7 @@ def has_sub_table(config: Container, dotted_header: str) -> bool:
 
 def load_pyproject_toml(
     source: IO | Path | str = CONFIG_PATH.pyproject,
-) -> TOMLDocument:
+) -> PyprojectTOML:
     """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
     if isinstance(source, io.IOBase):
         current_position = source.tell()
@@ -153,8 +154,8 @@ def load_pyproject_toml(
         return document
     if isinstance(source, Path):
         with open(source) as stream:
-            return tomlkit.load(stream)
+            return tomlkit.load(stream)  # type:ignore[return-value]
     if isinstance(source, str):
-        return tomlkit.loads(source)
+        return tomlkit.loads(source)  # type:ignore[return-value]
     msg = f"Source of type {type(source).__name__} is not supported"
     raise TypeError(msg)

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable
+from collections import abc
+from typing import TYPE_CHECKING, Any, Iterable, Mapping
 
 from ruamel.yaml import YAML
-from tomlkit.items import Array, Table
 
 from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
@@ -24,6 +24,9 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
+
+if TYPE_CHECKING:
+    from tomlkit.items import Array
 
 
 def main(has_notebooks: bool) -> None:
@@ -98,18 +101,17 @@ def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
     nbqa_table = pyproject.get_table(table_key)
     if option not in nbqa_table:
         return
-    nbqa_table.remove(option)
+    nbqa_table.pop(option)
     msg = f"Removed {option!r} nbQA options from {CONFIG_PATH.pyproject}"
     pyproject.append_to_changelog(msg)
 
 
 def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None:
-    table_key = f"tool.{tool_table}"
-    if not pyproject.has_table(table_key):
-        return
-    pyproject._document["tool"].remove(tool_table)  # type: ignore[union-attr]
-    msg = f"Removed [tool.{tool_table}] section from {CONFIG_PATH.pyproject}"
-    pyproject.append_to_changelog(msg)
+    tools = pyproject._document.get("tool")
+    if isinstance(tools, dict) and tool_table in tools:
+        tools.pop(tool_table)
+        msg = f"Removed [tool.{tool_table}] section from {CONFIG_PATH.pyproject}"
+        pyproject.append_to_changelog(msg)
 
 
 def _remove_pydocstyle(pyproject: ModifiablePyproject) -> None:
@@ -153,11 +155,13 @@ def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
     }
     global_settings = pyproject.get_table("tool.ruff", create=True)
     lint_settings = {k: v for k, v in global_settings.items() if k in lint_option_keys}
-    lint_arrays = {k: v for k, v in lint_settings.items() if isinstance(v, Array)}
+    lint_arrays = {
+        k: v for k, v in lint_settings.items() if isinstance(v, abc.Sequence)
+    }
     if lint_arrays:
         lint_config = pyproject.get_table("tool.ruff.lint", create=True)
         lint_config.update(lint_arrays)
-    lint_tables = {k: v for k, v in lint_settings.items() if isinstance(v, Table)}
+    lint_tables = {k: v for k, v in lint_settings.items() if isinstance(v, abc.Mapping)}
     for table in lint_tables:
         lint_config = pyproject.get_table(f"tool.ruff.lint.{table}", create=True)
         lint_config.update(lint_tables[table])
@@ -322,7 +326,7 @@ def ___get_selected_ruff_rules(pyproject: Pyproject) -> Array:
     return to_toml_array(sorted(rules))
 
 
-def ___get_task_tags(ruff_settings: Table) -> Array:
+def ___get_task_tags(ruff_settings: Mapping[str, Any]) -> Array:
     existing: set[str] = set(ruff_settings.get("task-tags", set()))
     expected = {
         "cspell",
