@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import sys
+from functools import lru_cache
+from typing import ForwardRef
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal, TypedDict
@@ -64,3 +66,21 @@ class Hook(TypedDict):
     verbose: NotRequired[bool]
     log_file: NotRequired[str]
     pass_filenames: NotRequired[bool]
+
+
+def validate(config: PrecommitConfig) -> None:
+    required_keys = _get_required_keys(PrecommitConfig)
+    missing_keys = required_keys - set(config)
+    if missing_keys:
+        msg = f"Missing required keys: {sorted(missing_keys)}"
+        raise ValueError(msg)
+
+
+@lru_cache(maxsize=None)
+def _get_required_keys(struct: type) -> set[str]:
+    annotations: dict[str, ForwardRef] = struct.__annotations__
+    return {
+        key
+        for key, ref in annotations.items()
+        if not ref.__forward_arg__.startswith("NotRequired")
+    }

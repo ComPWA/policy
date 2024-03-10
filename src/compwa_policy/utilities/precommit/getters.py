@@ -9,6 +9,7 @@ from typing import IO, TYPE_CHECKING
 import yaml
 
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.precommit.struct import validate
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit.struct import PrecommitConfig, Repo
@@ -22,11 +23,12 @@ def load_precommit_config(
         current_position = source.tell()
         source.seek(0)
         document = yaml.safe_load(source)
+        validate(document)
         source.seek(current_position)
         return document
     if isinstance(source, Path):
         with open(source) as stream:
-            return yaml.safe_load(stream)
+            return load_precommit_config(stream)
     if isinstance(source, str):
         stream = io.StringIO(source)
         return load_precommit_config(stream)
