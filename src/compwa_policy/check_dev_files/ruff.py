@@ -9,7 +9,7 @@ from ruamel.yaml import YAML
 from tomlkit.items import Array, Table
 
 from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -27,7 +27,7 @@ from compwa_policy.utilities.toml import to_toml_array
 
 def main(has_notebooks: bool) -> None:
     pyproject = PyprojectTOML.load()
-    with executor() as do:
+    with Executor() as do:
         do(
             add_badge,
             "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
@@ -47,7 +47,7 @@ def main(has_notebooks: bool) -> None:
 
 
 def _remove_black(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(
             vscode.remove_extension_recommendation,
             "ms-python.black-formatter",
@@ -67,7 +67,7 @@ def _remove_black(pyproject: PyprojectTOML) -> None:
 
 
 def _remove_flake8(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(remove_configs, [".flake8"])
         do(__remove_nbqa_option, pyproject, "flake8")
         do(pyproject.remove_dependency, "flake8")
@@ -80,7 +80,7 @@ def _remove_flake8(pyproject: PyprojectTOML) -> None:
 
 
 def _remove_isort(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(__remove_nbqa_option, pyproject, "black")
         do(__remove_nbqa_option, pyproject, "isort")
         do(__remove_tool_table, pyproject, "isort")
@@ -114,7 +114,7 @@ def __remove_tool_table(pyproject: PyprojectTOML, tool_table: str) -> None:
 
 
 def _remove_pydocstyle(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(
             remove_configs,
             [
@@ -128,7 +128,7 @@ def _remove_pydocstyle(pyproject: PyprojectTOML) -> None:
 
 
 def _remove_pylint(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
         do(pyproject.remove_dependency, "pylint")
         do(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
@@ -171,7 +171,7 @@ def _move_ruff_lint_config(pyproject: PyprojectTOML) -> None:
 
 
 def _update_ruff_config(pyproject: PyprojectTOML, has_notebooks: bool) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(__update_global_settings, pyproject, has_notebooks)
         do(__update_ruff_format_settings, pyproject)
         do(__update_ruff_lint_settings, pyproject)
@@ -462,7 +462,7 @@ def __update_pydocstyle_settings(pyproject: PyprojectTOML) -> None:
 
 
 def __remove_nbqa(pyproject: PyprojectTOML) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(___remove_nbqa_settings, pyproject)
         do(remove_precommit_hook, "nbqa-ruff")
 
@@ -510,7 +510,7 @@ def _update_lint_dependencies(pyproject: PyprojectTOML) -> None:
 
 def _update_vscode_settings() -> None:
     # cspell:ignore charliermarsh
-    with executor() as do:
+    with Executor() as do:
         do(vscode.add_extension_recommendation, "charliermarsh.ruff")
         do(
             vscode.update_settings,

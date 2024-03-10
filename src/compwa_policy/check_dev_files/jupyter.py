@@ -1,6 +1,6 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import PyprojectTOML, get_build_system
 
 
@@ -15,7 +15,7 @@ def _update_dev_requirements() -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if "3.6" in supported_python_versions:
         return
-    with executor() as do:
+    with Executor() as do:
         for package in [
             "black",
             "isort",

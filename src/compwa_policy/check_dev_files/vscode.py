@@ -3,17 +3,17 @@
 import os
 
 from compwa_policy.utilities import vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 
 
 def main(has_notebooks: bool) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(_update_extensions)
         do(_update_settings, has_notebooks)
 
 
 def _update_extensions() -> None:
-    with executor() as do:
+    with Executor() as do:
         do(
             vscode.add_extension_recommendation,
             "stkb.rewrap",  # cspell:ignore stkb
@@ -43,7 +43,7 @@ def _update_extensions() -> None:
 
 
 def _update_settings(has_notebooks: bool) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(
             vscode.update_settings,
             {
@@ -98,7 +98,7 @@ def _update_doc_settings() -> None:
     settings = {
         "livePreview.defaultPreviewPath": "docs/_build/html",
     }
-    with executor() as do:
+    with Executor() as do:
         do(vscode.update_settings, settings)
         do(
             vscode.add_extension_recommendation,

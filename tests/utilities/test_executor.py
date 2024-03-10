@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 
 
 class TestExecutor:
@@ -22,7 +22,7 @@ class TestExecutor:
         def no_error() -> None:
             pass
 
-        with executor(raise_exception=False) as do:
+        with Executor(raise_exception=False) as do:
             do(do_without_args)
             do(do_with_positional_args, ["one", "two", "three"])
             do(do_with_keyword_args, "given as positional argument")

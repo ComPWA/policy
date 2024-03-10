@@ -7,7 +7,7 @@ from typing import Iterable
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import find_repo, load_precommit_config
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
@@ -28,7 +28,7 @@ def main(no_prettierrc: bool) -> None:
     if find_repo(config, r".*/mirrors-prettier") is None:
         _remove_configuration()
     else:
-        with executor() as do:
+        with Executor() as do:
             do(_fix_config_content, no_prettierrc)
             do(add_badge, __BADGE)
             do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
@@ -46,7 +46,7 @@ def _remove_configuration() -> None:
 
 def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
-        with executor() as do:
+        with Executor() as do:
             do(__remove_prettierrc)
             do(vscode.remove_setting, {"[markdown]": "editor.wordWrap"})
     else:

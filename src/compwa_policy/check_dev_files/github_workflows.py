@@ -17,7 +17,7 @@ from compwa_policy.utilities import (
     vscode,
     write,
 )
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import load_precommit_config
 from compwa_policy.utilities.pyproject import (
     PyprojectTOML,
@@ -47,7 +47,7 @@ def main(
     skip_tests: list[str],
     test_extras: list[str],
 ) -> None:
-    with executor() as do:
+    with Executor() as do:
         do(_update_cd_workflow, no_pypi, no_version_branches)
         do(
             _update_ci_workflow,
@@ -83,7 +83,7 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
         if existing_data != expected_data:
             update_workflow(yaml, expected_data, workflow_path)
 
-    with executor() as do:
+    with Executor() as do:
         do(update)
         do(remove_workflow, "milestone.yml")
 
@@ -133,7 +133,7 @@ def _update_ci_workflow(  # noqa: PLR0917
             if existing_data != expected_data:
                 update_workflow(yaml, expected_data, workflow_path)
 
-    with executor() as do:
+    with Executor() as do:
         do(update)
         if not allow_deprecated:
             do(remove_workflow, "ci-docs.yml")
@@ -295,7 +295,7 @@ def _recommend_vscode_extension() -> None:
     if not CONFIG_PATH.github_workflow_dir.exists():
         return
     # cspell:ignore cschleiden
-    with executor() as do:
+    with Executor() as do:
         do(vscode.remove_extension_recommendation, "cschleiden.vscode-github-actions")
         do(vscode.add_extension_recommendation, "github.vscode-github-actions")
         ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"

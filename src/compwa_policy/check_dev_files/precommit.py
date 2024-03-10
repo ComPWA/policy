@@ -11,7 +11,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     PrecommitConfig,
     Repo,
@@ -26,7 +26,7 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 def main() -> None:
     if not CONFIG_PATH.precommit.exists():
         return
-    with executor() as do:
+    with Executor() as do:
         do(_sort_hooks)
         do(_update_conda_environment)
         do(_update_precommit_ci_commit_msg)

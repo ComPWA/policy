@@ -4,12 +4,12 @@ import os
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import remove_configs, remove_from_gitignore, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import remove_precommit_hook
 
 
 def remove_deprecated_tools(keep_issue_templates: bool) -> None:
-    with executor() as do:
+    with Executor() as do:
         if not keep_issue_templates:
             do(_remove_github_issue_templates)
         do(_remove_markdownlint)
@@ -25,7 +25,7 @@ def _remove_github_issue_templates() -> None:
 
 
 def _remove_markdownlint() -> None:
-    with executor() as do:
+    with Executor() as do:
         do(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
         do(remove_from_gitignore, ".markdownlint.json")
         do(

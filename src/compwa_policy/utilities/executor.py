@@ -28,10 +28,10 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class executor(AbstractContextManager):  # noqa: N801
+class Executor(AbstractContextManager):
     r"""Execute functions and collect any `.PrecommitError` exceptions.
 
-    The `executor` is a context manager that can be used to sequentially execute
+    The `Executor` is a context manager that can be used to sequentially execute
     functions and collect any `.PrecommitError` exceptions they raise. The collected
     exceptions are merged and re-raised as a new `.PrecommitError` when the context
     manager exits.
@@ -45,7 +45,7 @@ class executor(AbstractContextManager):  # noqa: N801
     ...     raise PrecommitError("Error message 2")
     >>> def function3() -> None: ...
     >>>
-    >>> with executor(raise_exception=False) as execute:
+    >>> with Executor(raise_exception=False) as execute:
     ...     execute(function1)
     ...     execute(function2)
     ...     execute(function3)
@@ -96,7 +96,7 @@ class executor(AbstractContextManager):  # noqa: N801
         else:
             return result
 
-    def __enter__(self) -> executor:
+    def __enter__(self) -> Executor:
         self.__is_in_context = True
         return self
 

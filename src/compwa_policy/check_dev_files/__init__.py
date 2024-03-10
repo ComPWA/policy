@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Any, Sequence
 
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 
 from . import (
     black,
@@ -50,7 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
     dev_python_version = __get_python_version(args.dev_python_version)
-    with executor(raise_exception=False) as do:
+    with Executor(raise_exception=False) as do:
         do(citation.main)
         do(commitlint.main)
         do(conda.main, dev_python_version)

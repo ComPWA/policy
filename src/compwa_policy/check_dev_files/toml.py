@@ -11,7 +11,7 @@ from ruamel.yaml import YAML
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -33,7 +33,7 @@ def main() -> None:
     ]
     if not any(f.exists() for f in trigger_files):
         return
-    with executor() as do:
+    with Executor() as do:
         do(_rename_taplo_config)
         do(_update_taplo_config)
         do(_update_precommit_repo)
@@ -131,6 +131,6 @@ def _update_precommit_repo() -> None:
 
 def _update_vscode_extensions() -> None:
     # cspell:ignore bungcip tamasfe
-    with executor() as do:
+    with Executor() as do:
         do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
         do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)

@@ -13,7 +13,7 @@ from typing import NamedTuple
 
 import compwa_policy
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -84,7 +84,7 @@ def write(content: str, target: Path | (io.TextIOBase | str)) -> None:
 
 
 def remove_configs(paths: list[str]) -> None:
-    with executor() as do:
+    with Executor() as do:
         for path in paths:
             do(__remove_file, path)
 

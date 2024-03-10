@@ -3,7 +3,7 @@
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -15,7 +15,7 @@ from compwa_policy.utilities.pyproject import PyprojectTOML
 
 
 def main(no_ruff: bool) -> None:
-    with executor() as do:
+    with Executor() as do:
         if no_ruff:
             do(_update_precommit_repo)
             do(_update_precommit_nbqa_hook)
@@ -61,6 +61,6 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
 
 
 def _remove_pyupgrade() -> None:
-    with executor() as do:
+    with Executor() as do:
         do(remove_precommit_hook, "nbqa-pyupgrade")
         do(remove_precommit_hook, "pyupgrade")

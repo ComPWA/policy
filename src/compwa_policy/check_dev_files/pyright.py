@@ -6,14 +6,14 @@ import json
 import os
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import PyprojectTOML, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
 def main() -> None:
     pyproject = PyprojectTOML.load()
-    with executor() as do:
+    with Executor() as do:
         do(_merge_config_into_pyproject, pyproject)
         do(_update_settings, pyproject)
         do(pyproject.finalize)

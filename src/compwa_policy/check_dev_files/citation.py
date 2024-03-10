@@ -14,7 +14,7 @@ from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -25,7 +25,7 @@ from compwa_policy.utilities.precommit import (
 
 
 def main() -> None:
-    with executor() as do:
+    with Executor() as do:
         if CONFIG_PATH.zenodo.exists():
             do(convert_zenodo_json)
             do(remove_zenodo_json)

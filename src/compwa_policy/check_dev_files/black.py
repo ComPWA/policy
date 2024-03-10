@@ -3,7 +3,7 @@
 from ruamel.yaml import YAML
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -18,7 +18,7 @@ def main(has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     pyproject = PyprojectTOML.load()
-    with executor() as do:
+    with Executor() as do:
         do(_remove_outdated_settings, pyproject)
         do(_update_black_settings, pyproject)
         do(

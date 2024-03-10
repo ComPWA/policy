@@ -16,7 +16,7 @@ from compwa_policy.check_dev_files.github_workflows import (
 )
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import load_precommit_config
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -45,7 +45,7 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
 
 
 def main(frequency: Frequency) -> None:
-    with executor() as do:
+    with Executor() as do:
         if frequency == "outsource":
             do(_check_precommit_schedule)
         do(_remove_script, "pin_requirements.py")
@@ -81,7 +81,7 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
         if existing_data != expected_data:
             update_workflow(yaml, expected_data, workflow_path)
 
-    with executor() as do:
+    with Executor() as do:
         do(overwrite_workflow, "requirements.yml")
         do(remove_workflow, "requirements-cron.yml")
         do(remove_workflow, "requirements-pr.yml")

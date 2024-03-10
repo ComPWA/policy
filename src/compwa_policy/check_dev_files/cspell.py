@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
@@ -46,7 +46,7 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 
 def main(no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
-    with executor() as do:
+    with Executor() as do:
         do(_update_cspell_repo_url)
         has_cspell_hook = False
         if CONFIG_PATH.cspell.exists():
@@ -96,7 +96,7 @@ def _remove_configuration() -> None:
                 " required and has been removed"
             )
             raise PrecommitError(msg)
-    with executor() as do:
+    with Executor() as do:
         do(remove_badge, __BADGE_PATTERN)
         do(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
 

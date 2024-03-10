@@ -10,7 +10,7 @@ from ini2toml.api import Translator
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.cfg import open_config
-from compwa_policy.utilities.executor import executor
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import PyprojectTOML
 from compwa_policy.utilities.toml import to_toml_array
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 def main() -> None:
     pyproject = PyprojectTOML.load()
-    with executor() as do:
+    with Executor() as do:
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
         do(_update_settings, pyproject)
