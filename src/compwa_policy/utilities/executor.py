@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+import inspect
+import os
 import sys
 import time
 from contextlib import AbstractContextManager
@@ -58,10 +60,15 @@ class executor(AbstractContextManager):  # noqa: N801
         self._raise_exception = raise_exception
         self.__error_messages: list[str] = []
         self.__is_in_context = False
+        self.__execution_times: dict[str, float] = {}
 
     @property
     def error_messages(self) -> tuple[str, ...]:
-        """View the collected error messages."""
+        """View the collected error messages.
+
+        .. note::
+            Set :code:`COMPWA_POLICY_DEBUG=1` to enable profiling the execution times.
+        """
         return tuple(self.__error_messages)
 
     def __call__(
@@ -72,13 +79,16 @@ class executor(AbstractContextManager):  # noqa: N801
             msg = "The __call__ method can only be used within a context manager."
             raise RuntimeError(msg)
         try:
-            start_time = time.time()
-            result = function(*args, **kwargs)
-            end_time = time.time()
-            execution_time = end_time - start_time
-            if execution_time > 0.05:  # noqa: PLR2004
-                function_name = f"{function.__module__}.{function.__name__}"
-                print(f"{execution_time:>7.2f} s  {function_name}")  # noqa: T201
+            if os.getenv("COMPWA_POLICY_DEBUG") != "0":
+                start_time = time.time()
+                result = function(*args, **kwargs)
+                end_time = time.time()
+                source_file = inspect.getsourcefile(function)
+                line_number = inspect.getsourcelines(function)[1]
+                location = f"{source_file}:{line_number} ({function.__name__})"
+                self.__execution_times[location] = end_time - start_time
+            else:
+                result = function(*args, **kwargs)
         except PrecommitError as exception:
             error_message = str("\n".join(exception.args))
             self.__error_messages.append(error_message)
@@ -101,7 +111,21 @@ class executor(AbstractContextManager):  # noqa: N801
             if self._raise_exception:
                 raise PrecommitError(error_msg) from exc_value
             print(error_msg)  # noqa: T201
+        if os.getenv("COMPWA_POLICY_DEBUG") is not None:
+            self.print_execution_times()
 
     def merge_messages(self) -> str:
         stripped_messages = (s.strip() for s in self.__error_messages)
         return "\n--------------------\n".join(stripped_messages)
+
+    def print_execution_times(self) -> None:
+        total_time = sum(self.__execution_times.values())
+        if total_time > 0.08:  # noqa: PLR2004
+            print(f"\nTotal sub-hook time: {total_time:.2f} s")  # noqa: T201
+            sorted_times = sorted(
+                self.__execution_times.items(), key=lambda x: x[1], reverse=True
+            )
+            for function_name, sub_time in sorted_times:
+                if sub_time < 0.03:  # noqa: PLR2004
+                    break
+                print(f"{sub_time:>7.2f} s  {function_name}")  # noqa: T201
