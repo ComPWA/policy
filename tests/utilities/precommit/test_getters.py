@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 import pytest
 
@@ -11,35 +12,9 @@ from compwa_policy.utilities.precommit.getters import (
 
 @pytest.fixture(scope="session")
 def example_yaml() -> str:
-    return """
-    ci:
-      autoupdate_schedule: quarterly
-      skip:
-        - mypy
-
-    repos:
-      - repo: meta
-        hooks:
-          - id: check-hooks-apply
-          - id: check-useless-excludes
-
-      - repo: https://github.com/ComPWA/policy
-        rev: 0.3.0
-        hooks:
-          - id: check-dev-files
-            args:
-            - --no-prettierrc
-
-      - repo: local
-        hooks:
-          - id: mypy
-            name: mypy
-            entry: mypy
-            language: system
-            require_serial: true
-            types:
-              - python
-    """
+    config_path = Path(__file__).parent / ".pre-commit-config.yaml"
+    with open(config_path) as stream:
+        return stream.read()
 
 
 @pytest.mark.parametrize("use_stream", [True, False])
