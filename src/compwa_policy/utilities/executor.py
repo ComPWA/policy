@@ -2,7 +2,7 @@
 
 .. autolink-preface::
     from compwa_policy.errors import PrecommitError
-    from compwa_policy.utilities.executor import executor
+    from compwa_policy.utilities.executor import Executor
 """
 
 from __future__ import annotations
