@@ -19,7 +19,6 @@ repos:
           - --repo-name="short name for your repository"
       - id: colab-toc-visible
       - id: fix-nbformat-version
-      - id: format-setup-cfg
       - id: set-nb-cells
 ```
 
