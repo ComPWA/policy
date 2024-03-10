@@ -3,8 +3,8 @@ from textwrap import dedent
 import pytest
 import tomlkit
 
+from compwa_policy.utilities.pyproject import load_pyproject_toml
 from compwa_policy.utilities.pyproject._struct import PyprojectTOML
-from compwa_policy.utilities.pyproject.getters import load_pyproject_toml
 from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
     create_sub_table,

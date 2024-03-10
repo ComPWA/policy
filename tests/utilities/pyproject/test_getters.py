@@ -1,6 +1,7 @@
 import pytest
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.pyproject import load_pyproject_toml
 from compwa_policy.utilities.pyproject.getters import (
     get_package_name,
     get_project_urls,
@@ -8,7 +9,6 @@ from compwa_policy.utilities.pyproject.getters import (
     get_sub_table,
     get_supported_python_versions,
     has_sub_table,
-    load_pyproject_toml,
 )
 
 

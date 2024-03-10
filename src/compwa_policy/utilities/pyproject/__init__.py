@@ -32,7 +32,6 @@ from compwa_policy.utilities.pyproject.getters import (
     get_sub_table,
     get_supported_python_versions,
     has_sub_table,
-    load_pyproject_toml,
 )
 from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
@@ -229,3 +228,22 @@ def _has_setup_cfg_build_system() -> bool:
         return False
     cfg = open_config(CONFIG_PATH.setup_cfg)
     return cfg.has_section("metadata")
+
+
+def load_pyproject_toml(
+    source: IO | Path | str = CONFIG_PATH.pyproject,
+) -> PyprojectTOML:
+    """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+    if isinstance(source, io.IOBase):
+        current_position = source.tell()
+        source.seek(0)
+        document = tomlkit.load(source)  # type:ignore[arg-type]
+        source.seek(current_position)
+        return document
+    if isinstance(source, Path):
+        with open(source) as stream:
+            return tomlkit.load(stream)  # type:ignore[return-value]
+    if isinstance(source, str):
+        return tomlkit.loads(source)  # type:ignore[return-value]
+    msg = f"Source of type {type(source).__name__} is not supported"
+    raise TypeError(msg)

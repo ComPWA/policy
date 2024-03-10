@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-import io
 import sys
-from pathlib import Path
 from textwrap import dedent
-from typing import IO, TYPE_CHECKING, Any, overload
-
-import tomlkit
+from typing import TYPE_CHECKING, Any, overload
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -140,22 +135,3 @@ def has_sub_table(config: Mapping[str, Any], dotted_header: str) -> bool:
         else:
             return False
     return True
-
-
-def load_pyproject_toml(
-    source: IO | Path | str = CONFIG_PATH.pyproject,
-) -> PyprojectTOML:
-    """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
-    if isinstance(source, io.IOBase):
-        current_position = source.tell()
-        source.seek(0)
-        document = tomlkit.load(source)  # type:ignore[arg-type]
-        source.seek(current_position)
-        return document
-    if isinstance(source, Path):
-        with open(source) as stream:
-            return tomlkit.load(stream)  # type:ignore[return-value]
-    if isinstance(source, str):
-        return tomlkit.loads(source)  # type:ignore[return-value]
-    msg = f"Source of type {type(source).__name__} is not supported"
-    raise TypeError(msg)
