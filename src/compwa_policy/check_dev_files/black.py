@@ -10,15 +10,14 @@ from compwa_policy.utilities.precommit import (
     remove_precommit_hook,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.pyproject import PyprojectTOML, complies_with_subset
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
 def main(has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
-    pyproject = PyprojectTOML.load()
-    with Executor() as do:
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_remove_outdated_settings, pyproject)
         do(_update_black_settings, pyproject)
         do(
@@ -47,10 +46,9 @@ def main(has_notebooks: bool) -> None:
             },
         )
         do(remove_precommit_hook, "nbqa-black")
-        do(pyproject.finalize)
 
 
-def _remove_outdated_settings(pyproject: PyprojectTOML) -> None:
+def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.black", create=True)
     forbidden_options = ("line-length",)
     removed_options = set()
@@ -63,10 +61,10 @@ def _remove_outdated_settings(pyproject: PyprojectTOML) -> None:
             f"Removed {', '.join(sorted(removed_options))} option from black"
             f" configuration in {CONFIG_PATH.pyproject}"
         )
-        pyproject.modifications.append(msg)
+        pyproject.append_to_changelog(msg)
 
 
-def _update_black_settings(pyproject: PyprojectTOML) -> None:
+def _update_black_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.black", create=True)
     versions = pyproject.get_supported_python_versions()
     target_version = to_toml_array(sorted("py" + v.replace(".", "") for v in versions))
@@ -77,7 +75,7 @@ def _update_black_settings(pyproject: PyprojectTOML) -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = f"Updated black configuration in {CONFIG_PATH.pyproject}"
-        pyproject.modifications.append(msg)
+        pyproject.append_to_changelog(msg)
 
 
 def _update_precommit_repo(has_notebooks: bool) -> None:

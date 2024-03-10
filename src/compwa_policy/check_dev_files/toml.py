@@ -17,7 +17,7 @@ from compwa_policy.utilities.precommit import (
     Repo,
     update_single_hook_precommit_repo,
 )
-from compwa_policy.utilities.pyproject import PyprojectTOML
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
@@ -43,7 +43,6 @@ def main() -> None:
 
 
 def _update_tomlsort_config() -> None:
-    pyproject = PyprojectTOML.load()
     sort_first = [
         "build-system",
         "project",
@@ -59,12 +58,12 @@ def _update_tomlsort_config() -> None:
         spaces_indent_inline_array=4,
         trailing_comma_inline_array=True,
     )
-    tool_table = pyproject.get_table("tool", create=True)
-    if tool_table.get("tomlsort") == expected_config:
-        return
-    tool_table["tomlsort"] = expected_config
-    pyproject.modifications.append("Updated toml-sort configuration")
-    pyproject.finalize()
+    with ModifiablePyproject.load() as pyproject:
+        tool_table = pyproject.get_table("tool", create=True)
+        if tool_table.get("tomlsort") == expected_config:
+            return
+        tool_table["tomlsort"] = expected_config
+        pyproject.append_to_changelog("Updated toml-sort configuration")
 
 
 def _update_tomlsort_hook() -> None:

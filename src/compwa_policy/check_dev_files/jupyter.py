@@ -1,7 +1,6 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import PyprojectTOML, get_build_system
+from compwa_policy.utilities.pyproject import ModifiablePyproject, get_build_system
 
 
 def main() -> None:
@@ -11,11 +10,10 @@ def main() -> None:
 def _update_dev_requirements() -> None:
     if get_build_system() is None:
         return
-    pyproject = PyprojectTOML.load()
-    supported_python_versions = pyproject.get_supported_python_versions()
-    if "3.6" in supported_python_versions:
-        return
-    with Executor() as do:
+    with ModifiablePyproject.load() as pyproject:
+        supported_python_versions = pyproject.get_supported_python_versions()
+        if "3.6" in supported_python_versions:
+            return
         for package in [
             "black",
             "isort",
@@ -27,4 +25,4 @@ def _update_dev_requirements() -> None:
             "python-lsp-ruff",
             "python-lsp-server[rope]",
         ]:
-            do(pyproject.add_dependency, package, optional_key=["jupyter", "dev"])
+            pyproject.add_dependency(package, optional_key=["jupyter", "dev"])

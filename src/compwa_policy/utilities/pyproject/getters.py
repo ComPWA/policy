@@ -1,8 +1,4 @@
-"""Getter implementations for :class:`.PyprojectTOML`.
-
-As opposed to :mod:`.setters`, :mod:`.getters` leave the state of the
-`~.PyprojectTOML.document` unaffected.
-"""
+"""Getter implementations for :class:`.PyprojectTOML`."""
 
 from __future__ import annotations
 

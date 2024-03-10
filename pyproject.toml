@@ -32,7 +32,7 @@ dependencies = [
     "pre-commit",
     "ruamel.yaml", # better YAML dumping
     "tomlkit",
-    'typing-extensions; python_version <"3.11.0"',
+    'typing-extensions; python_version <"3.12.0"', # override
 ]
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
 dynamic = ["version"]
