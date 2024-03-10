@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import sys
+from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
 from typing import IO, TYPE_CHECKING, Iterable, Sequence, overload
@@ -33,12 +34,14 @@ if sys.version_info < (3, 8):
 else:
     from typing import Literal
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from tomlkit.items import Table
     from tomlkit.toml_document import TOMLDocument
 
 
 @frozen
-class PyprojectTOML:
+class PyprojectTOML(AbstractContextManager):
     """Stateful representation of a :code:`pyproject.toml` file.
 
     Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
@@ -49,6 +52,17 @@ class PyprojectTOML:
     document: TOMLDocument
     source: IO | Path | None = field(default=None)
     modifications: list[str] = field(factory=list, init=False)
+
+    def __enter__(self) -> PyprojectTOML:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self.finalize()
 
     @classmethod
     def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> PyprojectTOML:
