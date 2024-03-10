@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from glob import glob
+from typing import TYPE_CHECKING
 
 from compwa_policy.check_dev_files.github_workflows import (
     remove_workflow,
@@ -17,8 +18,10 @@ from compwa_policy.check_dev_files.github_workflows import (
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import Precommit
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import Precommit
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal
@@ -44,10 +47,10 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
 }
 
 
-def main(frequency: Frequency) -> None:
+def main(precommit: Precommit, frequency: Frequency) -> None:
     with Executor() as do:
         if frequency == "outsource":
-            do(_check_precommit_schedule)
+            do(_check_precommit_schedule, precommit)
         do(_remove_script, "pin_requirements.py")
         do(_remove_script, "upgrade.sh")
         do(_update_requirement_workflow, frequency)
@@ -94,15 +97,12 @@ def _to_cron_schedule(frequency: Frequency) -> str:
     return __CRON_SCHEDULES[frequency]
 
 
-def _check_precommit_schedule() -> None:
-    msg = (
-        "Cannot outsource pip constraints updates, because autoupdate_schedule has not"
-        f" been set under the ci key in {CONFIG_PATH.precommit}. See"
-        " https://pre-commit.ci/#configuration-autoupdate_schedule."
-    )
-    if not CONFIG_PATH.precommit.exists():
-        raise PrecommitError(msg)
-    config = Precommit.load()
-    schedule = config.document.get("ci", {}).get("autoupdate_schedule")
+def _check_precommit_schedule(precommit: Precommit) -> None:
+    schedule = precommit.document.get("ci", {}).get("autoupdate_schedule")
     if schedule is None:
+        msg = (
+            "Cannot outsource pip constraints updates, because autoupdate_schedule has"
+            f" not been set under the ci key in {CONFIG_PATH.precommit}. See"
+            " https://pre-commit.ci/#configuration-autoupdate_schedule."
+        )
         raise PrecommitError(msg)

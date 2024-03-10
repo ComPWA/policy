@@ -5,6 +5,7 @@ from __future__ import annotations
 import shutil
 from glob import glob
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import tomlkit
 from ruamel.yaml import YAML
@@ -12,20 +13,19 @@ from ruamel.yaml import YAML
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     Path("taplo.toml"),
 ]
 
 
-def main() -> None:
+def main(precommit: ModifiablePrecommit) -> None:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
@@ -36,9 +36,9 @@ def main() -> None:
     with Executor() as do:
         do(_rename_taplo_config)
         do(_update_taplo_config)
-        do(_update_precommit_repo)
+        do(_update_precommit_repo, precommit)
         do(_update_tomlsort_config)
-        do(_update_tomlsort_hook)
+        do(_update_tomlsort_hook, precommit)
         do(_update_vscode_extensions)
 
 
@@ -66,7 +66,7 @@ def _update_tomlsort_config() -> None:
         pyproject.append_to_changelog("Updated toml-sort configuration")
 
 
-def _update_tomlsort_hook() -> None:
+def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo="https://github.com/pappasam/toml-sort",
         rev="",
@@ -82,7 +82,7 @@ def _update_tomlsort_hook() -> None:
     if excludes:
         excludes = sorted(excludes, key=str.lower)
         expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
-    update_single_hook_precommit_repo(expected_hook)
+    precommit.update_single_hook_repo(expected_hook)
 
 
 def _rename_taplo_config() -> None:
@@ -119,13 +119,13 @@ def _update_taplo_config() -> None:
         raise PrecommitError(msg)
 
 
-def _update_precommit_repo() -> None:
+def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo="https://github.com/ComPWA/mirrors-taplo",
         rev="",
         hooks=[Hook(id="taplo")],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    precommit.update_single_hook_repo(expected_hook)
 
 
 def _update_vscode_extensions() -> None:

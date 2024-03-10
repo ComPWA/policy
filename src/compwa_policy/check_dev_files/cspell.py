@@ -14,18 +14,13 @@ from typing import TYPE_CHECKING, Any, Iterable, Sequence
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Precommit,
-    Repo,
-    load_roundtrip_precommit_config,
-    update_single_hook_precommit_repo,
-)
-from compwa_policy.utilities.precommit.getters import find_repo
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -44,18 +39,17 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main(no_cspell_update: bool) -> None:
+def main(precommit: ModifiablePrecommit, no_cspell_update: bool) -> None:
     rename_file("cspell.json", str(CONFIG_PATH.cspell))
     with Executor() as do:
-        do(_update_cspell_repo_url)
+        do(_update_cspell_repo_url, precommit)
         has_cspell_hook = False
         if CONFIG_PATH.cspell.exists():
-            config = Precommit.load()
-            has_cspell_hook = config.find_repo(__REPO_URL) is not None
+            has_cspell_hook = precommit.find_repo(__REPO_URL) is not None
         if not has_cspell_hook:
             do(_remove_configuration)
         else:
-            do(_update_precommit_repo)
+            do(_update_precommit_repo, precommit)
             if not no_cspell_update:
                 do(_update_config_content)
             do(_sort_config_entries)
@@ -63,19 +57,17 @@ def main(no_cspell_update: bool) -> None:
             do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
-def _update_cspell_repo_url(path: Path = CONFIG_PATH.precommit) -> None:
+def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
     old_url_patters = [
         r".*/mirrors-cspell(.git)?$",
     ]
-    config, yaml = load_roundtrip_precommit_config(path)
     for pattern in old_url_patters:
-        repo = find_repo(config, pattern)
+        repo = precommit.find_repo(pattern)
         if repo is None:
             continue
         repo["repo"] = __REPO_URL
-        yaml.dump(config, path)
-        msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL} in {path}"
-        raise PrecommitError(msg)
+        msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL}"
+        precommit.append_to_changelog(msg)
 
 
 def _remove_configuration() -> None:
@@ -101,13 +93,13 @@ def _remove_configuration() -> None:
         do(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
-def _update_precommit_repo() -> None:
+def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo=__REPO_URL,
         rev="",
         hooks=[Hook(id="cspell")],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    precommit.update_single_hook_repo(expected_hook)
 
 
 def _update_config_content() -> None:

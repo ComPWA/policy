@@ -4,19 +4,26 @@ from __future__ import annotations
 
 from io import StringIO
 from textwrap import dedent, indent
+from typing import TYPE_CHECKING
 
 import yaml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import Hook, Precommit
+from compwa_policy.utilities.precommit import Precommit
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit.struct import Hook
 
 __HOOK_DEFINITION_FILE = ".pre-commit-hooks.yaml"
 
 
-def main() -> int:
-    cfg = Precommit.load()
-    local_repos = [repo for repo in cfg.document["repos"] if repo["repo"] == "local"]
+def main(precommit: Precommit | None = None) -> int:
+    if precommit is None:
+        precommit = Precommit.load()
+    local_repos = [
+        repo for repo in precommit.document["repos"] if repo["repo"] == "local"
+    ]
     hook_definitions = _load_precommit_hook_definitions()
     with Executor(raise_exception=False) as do:
         for repo in local_repos:

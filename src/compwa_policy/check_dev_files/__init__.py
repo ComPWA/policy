@@ -36,6 +36,7 @@ from compwa_policy.check_dev_files import (
 )
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject import PythonVersion
@@ -49,18 +50,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
     dev_python_version = __get_python_version(args.dev_python_version)
-    with Executor(raise_exception=False) as do:
-        do(citation.main)
+    with Executor(
+        raise_exception=False
+    ) as do, ModifiablePrecommit.load() as precommit_config:
+        do(citation.main, precommit_config)
         do(commitlint.main)
         do(conda.main, dev_python_version)
-        do(cspell.main, args.no_cspell_update)
+        do(cspell.main, precommit_config, args.no_cspell_update)
         do(dependabot.main, args.dependabot)
-        do(editorconfig.main, args.no_python)
+        do(editorconfig.main, precommit_config, args.no_python)
         if not args.allow_labels:
             do(github_labels.main)
         if not args.no_github_actions:
             do(
                 github_workflows.main,
+                precommit_config,
                 allow_deprecated=args.allow_deprecated_workflows,
                 doc_apt_packages=_to_list(args.doc_apt_packages),
                 github_pages=args.github_pages,
@@ -75,12 +79,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if has_notebooks:
             do(jupyter.main)
-        do(nbstripout.main)
-        do(toml.main)  # has to run before pre-commit
-        do(prettier.main, args.no_prettierrc)
+        do(nbstripout.main, precommit_config)
+        do(toml.main, precommit_config)  # has to run before pre-commit
+        do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
             if args.no_ruff:
-                do(black.main, has_notebooks)
+                do(black.main, precommit_config, has_notebooks)
             if not args.no_github_actions:
                 do(
                     release_drafter.main,
@@ -91,19 +95,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             do(mypy.main)
             do(pyright.main)
             do(pytest.main)
-            do(pyupgrade.main, args.no_ruff)
+            do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
-                do(ruff.main, has_notebooks)
+                do(ruff.main, precommit_config, has_notebooks)
         if args.pin_requirements != "no":
             do(
                 update_pip_constraints.main,
+                precommit_config,
                 frequency=args.pin_requirements,
             )
         do(readthedocs.main, dev_python_version)
-        do(remove_deprecated_tools, args.keep_issue_templates)
+        do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
         do(vscode.main, has_notebooks)
         do(gitpod.main, args.no_gitpod, dev_python_version)
-        do(precommit.main)
+        do(precommit.main, precommit_config)
         do(tox.main, has_notebooks)
     return 1 if do.error_messages else 0
 

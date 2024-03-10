@@ -4,26 +4,21 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    remove_precommit_hook,
-    update_precommit_hook,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import Pyproject
 
 
-def main(no_ruff: bool) -> None:
+def main(precommit: ModifiablePrecommit, no_ruff: bool) -> None:
     with Executor() as do:
         if no_ruff:
-            do(_update_precommit_repo)
-            do(_update_precommit_nbqa_hook)
+            do(_update_precommit_repo, precommit)
+            do(_update_precommit_nbqa_hook, precommit)
         else:
-            do(_remove_pyupgrade)
+            do(_remove_pyupgrade, precommit)
 
 
-def _update_precommit_repo() -> None:
+def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo="https://github.com/asottile/pyupgrade",
         rev="",
@@ -34,11 +29,11 @@ def _update_precommit_repo() -> None:
             )
         ],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_precommit_nbqa_hook() -> None:
-    update_precommit_hook(
+def _update_precommit_nbqa_hook(precommit: ModifiablePrecommit) -> None:
+    precommit.update_hook(
         repo_url="https://github.com/nbQA-dev/nbQA",
         expected_hook=Hook(
             id="nbqa-pyupgrade",
@@ -60,7 +55,7 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     return yaml.load(f"[--py{version_repr}-plus]")
 
 
-def _remove_pyupgrade() -> None:
+def _remove_pyupgrade(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
-        do(remove_precommit_hook, "nbqa-pyupgrade")
-        do(remove_precommit_hook, "pyupgrade")
+        do(precommit.remove_hook, "nbqa-pyupgrade")
+        do(precommit.remove_hook, "pyupgrade")

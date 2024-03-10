@@ -3,11 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from compwa_policy.utilities.precommit.getters import (
-    find_repo,
-    find_repo_with_index,
-    load_precommit_config,
-)
+from compwa_policy.utilities.precommit import Precommit
+from compwa_policy.utilities.precommit.getters import find_repo, find_repo_with_index
 
 
 @pytest.fixture(scope="session")
@@ -21,9 +18,9 @@ def example_yaml() -> str:
 def test_load_precommit_config(example_yaml: str, use_stream: bool):
     if use_stream:
         stream = io.StringIO(example_yaml)
-        config = load_precommit_config(stream)
+        config = Precommit.load(stream).document
     else:
-        config = load_precommit_config(example_yaml)
+        config = Precommit.load(example_yaml).document
     assert set(config) == {"ci", "repos"}
 
     ci = config.get("ci")
@@ -36,7 +33,7 @@ def test_load_precommit_config(example_yaml: str, use_stream: bool):
 
 
 def test_load_precommit_config_path():
-    config = load_precommit_config()
+    config = Precommit.load().document
     assert "ci" in config
     ci = config.get("ci")
     assert ci is not None
@@ -44,7 +41,7 @@ def test_load_precommit_config_path():
 
 
 def test_find_repo(example_yaml: str):
-    config = load_precommit_config(example_yaml)
+    config = Precommit.load(example_yaml).document
     repo = find_repo(config, "ComPWA/policy")
     assert repo is not None
     assert repo["repo"] == "https://github.com/ComPWA/policy"
@@ -53,7 +50,7 @@ def test_find_repo(example_yaml: str):
 
 
 def test_find_repo_with_index(example_yaml: str):
-    config = load_precommit_config(example_yaml)
+    config = Precommit.load(example_yaml).document
 
     repo_and_idx = find_repo_with_index(config, "ComPWA/policy")
     assert repo_and_idx is not None

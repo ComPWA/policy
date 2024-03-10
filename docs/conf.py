@@ -17,6 +17,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
         "obj",
         "compwa_policy.check_dev_files.dependabot.DependabotOption",
     ),
+    "Frequency": "typing.Literal",
     "IO": "typing.IO",
     "Iterable": "typing.Iterable",
     "K": "typing.TypeVar",

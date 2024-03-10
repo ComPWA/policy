@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from textwrap import dedent
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from html2text import HTML2Text
 from ruamel.yaml import YAML
@@ -15,16 +15,13 @@ from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    load_roundtrip_precommit_config,
-    update_single_hook_precommit_repo,
-)
-from compwa_policy.utilities.precommit.getters import find_repo_with_index
+from compwa_policy.utilities.precommit.struct import Hook, Repo
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main() -> None:
+def main(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
         if CONFIG_PATH.zenodo.exists():
             do(convert_zenodo_json)
@@ -33,7 +30,7 @@ def main() -> None:
             if CONFIG_PATH.zenodo.exists():
                 do(remove_zenodo_json)
             do(check_citation_keys)
-            do(add_json_schema_precommit)
+            do(add_json_schema_precommit, precommit)
             do(vscode.add_extension_recommendation, "redhat.vscode-yaml")
             do(update_vscode_settings)
 
@@ -168,7 +165,7 @@ def check_citation_keys() -> None:
         raise PrecommitError(msg)
 
 
-def add_json_schema_precommit() -> None:
+def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     if not CONFIG_PATH.citation.exists():
         return
     # cspell:ignore jsonschema schemafile
@@ -184,17 +181,15 @@ def add_json_schema_precommit() -> None:
         ],
         pass_filenames=False,
     )
-    config, yaml = load_roundtrip_precommit_config()
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
-    idx_and_repo = find_repo_with_index(config, repo_url)
-    existing_repos = config["repos"]
+    idx_and_repo = precommit.find_repo_with_index(repo_url)
     if idx_and_repo is None:
         repo = Repo(
             repo=repo_url,
             rev="",
             hooks=[expected_hook],
         )
-        update_single_hook_precommit_repo(repo)
+        precommit.update_single_hook_repo(repo)
     else:
         repo_idx, repo = idx_and_repo
         existing_hooks = repo["hooks"]
@@ -208,11 +203,11 @@ def add_json_schema_precommit() -> None:
             existing_hooks.append(expected_hook)
         else:
             existing_hooks[hook_idx] = expected_hook
+    existing_repos = precommit.document["repos"]
     repos_yaml = cast(CommentedSeq, existing_repos)
     repos_yaml.yaml_set_comment_before_after_key(repo_idx + 1, before="\n")
-    yaml.dump(config, CONFIG_PATH.precommit)
     msg = f"Updated check-jsonschema hook in {CONFIG_PATH.precommit}"
-    raise PrecommitError(msg)
+    precommit.append_to_changelog(msg)
 
 
 def update_vscode_settings() -> None:

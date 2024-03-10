@@ -18,7 +18,6 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import Precommit
 from compwa_policy.utilities.pyproject import Pyproject, PythonVersion, get_build_system
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -28,8 +27,11 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.main import YAML
 
+    from compwa_policy.utilities.precommit import Precommit
+
 
 def main(
+    precommit: Precommit,
     *,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
@@ -47,6 +49,7 @@ def main(
         do(_update_cd_workflow, no_pypi, no_version_branches)
         do(
             _update_ci_workflow,
+            precommit,
             allow_deprecated,
             doc_apt_packages,
             github_pages,
@@ -96,6 +99,7 @@ def _update_pr_linting() -> None:
 
 
 def _update_ci_workflow(  # noqa: PLR0917
+    precommit: Precommit,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     github_pages: bool,
@@ -108,6 +112,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
+            precommit,
             doc_apt_packages,
             github_pages,
             no_macos,
@@ -142,6 +147,7 @@ def _update_ci_workflow(  # noqa: PLR0917
 
 def _get_ci_workflow(  # noqa: PLR0917
     path: Path,
+    precommit: Precommit,
     doc_apt_packages: list[str],
     github_pages: bool,
     no_macos: bool,
@@ -154,7 +160,7 @@ def _get_ci_workflow(  # noqa: PLR0917
     config = yaml.load(path)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
-    __update_style_section(config, python_version)
+    __update_style_section(config, python_version, precommit)
     return yaml, config
 
 
@@ -177,20 +183,19 @@ def __update_doc_section(
         __update_with_section(config, job_name="doc")
 
 
-def __update_style_section(config: CommentedMap, python_version: PythonVersion) -> None:
+def __update_style_section(
+    config: CommentedMap, python_version: PythonVersion, precommit: Precommit
+) -> None:
     if python_version != "3.9":
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
-    if __is_remove_style_job():
+    if __is_remove_style_job(precommit):
         del config["jobs"]["style"]
 
 
-def __is_remove_style_job() -> bool:
-    if not CONFIG_PATH.precommit.exists():
-        return True
-    cfg = Precommit.load()
-    precommit_ci = cfg.document.get("ci")
+def __is_remove_style_job(precommit: Precommit) -> bool:
+    precommit_ci = precommit.document.get("ci")
     if precommit_ci is not None and "skip" not in precommit_ci:
         return True
     return False
