@@ -16,7 +16,7 @@ repos:
       - id: check-useless-excludes
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.3.2
     hooks:
       - id: ruff
         args: [--fix]
@@ -83,7 +83,7 @@ repos:
         exclude: (?x)^(labels/.*\.toml)$
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.3.0
+    rev: v8.6.0
     hooks:
       - id: cspell
 
@@ -109,6 +109,6 @@ repos:
           - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.350
+    rev: v1.1.353
     hooks:
       - id: pyright
