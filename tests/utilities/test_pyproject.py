@@ -42,10 +42,6 @@ class TestPyprojectToml:
             "build-system",
             "project",
         }
-        assert set(pyproject._document) == {
-            "build-system",
-            "project",
-        }
         project = pyproject.get_table("project")
         assert project.get("dependencies") == [
             "attrs",
