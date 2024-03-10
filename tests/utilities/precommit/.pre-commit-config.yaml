@@ -1,0 +1,28 @@
+# Example config for tests
+ci:
+  autoupdate_schedule: quarterly
+  skip:
+    - mypy
+
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+
+  - repo: https://github.com/ComPWA/policy
+    rev: 0.3.0
+    hooks:
+      - id: check-dev-files
+        args:
+          - --no-prettierrc
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        require_serial: true
+        types:
+          - python

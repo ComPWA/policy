@@ -4,33 +4,29 @@ from ruamel.yaml import YAML
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    remove_precommit_hook,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
-def main(has_notebooks: bool) -> None:
+def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_remove_outdated_settings, pyproject)
         do(_update_black_settings, pyproject)
         do(
-            remove_precommit_hook,
+            precommit.remove_hook,
             hook_id="black",
             repo_url="https://github.com/psf/black",
         )
         do(
-            remove_precommit_hook,
+            precommit.remove_hook,
             hook_id="black-jupyter",
             repo_url="https://github.com/psf/black",
         )
-        do(_update_precommit_repo, has_notebooks)
+        do(_update_precommit_repo, precommit, has_notebooks)
         do(vscode.add_extension_recommendation, "ms-python.black-formatter")
         do(
             vscode.update_settings,
@@ -45,7 +41,7 @@ def main(has_notebooks: bool) -> None:
                 },
             },
         )
-        do(remove_precommit_hook, "nbqa-black")
+        do(precommit.remove_hook, "nbqa-black")
 
 
 def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
@@ -78,7 +74,7 @@ def _update_black_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def _update_precommit_repo(has_notebooks: bool) -> None:
+def _update_precommit_repo(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     expected_repo = Repo(
         repo="https://github.com/psf/black-pre-commit-mirror",
         rev="",
@@ -91,4 +87,4 @@ def _update_precommit_repo(has_notebooks: bool) -> None:
             types_or=YAML(typ="rt").load("[jupyter]"),
         )
         expected_repo["hooks"].append(black_jupyter)
-    update_single_hook_precommit_repo(expected_repo)
+    precommit.update_single_hook_repo(expected_repo)

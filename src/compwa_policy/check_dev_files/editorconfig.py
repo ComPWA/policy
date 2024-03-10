@@ -5,24 +5,26 @@ pre-commit hook
 <https://github.com/editorconfig-checker/editorconfig-checker.python>`_.
 """
 
+from __future__ import annotations
+
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 from ruamel.yaml.scalarstring import FoldedScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit.struct import Hook, Repo
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(no_python: bool) -> None:
+def main(precommit: ModifiablePrecommit, no_python: bool) -> None:
     if CONFIG_PATH.editorconfig.exists():
-        _update_precommit_config(no_python)
+        _update_precommit_config(precommit, no_python)
 
 
-def _update_precommit_config(no_python: bool) -> None:
+def _update_precommit_config(precommit: ModifiablePrecommit, no_python: bool) -> None:
     hook = Hook(
         id="editorconfig-checker",
         name="editorconfig",
@@ -42,4 +44,4 @@ def _update_precommit_config(no_python: bool) -> None:
         rev="",
         hooks=[hook],
     )
-    update_single_hook_precommit_repo(expected_hook)
+    precommit.update_single_hook_repo(expected_hook)

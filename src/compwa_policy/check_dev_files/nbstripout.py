@@ -2,23 +2,13 @@
 
 from ruamel.yaml.scalarstring import LiteralScalarString
 
-from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    find_repo,
-    load_precommit_config,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 
-def main() -> None:
-    # cspell:ignore nbconvert showmarkdowntxt
-    if not CONFIG_PATH.precommit.exists():
-        return
-    config = load_precommit_config()
+def main(precommit: ModifiablePrecommit) -> None:
     repo_url = "https://github.com/kynan/nbstripout"
-    if find_repo(config, repo_url) is None:
+    if precommit.find_repo(repo_url) is None:
         return
     extra_keys_argument = [
         "cell.attachments",
@@ -34,7 +24,7 @@ def main() -> None:
         "metadata.toc",
         "metadata.toc-autonumbering",
         "metadata.toc-showcode",
-        "metadata.toc-showmarkdowntxt",
+        "metadata.toc-showmarkdowntxt",  # cspell:ignore showmarkdowntxt
         "metadata.toc-showtags",
         "metadata.varInspector",
         "metadata.vscode",
@@ -52,4 +42,4 @@ def main() -> None:
             )
         ],
     )
-    update_single_hook_precommit_repo(expected_repo)
+    precommit.update_single_hook_repo(expected_repo)

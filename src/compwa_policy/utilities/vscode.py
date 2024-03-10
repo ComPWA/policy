@@ -9,9 +9,8 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Iterable, OrderedDict, TypeVar, overload
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-
-from . import CONFIG_PATH
 
 if TYPE_CHECKING:
     from pathlib import Path

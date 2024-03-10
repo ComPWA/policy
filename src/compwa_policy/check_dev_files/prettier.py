@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import find_repo, load_precommit_config
 from compwa_policy.utilities.readme import add_badge, remove_badge
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import Precommit
 
 # cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
@@ -23,9 +25,8 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 
-def main(no_prettierrc: bool) -> None:
-    config = load_precommit_config()
-    if find_repo(config, r".*/mirrors-prettier") is None:
+def main(precommit: Precommit, no_prettierrc: bool) -> None:
+    if precommit.find_repo(r".*/mirrors-prettier") is None:
         _remove_configuration()
     else:
         with Executor() as do:

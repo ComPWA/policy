@@ -29,7 +29,6 @@ dependencies = [
     "ini2toml",
     "nbformat",
     "pip-tools",
-    "pre-commit",
     "ruamel.yaml", # better YAML dumping
     "tomlkit", # preserve original TOML formatting
     'rtoml', # fast, read-only parsing
@@ -144,10 +143,6 @@ module = ["ruamel.*"]
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = ["nbformat.*"]
-
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["pre_commit.commands.autoupdate.*"]
 
 [tool.pyright]
 exclude = [
@@ -271,6 +266,9 @@ ignore = [
     "UP036",
 ]
 task-tags = ["cspell"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
 known-first-party = ["compwa_policy"]

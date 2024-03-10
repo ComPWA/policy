@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
@@ -12,39 +12,37 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    PrecommitConfig,
-    Repo,
-    find_repo,
-    load_precommit_config,
-    load_roundtrip_precommit_config,
-)
+from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import (
+        ModifiablePrecommit,
+        Precommit,
+        PrecommitConfig,
+        Repo,
+    )
 
-def main() -> None:
-    if not CONFIG_PATH.precommit.exists():
-        return
+
+def main(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
-        do(_sort_hooks)
-        do(_update_conda_environment)
-        do(_update_precommit_ci_commit_msg)
-        do(_update_precommit_ci_skip)
-        do(_update_repo_urls)
+        do(_sort_hooks, precommit)
+        do(_update_conda_environment, precommit)
+        do(_update_precommit_ci_commit_msg, precommit)
+        do(_update_precommit_ci_skip, precommit)
+        do(_update_repo_urls, precommit)
 
 
-def _sort_hooks() -> None:
-    config, yaml = load_roundtrip_precommit_config()
-    repos = config.get("repos")
+def _sort_hooks(precommit: ModifiablePrecommit) -> None:
+    repos = precommit.document.get("repos")
     if repos is None:
         return
     sorted_repos = sorted(repos, key=__repo_sort_key)
     if sorted_repos != repos:
-        config["repos"] = sorted_repos
-        yaml.dump(config, CONFIG_PATH.precommit)
+        precommit.document["repos"] = sorted_repos
         msg = f"Sorted pre-commit hooks in {CONFIG_PATH.precommit}"
-        raise PrecommitError(msg)
+        precommit.append_to_changelog(msg)
 
 
 def __repo_sort_key(repo: Repo) -> tuple[int, str]:
@@ -70,11 +68,8 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
     return 4, hook_id
 
 
-def _update_precommit_ci_commit_msg() -> None:
-    if not CONFIG_PATH.precommit.exists():
-        return
-    config, yaml = load_roundtrip_precommit_config()
-    precommit_ci = config.get("ci")
+def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
+    precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
     if __has_constraint_files():
@@ -85,9 +80,8 @@ def _update_precommit_ci_commit_msg() -> None:
     autoupdate_commit_msg = precommit_ci.get(key)
     if autoupdate_commit_msg != expected_msg:
         precommit_ci[key] = expected_msg  # type:ignore[literal-required]
-        yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Updated ci.{key} in {CONFIG_PATH.precommit} to {expected_msg!r}"
-        raise PrecommitError(msg)
+        precommit.append_to_changelog(msg)
 
 
 def __has_constraint_files() -> bool:
@@ -97,27 +91,24 @@ def __has_constraint_files() -> bool:
     return any(path.exists() for path in constraint_paths)
 
 
-def _update_precommit_ci_skip() -> None:
-    config, yaml = load_roundtrip_precommit_config()
-    precommit_ci = config.get("ci")
+def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
+    precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
-    local_hooks = get_local_hooks(config)
-    non_functional_hooks = get_non_functional_hooks(config)
+    local_hooks = get_local_hooks(precommit.document)
+    non_functional_hooks = get_non_functional_hooks(precommit.document)
     expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
     existing_skips = precommit_ci.get("skip")
     if not expected_skips and existing_skips is not None:
         del precommit_ci["skip"]
-        yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Removed redundant ci.skip section from {CONFIG_PATH.precommit}"
-        raise PrecommitError(msg)
+        precommit.append_to_changelog(msg)
     if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
-        yaml_config = cast(CommentedMap, config)
+        yaml_config = cast(CommentedMap, precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
-        yaml.dump(yaml_config, CONFIG_PATH.precommit)
         msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
-        raise PrecommitError(msg)
+        precommit.append_to_changelog(msg)
 
 
 def get_local_hooks(config: PrecommitConfig) -> list[str]:
@@ -135,7 +126,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
     ]
 
 
-def _update_conda_environment() -> None:
+def _update_conda_environment(precommit: Precommit) -> None:
     """Temporary fix for Prettier v4 alpha releases.
 
     https://prettier.io/blog/2023/11/30/cli-deep-dive#installation
@@ -147,8 +138,7 @@ def _update_conda_environment() -> None:
     conda_env: CommentedMap = yaml.load(path)
     variables: CommentedMap = conda_env.get("variables", {})
     key = "PRETTIER_LEGACY_CLI"
-    precommit_config = load_precommit_config()
-    if __has_prettier_v4alpha(precommit_config):
+    if __has_prettier_v4alpha(precommit.document):
         if key not in variables:
             variables[key] = DoubleQuotedScalarString("1")
             conda_env["variables"] = variables
@@ -183,12 +173,11 @@ def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
     return rev.startswith("v4") and "alpha" in rev
 
 
-def _update_repo_urls() -> None:
+def _update_repo_urls(precommit: ModifiablePrecommit) -> None:
     redirects = {
         r"^.*github\.com/ComPWA/repo-maintenance$": "https://github.com/ComPWA/policy",
     }
-    config, yaml = load_roundtrip_precommit_config()
-    repos = config["repos"]
+    repos = precommit.document["repos"]
     updated_repos: list[tuple[str, str]] = []
     for repo in repos:
         url = repo["repo"]
@@ -197,8 +186,7 @@ def _update_repo_urls() -> None:
                 repo["repo"] = new_url
                 updated_repos.append((url, new_url))
     if updated_repos:
-        yaml.dump(config, CONFIG_PATH.precommit)
         msg = f"Updated repo urls in {CONFIG_PATH.precommit}:"
         for url, new_url in updated_repos:
             msg += f"\n  {url} -> {new_url}"
-        raise PrecommitError(msg)
+        precommit.append_to_changelog(msg)

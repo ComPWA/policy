@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Callable, Iterable
 
 from compwa_policy.errors import PrecommitError
-
-from . import CONFIG_PATH, read, write
+from compwa_policy.utilities import CONFIG_PATH, read, write
 
 
 def extract_config_section(

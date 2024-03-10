@@ -10,12 +10,7 @@ from ruamel.yaml import YAML
 
 from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import (
-    Hook,
-    Repo,
-    remove_precommit_hook,
-    update_single_hook_precommit_repo,
-)
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -28,27 +23,32 @@ from compwa_policy.utilities.toml import to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Array
 
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
-def main(has_notebooks: bool) -> None:
+
+def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(
             add_badge,
             "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
         )
         do(pyproject.remove_dependency, "radon")
-        do(_remove_black, pyproject)
-        do(_remove_flake8, pyproject)
-        do(_remove_isort, pyproject)
-        do(_remove_pydocstyle, pyproject)
-        do(_remove_pylint, pyproject)
+        do(_remove_black, precommit, pyproject)
+        do(_remove_flake8, precommit, pyproject)
+        do(_remove_isort, precommit, pyproject)
+        do(_remove_pydocstyle, precommit, pyproject)
+        do(_remove_pylint, precommit, pyproject)
         do(_move_ruff_lint_config, pyproject)
-        do(_update_ruff_config, pyproject, has_notebooks)
-        do(_update_precommit_hook, has_notebooks)
+        do(_update_ruff_config, precommit, pyproject, has_notebooks)
+        do(_update_precommit_hook, precommit, has_notebooks)
         do(_update_lint_dependencies, pyproject)
         do(_update_vscode_settings)
 
 
-def _remove_black(pyproject: ModifiablePyproject) -> None:
+def _remove_black(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(
             vscode.remove_extension_recommendation,
@@ -62,33 +62,39 @@ def _remove_black(pyproject: ModifiablePyproject) -> None:
             ignored_sections=["doc", "jupyter", "test"],
         )
         do(remove_badge, r".*https://github\.com/psf.*/black.*")
-        do(remove_precommit_hook, "black-jupyter")
-        do(remove_precommit_hook, "black")
-        do(remove_precommit_hook, "blacken-docs")
+        do(precommit.remove_hook, "black-jupyter")
+        do(precommit.remove_hook, "black")
+        do(precommit.remove_hook, "blacken-docs")
         do(vscode.remove_settings, ["black-formatter.importStrategy"])
 
 
-def _remove_flake8(pyproject: ModifiablePyproject) -> None:
+def _remove_flake8(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(remove_configs, [".flake8"])
         do(__remove_nbqa_option, pyproject, "flake8")
         do(pyproject.remove_dependency, "flake8")
         do(pyproject.remove_dependency, "pep8-naming")
         do(vscode.remove_extension_recommendation, "ms-python.flake8", unwanted=True)
-        do(remove_precommit_hook, "autoflake")  # cspell:ignore autoflake
-        do(remove_precommit_hook, "flake8")
-        do(remove_precommit_hook, "nbqa-flake8")
+        do(precommit.remove_hook, "autoflake")  # cspell:ignore autoflake
+        do(precommit.remove_hook, "flake8")
+        do(precommit.remove_hook, "nbqa-flake8")
         do(vscode.remove_settings, ["flake8.importStrategy"])
 
 
-def _remove_isort(pyproject: ModifiablePyproject) -> None:
+def _remove_isort(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(__remove_nbqa_option, pyproject, "black")
         do(__remove_nbqa_option, pyproject, "isort")
         do(__remove_tool_table, pyproject, "isort")
         do(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
-        do(remove_precommit_hook, "isort")
-        do(remove_precommit_hook, "nbqa-isort")
+        do(precommit.remove_hook, "isort")
+        do(precommit.remove_hook, "nbqa-isort")
         do(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
         do(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
 
@@ -114,7 +120,10 @@ def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None
         pyproject.append_to_changelog(msg)
 
 
-def _remove_pydocstyle(pyproject: ModifiablePyproject) -> None:
+def _remove_pydocstyle(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(
             remove_configs,
@@ -125,16 +134,19 @@ def _remove_pydocstyle(pyproject: ModifiablePyproject) -> None:
             ],
         )
         do(pyproject.remove_dependency, "pydocstyle")
-        do(remove_precommit_hook, "pydocstyle")
+        do(precommit.remove_hook, "pydocstyle")
 
 
-def _remove_pylint(pyproject: ModifiablePyproject) -> None:
+def _remove_pylint(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(remove_configs, [".pylintrc"])  # cspell:ignore pylintrc
         do(pyproject.remove_dependency, "pylint")
         do(vscode.remove_extension_recommendation, "ms-python.pylint", unwanted=True)
-        do(remove_precommit_hook, "pylint")
-        do(remove_precommit_hook, "nbqa-pylint")
+        do(precommit.remove_hook, "pylint")
+        do(precommit.remove_hook, "nbqa-pylint")
         do(vscode.remove_settings, ["pylint.importStrategy"])
 
 
@@ -173,7 +185,11 @@ def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
         )
 
 
-def _update_ruff_config(pyproject: ModifiablePyproject, has_notebooks: bool) -> None:
+def _update_ruff_config(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+    has_notebooks: bool,
+) -> None:
     with Executor() as do:
         do(__update_global_settings, pyproject, has_notebooks)
         do(__update_ruff_format_settings, pyproject)
@@ -181,7 +197,7 @@ def _update_ruff_config(pyproject: ModifiablePyproject, has_notebooks: bool) -> 
         do(__update_per_file_ignores, pyproject, has_notebooks)
         do(__update_isort_settings, pyproject)
         do(__update_pydocstyle_settings, pyproject)
-        do(__remove_nbqa, pyproject)
+        do(__remove_nbqa, precommit, pyproject)
 
 
 def __update_global_settings(
@@ -468,10 +484,13 @@ def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def __remove_nbqa(pyproject: ModifiablePyproject) -> None:
+def __remove_nbqa(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
     with Executor() as do:
         do(___remove_nbqa_settings, pyproject)
-        do(remove_precommit_hook, "nbqa-ruff")
+        do(precommit.remove_hook, "nbqa-ruff")
 
 
 def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
@@ -486,9 +505,7 @@ def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def _update_precommit_hook(has_notebooks: bool) -> None:
-    if not CONFIG_PATH.precommit.exists():
-        return
+def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     yaml = YAML(typ="rt")
     lint_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
     format_hook = Hook(id="ruff-format")
@@ -501,7 +518,7 @@ def _update_precommit_hook(has_notebooks: bool) -> None:
         rev="",
         hooks=[lint_hook, format_hook],
     )
-    update_single_hook_precommit_repo(expected_repo)
+    precommit.update_single_hook_repo(expected_repo)
 
 
 def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:

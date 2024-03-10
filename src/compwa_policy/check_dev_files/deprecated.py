@@ -5,14 +5,16 @@ import os
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import remove_configs, remove_from_gitignore, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import remove_precommit_hook
+from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def remove_deprecated_tools(keep_issue_templates: bool) -> None:
+def remove_deprecated_tools(
+    precommit: ModifiablePrecommit, keep_issue_templates: bool
+) -> None:
     with Executor() as do:
         if not keep_issue_templates:
             do(_remove_github_issue_templates)
-        do(_remove_markdownlint)
+        do(_remove_markdownlint, precommit)
         for directory in ["docs", "doc"]:
             do(_remove_relink_references, directory)
 
@@ -24,7 +26,7 @@ def _remove_github_issue_templates() -> None:
     ])
 
 
-def _remove_markdownlint() -> None:
+def _remove_markdownlint(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
         do(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
         do(remove_from_gitignore, ".markdownlint.json")
@@ -34,7 +36,7 @@ def _remove_markdownlint() -> None:
             extension_name="davidanson.vscode-markdownlint",
             unwanted=True,
         )
-        do(remove_precommit_hook, "markdownlint")
+        do(precommit.remove_hook, "markdownlint")
 
 
 def _remove_relink_references(directory: str) -> None:
