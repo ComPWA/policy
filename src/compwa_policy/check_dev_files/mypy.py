@@ -2,7 +2,7 @@
 
 import os
 
-import tomlkit
+import rtoml
 from ini2toml.api import Translator
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
@@ -44,7 +44,7 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     with open(config_path) as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name=config_path)
-    mypy_config = tomlkit.parse(toml_str)
+    mypy_config = rtoml.loads(toml_str)
     tool_table = pyproject.get_table("tool", create=True)
     tool_table.update(mypy_config)
     os.remove(config_path)

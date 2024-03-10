@@ -19,6 +19,7 @@ from typing import (
     overload,
 )
 
+import rtoml
 import tomlkit
 from attrs import field, frozen
 
@@ -32,7 +33,6 @@ from compwa_policy.utilities.pyproject.getters import (
     get_sub_table,
     get_supported_python_versions,
     has_sub_table,
-    load_pyproject_toml,
 )
 from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
@@ -63,18 +63,16 @@ class Pyproject:
     _document: PyprojectTOML
     _source: IO | Path | None = field(default=None)
 
-    @final
     @classmethod
     def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
-        document = load_pyproject_toml(source)
+        document = load_pyproject_toml(source, modifiable=False)
         if isinstance(source, str):
             return cls(document)
         return cls(document, source)
 
-    @final
     def dumps(self) -> str:
-        src = tomlkit.dumps(self._document, sort_keys=True)
+        src = rtoml.dumps(self._document, pretty=True)
         return f"{src.strip()}\n"
 
     def get_table(self, dotted_header: str, create: bool = False) -> Mapping[str, Any]:
@@ -126,6 +124,31 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     _is_in_context = False
     _changelog: list[str] = field(factory=list)
+
+    @override
+    @classmethod
+    def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
+        """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        if isinstance(source, io.IOBase):
+            current_position = source.tell()
+            source.seek(0)
+            document = tomlkit.load(source)  # type:ignore[arg-type]
+            source.seek(current_position)
+            return cls(document, source)  # type:ignore[arg-type]
+        if isinstance(source, Path):
+            with open(source) as stream:
+                document = tomlkit.load(stream)
+            return cls(document, source)  # type:ignore[arg-type]
+        if isinstance(source, str):
+            document = tomlkit.loads(source)
+            return cls(document)  # type:ignore[arg-type]
+        msg = f"Source of type {type(source).__name__} is not supported"
+        raise TypeError(msg)
+
+    @override
+    def dumps(self) -> str:
+        src = tomlkit.dumps(self._document, sort_keys=True)
+        return f"{src.strip()}\n"
 
     def __enter__(self) -> ModifiablePyproject:
         object.__setattr__(self, "_is_in_context", True)
@@ -229,3 +252,29 @@ def _has_setup_cfg_build_system() -> bool:
         return False
     cfg = open_config(CONFIG_PATH.setup_cfg)
     return cfg.has_section("metadata")
+
+
+def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectTOML:
+    """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`.
+
+    The :code:`modifiable` flag determines which parser to use:
+
+    - `False`: use `rtoml <https://github.com/samuelcolvin/rtoml>`_, which is
+      **faster**, but does not preserve comments and formatting.
+    - `True`: uses :mod:`tomlkit`, which is **slower**, but preservers comments and
+      formatting.
+    """
+    parser = tomlkit if modifiable else rtoml
+    if isinstance(source, io.IOBase):
+        current_position = source.tell()
+        source.seek(0)
+        document = parser.load(source)
+        source.seek(current_position)
+        return document
+    if isinstance(source, Path):
+        with open(source) as stream:
+            return parser.load(stream)  # type:ignore[return-value]
+    if isinstance(source, str):
+        return parser.loads(source)  # type:ignore[return-value]
+    msg = f"Source of type {type(source).__name__} is not supported"
+    raise TypeError(msg)

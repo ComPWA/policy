@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
 
-import tomlkit
+import rtoml
 from ini2toml.api import Translator
 
 from compwa_policy.utilities import CONFIG_PATH
@@ -49,10 +49,10 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     with open(CONFIG_PATH.pytest_ini) as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name="pytest.ini")
-    config = tomlkit.parse(toml_str)
-    config.pop("coverage:run", None)
+    pytest_config = rtoml.loads(toml_str)
+    pytest_config.pop("coverage:run", None)
     tool_table = pyproject.get_table("tool", create=True)
-    tool_table.update(config)
+    tool_table.update(pytest_config)
     CONFIG_PATH.pytest_ini.unlink()
     msg = f"Moved pytest configuration to {CONFIG_PATH.pyproject}"
     pyproject.append_to_changelog(msg)
