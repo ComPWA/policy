@@ -1,4 +1,9 @@
-"""Collect `.PrecommitError` instances from several executed functions."""
+"""Collect `.PrecommitError` instances from several executed functions.
+
+.. autolink-preface::
+    from compwa_policy.errors import PrecommitError
+    from compwa_policy.utilities.executor import executor
+"""
 
 from __future__ import annotations
 
@@ -22,7 +27,29 @@ P = ParamSpec("P")
 
 
 class executor(AbstractContextManager):  # noqa: N801
-    """Execute functions and collect any `.PrecommitError` exceptions.
+    r"""Execute functions and collect any `.PrecommitError` exceptions.
+
+    The `executor` is a context manager that can be used to sequentially execute
+    functions and collect any `.PrecommitError` exceptions they raise. The collected
+    exceptions are merged and re-raised as a new `.PrecommitError` when the context
+    manager exits.
+
+    To avoid raising the exceptions, set the :code:`raise_exception` argument to
+    `False`. The collected exceptions will then be printed to the console instead.
+
+    >>> def function1() -> None:
+    ...     raise PrecommitError("Error message 1")
+    >>> def function2() -> None:
+    ...     raise PrecommitError("Error message 2")
+    >>> def function3() -> None: ...
+    >>>
+    >>> with executor(raise_exception=False) as execute:
+    ...     execute(function1)
+    ...     execute(function2)
+    ...     execute(function3)
+    Error message 1
+    --------------------
+    Error message 2
 
     .. automethod:: __call__
     """

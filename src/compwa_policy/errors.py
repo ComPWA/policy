@@ -1,5 +1,3 @@
-"""Exceptions that are caught by a pre-commit hook and printed instead."""
-
-
+# noqa: D100
 class PrecommitError(RuntimeError):
-    pass
+    """Exceptions that are caught by a pre-commit hook and printed instead."""
