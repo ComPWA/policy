@@ -1,11 +1,8 @@
 # noqa: D100
 from __future__ import annotations
 
-import socket
-from functools import lru_cache
 from typing import TYPE_CHECKING, cast
 
-from pre_commit.commands.autoupdate import autoupdate as precommit_autoupdate
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
@@ -89,13 +86,6 @@ def update_single_hook_precommit_repo(expected: Repo) -> None:
             before="\n",
         )
         yaml.dump(config, CONFIG_PATH.precommit)
-        if _has_internet_connection():
-            precommit_autoupdate(
-                CONFIG_PATH.precommit,
-                freeze=False,
-                repos=[repo_url],
-                tags_only=True,
-            )
         msg = f"Added {hook_id} hook to {CONFIG_PATH.precommit}."
         raise PrecommitError(msg)
     idx, existing_hook = idx_and_repo
@@ -178,17 +168,3 @@ def __determine_expected_hook_idx(hooks: list[Hook], hook_id: str) -> int:
         if hook["id"] > hook_id:
             return i
     return len(hooks)
-
-
-@lru_cache(maxsize=None)
-def _has_internet_connection(
-    host: str = "8.8.8.8", port: int = 53, timeout: float = 0.5
-) -> bool:
-    try:
-        # cspell:ignore setdefaulttimeout
-        socket.setdefaulttimeout(timeout)
-        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-    except OSError:
-        return False
-    else:
-        return True
