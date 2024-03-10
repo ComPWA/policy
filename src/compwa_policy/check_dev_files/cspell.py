@@ -16,12 +16,12 @@ from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file,
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
+    Precommit,
     Repo,
-    find_repo,
-    load_precommit_config,
     load_roundtrip_precommit_config,
     update_single_hook_precommit_repo,
 )
+from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
@@ -50,8 +50,8 @@ def main(no_cspell_update: bool) -> None:
         do(_update_cspell_repo_url)
         has_cspell_hook = False
         if CONFIG_PATH.cspell.exists():
-            config = load_precommit_config()
-            has_cspell_hook = find_repo(config, __REPO_URL) is not None
+            config = Precommit.load()
+            has_cspell_hook = config.find_repo(__REPO_URL) is not None
         if not has_cspell_hook:
             do(_remove_configuration)
         else:

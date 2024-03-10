@@ -13,12 +13,12 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
+    Precommit,
     PrecommitConfig,
     Repo,
-    find_repo,
-    load_precommit_config,
     load_roundtrip_precommit_config,
 )
+from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -147,8 +147,8 @@ def _update_conda_environment() -> None:
     conda_env: CommentedMap = yaml.load(path)
     variables: CommentedMap = conda_env.get("variables", {})
     key = "PRETTIER_LEGACY_CLI"
-    precommit_config = load_precommit_config()
-    if __has_prettier_v4alpha(precommit_config):
+    precommit_config = Precommit.load()
+    if __has_prettier_v4alpha(precommit_config.document):
         if key not in variables:
             variables[key] = DoubleQuotedScalarString("1")
             conda_env["variables"] = variables

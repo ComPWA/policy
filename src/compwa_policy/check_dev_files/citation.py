@@ -18,10 +18,10 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import (
     Hook,
     Repo,
-    find_repo_with_index,
     load_roundtrip_precommit_config,
     update_single_hook_precommit_repo,
 )
+from compwa_policy.utilities.precommit.getters import find_repo_with_index
 
 
 def main() -> None:

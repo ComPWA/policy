@@ -17,7 +17,7 @@ from compwa_policy.check_dev_files.github_workflows import (
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import load_precommit_config
+from compwa_policy.utilities.precommit import Precommit
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if sys.version_info < (3, 8):
@@ -102,7 +102,7 @@ def _check_precommit_schedule() -> None:
     )
     if not CONFIG_PATH.precommit.exists():
         raise PrecommitError(msg)
-    config = load_precommit_config()
-    schedule = config.get("ci", {}).get("autoupdate_schedule")
+    config = Precommit.load()
+    schedule = config.document.get("ci", {}).get("autoupdate_schedule")
     if schedule is None:
         raise PrecommitError(msg)
