@@ -272,6 +272,9 @@ ignore = [
 ]
 task-tags = ["cspell"]
 
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [tool.ruff.lint.isort]
 known-first-party = ["compwa_policy"]
 split-on-trailing-comma = false

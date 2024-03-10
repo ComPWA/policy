@@ -7,10 +7,7 @@ import sys
 from argparse import ArgumentParser
 from typing import TYPE_CHECKING, Any, Sequence
 
-from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
-from compwa_policy.utilities.executor import Executor
-
-from . import (
+from compwa_policy.check_dev_files import (
     black,
     citation,
     commitlint,
@@ -37,6 +34,8 @@ from . import (
     update_pip_constraints,
     vscode,
 )
+from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
+from compwa_policy.utilities.executor import Executor
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject import PythonVersion

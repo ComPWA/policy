@@ -12,10 +12,9 @@ from typing import Sequence
 
 import nbformat
 
+from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.notebook import load_notebook
-
-from .errors import PrecommitError
-from .utilities.executor import Executor
 
 
 def main(argv: Sequence[str] | None = None) -> int:
