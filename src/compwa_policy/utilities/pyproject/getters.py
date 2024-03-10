@@ -72,15 +72,16 @@ def get_source_url(pyproject: PyprojectTOML) -> str:
 def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersion]:
     """Extract sorted list of supported Python versions from package classifiers.
 
-    >>> import tomlkit
-    >>> pyproject = tomlkit.loads('''
+    >>> from compwa_policy.utilities.pyproject import load_pyproject_toml
+    >>> toml_src = '''
     ...     [project]
     ...     classifiers = [
     ...         "Programming Language :: Python :: 3.9",
     ...         "Programming Language :: Python :: 3.10",
     ...         "Programming Language :: Python :: 3.11",
     ...     ]
-    ... ''')
+    ... '''
+    >>> pyproject = load_pyproject_toml(toml_src, modifiable=False)
     >>> get_supported_python_versions(pyproject)
     ['3.9', '3.10', '3.11']
     """

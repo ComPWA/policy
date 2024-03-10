@@ -1,4 +1,5 @@
 import pytest
+import rtoml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.pyproject import load_pyproject_toml
@@ -13,44 +14,44 @@ from compwa_policy.utilities.pyproject.getters import (
 
 
 def test_get_package_name():
-    src = load_pyproject_toml("""
+    src = """
         [project]
         name = "my-package"
-    """)
-    package_name = get_package_name(src)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
+    package_name = get_package_name(pyproject)
     assert package_name == "my-package"
 
 
 def test_get_package_name_missing():
-    src = load_pyproject_toml("""
+    src = """
         [server]
         ip = "192.168.1.1"
         port = 8000
-
         [server.http]
         enable = true
         port = 8080
-
         [[users]]
         name = "Alice"
         [[users]]
         name = "Bob"
-    """)
-    package_name = get_package_name(src)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
+    package_name = get_package_name(pyproject)
     assert package_name is None
     with pytest.raises(PrecommitError):
-        package_name = get_package_name(src, raise_on_missing=True)
+        package_name = get_package_name(pyproject, raise_on_missing=True)
 
 
 def test_get_project_urls():
-    pyproject = load_pyproject_toml("""
+    src = """
         [project]
         name = "my-package"
-
         [project.urls]
         Documentation = "https://ampform.rtfd.io"
         Source = "https://github.com/ComPWA/ampform"
-    """)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
     assert get_project_urls(pyproject) == {
         "Documentation": "https://ampform.rtfd.io",
         "Source": "https://github.com/ComPWA/ampform",
@@ -61,10 +62,11 @@ def test_get_project_urls():
 
 
 def test_get_project_urls_missing():
-    pyproject = load_pyproject_toml("""
+    src = """
         [project]
         name = "my-package"
-    """)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
     with pytest.raises(
         PrecommitError,
         match=r"pyproject\.toml does not contain project URLs",
@@ -73,10 +75,11 @@ def test_get_project_urls_missing():
 
 
 def test_get_source_url_missing():
-    pyproject = load_pyproject_toml("""
+    src = """
         [project.urls]
         Documentation = "https://ampform.rtfd.io"
-    """)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
     with pytest.raises(
         PrecommitError,
         match=r'\[project\.urls\] in pyproject\.toml does not contain a "Source" URL',
@@ -85,7 +88,7 @@ def test_get_source_url_missing():
 
 
 def test_get_supported_python_versions():
-    pyproject = load_pyproject_toml("""
+    src = """
         [project]
         name = "my-package"
         classifiers = [
@@ -94,20 +97,20 @@ def test_get_supported_python_versions():
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
         ]
-    """)
+    """
+    pyproject = load_pyproject_toml(src, modifiable=False)
     python_versions = get_supported_python_versions(pyproject)
     assert python_versions == ["3.7", "3.8", "3.9"]
 
 
 def test_get_sub_table():
-    document = load_pyproject_toml("""
+    document = rtoml.loads("""
         [project]
         name = "my-package"
 
         [project.urls]
         homepage = "https://github.com"
     """)
-
     sub_table = get_sub_table(document, "project")
     assert sub_table == document["project"]
 
@@ -124,7 +127,7 @@ def test_get_sub_table():
 
 
 def test_has_sub_table():
-    document = load_pyproject_toml("""
+    document = rtoml.loads("""
         [project]
         name = "my-package"
 

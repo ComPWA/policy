@@ -49,6 +49,7 @@
     "oneline",
     "pytest",
     "PYTHONHASHSEED",
+    "rtoml",
     "sympy",
     "toctree",
     "Zenodo"
