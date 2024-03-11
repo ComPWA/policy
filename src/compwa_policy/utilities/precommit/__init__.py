@@ -128,12 +128,15 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             raise RuntimeError(msg)
 
     def remove_hook(self, hook_id: str, repo_url: str | None = None) -> None:
+        self.__assert_is_in_context()
         remove_precommit_hook(self, hook_id, repo_url)
 
     def update_single_hook_repo(self, expected: Repo) -> None:
+        self.__assert_is_in_context()
         update_single_hook_precommit_repo(self, expected)
 
     def update_hook(self, repo_url: str, expected_hook: Hook) -> None:
+        self.__assert_is_in_context()
         update_precommit_hook(self, repo_url, expected_hook)
 
 
