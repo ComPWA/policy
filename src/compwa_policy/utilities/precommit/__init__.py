@@ -59,7 +59,8 @@ class Precommit:
         return cls(config, parser, source)
 
     def dumps(self) -> str:
-        return self.parser.dump(self.document)
+        with io.StringIO() as stream:
+            return self.parser.dump(self.document, stream)
 
     def find_repo(self, search_pattern: str) -> Repo | None:
         """Find pre-commit repo definition in pre-commit config."""
@@ -110,10 +111,9 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             target.seek(0)
             self.parser.dump(self.document, target)
             target.seek(current_position)
-        elif isinstance(target, (Path, str)):
-            src = self.dumps()
+        elif isinstance(target, Path):
             with open(target, "w") as stream:
-                stream.write(src)
+                self.parser.dump(self.document, stream)
         else:
             msg = f"Target of type {type(target).__name__} is not supported"
             raise TypeError(msg)
