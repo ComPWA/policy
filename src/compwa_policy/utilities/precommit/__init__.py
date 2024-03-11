@@ -92,12 +92,12 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             return
         if self.parser is None:
             self.dump(self.source)
-        msg = "Following modifications were made"
+        msg = "The following modifications were made"
         if isinstance(self.source, Path):
-            msg = f" to {self.source}"
+            msg += f" to {self.source}"
         msg += ":\n\n"
-        modifications = indent("\n".join(self.__changelog), prefix="   - ")
-        raise PrecommitError(modifications)
+        msg += indent("\n".join(self.__changelog), prefix="   - ")
+        raise PrecommitError(msg)
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None:
