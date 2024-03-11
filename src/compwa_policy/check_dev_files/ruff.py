@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping
 
 from ruamel.yaml import YAML
 
-from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
+from compwa_policy.utilities import natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
@@ -108,7 +108,7 @@ def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
     if option not in nbqa_table:
         return
     nbqa_table.pop(option)
-    msg = f"Removed {option!r} nbQA options from {CONFIG_PATH.pyproject}"
+    msg = f"Removed {option!r} nbQA options from [{table_key}]"
     pyproject.append_to_changelog(msg)
 
 
@@ -116,7 +116,7 @@ def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None
     tools = pyproject._document.get("tool")
     if isinstance(tools, dict) and tool_table in tools:
         tools.pop(tool_table)
-        msg = f"Removed [tool.{tool_table}] section from {CONFIG_PATH.pyproject}"
+        msg = f"Removed [tool.{tool_table}] table"
         pyproject.append_to_changelog(msg)
 
 
@@ -180,9 +180,7 @@ def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
     for key in lint_settings:
         del global_settings[key]
     if lint_arrays or lint_tables:
-        pyproject.append_to_changelog(
-            f"Moved linting configuration to [tool.ruff.lint] in {CONFIG_PATH.pyproject}"
-        )
+        pyproject.append_to_changelog("Moved linting configuration to [tool.ruff.lint]")
 
 
 def _update_ruff_config(
@@ -223,7 +221,7 @@ def __update_global_settings(
         minimal_settings[key] = ___merge(default_excludes, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -270,7 +268,7 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff formatter configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff formatter configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -301,7 +299,7 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff linting configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff linting configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -418,7 +416,7 @@ def __update_per_file_ignores(
         minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -469,7 +467,7 @@ def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
     minimal_settings = {"split-on-trailing-comma": False}
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff isort settings in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff isort settings"
         pyproject.append_to_changelog(msg)
 
 
@@ -480,7 +478,7 @@ def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated Ruff configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated Ruff configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -501,7 +499,7 @@ def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
         tool_table = pyproject.get_table("tool", create=True)
         del tool_table["nbqa"]
     if nbqa_addopts:
-        msg = f"Removed Ruff configuration for nbQA from {CONFIG_PATH.pyproject}"
+        msg = "Removed Ruff configuration for nbQA"
         pyproject.append_to_changelog(msg)
 
 

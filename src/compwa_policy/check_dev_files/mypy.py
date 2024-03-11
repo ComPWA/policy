@@ -38,15 +38,15 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
-    config_path = ".mypy.ini"
-    if not os.path.exists(config_path):
+    old_config_path = ".mypy.ini"
+    if not os.path.exists(old_config_path):
         return
-    with open(config_path) as stream:
+    with open(old_config_path) as stream:
         original_contents = stream.read()
-    toml_str = Translator().translate(original_contents, profile_name=config_path)
+    toml_str = Translator().translate(original_contents, profile_name=old_config_path)
     mypy_config = rtoml.loads(toml_str)
     tool_table = pyproject.get_table("tool", create=True)
     tool_table.update(mypy_config)
-    os.remove(config_path)
-    msg = f"Moved mypy configuration to {CONFIG_PATH.pyproject}"
+    os.remove(old_config_path)
+    msg = f"Imported mypy configuration from {old_config_path}"
     pyproject.append_to_changelog(msg)

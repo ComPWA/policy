@@ -95,8 +95,8 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
         msg = "The following modifications were made"
         if isinstance(self.source, Path):
             msg += f" to {self.source}"
-        msg += ":\n\n"
-        msg += indent("\n".join(self.__changelog), prefix="   - ")
+        msg += ":\n"
+        msg += indent("\n".join(self.__changelog), prefix="  - ")
         raise PrecommitError(msg)
 
     def dump(self, target: IO | Path | str | None = None) -> None:

@@ -53,10 +53,7 @@ def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
             settings.pop(option)
             removed_options.add(option)
     if removed_options:
-        msg = (
-            f"Removed {', '.join(sorted(removed_options))} option from black"
-            f" configuration in {CONFIG_PATH.pyproject}"
-        )
+        msg = f"Removed {', '.join(sorted(removed_options))} option from black configuration"
         pyproject.append_to_changelog(msg)
 
 
@@ -70,7 +67,7 @@ def _update_black_settings(pyproject: ModifiablePyproject) -> None:
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = f"Updated black configuration in {CONFIG_PATH.pyproject}"
+        msg = "Updated black configuration"
         pyproject.append_to_changelog(msg)
 
 
