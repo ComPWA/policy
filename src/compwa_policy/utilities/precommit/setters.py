@@ -27,7 +27,7 @@ def remove_precommit_hook(
         repos.pop(repo_idx)
     else:
         hooks.pop(hook_idx)
-    msg = f"Removed {hook_id!r} from {CONFIG_PATH.precommit}"
+    msg = f"Removed {hook_id!r} hook"
     precommit.append_to_changelog(msg)
 
 
@@ -82,7 +82,7 @@ def update_single_hook_precommit_repo(
         repos[idx] = expected_yaml  # type: ignore[assignment,call-overload]
         repos_map = cast(CommentedMap, repos)
         repos_map.yaml_set_comment_before_after_key(idx + 1, before="\n")
-        msg = f"Updated {hook_id} hook in {CONFIG_PATH.precommit}"
+        msg = f"Updated {hook_id} hook"
         precommit.append_to_changelog(msg)
 
 

@@ -57,7 +57,7 @@ class Executor(AbstractContextManager):
     """
 
     def __init__(self, raise_exception: bool = True) -> None:
-        self._raise_exception = raise_exception
+        self.__raise_exception = raise_exception
         self.__error_messages: list[str] = []
         self.__is_in_context = False
         self.__execution_times: dict[str, float] = {}
@@ -108,7 +108,7 @@ class Executor(AbstractContextManager):
     ) -> None:
         error_msg = self.merge_messages()
         if error_msg:
-            if self._raise_exception:
+            if self.__raise_exception:
                 raise PrecommitError(error_msg) from exc_value
             print(error_msg)  # noqa: T201
         if os.getenv("COMPWA_POLICY_DEBUG") is not None:

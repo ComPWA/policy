@@ -164,12 +164,12 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             return
         if self._source is None:
             self.dump(self._source)
-        msg = "Following modifications were made"
+        msg = "The following modifications were made"
         if isinstance(self._source, (Path, str)):
-            msg = f" to {self._source}"
-        msg += ":\n\n"
-        modifications = indent("\n".join(self._changelog), prefix="   - ")
-        raise PrecommitError(modifications)
+            msg += f" to {self._source}"
+        msg += ":\n"
+        msg += indent("\n".join(self._changelog), prefix="  - ")
+        raise PrecommitError(msg)
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None and self._source is None:

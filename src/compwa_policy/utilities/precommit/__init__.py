@@ -59,7 +59,8 @@ class Precommit:
         return cls(config, parser, source)
 
     def dumps(self) -> str:
-        return self.parser.dump(self.document)
+        with io.StringIO() as stream:
+            return self.parser.dump(self.document, stream)
 
     def find_repo(self, search_pattern: str) -> Repo | None:
         """Find pre-commit repo definition in pre-commit config."""
@@ -92,12 +93,12 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             return
         if self.parser is None:
             self.dump(self.source)
-        msg = "Following modifications were made"
+        msg = "The following modifications were made"
         if isinstance(self.source, Path):
-            msg = f" to {self.source}"
-        msg += ":\n\n"
-        modifications = indent("\n".join(self.__changelog), prefix="   - ")
-        raise PrecommitError(modifications)
+            msg += f" to {self.source}"
+        msg += ":\n"
+        msg += indent("\n".join(self.__changelog), prefix="  - ")
+        raise PrecommitError(msg)
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None:
@@ -110,10 +111,9 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             target.seek(0)
             self.parser.dump(self.document, target)
             target.seek(current_position)
-        elif isinstance(target, (Path, str)):
-            src = self.dumps()
+        elif isinstance(target, Path):
             with open(target, "w") as stream:
-                stream.write(src)
+                self.parser.dump(self.document, stream)
         else:
             msg = f"Target of type {type(target).__name__} is not supported"
             raise TypeError(msg)
@@ -128,12 +128,15 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             raise RuntimeError(msg)
 
     def remove_hook(self, hook_id: str, repo_url: str | None = None) -> None:
+        self.__assert_is_in_context()
         remove_precommit_hook(self, hook_id, repo_url)
 
     def update_single_hook_repo(self, expected: Repo) -> None:
+        self.__assert_is_in_context()
         update_single_hook_precommit_repo(self, expected)
 
     def update_hook(self, repo_url: str, expected_hook: Hook) -> None:
+        self.__assert_is_in_context()
         update_precommit_hook(self, repo_url, expected_hook)
 
 

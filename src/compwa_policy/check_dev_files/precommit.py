@@ -10,7 +10,6 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
@@ -41,7 +40,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
     sorted_repos = sorted(repos, key=__repo_sort_key)
     if sorted_repos != repos:
         precommit.document["repos"] = sorted_repos
-        msg = f"Sorted pre-commit hooks in {CONFIG_PATH.precommit}"
+        msg = "Sorted all pre-commit hooks"
         precommit.append_to_changelog(msg)
 
 
@@ -80,7 +79,7 @@ def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
     autoupdate_commit_msg = precommit_ci.get(key)
     if autoupdate_commit_msg != expected_msg:
         precommit_ci[key] = expected_msg  # type:ignore[literal-required]
-        msg = f"Updated ci.{key} in {CONFIG_PATH.precommit} to {expected_msg!r}"
+        msg = f"Set ci.{key} to {expected_msg!r}"
         precommit.append_to_changelog(msg)
 
 
@@ -101,13 +100,13 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     existing_skips = precommit_ci.get("skip")
     if not expected_skips and existing_skips is not None:
         del precommit_ci["skip"]
-        msg = f"Removed redundant ci.skip section from {CONFIG_PATH.precommit}"
+        msg = "Removed redundant ci.skip section"
         precommit.append_to_changelog(msg)
     if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast(CommentedMap, precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
-        msg = f"Updated ci.skip section in {CONFIG_PATH.precommit}"
+        msg = "Updated ci.skip section"
         precommit.append_to_changelog(msg)
 
 
@@ -186,7 +185,7 @@ def _update_repo_urls(precommit: ModifiablePrecommit) -> None:
                 repo["repo"] = new_url
                 updated_repos.append((url, new_url))
     if updated_repos:
-        msg = f"Updated repo urls in {CONFIG_PATH.precommit}:"
+        msg = "Updated repo URLs:"
         for url, new_url in updated_repos:
             msg += f"\n  {url} -> {new_url}"
         precommit.append_to_changelog(msg)
