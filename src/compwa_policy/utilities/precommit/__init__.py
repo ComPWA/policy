@@ -150,7 +150,6 @@ def _load_roundtrip_precommit_config(
     parser = create_prettier_round_trip_yaml()
     if isinstance(source, str):
         with io.StringIO(source) as stream:
-            stream.seek(0)
             config = parser.load(stream)
     else:
         config = parser.load(source)
