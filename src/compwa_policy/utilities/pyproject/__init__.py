@@ -159,10 +159,12 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         tb: TracebackType | None,
-    ) -> None:
+    ) -> bool:
+        if exc_type is not None and not issubclass(exc_type, PrecommitError):
+            return False
         if not self._changelog:
-            return
-        if self._source is None:
+            return True
+        if self._source is not None:
             self.dump(self._source)
         msg = "The following modifications were made"
         if isinstance(self._source, (Path, str)):

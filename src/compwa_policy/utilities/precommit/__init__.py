@@ -60,7 +60,8 @@ class Precommit:
 
     def dumps(self) -> str:
         with io.StringIO() as stream:
-            return self.parser.dump(self.document, stream)
+            self.parser.dump(self.document, stream)
+            return stream.getvalue()
 
     def find_repo(self, search_pattern: str) -> Repo | None:
         """Find pre-commit repo definition in pre-commit config."""
@@ -88,10 +89,12 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         tb: TracebackType | None,
-    ) -> None:
+    ) -> bool:
+        if exc_type is not None and not issubclass(exc_type, PrecommitError):
+            return False
         if not self.__changelog:
-            return
-        if self.parser is None:
+            return True
+        if self.parser is not None:
             self.dump(self.source)
         msg = "The following modifications were made"
         if isinstance(self.source, Path):
