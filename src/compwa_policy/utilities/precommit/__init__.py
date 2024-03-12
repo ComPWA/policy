@@ -60,7 +60,8 @@ class Precommit:
 
     def dumps(self) -> str:
         with io.StringIO() as stream:
-            return self.parser.dump(self.document, stream)
+            self.parser.dump(self.document, stream)
+            return stream.getvalue()
 
     def find_repo(self, search_pattern: str) -> Repo | None:
         """Find pre-commit repo definition in pre-commit config."""
