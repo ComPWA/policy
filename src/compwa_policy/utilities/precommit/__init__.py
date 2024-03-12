@@ -89,9 +89,11 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         tb: TracebackType | None,
-    ) -> None:
+    ) -> bool:
+        if exc_type is not None and not issubclass(exc_type, PrecommitError):
+            return False
         if not self.__changelog:
-            return
+            return True
         if self.parser is None:
             self.dump(self.source)
         msg = "The following modifications were made"

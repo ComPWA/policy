@@ -105,14 +105,19 @@ class Executor(AbstractContextManager):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         tb: TracebackType | None,
-    ) -> None:
+    ) -> bool:
+        if exc_type is not None and not issubclass(exc_type, PrecommitError):
+            return False
+        if isinstance(exc_value, PrecommitError):
+            self.__error_messages.append(str("\n".join(exc_value.args)))
         error_msg = self.merge_messages()
         if error_msg:
             if self.__raise_exception:
-                raise PrecommitError(error_msg) from exc_value
+                raise PrecommitError(error_msg)
             print(error_msg)  # noqa: T201
         if os.getenv("COMPWA_POLICY_DEBUG") is not None:
             self.print_execution_times()
+        return True
 
     def merge_messages(self) -> str:
         stripped_messages = (s.strip() for s in self.__error_messages)
