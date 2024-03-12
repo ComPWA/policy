@@ -164,7 +164,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             return False
         if not self._changelog:
             return True
-        if self._source is None:
+        if self._source is not None:
             self.dump(self._source)
         msg = "The following modifications were made"
         if isinstance(self._source, (Path, str)):

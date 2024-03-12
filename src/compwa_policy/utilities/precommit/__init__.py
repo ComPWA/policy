@@ -94,7 +94,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             return False
         if not self.__changelog:
             return True
-        if self.parser is None:
+        if self.parser is not None:
             self.dump(self.source)
         msg = "The following modifications were made"
         if isinstance(self.source, Path):

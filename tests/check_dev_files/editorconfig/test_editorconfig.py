@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 
 import pytest
@@ -13,9 +14,10 @@ def test_update_precommit_config(no_python: bool):
     with open(this_dir / ".pre-commit-config-bad.yaml") as file:
         src = file.read()
 
+    stream = io.StringIO(src)
     with pytest.raises(
         PrecommitError, match=r"Updated editorconfig-checker hook"
-    ), ModifiablePrecommit.load(src) as precommit:
+    ), ModifiablePrecommit.load(stream) as precommit:
         _update_precommit_config(precommit, no_python)
 
     result = precommit.dumps()
