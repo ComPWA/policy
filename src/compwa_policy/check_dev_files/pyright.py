@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
@@ -15,8 +16,12 @@ def main() -> None:
         _update_settings(pyproject)
 
 
-def _merge_config_into_pyproject(pyproject: ModifiablePyproject) -> None:
-    old_config_path = "pyrightconfig.json"  # cspell:ignore pyrightconfig
+def _merge_config_into_pyproject(
+    pyproject: ModifiablePyproject,
+    path: Path = Path("pyrightconfig.json"),
+    remove: bool = True,
+) -> None:
+    old_config_path = path
     if not os.path.exists(old_config_path):
         return
     with open(old_config_path) as stream:
@@ -26,7 +31,8 @@ def _merge_config_into_pyproject(pyproject: ModifiablePyproject) -> None:
             existing_config[key] = to_toml_array(sorted(value))
     tool_table = pyproject.get_table("tool.pyright", create=True)
     tool_table.update(existing_config)
-    os.remove(old_config_path)
+    if remove:
+        os.remove(old_config_path)
     msg = f"Imported pyright configuration from {old_config_path}"
     pyproject.append_to_changelog(msg)
 
