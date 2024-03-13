@@ -93,7 +93,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     github_pages=args.github_pages,
                 )
             do(mypy.main)
-            do(pyright.main)
+            do(pyright.main, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:

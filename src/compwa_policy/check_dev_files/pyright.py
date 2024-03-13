@@ -5,14 +5,24 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.precommit.struct import Hook, Repo
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    complies_with_subset,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
-def main() -> None:
+
+def main(precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
         _merge_config_into_pyproject(pyproject)
+        _update_precommit(precommit, pyproject)
         _update_settings(pyproject)
 
 
@@ -37,9 +47,19 @@ def _merge_config_into_pyproject(
     pyproject.append_to_changelog(msg)
 
 
+def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
+    if not __has_pyright(pyproject):
+        return
+    repo = Repo(
+        repo="https://github.com/ComPWA/mirrors-pyright",
+        rev="",
+        hooks=[Hook(id="pyright")],
+    )
+    precommit.update_single_hook_repo(repo)
+
+
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    table_key = "tool.pyright"
-    if not pyproject.has_table(table_key):
+    if not __has_pyright(pyproject):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
     minimal_settings = {
@@ -49,3 +69,8 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyright_settings.update(minimal_settings)
         msg = "Updated pyright configuration"
         pyproject.append_to_changelog(msg)
+
+
+def __has_pyright(pyproject: Pyproject) -> bool:
+    table_key = "tool.pyright"
+    return pyproject.has_table(table_key)
