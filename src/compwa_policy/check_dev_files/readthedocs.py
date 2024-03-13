@@ -86,8 +86,8 @@ def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> 
     config.changelog.append(msg)
 
 
-def __get_install_steps(python_version: PythonVersion) -> tuple[str, str, str]:
-    pip_install = "uv pip install --system"
+def __get_install_steps(python_version: PythonVersion) -> tuple[str, str]:
+    pip_install = "/home/docs/.cargo/bin/uv pip install --system"
     constraints_file = get_constraints_file(python_version)
     if constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"
@@ -95,7 +95,6 @@ def __get_install_steps(python_version: PythonVersion) -> tuple[str, str, str]:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
     return (
         "curl -LsSf https://astral.sh/uv/install.sh | sh",
-        "export PATH=/home/docs/.cargo/bin:$PATH",
         install_statement,
     )
 
