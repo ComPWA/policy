@@ -29,10 +29,11 @@ class TestModifiablePrecommit:
             precommit.append_to_changelog("Fake modification")
 
     def test_context_manager_path(self, this_dir: Path, example_config: str):
+        input_stream = io.StringIO(example_config)
         with pytest.raises(
             PrecommitError,
             match=r"Fake modification$",
-        ), ModifiablePrecommit.load(this_dir / ".pre-commit-config.yaml") as precommit:
+        ), ModifiablePrecommit.load(input_stream) as precommit:
             precommit.append_to_changelog("Fake modification")
         yaml = precommit.dumps()
         assert yaml == example_config
