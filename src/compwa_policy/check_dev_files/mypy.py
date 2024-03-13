@@ -16,6 +16,21 @@ def main() -> None:
         do(_update_vscode_settings, pyproject)
 
 
+def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
+    old_config_path = ".mypy.ini"
+    if not os.path.exists(old_config_path):
+        return
+    with open(old_config_path) as stream:
+        original_contents = stream.read()
+    toml_str = Translator().translate(original_contents, profile_name=old_config_path)
+    mypy_config = rtoml.loads(toml_str)
+    tool_table = pyproject.get_table("tool", create=True)
+    tool_table.update(mypy_config)
+    os.remove(old_config_path)
+    msg = f"Imported mypy configuration from {old_config_path}"
+    pyproject.append_to_changelog(msg)
+
+
 def _update_vscode_settings(pyproject: Pyproject) -> None:
     mypy_config = pyproject.get_table("tool.mypy")
     with Executor() as do:
@@ -35,18 +50,3 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
                 "mypy-type-checker.importStrategy": "fromEnvironment",
             }
             do(vscode.update_settings, settings)
-
-
-def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
-    old_config_path = ".mypy.ini"
-    if not os.path.exists(old_config_path):
-        return
-    with open(old_config_path) as stream:
-        original_contents = stream.read()
-    toml_str = Translator().translate(original_contents, profile_name=old_config_path)
-    mypy_config = rtoml.loads(toml_str)
-    tool_table = pyproject.get_table("tool", create=True)
-    tool_table.update(mypy_config)
-    os.remove(old_config_path)
-    msg = f"Imported mypy configuration from {old_config_path}"
-    pyproject.append_to_changelog(msg)
