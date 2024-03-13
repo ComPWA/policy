@@ -359,7 +359,6 @@ def __update_per_file_ignores(
             "B018",  # useless-expression
             "C90",  # complex-structure
             "D",  # pydocstyle
-            "E402",  # import not at top of file
             "E703",  #  useless-semicolon
             "N806",  # non-lowercase-variable-in-function
             "N816",  # mixed-case-variable-in-global-scope
