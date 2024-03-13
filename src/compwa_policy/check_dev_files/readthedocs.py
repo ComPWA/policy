@@ -95,7 +95,7 @@ def __get_install_steps(python_version: PythonVersion) -> tuple[str, str, str]:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
     return (
         "curl -LsSf https://astral.sh/uv/install.sh | sh",
-        "export PATH=$HOME/.cargo/bin:$PATH",
+        "export PATH=/home/docs/.cargo/bin:$PATH",
         install_statement,
     )
 
