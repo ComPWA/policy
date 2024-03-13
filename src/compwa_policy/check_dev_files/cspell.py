@@ -10,18 +10,10 @@ import json
 import os
 from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
-
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import (
-    COMPWA_POLICY_DIR,
-    CONFIG_PATH,
-    git_ls_files,
-    rename_file,
-    vscode,
-)
+from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
@@ -165,10 +157,7 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
         return expected_section_content
     if isinstance(expected_section_content, list):
         if section == "ignorePaths":
-            expected_section_content = __filter_patterns(
-                patterns=expected_section_content,
-                files=git_ls_files(untracked=True),
-            )
+            expected_section_content = filter_patterns(expected_section_content)
         if not extend:
             return __sort_section(expected_section_content, section)
         expected_section_content_set = set(expected_section_content)
@@ -236,26 +225,3 @@ def __sort_section(content: Iterable[Any], section_name: str) -> list[str]:
     if section_name == "ignoreWords":
         return sorted(content)
     return vscode.sort_case_insensitive(content)
-
-
-def __filter_patterns(patterns: list[str], files: list[str]) -> list[str]:
-    """Filter patterns that match files.
-
-    >>> __filter_patterns(["**/*.json", "**/*.txt"], ["file.json", "file.yaml"])
-    ['**/*.json']
-    """
-    return [pattern for pattern in patterns if __matches_files(pattern, files)]
-
-
-def __matches_files(pattern: str, files: list[str]) -> bool:
-    """Use git wild-match patterns to match a filename.
-
-    >>> __matches_files("**/*.json", [".cspell.json"])
-    True
-    >>> __matches_files("**/*.json", ["some/random/path/.cspell.json"])
-    True
-    >>> __matches_files("*/*.json", ["some/random/path/.cspell.json"])
-    False
-    """
-    spec = PathSpec.from_lines(GitWildMatchPattern, [pattern])
-    return any(spec.match_file(file) for file in files)

@@ -8,7 +8,6 @@ See Also:
 from __future__ import annotations
 
 import sys
-from glob import glob
 from typing import TYPE_CHECKING
 
 from compwa_policy.check_dev_files.github_workflows import (
@@ -18,6 +17,7 @@ from compwa_policy.check_dev_files.github_workflows import (
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -74,9 +74,9 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
         if frequency == "outsource":
             del expected_data["on"]["schedule"]
         else:
-            paths: list[str] = expected_data["on"]["pull_request"]["paths"]
+            paths = filter_patterns(expected_data["on"]["pull_request"]["paths"])
+            expected_data["on"]["pull_request"]["paths"] = paths
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
-            expected_data["on"]["pull_request"]["paths"] = [p for p in paths if glob(p)]
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)

@@ -7,10 +7,12 @@ https://github.com/ComPWA/policy.
 from __future__ import annotations
 
 import os
-import pathlib
+from functools import lru_cache
+from pathlib import Path
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.match import filter_files
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
@@ -39,7 +41,7 @@ def main() -> None:
         raise PrecommitError(msg)
 
 
-def _check_has_labels_requirement(path: pathlib.Path) -> bool:
+def _check_has_labels_requirement(path: Path) -> bool:
     with open(path) as stream:
         lines = stream.readlines()
     for line in lines:
@@ -49,12 +51,15 @@ def _check_has_labels_requirement(path: pathlib.Path) -> bool:
     return False
 
 
-def _get_requirement_files() -> list[pathlib.Path]:
-    return [
-        *pathlib.Path(".").glob("**/requirements*.in"),
-        *pathlib.Path(".").glob("**/requirements*.txt"),
-        *pathlib.Path(".").glob(str(CONFIG_PATH.setup_cfg)),
+@lru_cache(maxsize=1)
+def _get_requirement_files() -> list[Path]:
+    patterns = [
+        "**/requirements*.in",
+        "**/requirements*.txt",
+        str(CONFIG_PATH.setup_cfg),
     ]
+    filenames = filter_files(patterns)
+    return [Path(file) for file in filenames]
 
 
 def _get_package_name(line: str) -> str:
@@ -72,7 +77,7 @@ def _remove_all_labels_requirement() -> None:
         _remove_labels_requirement(file)
 
 
-def _remove_labels_requirement(path: pathlib.Path) -> None:
+def _remove_labels_requirement(path: Path) -> None:
     with open(path) as stream:
         original_lines = stream.readlines()
     with open(path, "w") as stream:
