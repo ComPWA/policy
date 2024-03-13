@@ -2,81 +2,135 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
+from textwrap import indent
+from typing import IO, TYPE_CHECKING, cast
 
+from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from ruamel.yaml.comments import CommentedMap, CommentedSeq
-
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
-def main(python_version: PythonVersion) -> None:
-    if not CONFIG_PATH.readthedocs.exists():
+def main(
+    python_version: PythonVersion, source: IO | Path | str = CONFIG_PATH.readthedocs
+) -> None:
+    if isinstance(source, str):
+        source = Path(source)
+    if isinstance(source, Path) and not source.exists():
         return
-    with Executor() as do:
-        do(_update_os)
-        do(_update_python_version, python_version)
-        do(_update_install_step, python_version)
+    rtd = ReadTheDocs(source)
+    _update_os(rtd)
+    _update_python_version(rtd, python_version)
+    _update_install_step(rtd, python_version)
+    rtd.finalize()
 
 
-def _update_os() -> None:
-    yaml = create_prettier_round_trip_yaml()
-    config: CommentedMap = yaml.load(CONFIG_PATH.readthedocs)
-    build: CommentedMap | None = config.get("build")
+def _update_os(config: ReadTheDocs) -> None:
+    build = cast(CommentedMap, config.document.get("build"))
     if build is None:
         return
     os: str | None = build.get("os")
-    expected = "ubuntu-22.04"
-    if os == expected:
+    expected_os = "ubuntu-22.04"
+    if os == expected_os:
         return
-    build["os"] = expected
-    yaml.dump(config, CONFIG_PATH.readthedocs)
-    msg = f"Switched to {expected} in {CONFIG_PATH.readthedocs}"
-    raise PrecommitError(msg)
+    build["os"] = expected_os
+    msg = f"Set build.os to {expected_os}"
+    config.changelog.append(msg)
 
 
-def _update_python_version(python_version: PythonVersion) -> None:
-    yaml = create_prettier_round_trip_yaml()
-    config: CommentedMap = yaml.load(CONFIG_PATH.readthedocs)
-    tools: CommentedMap = config.get("build", {}).get("tools", {})
+def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -> None:
+    tools = cast(CommentedMap, config.document.get("build", {}).get("tools"))
     if tools is None:
         return
-    existing_version = tools.get("python")
+    existing_version: str | None = tools.get("python")
     if existing_version is None:
         return
     expected_version = DoubleQuotedScalarString(python_version)
     if expected_version == existing_version:
         return
     tools["python"] = expected_version
-    yaml.dump(config, CONFIG_PATH.readthedocs)
-    msg = f"Switched to Python {python_version} in {CONFIG_PATH.readthedocs}"
-    raise PrecommitError(msg)
+    msg = f"Set build.tools.python to {python_version!r}"
+    config.changelog.append(msg)
 
 
-def _update_install_step(python_version: PythonVersion) -> None:
-    yaml = create_prettier_round_trip_yaml()
-    config: CommentedMap = yaml.load(CONFIG_PATH.readthedocs)
-    steps: CommentedSeq = config.get("build", {}).get("jobs", {}).get("post_install")
+def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> None:
+    jobs = get_nested_dict(config.document, ["build", "jobs"])
+    if "post_install" not in jobs:
+        jobs["post_install"] = []
+    steps: list[str] = jobs["post_install"]
     if steps is None:
         return
-    if len(steps) == 0:
+    expected_steps = __get_install_steps(python_version)
+    step_idx = __find_pip_install_step(steps)
+    if step_idx is None:
+        step_idx = 0
+    start = max(0, step_idx - len(expected_steps) - 1)
+    end = step_idx + 1
+    existing_steps = steps[start:end]
+    if existing_steps == expected_steps:
         return
+    steps.clear()  # update the reference in the post_install dict!
+    steps.extend([
+        *steps[:start],
+        *expected_steps,
+        *steps[end:],
+    ])
+    msg = "Updated pip install steps"
+    config.changelog.append(msg)
+
+
+def __get_install_steps(python_version: PythonVersion) -> list[str]:
+    pip_install = "/home/docs/.cargo/bin/uv pip install --system"
     constraints_file = get_constraints_file(python_version)
     if constraints_file is None:
-        expected_install = "pip install -e .[doc]"
+        install_statement = f"{pip_install} -e .[doc]"
     else:
-        expected_install = f"pip install -c {constraints_file} -e .[doc]"
-    if steps[0] == expected_install:
-        return
-    steps[0] = expected_install
-    yaml.dump(config, CONFIG_PATH.readthedocs)
-    msg = f"Pinned constraints for Python {python_version} in {CONFIG_PATH.readthedocs}"
-    raise PrecommitError(msg)
+        install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
+    return [
+        "curl -LsSf https://astral.sh/uv/install.sh | sh",
+        install_statement,
+    ]
+
+
+def __find_pip_install_step(post_install: list[str]) -> int | None:
+    for idx, step in enumerate(post_install):
+        if "pip install" in step:
+            return idx
+    return None
+
+
+class ReadTheDocs:
+    def __init__(self, source: IO | Path | str) -> None:
+        self.__parser = create_prettier_round_trip_yaml()
+        self.changelog: list[str] = []
+        self.source = source
+        if isinstance(source, (Path, str)):
+            with open(source) as f:
+                self.document = cast(dict, self.__parser.load(f))
+        else:
+            self.document = cast(dict, self.__parser.load(source))
+
+    def dump(self, target: IO | Path | str | None = None) -> None:
+        if target is None:
+            target = self.source
+        if isinstance(target, (Path, str)):
+            with open(target, "w") as f:
+                self.__parser.dump(self.document, f)
+        else:
+            target.seek(0)
+            self.__parser.dump(self.document, target)
+
+    def finalize(self) -> None:
+        if not self.changelog:
+            return
+        msg = f"Updated {CONFIG_PATH.readthedocs}:\n"
+        msg += indent("\n".join(self.changelog), prefix="  - ")
+        self.dump(self.source)
+        raise PrecommitError(msg)

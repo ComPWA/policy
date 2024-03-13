@@ -16,27 +16,6 @@ def main() -> None:
         do(_update_vscode_settings, pyproject)
 
 
-def _update_vscode_settings(pyproject: Pyproject) -> None:
-    mypy_config = pyproject.get_table("tool.mypy")
-    with Executor() as do:
-        if not mypy_config:
-            do(
-                vscode.remove_extension_recommendation,
-                "ms-python.mypy-type-checker",
-                unwanted=True,
-            )
-            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
-        else:
-            do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
-            settings = {
-                "mypy-type-checker.args": [
-                    f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
-                ],
-                "mypy-type-checker.importStrategy": "fromEnvironment",
-            }
-            do(vscode.update_settings, settings)
-
-
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     old_config_path = ".mypy.ini"
     if not os.path.exists(old_config_path):
@@ -50,3 +29,23 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     os.remove(old_config_path)
     msg = f"Imported mypy configuration from {old_config_path}"
     pyproject.append_to_changelog(msg)
+
+
+def _update_vscode_settings(pyproject: Pyproject) -> None:
+    with Executor() as do:
+        if pyproject.has_table("tool.mypy"):
+            do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
+            settings = {
+                "mypy-type-checker.args": [
+                    f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
+                ],
+                "mypy-type-checker.importStrategy": "fromEnvironment",
+            }
+            do(vscode.update_settings, settings)
+        else:
+            do(
+                vscode.remove_extension_recommendation,
+                "ms-python.mypy-type-checker",
+                unwanted=True,
+            )
+            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
