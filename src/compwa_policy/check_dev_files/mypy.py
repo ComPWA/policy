@@ -32,16 +32,8 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_vscode_settings(pyproject: Pyproject) -> None:
-    mypy_config = pyproject.get_table("tool.mypy")
     with Executor() as do:
-        if not mypy_config:
-            do(
-                vscode.remove_extension_recommendation,
-                "ms-python.mypy-type-checker",
-                unwanted=True,
-            )
-            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
-        else:
+        if pyproject.has_table("tool.mypy"):
             do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
             settings = {
                 "mypy-type-checker.args": [
@@ -50,3 +42,10 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
                 "mypy-type-checker.importStrategy": "fromEnvironment",
             }
             do(vscode.update_settings, settings)
+        else:
+            do(
+                vscode.remove_extension_recommendation,
+                "ms-python.mypy-type-checker",
+                unwanted=True,
+            )
+            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
