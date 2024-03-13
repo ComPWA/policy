@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import shutil
-from glob import glob
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -13,6 +12,7 @@ from ruamel.yaml import YAML
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
@@ -72,16 +72,17 @@ def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
         rev="",
         hooks=[Hook(id="toml-sort", args=YAML(typ="rt").load("[--in-place]"))],
     )
-    excludes = []
-    if glob("labels/*.toml"):
-        excludes.append(r"labels/.*\.toml")
-    if glob("labels*.toml"):
-        excludes.append(r"labels.*\.toml")
-    if any(glob(f"**/{f}.toml", recursive=True) for f in ("Manifest", "Project")):
-        excludes.append(r".*(Manifest|Project)\.toml")
+    excludes = filter_patterns([
+        "**/Manifest.toml",
+        "**/Project.toml",
+        "labels*.toml",
+        "labels/*.toml",
+    ])
     if excludes:
-        excludes = sorted(excludes, key=str.lower)
-        expected_hook["hooks"][0]["exclude"] = "(?x)^(" + "|".join(excludes) + ")$"
+        regex_excludes = sorted(_to_regex(r) for r in excludes)
+        expected_hook["hooks"][0]["exclude"] = (
+            "(?x)^(" + "|".join(regex_excludes) + ")$"
+        )
     precommit.update_single_hook_repo(expected_hook)
 
 
@@ -102,10 +103,11 @@ def _update_taplo_config() -> None:
         raise PrecommitError(msg)
     with open(template_path) as f:
         expected = tomlkit.load(f)
-    excludes: list[str] = [p for p in expected["exclude"] if glob(p, recursive=True)]  # type: ignore[union-attr]
+
+    excludes = filter_patterns(expected["exclude"])  # type:ignore[arg-type]
     if excludes:
-        excludes = sorted(excludes, key=str.lower)
-        expected["exclude"] = to_toml_array(excludes, enforce_multiline=True)
+        sorted_excludes = sorted(excludes, key=str.lower)
+        expected["exclude"] = to_toml_array(sorted_excludes, enforce_multiline=True)
     else:
         del expected["exclude"]
     with open(CONFIG_PATH.taplo) as f:
@@ -133,3 +135,12 @@ def _update_vscode_extensions() -> None:
     with Executor() as do:
         do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
         do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)
+
+
+def _to_regex(glob: str) -> str:
+    r"""Convert glob pattern to regex.
+
+    >>> _to_regex("**/*.toml")
+    '.*/.*\\.toml'
+    """
+    return glob.replace("**", "*").replace(".", r"\.").replace("*", r".*")

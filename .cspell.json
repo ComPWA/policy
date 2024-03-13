@@ -22,6 +22,8 @@
   "ignorePaths": [
     "**/*.rst_t",
     "**/.cspell.json",
+    "*.ico",
+    "*.rst_t",
     ".editorconfig",
     ".gitignore",
     ".gitpod.*",
@@ -33,6 +35,7 @@
     "docs/conf.py",
     "labels/*.toml",
     "pyproject.toml",
+    "pyrightconfig.json",
     "tox.ini",
     "typings"
   ],
@@ -85,6 +88,7 @@
     "noreply",
     "orcid",
     "pandoc",
+    "pathspec",
     "prebuilds",
     "precommit",
     "prereleased",

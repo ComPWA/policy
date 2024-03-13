@@ -7,7 +7,7 @@ from textwrap import indent
 from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
@@ -95,7 +95,7 @@ def __get_install_steps(python_version: PythonVersion) -> list[str]:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
     return [
         "curl -LsSf https://astral.sh/uv/install.sh | sh",
-        install_statement,
+        LiteralScalarString(install_statement),
     ]
 
 

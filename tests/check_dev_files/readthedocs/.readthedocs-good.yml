@@ -6,4 +6,5 @@ build:
   jobs:
     post_install:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
-      - /home/docs/.cargo/bin/uv pip install --system -e .[doc]
+      - |-
+        /home/docs/.cargo/bin/uv pip install --system -e .[doc]

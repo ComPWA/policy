@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import json
 import os
-from glob import glob
 from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
@@ -157,9 +157,7 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
         return expected_section_content
     if isinstance(expected_section_content, list):
         if section == "ignorePaths":
-            expected_section_content = [
-                p for p in expected_section_content if glob(p, recursive=True)
-            ]
+            expected_section_content = filter_patterns(expected_section_content)
         if not extend:
             return __sort_section(expected_section_content, section)
         expected_section_content_set = set(expected_section_content)
