@@ -156,3 +156,20 @@ def __attempt_number_cast(text: str) -> float | str:
         return float(text)
     except ValueError:
         return text
+
+
+def get_nested_dict(data: dict, keys: list[str]) -> dict:
+    """Get a nested dictionary from a list of keys, create it if it doesn't exist.
+
+    >>> data = {}
+    >>> sub_dict = get_nested_dict(data, keys=["a", "b"])
+    >>> sub_dict["c"] = 1
+    >>> data
+    {'a': {'b': {'c': 1}}}
+    """
+    nested_dict = data
+    for key in keys:
+        if key not in nested_dict:
+            nested_dict[key] = {}
+        nested_dict = nested_dict[key]
+    return nested_dict

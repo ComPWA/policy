@@ -10,7 +10,7 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -61,21 +61,19 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
 
 
 def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> None:
-    steps = cast(
-        list[str],
-        config.document.get("build", {}).get("jobs", {}).get("post_install"),
-    )
+    jobs = get_nested_dict(config.document, ["build", "jobs"])
+    if "post_install" not in jobs:
+        jobs["post_install"] = []
+    steps: list[str] = jobs["post_install"]
     if steps is None:
         return
-    if len(steps) == 0:
-        return
+    expected_steps = __get_install_steps(python_version)
     step_idx = __find_pip_install_step(steps)
     if step_idx is None:
-        return
-    expected_steps = __get_install_steps(python_version)
+        step_idx = 0
     start = min(0, step_idx - len(expected_steps) - 1)
     end = step_idx + 1
-    existing_steps = tuple(steps[start:end])
+    existing_steps = steps[start:end]
     if existing_steps == expected_steps:
         return
     steps.clear()  # update the reference in the post_install dict!
