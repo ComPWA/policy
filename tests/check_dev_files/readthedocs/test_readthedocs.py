@@ -21,7 +21,9 @@ def this_dir() -> Path:
 
 @pytest.mark.parametrize("python_version", ["3.9", "3.10"])
 @pytest.mark.parametrize("suffix", ["bad1", "bad2"])
-def test_update_readthedocs(this_dir: Path, python_version: PythonVersion, suffix: str):
+def test_update_readthedocs_bad(
+    this_dir: Path, python_version: PythonVersion, suffix: str
+):
     with open(this_dir / f".readthedocs-{suffix}.yml") as f:
         input_stream = io.StringIO(f.read())
     with pytest.raises(PrecommitError) as exception:
@@ -38,6 +40,18 @@ def test_update_readthedocs(this_dir: Path, python_version: PythonVersion, suffi
     with open(this_dir / ".readthedocs-good.yml") as f:
         expected_output = f.read()
     expected_output = expected_output.replace("3.9", python_version)
+    input_stream.seek(0)
+    result = input_stream.read()
+    assert result.strip() == expected_output.strip()
+
+
+def test_update_readthedocs_good(this_dir: Path):
+    with open(this_dir / ".readthedocs-good.yml") as f:
+        input_stream = io.StringIO(f.read())
+    readthedocs.main(python_version="3.9", source=input_stream)
+
+    with open(this_dir / ".readthedocs-good.yml") as f:
+        expected_output = f.read()
     input_stream.seek(0)
     result = input_stream.read()
     assert result.strip() == expected_output.strip()

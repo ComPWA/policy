@@ -71,9 +71,9 @@ def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> 
     step_idx = __find_pip_install_step(steps)
     if step_idx is None:
         step_idx = 0
-    start = min(0, step_idx - len(expected_steps) - 1)
+    start = max(0, step_idx - len(expected_steps) - 1)
     end = step_idx + 1
-    existing_steps = steps[start:end]
+    existing_steps = tuple(steps[start:end])
     if existing_steps == expected_steps:
         return
     steps.clear()  # update the reference in the post_install dict!
