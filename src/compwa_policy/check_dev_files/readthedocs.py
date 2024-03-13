@@ -73,7 +73,7 @@ def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> 
         step_idx = 0
     start = max(0, step_idx - len(expected_steps) - 1)
     end = step_idx + 1
-    existing_steps = tuple(steps[start:end])
+    existing_steps = steps[start:end]
     if existing_steps == expected_steps:
         return
     steps.clear()  # update the reference in the post_install dict!
@@ -86,17 +86,17 @@ def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> 
     config.changelog.append(msg)
 
 
-def __get_install_steps(python_version: PythonVersion) -> tuple[str, str]:
+def __get_install_steps(python_version: PythonVersion) -> list[str]:
     pip_install = "/home/docs/.cargo/bin/uv pip install --system"
     constraints_file = get_constraints_file(python_version)
     if constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"
     else:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
-    return (
+    return [
         "curl -LsSf https://astral.sh/uv/install.sh | sh",
         install_statement,
-    )
+    ]
 
 
 def __find_pip_install_step(post_install: list[str]) -> int | None:
