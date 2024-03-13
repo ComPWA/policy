@@ -70,10 +70,11 @@ def _update_install_step(python_version: PythonVersion) -> None:
     if len(steps) == 0:
         return
     constraints_file = get_constraints_file(python_version)
+    pip_install = "uv pip install --system"
     if constraints_file is None:
-        expected_install = "pip install -e .[doc]"
+        expected_install = f"{pip_install} -e .[doc]"
     else:
-        expected_install = f"pip install -c {constraints_file} -e .[doc]"
+        expected_install = f"{pip_install} -c {constraints_file} -e .[doc]"
     if steps[0] == expected_install:
         return
     steps[0] = expected_install
