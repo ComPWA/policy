@@ -28,7 +28,7 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    _update_install_step(rtd, python_version)
+    _update_post_install(rtd, python_version)
     rtd.finalize()
 
 
@@ -60,11 +60,9 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
     config.changelog.append(msg)
 
 
-def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> None:
+def _update_post_install(config: ReadTheDocs, python_version: PythonVersion) -> None:
     jobs = get_nested_dict(config.document, ["build", "jobs"])
-    if "post_install" not in jobs:
-        jobs["post_install"] = []
-    steps: list[str] = jobs["post_install"]
+    steps: list[str] = jobs.get("post_install", [])
     if steps is None:
         return
     expected_steps = __get_install_steps(python_version)
@@ -76,12 +74,11 @@ def _update_install_step(config: ReadTheDocs, python_version: PythonVersion) -> 
     existing_steps = steps[start:end]
     if existing_steps == expected_steps:
         return
-    steps.clear()  # update the reference in the post_install dict!
-    steps.extend([
+    jobs["post_install"] = [
         *steps[:start],
         *expected_steps,
         *steps[end:],
-    ])
+    ]
     msg = "Updated pip install steps"
     config.changelog.append(msg)
 
