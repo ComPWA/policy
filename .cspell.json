@@ -92,6 +92,7 @@
     "prettierrc",
     "pyenv",
     "pyright",
+    "pyrightconfig",
     "pyupgrade",
     "redeboer",
     "repos",

@@ -1,0 +1,7 @@
+{
+  "include": ["src/**/*.py"],
+  "exclude": ["tests/**/*.py"],
+  "pythonVersion": "3.9",
+  "reportMissingTypeStubs": false,
+  "reportMissingImports": true
+}
