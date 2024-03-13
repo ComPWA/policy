@@ -7,6 +7,7 @@ import io
 import os
 import re
 import shutil
+import subprocess  # noqa: S404
 from pathlib import Path
 from shutil import copyfile
 from typing import NamedTuple
@@ -173,3 +174,20 @@ def get_nested_dict(data: dict, keys: list[str]) -> dict:
             nested_dict[key] = {}
         nested_dict = nested_dict[key]
     return nested_dict
+
+
+def git_ls_files(untracked: bool = False) -> list[str]:
+    output = subprocess.check_output([  # noqa: S603, S607
+        "git",
+        "ls-files",
+    ]).decode("utf-8")
+    tracked_files = output.splitlines()
+    if untracked:
+        output = subprocess.check_output([  # noqa: S603, S607
+            "git",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+        ]).decode("utf-8")
+        return tracked_files + output.splitlines()
+    return tracked_files

@@ -28,6 +28,7 @@ dependencies = [
     "html2text",
     "ini2toml",
     "nbformat",
+    "pathspec",
     "pip-tools",
     "ruamel.yaml", # better YAML dumping
     "tomlkit", # preserve original TOML formatting
