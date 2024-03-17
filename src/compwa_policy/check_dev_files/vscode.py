@@ -63,6 +63,9 @@ def _update_settings(has_notebooks: bool) -> None:
                     "editor.rulers": [72],
                     "rewrap.wrappingColumn": 72,
                 },
+                "[json]": {
+                    "editor.wordWrap": "on",
+                },
             },
         )
         do(_remove_outdated_settings)
