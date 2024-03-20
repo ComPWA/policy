@@ -70,6 +70,7 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
         if no_pypi or get_build_system() is None:
+            del expected_data["jobs"]["package-name"]
             del expected_data["jobs"]["pypi"]
         if no_version_branches:
             del expected_data["jobs"]["push"]
