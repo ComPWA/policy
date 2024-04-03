@@ -197,9 +197,7 @@ def __update_style_section(
 
 def __is_remove_style_job(precommit: Precommit) -> bool:
     precommit_ci = precommit.document.get("ci")
-    if precommit_ci is not None and "skip" not in precommit_ci:
-        return True
-    return False
+    return precommit_ci is not None and "skip" not in precommit_ci
 
 
 def __update_pytest_section(
