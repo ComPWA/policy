@@ -10,6 +10,7 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
@@ -84,6 +85,8 @@ def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
 
 
 def __has_constraint_files() -> bool:
+    if not CONFIG_PATH.pip_constraints.exists():
+        return False
     python_versions = Pyproject.load().get_supported_python_versions()
     constraint_files = [get_constraints_file(v) for v in python_versions]
     constraint_paths = [Path(path) for path in constraint_files if path is not None]
