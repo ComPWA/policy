@@ -236,6 +236,8 @@ def ___get_target_version(pyproject: Pyproject) -> str:
     supported_python_versions = pyproject.get_supported_python_versions()
     versions = {f'py{v.replace(".", "")}' for v in supported_python_versions}
     versions &= {"py37", "py38", "py39", "py310", "py311", "py312"}
+    if not versions:
+        return "py37"
     lowest_version, *_ = sorted(versions, key=natural_sorting)
     return lowest_version
 
