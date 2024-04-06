@@ -91,6 +91,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     args.repo_name,
                     args.repo_title,
                     github_pages=args.github_pages,
+                    organization=args.repo_organization,
                 )
             do(mypy.main)
             do(pyright.main, precommit_config)
@@ -274,6 +275,12 @@ def _create_argparse() -> ArgumentParser:
             " repository on GitHub or GitLab"
         ),
         required=True,
+        type=str,
+    )
+    parser.add_argument(
+        "--repo-organization",
+        default="ComPWA",
+        help="Name of the organization under which the repository lives.",
         type=str,
     )
     parser.add_argument(
