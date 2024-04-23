@@ -1,16 +1,23 @@
 """Check the nbstripout hook in the pre-commit config."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ruamel.yaml.scalarstring import LiteralScalarString
 
-from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
 def main(precommit: ModifiablePrecommit) -> None:
     repo_url = "https://github.com/kynan/nbstripout"
-    if precommit.find_repo(repo_url) is None:
+    repo = precommit.find_repo(repo_url)
+    if repo is None:
         return
-    extra_keys_argument = [
+    extra_keys_argument = {
         "cell.attachments",
         "cell.metadata.code_folding",
         "cell.metadata.id",
@@ -28,7 +35,14 @@ def main(precommit: ModifiablePrecommit) -> None:
         "metadata.toc-showtags",
         "metadata.varInspector",
         "metadata.vscode",
-    ]
+    }
+    existing_hooks = repo["hooks"]
+    if existing_hooks:
+        args = existing_hooks[0].get("args", [])
+        if len(args) >= 2:  # noqa: PLR2004
+            existing_keys = {line.strip() for line in args[1].split("\n")}
+            existing_keys = {key for key in existing_keys if key}
+            extra_keys_argument.update(existing_keys)
     expected_repo = Repo(
         repo=repo_url,
         rev="",
@@ -37,7 +51,7 @@ def main(precommit: ModifiablePrecommit) -> None:
                 id="nbstripout",
                 args=[
                     "--extra-keys",
-                    LiteralScalarString("\n".join(extra_keys_argument) + "\n"),
+                    LiteralScalarString("\n".join(sorted(extra_keys_argument)) + "\n"),
                 ],
             )
         ],
