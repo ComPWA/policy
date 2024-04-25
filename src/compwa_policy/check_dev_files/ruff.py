@@ -387,7 +387,6 @@ def __update_per_file_ignores(
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
         default_ignores = {
-            "E402",  # import not at top of file
             "INP001",  # implicit namespace package
             "S101",  # `assert` detected
             "S113",  # requests call without timeout
