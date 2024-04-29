@@ -43,7 +43,7 @@ def _get_expected_config(
     config[key] = config[key].replace("<<REPO_TITLE>>", repo_title)
     key = "template"
     lines = config[key].split("\n")
-    if not os.path.exists(CONFIG_PATH.readthedocs) or github_pages:
+    if not os.path.exists(CONFIG_PATH.readthedocs):
         lines = lines[2:]
     config[key] = (
         "\n".join(lines)
