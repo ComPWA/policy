@@ -7,7 +7,7 @@ from textwrap import indent
 from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
@@ -63,20 +63,19 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
 def _update_post_install(config: ReadTheDocs, python_version: PythonVersion) -> None:
     jobs = get_nested_dict(config.document, ["build", "jobs"])
     steps: list[str] = jobs.get("post_install", [])
-    if steps is None:
-        return
-    expected_steps = __get_install_steps(python_version)
-    step_idx = __find_pip_install_step(steps)
-    if step_idx is None:
-        step_idx = 0
-    start = max(0, step_idx - len(expected_steps) - 1)
-    end = step_idx + 1
-    existing_steps = steps[start:end]
-    if existing_steps == expected_steps:
+    expected_pip_install_steps = __get_install_steps(python_version)
+    start = __find_step(steps, pattern="pip install")
+    if start is None:
+        start = 0
+    end = __find_step(steps, pattern="pip install", invert=True)
+    if end is None:
+        end = len(steps)
+    existing_pip_install_steps = steps[start:end]
+    if existing_pip_install_steps == expected_pip_install_steps:
         return
     jobs["post_install"] = [
         *steps[:start],
-        *expected_steps,
+        *expected_pip_install_steps,
         *steps[end:],
     ]
     msg = "Updated pip install steps"
@@ -84,21 +83,24 @@ def _update_post_install(config: ReadTheDocs, python_version: PythonVersion) -> 
 
 
 def __get_install_steps(python_version: PythonVersion) -> list[str]:
-    pip_install = "/home/docs/.cargo/bin/uv pip install --system"
+    pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
     if constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"
     else:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
     return [
-        "curl -LsSf https://astral.sh/uv/install.sh | sh",
-        LiteralScalarString(install_statement),
+        "python -m pip install 'uv>=0.2.0'",
+        install_statement,
     ]
 
 
-def __find_pip_install_step(post_install: list[str]) -> int | None:
-    for idx, step in enumerate(post_install):
-        if "pip install" in step:
+def __find_step(steps: list[str], pattern: str, invert: bool = False) -> int | None:
+    for idx, step in enumerate(steps):
+        if invert:
+            if pattern not in step:
+                return idx
+        elif pattern in step:
             return idx
     return None
 
