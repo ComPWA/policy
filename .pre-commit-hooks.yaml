@@ -19,6 +19,15 @@
   types:
     - jupyter
 
+- id: remove-empty-tags
+  name: Remove empty tags metadata field from Jupyter notebooks
+  description: >
+    Remove the tags metadata field from Jupyter notebooks if there are no tags
+  entry: remove-empty-tags
+  language: python
+  types:
+    - jupyter
+
 - id: set-nb-cells
   name: Add or update default cells in a Jupyter notebook
   description: >
