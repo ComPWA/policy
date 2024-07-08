@@ -41,7 +41,6 @@ __CONFIG_CELL_METADATA: dict = {
     "hideOutput": True,
     "hidePrompt": True,
     "jupyter": {"source_hidden": True},
-    "slideshow": {"slide_type": "skip"},
     "tags": ["remove-cell"],
 }
 
