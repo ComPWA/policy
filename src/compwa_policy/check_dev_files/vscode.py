@@ -2,7 +2,7 @@
 
 import os
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 
 
@@ -73,6 +73,8 @@ def _update_settings(has_notebooks: bool) -> None:
         if has_notebooks:
             do(_update_notebook_settings)
         do(_update_pytest_settings)
+        if CONFIG_PATH.envrc.exists():
+            do(vscode.update_settings, {"python.terminal.activateEnvironment": False})
 
 
 def _remove_outdated_settings() -> None:
