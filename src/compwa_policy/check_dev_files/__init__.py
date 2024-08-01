@@ -78,7 +78,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 test_extras=_to_list(args.ci_test_extras),
             )
         if has_notebooks:
-            do(jupyter.main)
+            do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
