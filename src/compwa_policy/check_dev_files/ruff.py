@@ -290,6 +290,7 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "D213",  # multi-line docstring should start at the second line
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
+        "DOC",  # do not check undocumented exceptions
         "E501",  # line-width already handled by black
         "FURB101",  # do not enforce Path.read_text()
         "FURB103",  # do not enforce Path.write_text()
