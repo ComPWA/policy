@@ -336,6 +336,7 @@ def __update_per_file_ignores(
     if has_notebooks:
         key = "*.ipynb"
         default_ignores = {
+            "ANN",  # global-statement
             "B018",  # useless-expression
             "C90",  # complex-structure
             "D",  # pydocstyle
