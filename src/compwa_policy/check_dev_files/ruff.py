@@ -278,6 +278,7 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
 def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
     ignored_rules = [
+        "ANN401",  # allow typing.Any
         "COM812",  # missing trailing comma
         "CPY001",  # don't add copyright
         "D101",  # class docstring
