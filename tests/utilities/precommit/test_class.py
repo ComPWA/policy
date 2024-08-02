@@ -20,15 +20,15 @@ def example_config(this_dir: Path) -> str:
 
 class TestModifiablePrecommit:
     def test_no_context_manager(self, example_config: str):
+        precommit = ModifiablePrecommit.load(example_config)
+        precommit.document["fail_fast"] = True
         with pytest.raises(
             expected_exception=RuntimeError,
             match=r"^Modifications can only be made within a context$",
         ):
-            precommit = ModifiablePrecommit.load(example_config)
-            precommit.document["fail_fast"] = True
             precommit.append_to_changelog("Fake modification")
 
-    def test_context_manager_path(self, this_dir: Path, example_config: str):
+    def test_context_manager_path(self, example_config: str):
         input_stream = io.StringIO(example_config)
         with pytest.raises(
             PrecommitError,

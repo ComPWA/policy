@@ -44,6 +44,10 @@ if sys.version_info < (3, 8):
     from typing_extensions import Literal, final
 else:
     from typing import Literal, final
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
 if sys.version_info < (3, 12):
     from typing_extensions import override
 else:
@@ -150,7 +154,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         src = tomlkit.dumps(self._document, sort_keys=True)
         return f"{src.strip()}\n"
 
-    def __enter__(self) -> ModifiablePyproject:
+    def __enter__(self) -> Self:
         object.__setattr__(self, "_is_in_context", True)
         return self
 

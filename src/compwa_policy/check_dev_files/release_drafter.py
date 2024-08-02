@@ -10,18 +10,14 @@ from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(
-    repo_name: str, repo_title: str, github_pages: bool, organization: str
-) -> None:
+def main(repo_name: str, repo_title: str, organization: str) -> None:
     update_file(CONFIG_PATH.release_drafter_workflow)
-    _update_draft(repo_name, repo_title, github_pages, organization)
+    _update_draft(repo_name, repo_title, organization)
 
 
-def _update_draft(
-    repo_name: str, repo_title: str, github_pages: bool, organization: str
-) -> None:
+def _update_draft(repo_name: str, repo_title: str, organization: str) -> None:
     yaml = create_prettier_round_trip_yaml()
-    expected = _get_expected_config(repo_name, repo_title, github_pages, organization)
+    expected = _get_expected_config(repo_name, repo_title, organization)
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
         yaml.dump(expected, output_path)
@@ -35,7 +31,7 @@ def _update_draft(
 
 
 def _get_expected_config(
-    repo_name: str, repo_title: str, github_pages: bool, organization: str
+    repo_name: str, repo_title: str, organization: str
 ) -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(COMPWA_POLICY_DIR / CONFIG_PATH.release_drafter_config)

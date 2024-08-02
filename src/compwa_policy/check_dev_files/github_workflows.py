@@ -250,8 +250,8 @@ def __get_package_name() -> str:
         if not s.endswith(".egg-info")
     ]
     if candidate_dirs:
-        return sorted(candidate_dirs)[0]
-    return sorted(src_dirs)[0]
+        return min(candidate_dirs)
+    return min(src_dirs)
 
 
 def _copy_workflow_file(filename: str) -> None:

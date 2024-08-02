@@ -76,7 +76,7 @@ def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
     merged = dict(old)
     for key, value in new.items():
         if key in merged:
-            merged[key] = _determine_new_value(merged[key], value, key, sort)
+            merged[key] = _determine_new_value(merged[key], value, sort)
         else:
             merged[key] = value
     if sort:
@@ -84,7 +84,7 @@ def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
     return merged
 
 
-def _determine_new_value(old: V, new: V, key: str | None, sort: bool = False) -> V:
+def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     if isinstance(old, dict) and isinstance(new, dict):
         return _update_dict_recursively(old, new, sort)  # type: ignore[return-value]
     if isinstance(old, list) and isinstance(new, list):

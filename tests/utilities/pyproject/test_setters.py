@@ -85,7 +85,7 @@ def test_add_dependency_optional():
     assert new_content == expected
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def pyproject_example() -> PyprojectTOML:
     src = dedent("""
         [project]
