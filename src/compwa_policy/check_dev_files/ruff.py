@@ -304,10 +304,10 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     ]
     if "3.6" in pyproject.get_supported_python_versions():
         ignored_rules.append("UP036")
-    ignored_rules = sorted({*settings.get("ignore", []), *ignored_rules})
+    ignored_rules = ___merge_rules(settings.get("ignore", []), ignored_rules)
     minimal_settings = {
         "select": to_toml_array(["ALL"]),
-        "ignore": to_toml_array(ignored_rules),
+        "ignore": ignored_rules,
         "task-tags": ___get_task_tags(settings),
     }
     if not complies_with_subset(settings, minimal_settings):
