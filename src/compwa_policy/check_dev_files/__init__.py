@@ -14,6 +14,7 @@ from compwa_policy.check_dev_files import (
     conda,
     cspell,
     dependabot,
+    direnv,
     editorconfig,
     github_labels,
     github_workflows,
@@ -58,6 +59,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(conda.main, dev_python_version)
         do(cspell.main, precommit_config, args.no_cspell_update)
         do(dependabot.main, args.dependabot)
+        do(direnv.main)
         do(editorconfig.main, precommit_config, args.no_python)
         if not args.allow_labels:
             do(github_labels.main)
@@ -78,7 +80,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 test_extras=_to_list(args.ci_test_extras),
             )
         if has_notebooks:
-            do(jupyter.main)
+            do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
