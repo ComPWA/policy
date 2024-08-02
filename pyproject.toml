@@ -215,7 +215,6 @@ docstring-code-format = true
 line-ending = "lf"
 
 [tool.ruff.lint]
-extend-select = ["ALL"]
 ignore = [
     "ANN401",
     "C408",

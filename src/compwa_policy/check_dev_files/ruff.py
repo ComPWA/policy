@@ -310,6 +310,10 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         settings.update(minimal_settings)
         msg = "Updated Ruff linting configuration"
         pyproject.append_to_changelog(msg)
+    if "extend-select" in settings:
+        del settings["extend-select"]
+        msg = "Removed [tool.ruff.lint.extend-select] configuration"
+        pyproject.append_to_changelog(msg)
 
 
 def ___get_task_tags(ruff_settings: Mapping[str, Any]) -> Array:
