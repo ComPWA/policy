@@ -215,40 +215,12 @@ docstring-code-format = true
 line-ending = "lf"
 
 [tool.ruff.lint]
-extend-select = [
-    "A",
-    "B",
-    "BLE",
-    "C4",
-    "C90",
-    "D",
-    "EM",
-    "ERA",
-    "FA",
-    "I",
-    "ICN",
-    "INP",
-    "ISC",
-    "N",
-    "NPY",
-    "PGH",
-    "PIE",
-    "PL",
-    "Q",
-    "RET",
-    "RSE",
-    "RUF",
-    "S",
-    "SIM",
-    "T20",
-    "TCH",
-    "TID",
-    "TRY",
-    "UP",
-    "YTT",
-]
+extend-select = ["ALL"]
 ignore = [
+    "ANN401",
     "C408",
+    "COM812",
+    "CPY001",
     "D101",
     "D102",
     "D103",
@@ -259,14 +231,20 @@ ignore = [
     "D407",
     "D416",
     "E501",
+    "FBT",
+    "FURB101",
+    "FURB103",
     "ISC001",
     "PLR0913",
     "PLW1514",
     "PLW2901",
+    "PT001",
+    "PTH",
     "S301",
     "SIM108",
     "UP036",
 ]
+select = ["ALL"]
 task-tags = ["cspell"]
 
 [tool.ruff.lint.flake8-tidy-imports]
@@ -287,7 +265,9 @@ split-on-trailing-comma = false
 "docs/conf.py" = ["D100"]
 "setup.py" = ["D100"]
 "tests/*" = [
+    "ANN",
     "D",
+    "FBT001",
     "INP001",
     "PGH001",
     "PLC2701",
@@ -295,6 +275,7 @@ split-on-trailing-comma = false
     "PLR2004",
     "PLR6301",
     "S101",
+    "SLF001",
     "T20",
 ]
 

@@ -278,6 +278,8 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
 def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
     ignored_rules = [
+        "COM812",  # missing trailing comma
+        "CPY001",  # don't add copyright
         "D101",  # class docstring
         "D102",  # method docstring
         "D103",  # function docstring
@@ -288,15 +290,19 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "D407",  # missing dashed underline after section
         "D416",  # section name does not have to end with a colon
         "E501",  # line-width already handled by black
+        "FURB101",  # do not enforce Path.read_text()
+        "FURB103",  # do not enforce Path.write_text()
         "ISC001",  # conflicts with ruff formatter
         "PLW1514",  # allow missing encoding in open()
+        "PT001",  # allow pytest.fixture without parentheses
+        "PTH",  # do not enforce Path
         "SIM108",  # allow if-else blocks
     ]
     if "3.6" in pyproject.get_supported_python_versions():
         ignored_rules.append("UP036")
     ignored_rules = sorted({*settings.get("ignore", []), *ignored_rules})
     minimal_settings = {
-        "extend-select": ___get_selected_ruff_rules(pyproject),
+        "select": to_toml_array(["ALL"]),
         "ignore": to_toml_array(ignored_rules),
         "task-tags": ___get_task_tags(settings),
     }
@@ -304,43 +310,6 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         settings.update(minimal_settings)
         msg = "Updated Ruff linting configuration"
         pyproject.append_to_changelog(msg)
-
-
-def ___get_selected_ruff_rules(pyproject: Pyproject) -> Array:
-    rules = {
-        "A",
-        "B",
-        "BLE",
-        "C4",
-        "C90",
-        "D",
-        "EM",
-        "ERA",
-        "I",
-        "ICN",
-        "INP",
-        "ISC",
-        "N",
-        "NPY",
-        "PGH",
-        "PIE",
-        "PL",
-        "Q",
-        "RET",
-        "RSE",
-        "RUF",
-        "S",
-        "SIM",
-        "T20",
-        "TCH",
-        "TID",
-        "TRY",
-        "UP",
-        "YTT",
-    }
-    if "3.6" not in pyproject.get_supported_python_versions():
-        rules.add("FA")
-    return to_toml_array(sorted(rules))
 
 
 def ___get_task_tags(ruff_settings: Mapping[str, Any]) -> Array:
@@ -362,7 +331,7 @@ def __update_per_file_ignores(
             "B018",  # useless-expression
             "C90",  # complex-structure
             "D",  # pydocstyle
-            "E703",  #  useless-semicolon
+            "E703",  # useless-semicolon
             "N806",  # non-lowercase-variable-in-function
             "N816",  # mixed-case-variable-in-global-scope
             "PLR09",  # complicated logic
@@ -405,13 +374,16 @@ def __update_per_file_ignores(
     if os.path.exists(tests_dir) and os.path.isdir(tests_dir):
         key = f"{tests_dir}/*"
         default_ignores = {
+            "ANN",  # don't check missing types
             "D",  # no need for pydocstyle
+            "FBT001",  # don't force booleans as keyword arguments
             "INP001",  # allow implicit-namespace-package
             "PGH001",  # allow eval
             "PLC2701",  # private module imports
             "PLR2004",  # magic-value-comparison
             "PLR6301",  # allow non-static method
             "S101",  # allow assert
+            "SLF001",  # allow access to private members
             "T20",  # allow print and pprint
         }
         minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))

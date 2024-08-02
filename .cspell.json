@@ -59,6 +59,7 @@
     "Zenodo"
   ],
   "ignoreWords": [
+    "FURB",
     "MAINT",
     "PyPI",
     "addopts",
