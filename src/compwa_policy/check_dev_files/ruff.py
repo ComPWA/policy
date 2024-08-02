@@ -378,8 +378,11 @@ def __update_per_file_ignores(
         minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
-    tests_dir = "tests"
-    if os.path.exists(tests_dir) and os.path.isdir(tests_dir):
+    for tests_dir in ["benchmarks", "tests"]:
+        if not os.path.exists(tests_dir):
+            continue
+        if not os.path.isdir(tests_dir):
+            continue
         key = f"{tests_dir}/*"
         default_ignores = {
             "ANN",  # don't check missing types
