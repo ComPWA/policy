@@ -175,9 +175,9 @@ def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
         lint_config = pyproject.get_table("tool.ruff.lint", create=True)
         lint_config.update(lint_arrays)
     lint_tables = {k: v for k, v in lint_settings.items() if isinstance(v, abc.Mapping)}
-    for table in lint_tables:
-        lint_config = pyproject.get_table(f"tool.ruff.lint.{table}", create=True)
-        lint_config.update(lint_tables[table])
+    for table_name, values in lint_tables.items():
+        lint_config = pyproject.get_table(f"tool.ruff.lint.{table_name}", create=True)
+        lint_config.update(values)
     for key in lint_settings:
         del global_settings[key]
     if lint_arrays or lint_tables:
