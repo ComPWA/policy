@@ -292,6 +292,7 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "E501",  # line-width already handled by black
         "FURB101",  # do not enforce Path.read_text()
         "FURB103",  # do not enforce Path.write_text()
+        "FURB140",  # do not enforce itertools.starmap
         "ISC001",  # conflicts with ruff formatter
         "PLW1514",  # allow missing encoding in open()
         "PT001",  # allow pytest.fixture without parentheses
