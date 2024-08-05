@@ -193,6 +193,7 @@ addopts = [
 filterwarnings = [
     "error",
     "ignore: Importing ErrorTree directly from the jsonschema package is deprecated.*",
+    "ignore: The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025.:DeprecationWarning",
 ]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 testpaths = [
