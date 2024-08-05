@@ -269,11 +269,9 @@ split-on-trailing-comma = false
 "tests/*" = [
     "ANN",
     "D",
-    "FBT001",
     "INP001",
     "PGH001",
     "PLC2701",
-    "PLR0913",
     "PLR2004",
     "PLR6301",
     "S101",

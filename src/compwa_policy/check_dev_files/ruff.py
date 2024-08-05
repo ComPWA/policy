@@ -210,16 +210,22 @@ def __update_global_settings(
     }
     if has_notebooks:
         key = "extend-include"
-        default_includes = ["*.ipynb"]
-        minimal_settings[key] = ___merge(default_includes, settings.get(key, []))
+        default_includes = sorted({
+            "*.ipynb",
+            *settings.get(key, []),
+        })
+        minimal_settings[key] = to_toml_array(default_includes)
     src_directories = ___get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
     typings_dir = "typings"
     if filter_files([typings_dir]):
         key = "extend-exclude"
-        default_excludes = [typings_dir]
-        minimal_settings[key] = ___merge(default_excludes, settings.get(key, []))
+        default_includes = sorted({
+            typings_dir,
+            *settings.get(key, []),
+        })
+        minimal_settings[key] = to_toml_array(default_includes)
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated Ruff configuration"
@@ -240,13 +246,6 @@ def ___get_target_version(pyproject: Pyproject) -> str:
         return "py37"
     lowest_version, *_ = sorted(versions, key=natural_sorting)
     return lowest_version
-
-
-def ___merge(*listings: Iterable[str], enforce_multiline: bool = False) -> Array:
-    merged = set()
-    for lst in listings:
-        merged |= set(lst)
-    return to_toml_array(sorted(merged), enforce_multiline)
 
 
 def ___get_src_directories() -> list[str]:
@@ -277,7 +276,7 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
 
 def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
-    ignored_rules = [
+    ignored_rules = {
         "ANN401",  # allow typing.Any
         "COM812",  # missing trailing comma
         "CPY001",  # don't add copyright
@@ -301,13 +300,13 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "PT001",  # allow pytest.fixture without parentheses
         "PTH",  # do not enforce Path
         "SIM108",  # allow if-else blocks
-    ]
+    }
     if "3.6" in pyproject.get_supported_python_versions():
-        ignored_rules.append("UP036")
+        ignored_rules.add("UP036")
     ignored_rules = ___merge_rules(settings.get("ignore", []), ignored_rules)
     minimal_settings = {
         "select": to_toml_array(["ALL"]),
-        "ignore": ignored_rules,
+        "ignore": to_toml_array(sorted(ignored_rules), enforce_multiline=True),
         "task-tags": ___get_task_tags(settings),
     }
     if not complies_with_subset(settings, minimal_settings):
@@ -331,52 +330,56 @@ def ___get_task_tags(ruff_settings: Mapping[str, Any]) -> Array:
 def __update_per_file_ignores(
     pyproject: ModifiablePyproject, has_notebooks: bool
 ) -> None:
-    settings = pyproject.get_table("tool.ruff.lint.per-file-ignores", create=True)
-    minimal_settings = {}
+    minimal_settings: dict[str, Array] = {}
     if has_notebooks:
         key = "*.ipynb"
-        default_ignores = {
-            "ANN",  # global-statement
-            "B018",  # useless-expression
-            "C90",  # complex-structure
-            "D",  # pydocstyle
-            "E703",  # useless-semicolon
-            "N806",  # non-lowercase-variable-in-function
-            "N816",  # mixed-case-variable-in-global-scope
-            "PLR09",  # complicated logic
-            "PLR2004",  # magic-value-comparison
-            "PLW0602",  # global-variable-not-assigned
-            "PLW0603",  # global-statement
-            "S101",  # `assert` detected
-            "T20",  # print found
-            "TCH00",  # type-checking block
-        }
-        expected_rules = ___merge_rules(
-            default_ignores,
-            ___get_existing_nbqa_ignores(pyproject),
-            settings.get(key, []),
+        minimal_settings[key] = ___get_per_file_ignores(
+            pyproject,
+            key=key,
+            expected_ignores={
+                "ANN",  # global-statement
+                "B018",  # useless-expression
+                "C90",  # complex-structure
+                "D",  # pydocstyle
+                "E703",  # useless-semicolon
+                "N806",  # non-lowercase-variable-in-function
+                "N816",  # mixed-case-variable-in-global-scope
+                "PLR09",  # complicated logic
+                "PLR2004",  # magic-value-comparison
+                "PLW0602",  # global-variable-not-assigned
+                "PLW0603",  # global-statement
+                "S101",  # `assert` detected
+                "T20",  # print found
+                "TCH00",  # type-checking block
+                *___get_existing_nbqa_ignores(pyproject),
+            },
+            banned_ignores={
+                "F821",  # identify variables that are not defined
+                "ISC003",  # explicit-string-concatenation
+            },
         )
-        banned_rules = {
-            "F821",  # identify variables that are not defined
-            "ISC003",  # explicit-string-concatenation
-        }
-        minimal_settings[key] = ___ban(expected_rules, banned_rules)
     docs_dir = "docs"
     if os.path.exists(docs_dir) and os.path.isdir(docs_dir):
         key = f"{docs_dir}/*"
-        default_ignores = {
-            "INP001",  # implicit namespace package
-            "S101",  # `assert` detected
-            "S113",  # requests call without timeout
-        }
-        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
+        minimal_settings[key] = ___get_per_file_ignores(
+            pyproject,
+            key=key,
+            expected_ignores={
+                "INP001",  # implicit namespace package
+                "S101",  # `assert` detected
+                "S113",  # requests call without timeout
+            },
+        )
     conf_path = f"{docs_dir}/conf.py"
     if os.path.exists(conf_path):
-        key = f"{conf_path}"
-        default_ignores = {
-            "D100",  # no module docstring
-        }
-        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
+        key = conf_path
+        minimal_settings[key] = ___get_per_file_ignores(
+            pyproject,
+            key=key,
+            expected_ignores={
+                "D100",  # no module docstring
+            },
+        )
     if os.path.exists("setup.py"):
         minimal_settings["setup.py"] = to_toml_array(["D100"])
     for tests_dir in ["benchmarks", "tests"]:
@@ -385,39 +388,79 @@ def __update_per_file_ignores(
         if not os.path.isdir(tests_dir):
             continue
         key = f"{tests_dir}/*"
-        default_ignores = {
-            "ANN",  # don't check missing types
-            "D",  # no need for pydocstyle
-            "FBT001",  # don't force booleans as keyword arguments
-            "INP001",  # allow implicit-namespace-package
-            "PGH001",  # allow eval
-            "PLC2701",  # private module imports
-            "PLR2004",  # magic-value-comparison
-            "PLR6301",  # allow non-static method
-            "S101",  # allow assert
-            "SLF001",  # allow access to private members
-            "T20",  # allow print and pprint
-        }
-        minimal_settings[key] = ___merge_rules(default_ignores, settings.get(key, []))
-    if not complies_with_subset(settings, minimal_settings):
-        settings.update(minimal_settings)
+        minimal_settings[key] = ___get_per_file_ignores(
+            pyproject,
+            key=key,
+            expected_ignores={
+                "ANN",  # don't check missing types
+                "D",  # no need for pydocstyle
+                "FBT001",  # don't force booleans as keyword arguments
+                "INP001",  # allow implicit-namespace-package
+                "PGH001",  # allow eval
+                "PLC2701",  # private module imports
+                "PLR2004",  # magic-value-comparison
+                "PLR6301",  # allow non-static method
+                "S101",  # allow assert
+                "SLF001",  # allow access to private members
+                "T20",  # allow print and pprint
+            },
+        )
+    per_file_ignores = pyproject.get_table(
+        "tool.ruff.lint.per-file-ignores", create=True
+    )
+    if not complies_with_subset(per_file_ignores, minimal_settings):
+        per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
         pyproject.append_to_changelog(msg)
 
 
-def ___merge_rules(*rule_sets: Iterable[str], enforce_multiline: bool = False) -> Array:
+def ___get_per_file_ignores(
+    pyproject: Pyproject,
+    key: str,
+    expected_ignores: set[str],
+    banned_ignores: set[str] | None = None,
+) -> Array:
+    per_file_ignores = pyproject.get_table(
+        "tool.ruff.lint.per-file-ignores", create=True
+    )
+    existing_ignores = per_file_ignores.get(key, [])
+    expected_ignores = ___merge_rules(expected_ignores, existing_ignores)
+    if banned_ignores is not None:
+        expected_ignores = ___ban_rules(expected_ignores, banned_ignores)
+    global_settings = pyproject.get_table("tool.ruff.lint", create=True)
+    global_ignores = global_settings.get("ignore", [])
+    expected_ignores = ___ban_rules(expected_ignores, global_ignores)
+    return to_toml_array(sorted(expected_ignores))
+
+
+def ___ban_rules(rules: Iterable[str], banned_rules: Iterable[str]) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
-    >>> ___merge_rules(["C90", "B018"], ["D10", "C"])
+    >>> result = ___ban_rules(
+    ...     ["C90", "B018", "D", "E402"],
+    ...     banned_rules=["D10", "C", "E"],
+    ... )
+    >>> sorted(result)
+    ['B018', 'D']
+    """
+    banned_set = tuple(banned_rules)
+    return {rule for rule in rules if not any(rule.startswith(r) for r in banned_set)}
+
+
+def ___merge_rules(*rule_sets: Iterable[str]) -> set[str]:
+    """Extend Ruff rules with new rules and filter out redundant ones.
+
+    >>> sorted(___merge_rules(["C90", "B018"], ["D10", "C"]))
     ['B018', 'C', 'D10']
     """
-    merged = ___merge(*rule_sets)
-    filtered = {
+    merged_rules: set[str] = set()
+    for rule_set in rule_sets:
+        merged_rules |= set(rule_set)
+    return {
         rule
-        for rule in merged
-        if not any(rule != r and rule.startswith(r) for r in merged)
+        for rule in merged_rules
+        if not any(rule != r and rule.startswith(r) for r in merged_rules)
     }
-    return to_toml_array(sorted(filtered), enforce_multiline)
 
 
 def ___get_existing_nbqa_ignores(pyproject: Pyproject) -> set[str]:
@@ -430,21 +473,6 @@ def ___get_existing_nbqa_ignores(pyproject: Pyproject) -> set[str]:
         for r in ruff_rules
         if r.startswith("--extend-ignore=")
     }
-
-
-def ___ban(
-    rules: Iterable[str], banned_rules: Iterable[str], enforce_multiline: bool = False
-) -> Array:
-    """Extend Ruff rules with new rules and filter out redundant ones.
-
-    >>> ___ban(["C90", "B018"], banned_rules=["D10", "C"])
-    ['B018']
-    """
-    banned_set = tuple(banned_rules)
-    filtered = {
-        rule for rule in rules if not any(rule.startswith(r) for r in banned_set)
-    }
-    return to_toml_array(sorted(filtered), enforce_multiline)
 
 
 def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
