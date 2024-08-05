@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
@@ -17,6 +18,11 @@ from compwa_policy.utilities.precommit.setters import (
     update_single_hook_precommit_repo,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -80,7 +86,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
         self.__is_in_context = False
         self.__changelog: list[str] = []
 
-    def __enter__(self) -> ModifiablePrecommit:
+    def __enter__(self) -> Self:
         self.__is_in_context = True
         return self
 

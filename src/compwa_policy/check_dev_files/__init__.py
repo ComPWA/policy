@@ -92,7 +92,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     release_drafter.main,
                     args.repo_name,
                     args.repo_title,
-                    github_pages=args.github_pages,
                     organization=args.repo_organization,
                 )
             do(mypy.main)

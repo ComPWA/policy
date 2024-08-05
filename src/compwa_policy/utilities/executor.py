@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import inspect
+import operator
 import os
 import sys
 import time
@@ -23,6 +24,10 @@ if sys.version_info >= (3, 10):
     from typing import ParamSpec
 else:
     from typing_extensions import ParamSpec
+if sys.version_info < (3, 11):
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -96,7 +101,7 @@ class Executor(AbstractContextManager):
         else:
             return result
 
-    def __enter__(self) -> Executor:
+    def __enter__(self) -> Self:
         self.__is_in_context = True
         return self
 
@@ -128,7 +133,7 @@ class Executor(AbstractContextManager):
         if total_time > 0.08:  # noqa: PLR2004
             print(f"\nTotal sub-hook time: {total_time:.2f} s")  # noqa: T201
             sorted_times = sorted(
-                self.__execution_times.items(), key=lambda x: x[1], reverse=True
+                self.__execution_times.items(), key=operator.itemgetter(1), reverse=True
             )
             for function_name, sub_time in sorted_times:
                 if sub_time < 0.03:  # noqa: PLR2004
