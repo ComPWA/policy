@@ -194,6 +194,8 @@ def _update_ruff_config(
         do(__update_ruff_format_settings, pyproject)
         do(__update_ruff_lint_settings, pyproject)
         do(__update_per_file_ignores, pyproject, has_notebooks)
+        if has_notebooks:
+            do(__update_flake8_builtins, pyproject)
         do(__update_isort_settings, pyproject)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
@@ -473,6 +475,18 @@ def ___get_existing_nbqa_ignores(pyproject: Pyproject) -> set[str]:
         for r in ruff_rules
         if r.startswith("--extend-ignore=")
     }
+
+
+def __update_flake8_builtins(pyproject: ModifiablePyproject) -> None:
+    # cspell:ignore ignorelist
+    settings = pyproject.get_table("tool.ruff.lint.flake8-builtins", create=True)
+    key = "builtins-ignorelist"
+    allowed_modules = sorted({"display", *settings.get(key, [])})
+    minimal_settings = {key: to_toml_array(allowed_modules)}
+    if not complies_with_subset(settings, minimal_settings):
+        settings.update(minimal_settings)
+        msg = "Updated Ruff flake8-builtins settings"
+        pyproject.append_to_changelog(msg)
 
 
 def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
