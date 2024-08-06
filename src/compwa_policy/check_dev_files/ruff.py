@@ -195,6 +195,7 @@ def _update_ruff_config(
         do(__update_per_file_ignores, pyproject, has_notebooks)
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
+            do(__update_flake8_comprehensions_builtins, pyproject)
         do(__update_isort_settings, pyproject)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
@@ -479,33 +480,52 @@ def ___get_existing_nbqa_ignores(pyproject: Pyproject) -> set[str]:
 
 def __update_flake8_builtins(pyproject: ModifiablePyproject) -> None:
     # cspell:ignore ignorelist
-    settings = pyproject.get_table("tool.ruff.lint.flake8-builtins", create=True)
-    key = "builtins-ignorelist"
-    allowed_modules = sorted({"display", *settings.get(key, [])})
-    minimal_settings = {key: to_toml_array(allowed_modules)}
-    if not complies_with_subset(settings, minimal_settings):
-        settings.update(minimal_settings)
-        msg = "Updated Ruff flake8-builtins settings"
-        pyproject.append_to_changelog(msg)
+    ___update_ruff_lint_table(
+        pyproject,
+        table_name="flake8-builtins",
+        minimal_settings={"builtins-ignorelist": ["display"]},
+    )
+
+
+def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> None:
+    ___update_ruff_lint_table(
+        pyproject,
+        table_name="flake8-comprehensions",
+        minimal_settings={
+            "allow-dict-calls-with-keyword-arguments": True,
+        },
+    )
 
 
 def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
-    settings = pyproject.get_table("tool.ruff.lint.isort", create=True)
-    minimal_settings = {"split-on-trailing-comma": False}
-    if not complies_with_subset(settings, minimal_settings):
-        settings.update(minimal_settings)
-        msg = "Updated Ruff isort settings"
-        pyproject.append_to_changelog(msg)
+    ___update_ruff_lint_table(
+        pyproject,
+        table_name="isort",
+        minimal_settings={"split-on-trailing-comma": False},
+    )
 
 
 def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:
-    settings = pyproject.get_table("tool.ruff.lint.pydocstyle", create=True)
+    ___update_ruff_lint_table(
+        pyproject,
+        table_name="pydocstyle",
+        minimal_settings={"convention": "google"},
+    )
+
+
+def ___update_ruff_lint_table(
+    pyproject: ModifiablePyproject, table_name: str, minimal_settings: dict[str, Any]
+) -> None:
+    settings = pyproject.get_table(f"tool.ruff.lint.{table_name}", create=True)
     minimal_settings = {
-        "convention": "google",
+        key: to_toml_array({*value, *settings.get(key, [])})
+        if isinstance(value, abc.Iterable) and not isinstance(value, str)
+        else value
+        for key, value in minimal_settings.items()
     }
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
-        msg = "Updated Ruff configuration"
+        msg = f"Updated Ruff {table_name} settings"
         pyproject.append_to_changelog(msg)
 
 
