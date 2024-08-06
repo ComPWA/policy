@@ -409,6 +409,7 @@ def __update_per_file_ignores(
     per_file_ignores = pyproject.get_table(
         "tool.ruff.lint.per-file-ignores", create=True
     )
+    minimal_settings = {k: v for k, v in minimal_settings.items() if v}
     if not complies_with_subset(per_file_ignores, minimal_settings):
         per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
