@@ -195,6 +195,7 @@ def _update_ruff_config(
         do(__update_per_file_ignores, pyproject, has_notebooks)
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
+            do(__update_flake8_comprehensions_builtins, pyproject)
         do(__update_isort_settings, pyproject)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
@@ -483,6 +484,16 @@ def __update_flake8_builtins(pyproject: ModifiablePyproject) -> None:
         pyproject,
         table_name="flake8-builtins",
         minimal_settings={"builtins-ignorelist": ["display"]},
+    )
+
+
+def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> None:
+    ___update_ruff_lint_table(
+        pyproject,
+        table_name="flake8-comprehensions",
+        minimal_settings={
+            "allow-dict-calls-with-keyword-arguments": True,
+        },
     )
 
 
