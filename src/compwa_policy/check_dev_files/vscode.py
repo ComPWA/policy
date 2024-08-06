@@ -4,6 +4,7 @@ import os
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.python import has_constraint_files
 
 
 def main(has_notebooks: bool) -> None:
@@ -73,6 +74,11 @@ def _update_settings(has_notebooks: bool) -> None:
         if has_notebooks:
             do(_update_notebook_settings)
         do(_update_pytest_settings)
+        if has_constraint_files():
+            do(
+                vscode.update_settings,
+                {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
+            )
         if CONFIG_PATH.envrc.exists():
             do(vscode.update_settings, {"python.terminal.activateEnvironment": False})
 
