@@ -110,7 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
         do(vscode.main, has_notebooks)
         do(gitpod.main, args.no_gitpod, dev_python_version)
-        do(precommit.main, precommit_config)
+        do(precommit.main, precommit_config, has_notebooks)
         do(tox.main, has_notebooks)
     return 1 if do.error_messages else 0
 

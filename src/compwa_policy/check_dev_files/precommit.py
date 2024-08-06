@@ -13,6 +13,7 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
+from compwa_policy.utilities.precommit.struct import Hook
 from compwa_policy.utilities.pyproject import Pyproject, get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -25,12 +26,13 @@ if TYPE_CHECKING:
     )
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     with Executor() as do:
         do(_sort_hooks, precommit)
         do(_update_conda_environment, precommit)
         do(_update_precommit_ci_commit_msg, precommit)
         do(_update_precommit_ci_skip, precommit)
+        do(_update_policy_hook, precommit, has_notebooks)
         do(_update_repo_urls, precommit)
 
 
@@ -66,6 +68,23 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
     if hook_id in formatter_hooks:
         return 3, hook_id
     return 4, hook_id
+
+
+def _update_policy_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
+    if not has_notebooks:
+        return
+    repo = precommit.find_repo(r".*/(ComPWA\-)?policy")
+    if repo is None:
+        msg = "Could not find ComPWA/policy pre-commit repo"
+        raise KeyError(msg)
+    hook_ids = {h["id"] for h in repo["hooks"]}
+    remove_empty_tags_ids = "remove-empty-tags"
+    if remove_empty_tags_ids in hook_ids:
+        return
+    precommit.update_hook(
+        repo_url=repo["repo"],
+        expected_hook=Hook(id=remove_empty_tags_ids),
+    )
 
 
 def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
