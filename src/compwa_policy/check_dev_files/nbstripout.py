@@ -20,8 +20,10 @@ def main(precommit: ModifiablePrecommit) -> None:
     extra_keys_argument = {
         "cell.attachments",
         "cell.metadata.code_folding",
+        "cell.metadata.editable",
         "cell.metadata.id",
         "cell.metadata.pycharm",
+        "cell.metadata.slideshow",
         "cell.metadata.user_expressions",
         "metadata.celltoolbar",
         "metadata.colab.name",
