@@ -343,6 +343,7 @@ def __update_per_file_ignores(
                 "B018",  # useless-expression
                 "C90",  # complex-structure
                 "D",  # pydocstyle
+                "E303",  # too many blank lines, specific for jupyterlab-lsp
                 "E703",  # useless-semicolon
                 "N806",  # non-lowercase-variable-in-function
                 "N816",  # mixed-case-variable-in-global-scope
