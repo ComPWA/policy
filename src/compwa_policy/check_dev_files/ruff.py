@@ -60,11 +60,10 @@ def _remove_black(
         do(
             pyproject.remove_dependency,
             package="black",
-            ignored_sections=["doc", "jupyter", "test"],
+            ignored_sections=["doc", "test"],
         )
         do(remove_badge, r".*https://github\.com/psf.*/black.*")
         do(precommit.remove_hook, "black-jupyter")
-        do(precommit.remove_hook, "black")
         do(precommit.remove_hook, "blacken-docs")
         do(vscode.remove_settings, ["black-formatter.importStrategy"])
 
