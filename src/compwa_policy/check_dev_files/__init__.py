@@ -60,7 +60,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(cspell.main, precommit_config, args.no_cspell_update)
         do(dependabot.main, args.dependabot)
         do(direnv.main)
-        do(editorconfig.main, precommit_config, args.no_python)
+        do(editorconfig.main, precommit_config)
         if not args.allow_labels:
             do(github_labels.main)
         if not args.no_github_actions:
