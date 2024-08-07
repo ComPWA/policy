@@ -8,8 +8,7 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-@pytest.mark.parametrize("no_python", [True, False])
-def test_update_precommit_config(no_python: bool):
+def test_update_precommit_config():
     this_dir = Path(__file__).parent
     with open(this_dir / ".pre-commit-config-bad.yaml") as file:
         src = file.read()
@@ -18,13 +17,9 @@ def test_update_precommit_config(no_python: bool):
     with pytest.raises(
         PrecommitError, match=r"Updated editorconfig-checker hook"
     ), ModifiablePrecommit.load(stream) as precommit:
-        _update_precommit_config(precommit, no_python)
+        _update_precommit_config(precommit)
 
     result = precommit.dumps()
-    if no_python:
-        expected_file = this_dir / ".pre-commit-config-good-no-python.yaml"
-    else:
-        expected_file = this_dir / ".pre-commit-config-good.yaml"
-    with open(expected_file) as file:
+    with open(this_dir / ".pre-commit-config-good.yaml") as file:
         expected = file.read()
     assert result == expected
