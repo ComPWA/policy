@@ -7,7 +7,6 @@ from textwrap import dedent, indent
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
-from compwa_policy.utilities.python import has_constraint_files
 
 __SCRIPTS = {
     "conda": "layout anaconda",
@@ -16,20 +15,13 @@ __SCRIPTS = {
         eval "$(pixi shell-hook)"
     """,
     "venv": "source venv/bin/activate",
-    "uv-venv": """
-        uv pip install --editable '.[dev]' --quiet
-        source .venv/bin/activate
-    """,
-    "uv-venv-pin": """
-        uv pip sync .constraints/py$(python3 --version | awk '{print $2}' | awk -F. '{print $1"."$2}').txt --quiet
-        uv pip install --editable '.[dev]' --quiet
-    """,
+    "uv-venv": "source .venv/bin/activate",
 }
 
 
 def main() -> None:
     statements: list[tuple[str | None, str]] = [
-        (".venv", __SCRIPTS["uv-venv-pin" if has_constraint_files() else "uv-venv"]),
+        (".venv", __SCRIPTS["uv-venv"]),
         ("venv", __SCRIPTS["venv"]),
     ]
     if (
