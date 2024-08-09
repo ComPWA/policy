@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit, slideshow: bool) -> None:
     repo_url = "https://github.com/kynan/nbstripout"
     repo = precommit.find_repo(repo_url)
     if repo is None:
@@ -23,7 +23,6 @@ def main(precommit: ModifiablePrecommit) -> None:
         "cell.metadata.editable",
         "cell.metadata.id",
         "cell.metadata.pycharm",
-        "cell.metadata.slideshow",
         "cell.metadata.user_expressions",
         "metadata.celltoolbar",
         "metadata.colab.name",
@@ -38,6 +37,8 @@ def main(precommit: ModifiablePrecommit) -> None:
         "metadata.varInspector",
         "metadata.vscode",
     }
+    if not slideshow:
+        extra_keys_argument.add("cell.metadata.slideshow")
     existing_hooks = repo["hooks"]
     if existing_hooks:
         args = existing_hooks[0].get("args", [])
