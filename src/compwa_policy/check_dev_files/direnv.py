@@ -9,15 +9,18 @@ from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.python import has_constraint_files
 
-__DIRENV_SCRIPTS = {
+__SCRIPTS = {
     "conda": "layout anaconda",
     "pixi": """
         watch_file pixi.lock
         eval "$(pixi shell-hook)"
     """,
     "venv": "source venv/bin/activate",
-    "uv-venv": "source .venv/bin/activate",
-    "uv-venv-update": """
+    "uv-venv": """
+        uv pip install --editable '.[dev]' --quiet
+        source .venv/bin/activate
+    """,
+    "uv-venv-pin": """
         uv pip sync .constraints/py$(python3 --version | awk '{print $2}' | awk -F. '{print $1"."$2}').txt --quiet
         uv pip install --editable '.[dev]' --quiet
     """,
@@ -25,21 +28,18 @@ __DIRENV_SCRIPTS = {
 
 
 def main() -> None:
-    uv_venv = __DIRENV_SCRIPTS["uv-venv"]
-    if has_constraint_files():
-        uv_venv += "\n" + dedent(__DIRENV_SCRIPTS["uv-venv-update"])
     statements: list[tuple[str | None, str]] = [
-        (".venv", uv_venv),
-        ("venv", __DIRENV_SCRIPTS["venv"]),
+        (".venv", __SCRIPTS["uv-venv-pin" if has_constraint_files() else "uv-venv"]),
+        ("venv", __SCRIPTS["venv"]),
     ]
     if (
         CONFIG_PATH.pixi_lock.exists()
         or CONFIG_PATH.pixi_toml.exists()
         or (CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi"))
     ):
-        statements.append((".pixi", __DIRENV_SCRIPTS["pixi"]))
+        statements.append((".pixi", __SCRIPTS["pixi"]))
     if CONFIG_PATH.conda.exists():
-        statements.append((None, __DIRENV_SCRIPTS["conda"]))
+        statements.append((None, __SCRIPTS["conda"]))
     _update_envrc(statements)
 
 
