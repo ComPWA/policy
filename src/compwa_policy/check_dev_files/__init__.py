@@ -81,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if has_notebooks:
             do(jupyter.main, args.no_ruff)
-        do(nbstripout.main, precommit_config)
+        do(nbstripout.main, precommit_config, args.jupyter_slideshow)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
@@ -158,6 +158,12 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Host documentation on GitHub Pages",
+    )
+    parser.add_argument(
+        "--jupyter-slideshow",
+        action="store_true",
+        default=False,
+        help="Allow slideshow tags in Jupyter notebooks, for instance for RISE.",
     )
     parser.add_argument(
         "--keep-issue-templates",
