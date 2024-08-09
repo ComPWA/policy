@@ -27,6 +27,7 @@
     "*particle*.*ml",
     ".constraints/*.txt",
     ".editorconfig",
+    ".envrc",
     ".gitignore",
     ".gitpod.*",
     ".mypy.ini",
