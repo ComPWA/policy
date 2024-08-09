@@ -81,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if has_notebooks:
             do(jupyter.main, args.no_ruff)
-        do(nbstripout.main, precommit_config)
+        do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
@@ -122,6 +122,13 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Allow deprecated CI workflows, such as ci-docs.yml.",
+    )
+    parser.add_argument(
+        "--allowed-cell-metadata",
+        default="",
+        help="Comma-separated list of allowed metadata in Jupyter notebook cells, e.g. editable,slideshow.",
+        required=False,
+        type=str,
     )
     parser.add_argument(
         "--ci-skipped-tests",
@@ -301,6 +308,8 @@ def _to_list(arg: str) -> list[str]:
 
     >>> _to_list("a c , test,b")
     ['a', 'b', 'c', 'test']
+    >>> _to_list("d")
+    ['d']
     >>> _to_list(" ")
     []
     >>> _to_list("")

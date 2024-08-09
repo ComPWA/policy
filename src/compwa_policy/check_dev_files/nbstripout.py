@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit, allowed_cell_metadata: list[str]) -> None:
     repo_url = "https://github.com/kynan/nbstripout"
     repo = precommit.find_repo(repo_url)
     if repo is None:
@@ -38,6 +38,7 @@ def main(precommit: ModifiablePrecommit) -> None:
         "metadata.varInspector",
         "metadata.vscode",
     }
+    extra_keys_argument -= {f"cell.metadata.{key}" for key in allowed_cell_metadata}
     existing_hooks = repo["hooks"]
     if existing_hooks:
         args = existing_hooks[0].get("args", [])
