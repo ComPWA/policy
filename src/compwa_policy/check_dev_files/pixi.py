@@ -90,7 +90,7 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         for section in cfg.sections()
         if section.startswith("testenv")  # cspell:ignore testenv
     ]
-    imported_jobs = []
+    imported_tasks = []
     for job_name in tox_jobs:
         task_name = job_name or "tests"
         pixi_table_name = f"tool.pixi.feature.dev.tasks.{task_name}"
@@ -102,9 +102,9 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         command = cfg.get(section, option="commands", raw=True)
         pixi_table = pyproject.get_table(pixi_table_name, create=True)
         pixi_table["cmd"] = __to_pixi_command(command)
-        imported_jobs.append(job_name)
-    if imported_jobs:
-        msg = f"Imported the following tox jobs: {', '.join(imported_jobs)}"
+        imported_tasks.append(task_name)
+    if imported_tasks:
+        msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
         pyproject.append_to_changelog(msg)
 
 
