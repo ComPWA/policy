@@ -28,6 +28,7 @@
     ".constraints/*.txt",
     ".editorconfig",
     ".envrc",
+    ".gitattributes",
     ".gitignore",
     ".gitpod.*",
     ".mypy.ini",

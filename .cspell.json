@@ -26,6 +26,7 @@
     "*.rst_t",
     ".editorconfig",
     ".envrc",
+    ".gitattributes",
     ".gitignore",
     ".gitpod.*",
     ".pre-commit-config.yaml",
