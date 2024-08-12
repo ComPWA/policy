@@ -21,8 +21,7 @@ def _update_extensions() -> None:
         )
         do(
             vscode.remove_extension_recommendation,
-            "travisillig.vscode-json-stable-stringify",
-            # cspell:ignore travisillig
+            "travisillig.vscode-json-stable-stringify",  # cspell:ignore travisillig
             unwanted=True,
         )
         do(
@@ -32,14 +31,16 @@ def _update_extensions() -> None:
         )
         do(
             vscode.remove_extension_recommendation,
-            "garaioag.garaio-vscode-unwanted-recommendations",
-            # cspell:ignore garaio garaioag
+            "garaioag.garaio-vscode-unwanted-recommendations",  # cspell:ignore garaio garaioag
             unwanted=True,
         )
         do(
             vscode.add_extension_recommendation,
-            "Soulcode.vscode-unwanted-extensions",
-            # cspell:ignore Soulcode
+            "Soulcode.vscode-unwanted-extensions",  # cspell:ignore Soulcode
+        )
+        do(
+            vscode.add_extension_recommendation,
+            "mhutchie.git-graph",  # cspell:ignore mhutchie
         )
 
 
