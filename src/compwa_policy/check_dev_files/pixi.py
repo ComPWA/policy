@@ -48,8 +48,9 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
                 vscode.update_settings,
                 {"files.associations": {"**/pixi.lock": "yaml"}},
             )
-        do(_update_gitattributes)
-        do(_update_gitignore)
+        if has_pixi_config():
+            do(_update_gitattributes)
+            do(_update_gitignore)
 
 
 def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
@@ -239,16 +240,12 @@ def _set_dev_python_version(
 
 
 def _update_gitattributes() -> None:
-    if not has_pixi_config():
-        return None
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
     msg = f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
     return __safe_update_file(expected_line, CONFIG_PATH.gitattributes, msg)
 
 
 def _update_gitignore() -> None:
-    if not has_pixi_config():
-        return None
     ignore_path = ".pixi/"
     msg = f"Added {ignore_path} under {CONFIG_PATH.gitignore}"
     return __safe_update_file(ignore_path, CONFIG_PATH.gitignore, msg)
