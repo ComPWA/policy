@@ -22,6 +22,8 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from tomlkit.items import InlineTable, String, Table
 
     from compwa_policy.utilities.pyproject.getters import PythonVersion
@@ -57,10 +59,7 @@ def _check_gitattributes() -> None:
     msg = f"Please list {expected_line} under {CONFIG_PATH.gitattributes}"
     if not CONFIG_PATH.gitattributes.exists():
         raise PrecommitError(msg)
-    with CONFIG_PATH.gitattributes.open() as stream:
-        lines = stream.readlines()
-    paths = {line.strip() for line in lines}
-    if expected_line not in paths:
+    if not __contains_line(CONFIG_PATH.gitattributes, expected_line):
         raise PrecommitError(msg)
 
 
@@ -71,11 +70,14 @@ def _check_gitignore() -> None:
     msg = f"Please list {ignore_path} under {CONFIG_PATH.gitignore}"
     if not CONFIG_PATH.gitignore.exists():
         raise PrecommitError(msg)
-    with CONFIG_PATH.gitignore.open() as stream:
-        lines = stream.readlines()
-    paths = {line.strip() for line in lines}
-    if ignore_path not in paths:
+    if not __contains_line(CONFIG_PATH.gitignore, ignore_path):
         raise PrecommitError(msg)
+
+
+def __contains_line(path: Path, expected_line: str) -> bool:
+    with path.open() as stream:
+        lines = stream.readlines()
+    return expected_line in {line.strip() for line in lines}
 
 
 def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
