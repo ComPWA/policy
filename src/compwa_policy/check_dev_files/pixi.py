@@ -2,7 +2,7 @@
 
 from tomlkit import inline_table
 
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
@@ -17,9 +17,12 @@ def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
     if not pyproject.has_table("tool.setuptools_scm"):
         return
     setuptools_scm = pyproject.get_table("tool.setuptools_scm")
-    expected_scheme = "no-local-version"
-    if setuptools_scm.get("local_scheme") != expected_scheme:
-        setuptools_scm["local_scheme"] = expected_scheme
+    expected_scheme = {
+        "local_scheme": "no-local-version",
+        "version_scheme": "post-release",
+    }
+    if not complies_with_subset(setuptools_scm, expected_scheme):
+        setuptools_scm.update(expected_scheme)
         msg = "Configured setuptools_scm to not include git info in package version for pixi"
         pyproject.append_to_changelog(msg)
 

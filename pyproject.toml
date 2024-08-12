@@ -116,6 +116,7 @@ where = ["src"]
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
+version_scheme = "post-release"
 write_to = "src/compwa_policy/version.py"
 
 [tool.coverage.run]
