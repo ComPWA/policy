@@ -67,9 +67,11 @@ def _sort_taplo(items: Iterable[str]) -> list[str]:
 def create_sub_table(config: Mapping[str, Any], dotted_header: str) -> Table:
     """Create a TOML sub-table through a dotted header key."""
     current_table: Any = config
-    for header in dotted_header.split("."):
+    header_hierarchy = dotted_header.split(".")
+    for i, header in enumerate(header_hierarchy, 1):
         if header not in current_table:
-            current_table[header] = tomlkit.table()
+            is_last_header = i == len(header_hierarchy)
+            current_table[header] = tomlkit.table(is_super_table=not is_last_header)
         current_table = current_table[header]
     return current_table
 

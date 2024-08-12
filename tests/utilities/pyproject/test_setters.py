@@ -155,3 +155,23 @@ def test_create_sub_table(table_key: str):
         lint = ["ruff"]
     """)
     assert new_content.strip() == expected.strip()
+
+
+def test_create_sub_table_with_super_table():
+    pyproject = load_pyproject_toml("", modifiable=True)
+    pixi = create_sub_table(pyproject, "tool.pixi")
+    pixi["channels"] = ["conda-forge"]
+    pixi["platforms"] = ["linux-64"]
+    task_table = create_sub_table(pyproject, "tool.pixi.feature.dev.tasks.test")
+    task_table["cmd"] = "pytest"
+
+    new_content = tomlkit.dumps(pyproject)
+    expected = dedent("""
+        [tool.pixi]
+        channels = ["conda-forge"]
+        platforms = ["linux-64"]
+
+        [tool.pixi.feature.dev.tasks.test]
+        cmd = "pytest"
+    """)
+    assert new_content.strip() == expected.strip()
