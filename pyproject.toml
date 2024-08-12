@@ -221,7 +221,7 @@ pydeps compwa_policy \
 [tool.pixi.feature.dev.tasks.sty]
 cmd = "pre-commit run --all-files"
 
-[tool.pixi.feature.dev.tasks.test]
+[tool.pixi.feature.dev.tasks.tests]
 cmd = "pytest"
 
 [tool.pixi.pypi-dependencies]
