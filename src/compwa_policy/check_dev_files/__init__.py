@@ -22,6 +22,7 @@ from compwa_policy.check_dev_files import (
     jupyter,
     mypy,
     nbstripout,
+    pixi,
     precommit,
     prettier,
     pyright,
@@ -82,6 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if has_notebooks:
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
+        do(pixi.main)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
