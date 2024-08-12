@@ -357,27 +357,21 @@ def _update_docnb_and_doclive(pyproject: ModifiablePyproject, table_key: str) ->
     }
     updated_tasks = []
     for template_task_name, target_task_names in tables_to_overwrite.items():
-        template_task = tasks.get(template_task_name)
-        if template_task is None:
-            continue
         for task_name in target_task_names:
             task = tasks.get(task_name)
             if task is None:
                 continue
-            if ___overwrite_cmd(task, template_task):
+            if __outsource_cmd(task, template_task_name):
                 updated_tasks.append(task_name)
     if updated_tasks:
         msg = f"Updated `cmd` of Pixi tasks {', '.join(updated_tasks)}"
         pyproject.append_to_changelog(msg)
 
 
-def ___overwrite_cmd(task: Table, template_task: Table) -> bool:
-    template_cmd = template_task.get("cmd")
-    if not template_cmd:
-        msg = f"Missing cmd for template task {template_task.name}"
-        raise ValueError(msg)
-    if task.get("cmd") != template_cmd:
-        task["cmd"] = template_task["cmd"]
+def __outsource_cmd(task: Table, other_task_name: str) -> bool:
+    expected_cmd = f"pixi run {other_task_name}"
+    if task.get("cmd") != expected_cmd:
+        task["cmd"] = expected_cmd
         return True
     return False
 

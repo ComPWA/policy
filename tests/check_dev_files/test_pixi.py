@@ -36,7 +36,7 @@ def test_update_docnb_and_doclive(table_key: str):
         cmd = "command executed by doc"
 
         [{table_key}.docnb]
-        cmd = "command executed by doc"
+        cmd = "pixi run doc"
 
         [{table_key}.docnb-test]
         cmd = "should not change"
