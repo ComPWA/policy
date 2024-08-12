@@ -202,10 +202,7 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         pixi_table["cmd"] = __to_pixi_command(command)
         if tox.has_option(section, "setenv"):  # cspell:ignore setenv
             job_environment = tox.get(section, option="setenv", raw=True)
-            environment_variables = __convert_tox_environment_variables(
-                job_environment,
-                blacklisted_keys={"FORCE_COLOR"},
-            )
+            environment_variables = __convert_tox_environment_variables(job_environment)
             if environment_variables:
                 pixi_table["env"] = environment_variables
         imported_tasks.append(task_name)
@@ -223,9 +220,7 @@ def __get_tox_job_names(cfg: ConfigParser) -> dict[str, str]:
     return {job: job or "tests" for job in tox_jobs if job}
 
 
-def __convert_tox_environment_variables(
-    tox_env: str, blacklisted_keys: set[str]
-) -> InlineTable:
+def __convert_tox_environment_variables(tox_env: str) -> InlineTable:
     lines = tox_env.splitlines()
     lines = [s.strip() for s in lines]
     lines = [s for s in lines if s]
@@ -234,8 +229,6 @@ def __convert_tox_environment_variables(
         key, value = line.split("=", 1)
         key = key.strip()
         if not key:
-            continue
-        if key in blacklisted_keys:
             continue
         environment_variables[key] = string(value.strip())
     return environment_variables
