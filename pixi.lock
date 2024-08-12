@@ -447,7 +447,7 @@ packages:
   requires_python: '!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7'
 - kind: pypi
   name: compwa-policy
-  version: 0.3.18.post7
+  version: 0.3.18.post8
   path: .
   sha256: 0855bd706b1c2f907c2257a6845cda3925b6f78840f9f1a5676af4bb1a14427c
   requires_dist:
