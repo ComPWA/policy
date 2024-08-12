@@ -2,14 +2,20 @@
 
 from tomlkit import inline_table
 
+from compwa_policy.utilities import vscode
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 
 def main() -> None:
-    with ModifiablePyproject.load() as pyproject:
-        _configure_setuptools_scm(pyproject)
-        _update_dev_environment(pyproject)
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
+        do(_configure_setuptools_scm, pyproject)
+        do(_update_dev_environment, pyproject)
+        do(
+            vscode.update_settings,
+            {"files.associations": {"**/pixi.lock": "yaml"}},
+        )
 
 
 def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
