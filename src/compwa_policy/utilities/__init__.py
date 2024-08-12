@@ -23,6 +23,7 @@ class _ConfigFilePaths(NamedTuple):
     cspell: Path = Path(".cspell.json")
     editorconfig: Path = Path(".editorconfig")
     envrc: Path = Path(".envrc")
+    gitattributes: Path = Path(".gitattributes")
     github_workflow_dir: Path = Path(".github/workflows")
     gitignore: Path = Path(".gitignore")
     gitpod: Path = Path(".gitpod.yml")

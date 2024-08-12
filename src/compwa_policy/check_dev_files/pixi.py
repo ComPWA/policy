@@ -46,7 +46,22 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
                 vscode.update_settings,
                 {"files.associations": {"**/pixi.lock": "yaml"}},
             )
+        do(_check_gitattributes)
         do(_check_gitignore)
+
+
+def _check_gitattributes() -> None:
+    if not has_pixi_config():
+        return
+    expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
+    msg = f"Please list {expected_line} under {CONFIG_PATH.gitattributes}"
+    if not CONFIG_PATH.gitattributes.exists():
+        raise PrecommitError(msg)
+    with CONFIG_PATH.gitattributes.open() as stream:
+        lines = stream.readlines()
+    paths = {line.strip() for line in lines}
+    if expected_line not in paths:
+        raise PrecommitError(msg)
 
 
 def _check_gitignore() -> None:
