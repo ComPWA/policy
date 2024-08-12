@@ -51,6 +51,7 @@ dev = [
     "pydeps",
     "sphinx-autobuild",
     "tox >=1.9", # for skip_install, use_develop
+    'sphinx-autobuild!=2024.4.*; python_version <"3.10.0"',
 ]
 doc = [
     "Sphinx",
@@ -115,6 +116,8 @@ namespaces = false
 where = ["src"]
 
 [tool.setuptools_scm]
+local_scheme = "no-local-version"
+version_scheme = "post-release"
 write_to = "src/compwa_policy/version.py"
 
 [tool.coverage.run]
@@ -146,6 +149,52 @@ module = ["ruamel.*"]
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = ["nbformat.*"]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.activation]
+env = {PRETTIER_LEGACY_CLI = "1"}
+
+[tool.pixi.dependencies]
+python = "3.9.*"
+
+[tool.pixi.environments]
+default = {features = [
+    "dev",
+    "doc",
+    "sty",
+    "test",
+    "types",
+]}
+
+[tool.pixi.feature.dev.tasks.ci]
+depends_on = ["cov", "doc", "linkcheck", "sty"]
+
+[tool.pixi.feature.dev.tasks.cov]
+cmd = "tox -e cov"
+
+[tool.pixi.feature.dev.tasks.doc]
+cmd = "tox -e doc"
+
+[tool.pixi.feature.dev.tasks.doclive]
+cmd = "tox -e doclive"
+
+[tool.pixi.feature.dev.tasks.linkcheck]
+cmd = "tox -e linkcheck"
+
+[tool.pixi.feature.dev.tasks.pydeps]
+cmd = "tox -e pydeps"
+
+[tool.pixi.feature.dev.tasks.sty]
+cmd = "pre-commit run --all-files"
+
+[tool.pixi.feature.dev.tasks.tests]
+cmd = "pytest"
+
+[tool.pixi.pypi-dependencies]
+compwa-policy = {path = ".", editable = true}
 
 [tool.pyright]
 exclude = [

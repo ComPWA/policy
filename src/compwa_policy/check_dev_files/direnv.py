@@ -4,35 +4,58 @@ from __future__ import annotations
 
 from textwrap import dedent, indent
 
+import rtoml
+
+from compwa_policy.check_dev_files.pixi import has_pixi_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 
-__SCRIPTS = {
-    "conda": "layout anaconda",
-    "pixi": """
-        watch_file pixi.lock
-        eval "$(pixi shell-hook)"
-    """,
-    "venv": "source venv/bin/activate",
-    "uv-venv": "source .venv/bin/activate",
-}
-
 
 def main() -> None:
     statements: list[tuple[str | None, str]] = [
-        (".venv", __SCRIPTS["uv-venv"]),
-        ("venv", __SCRIPTS["venv"]),
+        (".venv", "source .venv/bin/activate"),
+        ("venv", "source venv/bin/activate"),
     ]
-    if (
-        CONFIG_PATH.pixi_lock.exists()
-        or CONFIG_PATH.pixi_toml.exists()
-        or (CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi"))
-    ):
-        statements.append((".pixi", __SCRIPTS["pixi"]))
+    if has_pixi_config():
+        dev_environment = __determine_pixi_dev_environment()
+        if dev_environment is None:
+            environment_flag = ""
+        else:
+            environment_flag = f" --environment {dev_environment}"
+        script = f"""
+            watch_file pixi.lock
+            eval "$(pixi shell-hook{environment_flag})"
+        """
+        statements.append((".pixi", script))
     if CONFIG_PATH.conda.exists():
-        statements.append((None, __SCRIPTS["conda"]))
+        statements.append((None, "layout anaconda"))
     _update_envrc(statements)
+
+
+def __determine_pixi_dev_environment() -> str | None:
+    search_terms = ["dev"]
+    if CONFIG_PATH.pyproject.exists():
+        pyproject = Pyproject.load()
+        package_name = pyproject.get_package_name()
+        if package_name is not None:
+            search_terms.append(package_name)
+    available_environments = __get_pixi_environment_names()
+    for candidate in search_terms:
+        if candidate in available_environments:
+            return candidate
+    return None
+
+
+def __get_pixi_environment_names() -> set[str]:
+    if CONFIG_PATH.pixi_toml.exists():
+        pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
+        return set(pixi_config.get("environments", set()))
+    if CONFIG_PATH.pyproject.exists():
+        pyproject = Pyproject.load()
+        if pyproject.has_table("tool.pixi.environments"):
+            return set(pyproject.get_table("tool.pixi.environments"))
+    return set()
 
 
 def _update_envrc(statements: list[tuple[str | None, str]]) -> None:

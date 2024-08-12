@@ -35,8 +35,10 @@ prof/
 
 # Virtual environments
 *venv/
+.pixi/
 .tox/
 pyvenv*/
+pixi.lock
 
 # Settings
 .idea/
