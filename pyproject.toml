@@ -167,7 +167,7 @@ compwa-policy = {features = [
 ], solve-group = "default"}
 
 [tool.pixi.feature.dev.tasks.ci]
-depends_on = ["coverage", "doc", "linkcheck", "sty"]
+depends_on = ["cov", "doc", "linkcheck", "sty"]
 
 [tool.pixi.feature.dev.tasks.cov]
 cmd = """

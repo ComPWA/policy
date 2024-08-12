@@ -20,6 +20,7 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
         if is_python_package:
             do(_install_package_editable, pyproject)
         do(_import_tox_tasks, pyproject)
+        do(_define_combined_ci_job, pyproject)
         do(_set_dev_python_version, pyproject, dev_python_version)
         do(_update_dev_environment, pyproject)
         do(
@@ -40,6 +41,28 @@ def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(setuptools_scm, expected_scheme):
         setuptools_scm.update(expected_scheme)
         msg = "Configured setuptools_scm to not include git info in package version for pixi"
+        pyproject.append_to_changelog(msg)
+
+
+def _define_combined_ci_job(pyproject: ModifiablePyproject) -> None:
+    if not pyproject.has_table("tool.pixi.feature.dev.tasks"):
+        return
+    tasks = set(pyproject.get_table("tool.pixi.feature.dev.tasks"))
+    expected = {"linkcheck", "sty"} & tasks
+    if {"cov", "coverage"} & tasks:
+        expected.add("cov")
+    elif "tests" in tasks:
+        expected.add("tests")
+    if "docnb" in tasks:  # cspelL:ignore docnb
+        expected.add("docnb")
+    elif "doc" in tasks:
+        expected.add("doc")
+    ci = pyproject.get_table("tool.pixi.feature.dev.tasks.ci", create=True)
+    existing = set(ci.get("depends_on", set()))
+    if not expected <= existing:
+        depends_on = expected | existing & tasks
+        ci["depends_on"] = to_toml_array(sorted(depends_on), multiline=False)
+        msg = "Updated combined CI job for Pixi"
         pyproject.append_to_changelog(msg)
 
 
