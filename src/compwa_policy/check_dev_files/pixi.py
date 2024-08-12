@@ -5,7 +5,7 @@ from configparser import ConfigParser
 from textwrap import dedent
 
 from tomlkit import inline_table, string
-from tomlkit.items import String
+from tomlkit.items import InlineTable, String
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
@@ -102,10 +102,28 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         command = cfg.get(section, option="commands", raw=True)
         pixi_table = pyproject.get_table(pixi_table_name, create=True)
         pixi_table["cmd"] = __to_pixi_command(command)
+        if cfg.has_option(section, "setenv"):  # cspell:ignore setenv
+            job_environment = cfg.get(section, option="setenv", raw=True)
+            environment_variables = __to_environment_variables(job_environment)
+            if environment_variables:
+                pixi_table["env"] = environment_variables
         imported_tasks.append(task_name)
     if imported_tasks:
         msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
         pyproject.append_to_changelog(msg)
+
+
+def __to_environment_variables(tox_env: str) -> InlineTable:
+    lines = tox_env.splitlines()
+    lines = [s.strip() for s in lines]
+    lines = [s for s in lines if s]
+    environment_variables = inline_table()
+    for line in lines:
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key:
+            environment_variables[key] = string(value.strip())
+    return environment_variables
 
 
 def __to_pixi_command(tox_command: str) -> String:
