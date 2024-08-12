@@ -36,6 +36,7 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
         do(_define_combined_ci_job, pyproject)
         do(_set_dev_python_version, pyproject, dev_python_version)
         do(_update_dev_environment, pyproject)
+        do(_clean_up_task_env, pyproject)
         do(
             vscode.update_settings,
             {"files.associations": {"**/pixi.lock": "yaml"}},
@@ -118,7 +119,6 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         for section in cfg.sections()
         if section.startswith("testenv")  # cspell:ignore testenv
     ]
-    global_env_variables = __load_pixi_environment_variables(pyproject)
     imported_tasks = []
     for job_name in tox_jobs:
         task_name = job_name or "tests"
@@ -135,7 +135,6 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
             job_environment = cfg.get(section, option="setenv", raw=True)
             environment_variables = __convert_tox_environment_variables(
                 job_environment,
-                global_env_variables,
                 blacklisted_keys={"FORCE_COLOR"},
             )
             if environment_variables:
@@ -146,32 +145,9 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def __load_pixi_environment_variables(pyproject: Pyproject) -> dict[str, str]:
-    if not pyproject.has_table("tool.pixi.activation"):
-        return {}
-    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
-    return dict(activation_table.get("env", {}))
-
-
 def __convert_tox_environment_variables(
-    tox_env: str, global_env: dict[str, str], blacklisted_keys: set[str]
+    tox_env: str, blacklisted_keys: set[str]
 ) -> InlineTable:
-    '''Convert tox environment variables to a dictionary.
-
-    >>> tox_env = """
-    ...      KEY=0
-    ...      EMPTY_VAR=
-    ...      FOO=bar
-    ...      BAR=overwritten
-    ...      FORCE_COLOR=baz
-    ... """
-    >>> __convert_tox_environment_variables(
-    ...     tox_env,
-    ...     global_env={"FOO": "bar", "BAR": "something-else"},
-    ...     blacklisted_keys={"FORCE_COLOR"},
-    ... )
-    {'KEY': '0', 'EMPTY_VAR': '', 'BAR': 'overwritten'}
-    '''
     lines = tox_env.splitlines()
     lines = [s.strip() for s in lines]
     lines = [s for s in lines if s]
@@ -183,10 +159,37 @@ def __convert_tox_environment_variables(
             continue
         if key in blacklisted_keys:
             continue
-        value = value.strip()
-        if global_env.get(key) != value:
-            environment_variables[key] = string(value)
+        environment_variables[key] = string(value.strip())
     return environment_variables
+
+
+def _clean_up_task_env(pyproject: ModifiablePyproject) -> None:
+    if not pyproject.has_table("tool.pixi.feature.dev.tasks"):
+        return
+    global_env = __load_pixi_environment_variables(pyproject)
+    tasks = pyproject.get_table("tool.pixi.feature.dev.tasks")
+    updated_tasks = []
+    for task_name, task_table in tasks.items():
+        local_env = task_table.get("env", {})
+        if not local_env:
+            continue
+        expected = {k: v for k, v in local_env.items() if v != global_env.get(k)}
+        if local_env != expected:
+            if expected:
+                task_table["env"] = expected
+            else:
+                del task_table["env"]
+            updated_tasks.append(task_name)
+    if updated_tasks:
+        msg = f"Removed redundant environment variables from Pixi tasks {', '.join(updated_tasks)}"
+        pyproject.append_to_changelog(msg)
+
+
+def __load_pixi_environment_variables(pyproject: Pyproject) -> dict[str, str]:
+    if not pyproject.has_table("tool.pixi.activation"):
+        return {}
+    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
+    return dict(activation_table.get("env", {}))
 
 
 def __to_pixi_command(tox_command: str) -> String:
