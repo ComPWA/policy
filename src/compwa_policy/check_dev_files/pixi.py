@@ -11,6 +11,7 @@ from compwa_policy.utilities.toml import to_toml_array
 def main() -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_configure_setuptools_scm, pyproject)
+        do(_define_minimal_project, pyproject)
         do(_update_dev_environment, pyproject)
         do(
             vscode.update_settings,
@@ -30,6 +31,19 @@ def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(setuptools_scm, expected_scheme):
         setuptools_scm.update(expected_scheme)
         msg = "Configured setuptools_scm to not include git info in package version for pixi"
+        pyproject.append_to_changelog(msg)
+
+
+def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
+    """Create a minimal Pixi project definition if it does not exist."""
+    settings = pyproject.get_table("tool.pixi.project", create=True)
+    minimal_settings = dict(
+        channels=["conda-forge"],
+        platforms=["linux-64"],
+    )
+    if not complies_with_subset(settings, minimal_settings, exact_value_match=False):
+        settings.update(minimal_settings)
+        msg = "Defined minimal Pixi project settings"
         pyproject.append_to_changelog(msg)
 
 

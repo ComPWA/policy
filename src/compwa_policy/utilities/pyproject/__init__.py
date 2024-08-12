@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import sys
+from collections import abc
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
@@ -231,8 +232,49 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         self._changelog.append(message)
 
 
-def complies_with_subset(settings: Mapping, minimal_settings: Mapping) -> bool:
-    return all(settings.get(key) == value for key, value in minimal_settings.items())
+def complies_with_subset(
+    settings: Mapping,
+    minimal_settings: Mapping,
+    *,
+    exact_value_match: bool = True,
+) -> bool:
+    """Compare if a nested mapping fits inside another nested mapping.
+
+    >>> complies_with_subset(
+    ...     {"channels": ["conda-forge"]},
+    ...     {"channels": ["conda-forge"], "platforms": ["linux-64"]},
+    ... )
+    False
+    >>> complies_with_subset(
+    ...     {"channels": ["conda-forge"], "platforms": ["linux-64"]},
+    ...     {"channels": ["conda-forge"]},
+    ... )
+    True
+    >>> complies_with_subset(
+    ...     {"channels": ["conda-forge", "default"]},
+    ...     {"channels": ["conda-forge"]},
+    ...     exact_value_match=False,
+    ... )
+    True
+    """
+    if exact_value_match:
+        return all(
+            settings.get(key) == expected for key, expected in minimal_settings.items()
+        )
+    for key, expected in minimal_settings.items():
+        if not _complies_minimally(settings.get(key), expected):
+            return False
+    return True
+
+
+def _complies_minimally(obj: Any, other: Any) -> bool:
+    if isinstance(other, abc.Mapping):
+        return complies_with_subset(obj, other, exact_value_match=False)
+    if isinstance(other, str):
+        return obj == other
+    if isinstance(obj, abc.Iterable):
+        return set(other) <= set(obj)
+    return obj == other
 
 
 def get_build_system() -> Literal["pyproject", "setup.cfg"] | None:
