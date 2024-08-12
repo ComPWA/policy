@@ -115,6 +115,7 @@ namespaces = false
 where = ["src"]
 
 [tool.setuptools_scm]
+local_scheme = "no-local-version"
 write_to = "src/compwa_policy/version.py"
 
 [tool.coverage.run]
@@ -146,6 +147,25 @@ module = ["ruamel.*"]
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
 module = ["nbformat.*"]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.9.*"
+
+[tool.pixi.environments]
+compwa-policy = {features = [
+    "dev",
+    "doc",
+    "sty",
+    "test",
+    "types",
+], solve-group = "default"}
+
+[tool.pixi.pypi-dependencies]
+compwa-policy = {path = ".", editable = true}
 
 [tool.pyright]
 exclude = [
