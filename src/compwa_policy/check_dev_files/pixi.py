@@ -48,36 +48,8 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
                 vscode.update_settings,
                 {"files.associations": {"**/pixi.lock": "yaml"}},
             )
-        do(_check_gitattributes)
-        do(_check_gitignore)
-
-
-def _check_gitattributes() -> None:
-    if not has_pixi_config():
-        return
-    expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
-    msg = f"Please list {expected_line} under {CONFIG_PATH.gitattributes}"
-    if not CONFIG_PATH.gitattributes.exists():
-        raise PrecommitError(msg)
-    if not __contains_line(CONFIG_PATH.gitattributes, expected_line):
-        raise PrecommitError(msg)
-
-
-def _check_gitignore() -> None:
-    if not has_pixi_config():
-        return
-    ignore_path = ".pixi/"
-    msg = f"Please list {ignore_path} under {CONFIG_PATH.gitignore}"
-    if not CONFIG_PATH.gitignore.exists():
-        raise PrecommitError(msg)
-    if not __contains_line(CONFIG_PATH.gitignore, ignore_path):
-        raise PrecommitError(msg)
-
-
-def __contains_line(path: Path, expected_line: str) -> bool:
-    with path.open() as stream:
-        lines = stream.readlines()
-    return expected_line in {line.strip() for line in lines}
+        do(_update_gitattributes)
+        do(_update_gitignore)
 
 
 def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
@@ -264,6 +236,36 @@ def _set_dev_python_version(
         dependencies["python"] = version
         msg = f"Set Python version for Pixi developer environment to {version}"
         pyproject.append_to_changelog(msg)
+
+
+def _update_gitattributes() -> None:
+    if not has_pixi_config():
+        return None
+    expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
+    msg = f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
+    return __safe_update_file(expected_line, CONFIG_PATH.gitattributes, msg)
+
+
+def _update_gitignore() -> None:
+    if not has_pixi_config():
+        return None
+    ignore_path = ".pixi/"
+    msg = f"Added {ignore_path} under {CONFIG_PATH.gitignore}"
+    return __safe_update_file(ignore_path, CONFIG_PATH.gitignore, msg)
+
+
+def __safe_update_file(expected_line: str, path: Path, msg: str) -> None:
+    if path.exists() and __contains_line(path, expected_line):
+        return
+    with path.open("a") as stream:
+        stream.write(expected_line + "\n")
+    raise PrecommitError(msg)
+
+
+def __contains_line(path: Path, expected_line: str) -> bool:
+    with path.open() as stream:
+        lines = stream.readlines()
+    return expected_line in {line.strip() for line in lines}
 
 
 def _update_dev_environment(pyproject: ModifiablePyproject) -> None:
