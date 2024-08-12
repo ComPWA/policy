@@ -8,7 +8,20 @@ from compwa_policy.utilities.toml import to_toml_array
 
 def main() -> None:
     with ModifiablePyproject.load() as pyproject:
+        _configure_setuptools_scm(pyproject)
         _update_dev_environment(pyproject)
+
+
+def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
+    """Configure :code:`setuptools_scm` to not include git info in package version."""
+    if not pyproject.has_table("tool.setuptools_scm"):
+        return
+    setuptools_scm = pyproject.get_table("tool.setuptools_scm")
+    expected_scheme = "no-local-version"
+    if setuptools_scm.get("local_scheme") != expected_scheme:
+        setuptools_scm["local_scheme"] = expected_scheme
+        msg = "Configured setuptools_scm to not include git info in package version for pixi"
+        pyproject.append_to_changelog(msg)
 
 
 def _update_dev_environment(pyproject: ModifiablePyproject) -> None:
