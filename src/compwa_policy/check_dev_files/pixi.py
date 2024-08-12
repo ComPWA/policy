@@ -7,11 +7,16 @@ from configparser import ConfigParser
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+import yaml
 from tomlkit import inline_table, string
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    complies_with_subset,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -26,6 +31,7 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
         do(_define_minimal_project, pyproject)
         if is_python_package:
             do(_install_package_editable, pyproject)
+        do(_import_conda_environment, pyproject)
         do(_import_tox_tasks, pyproject)
         do(_define_combined_ci_job, pyproject)
         do(_set_dev_python_version, pyproject, dev_python_version)
@@ -86,6 +92,25 @@ def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
+def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
+    if not CONFIG_PATH.conda.exists():
+        return
+    with CONFIG_PATH.conda.open() as stream:
+        conda = yaml.safe_load(stream)
+    conda_variables = {k: str(v) for k, v in conda.get("variables", {}).items()}
+    if not conda_variables:
+        return
+    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
+    pixi_variables = dict(activation_table.get("env", {}))
+    if not complies_with_subset(pixi_variables, conda_variables):
+        new_environment = inline_table()
+        new_environment.update(pixi_variables)
+        new_environment.update(conda_variables)
+        activation_table["env"] = new_environment
+        msg = "Imported conda environment variables for Pixi"
+        pyproject.append_to_changelog(msg)
+
+
 def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
     if not CONFIG_PATH.tox.exists():
         return
@@ -96,6 +121,7 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         for section in cfg.sections()
         if section.startswith("testenv")  # cspell:ignore testenv
     ]
+    global_env_variables = __load_pixi_environment_variables(pyproject)
     imported_tasks = []
     for job_name in tox_jobs:
         task_name = job_name or "tests"
@@ -110,7 +136,11 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         pixi_table["cmd"] = __to_pixi_command(command)
         if cfg.has_option(section, "setenv"):  # cspell:ignore setenv
             job_environment = cfg.get(section, option="setenv", raw=True)
-            environment_variables = __to_environment_variables(job_environment)
+            environment_variables = __convert_tox_environment_variables(
+                job_environment,
+                global_env_variables,
+                blacklisted_keys={"FORCE_COLOR"},
+            )
             if environment_variables:
                 pixi_table["env"] = environment_variables
         imported_tasks.append(task_name)
@@ -119,7 +149,32 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
-def __to_environment_variables(tox_env: str) -> InlineTable:
+def __load_pixi_environment_variables(pyproject: Pyproject) -> dict[str, str]:
+    if not pyproject.has_table("tool.pixi.activation"):
+        return {}
+    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
+    return dict(activation_table.get("env", {}))
+
+
+def __convert_tox_environment_variables(
+    tox_env: str, global_env: dict[str, str], blacklisted_keys: set[str]
+) -> InlineTable:
+    '''Convert tox environment variables to a dictionary.
+
+    >>> tox_env = """
+    ...      KEY=0
+    ...      EMPTY_VAR=
+    ...      FOO=bar
+    ...      BAR=overwritten
+    ...      FORCE_COLOR=baz
+    ... """
+    >>> __convert_tox_environment_variables(
+    ...     tox_env,
+    ...     global_env={"FOO": "bar", "BAR": "something-else"},
+    ...     blacklisted_keys={"FORCE_COLOR"},
+    ... )
+    {'KEY': '0', 'EMPTY_VAR': '', 'BAR': 'overwritten'}
+    '''
     lines = tox_env.splitlines()
     lines = [s.strip() for s in lines]
     lines = [s for s in lines if s]
@@ -127,8 +182,13 @@ def __to_environment_variables(tox_env: str) -> InlineTable:
     for line in lines:
         key, value = line.split("=", 1)
         key = key.strip()
-        if key:
-            environment_variables[key] = string(value.strip())
+        if not key:
+            continue
+        if key in blacklisted_keys:
+            continue
+        value = value.strip()
+        if global_env.get(key) != value:
+            environment_variables[key] = string(value)
     return environment_variables
 
 

@@ -154,6 +154,9 @@ module = ["nbformat.*"]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
+[tool.pixi.activation]
+env = {PRETTIER_LEGACY_CLI = "1"}
+
 [tool.pixi.dependencies]
 python = "3.9.*"
 
