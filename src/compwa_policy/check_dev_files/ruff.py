@@ -308,7 +308,7 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     ignored_rules = ___merge_rules(settings.get("ignore", []), ignored_rules)
     minimal_settings = {
         "select": to_toml_array(["ALL"]),
-        "ignore": to_toml_array(sorted(ignored_rules), enforce_multiline=True),
+        "ignore": to_toml_array(sorted(ignored_rules), multiline=True),
         "task-tags": ___get_task_tags(settings),
     }
     if not complies_with_subset(settings, minimal_settings):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from textwrap import dedent
 
 import pytest
@@ -16,7 +18,7 @@ def test_to_toml_array_single_item():
     array = to_toml_array(lst)
     assert _dump(array) == "a = [1]"
 
-    array = to_toml_array(lst, enforce_multiline=True)
+    array = to_toml_array(lst, multiline=True)
     expected = dedent("""
         a = [
             1,
@@ -25,10 +27,10 @@ def test_to_toml_array_single_item():
     assert _dump(array) == expected.strip()
 
 
-@pytest.mark.parametrize("enforce_multiline", [False, True])
-def test_to_toml_array_multiple_items(enforce_multiline: bool):
+@pytest.mark.parametrize("multiline", [False, True])
+def test_to_toml_array_multiple_items(multiline: bool):
     lst = [1, 2, 3]
-    array = to_toml_array(lst, enforce_multiline)
+    array = to_toml_array(lst, multiline)
     expected = dedent("""
         a = [
             1,
