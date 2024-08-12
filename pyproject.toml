@@ -161,13 +161,13 @@ env = {PRETTIER_LEGACY_CLI = "1"}
 python = "3.9.*"
 
 [tool.pixi.environments]
-compwa-policy = {features = [
+default = {features = [
     "dev",
     "doc",
     "sty",
     "test",
     "types",
-], solve-group = "default"}
+]}
 
 [tool.pixi.feature.dev.tasks.ci]
 depends_on = ["cov", "doc", "linkcheck", "sty"]

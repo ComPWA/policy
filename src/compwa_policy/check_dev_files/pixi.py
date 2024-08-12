@@ -358,16 +358,12 @@ def __contains_line(path: Path, expected_line: str) -> bool:
 def _update_dev_environment(pyproject: ModifiablePyproject) -> None:
     if not pyproject.has_table("project.optional-dependencies"):
         return
-    optional_dependencies = sorted(pyproject.get_table("project.optional-dependencies"))
+    optional_dependencies = pyproject.get_table("project.optional-dependencies")
     expected = inline_table()
-    expected.update({
-        "features": to_toml_array(optional_dependencies),
-        "solve-group": "default",
-    })
+    expected["features"] = to_toml_array(sorted(optional_dependencies))
     environments = pyproject.get_table("tool.pixi.environments", create=True)
-    package_name = pyproject.get_package_name(raise_on_missing=True)
-    if environments.get(package_name) != expected:
-        environments[package_name] = expected
+    if environments.get("default") != expected:
+        environments["default"] = expected
         msg = "Updated Pixi developer environment"
         pyproject.append_to_changelog(msg)
 
