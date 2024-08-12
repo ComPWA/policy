@@ -1,5 +1,6 @@
 """Update pixi implementation."""
 
+import re
 from configparser import ConfigParser
 from textwrap import dedent
 
@@ -108,9 +109,8 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
 
 
 def __to_pixi_command(tox_command: str) -> String:
-    tox_command = tox_command.replace(" {posargs}", "")  # cspell:ignore posargs
+    tox_command = re.sub(r" {posargs[^}]*}", "", tox_command)  # cspell:ignore posargs
     pixi_command = dedent(tox_command).strip()
-    pixi_command = pixi_command.replace(" {posargs}", "")
     if "\n" in pixi_command:
         pixi_command = "\n" + pixi_command + "\n"
         pixi_command = pixi_command.replace("\\\n", "\\\n" + 4 * " ")
