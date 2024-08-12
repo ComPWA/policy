@@ -27,17 +27,48 @@ def test_to_toml_array_single_item():
     assert _dump(array) == expected.strip()
 
 
-@pytest.mark.parametrize("multiline", [False, True])
-def test_to_toml_array_multiple_items(multiline: bool):
-    lst = [1, 2, 3]
+@pytest.mark.parametrize(
+    ("lst", "multiline", "expected"),
+    [
+        ([0], False, "a = [0]"),
+        (
+            [0],
+            True,
+            """
+            a = [
+                0,
+            ]
+            """,
+        ),
+        ([0], None, "a = [0]"),
+        ([1, 2, 3], False, "a = [1, 2, 3]"),
+        (
+            [1, 2, 3],
+            True,
+            """
+            a = [
+                1,
+                2,
+                3,
+            ]
+            """,
+        ),
+        (
+            [1, 2, 3],
+            None,
+            """
+            a = [
+                1,
+                2,
+                3,
+            ]
+            """,
+        ),
+    ],
+)
+def test_to_toml_array_multiple_items(lst: list[int], multiline: bool, expected: str):
     array = to_toml_array(lst, multiline)
-    expected = dedent("""
-        a = [
-            1,
-            2,
-            3,
-        ]
-    """)
+    expected = dedent(expected).strip()
     assert _dump(array) == expected.strip()
 
 
