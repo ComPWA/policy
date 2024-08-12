@@ -14,12 +14,7 @@ def to_toml_array(items: Iterable[Any], multiline: bool | None = None) -> Array:
     array = tomlkit.array()
     array.extend(items)
     if multiline is None:
-        if len(array) > 1:
-            array.multiline(True)
-        else:
-            array.multiline(False)
-    elif multiline:
-        array.multiline(True)
+        array.multiline(len(array) > 1)
     else:
-        array.multiline(False)
+        array.multiline(multiline)
     return array
