@@ -182,8 +182,8 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--outsource-pixi-to-tox",
-        action="store_false",
-        default=True,
+        action="store_true",
+        default=False,
         help="Run ",
     )
     parser.add_argument(
