@@ -241,7 +241,8 @@ def _clean_up_task_env(pyproject: ModifiablePyproject) -> None:
         local_env = task_table.get("env", {})
         if not local_env:
             continue
-        expected = {k: v for k, v in local_env.items() if v != global_env.get(k)}
+        expected = inline_table()
+        expected.update({k: v for k, v in local_env.items() if v != global_env.get(k)})
         if local_env != expected:
             if expected:
                 task_table["env"] = expected
