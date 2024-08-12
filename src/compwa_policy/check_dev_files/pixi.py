@@ -1,8 +1,12 @@
 """Update pixi implementation."""
 
-from tomlkit import inline_table
+from configparser import ConfigParser
+from textwrap import dedent
 
-from compwa_policy.utilities import vscode
+from tomlkit import inline_table, string
+from tomlkit.items import String
+
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.pyproject.getters import PythonVersion
@@ -15,6 +19,7 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
         do(_define_minimal_project, pyproject)
         if is_python_package:
             do(_install_package_editable, pyproject)
+        do(_import_tox_tasks, pyproject)
         do(_set_dev_python_version, pyproject, dev_python_version)
         do(_update_dev_environment, pyproject)
         do(
@@ -49,6 +54,40 @@ def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
         settings.update(minimal_settings)
         msg = "Defined minimal Pixi project settings"
         pyproject.append_to_changelog(msg)
+
+
+def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
+    if not CONFIG_PATH.tox.exists():
+        return
+    cfg = ConfigParser()
+    cfg.read(CONFIG_PATH.tox)
+    tox_jobs = [
+        section[8:]
+        for section in cfg.sections()
+        if section.startswith("testenv:")  # cspell:ignore testenv
+    ]
+    imported_jobs = []
+    for job_name in tox_jobs:
+        pixi_table_name = f"tool.pixi.feature.dev.tasks.{job_name}"
+        if pyproject.has_table(pixi_table_name):
+            continue
+        pixi_table = pyproject.get_table(pixi_table_name, create=True)
+        command = cfg.get(section=f"testenv:{job_name}", option="commands", raw=True)
+        pixi_table["cmd"] = __to_pixi_command(command)
+        imported_jobs.append(job_name)
+    if imported_jobs:
+        msg = f"Imported the following tox jobs: {', '.join(imported_jobs)}"
+        pyproject.append_to_changelog(msg)
+
+
+def __to_pixi_command(tox_command: str) -> String:
+    tox_command = tox_command.replace(" {posargs}", "")  # cspell:ignore posargs
+    pixi_command = dedent(tox_command).strip()
+    pixi_command = pixi_command.replace(" {posargs}", "")
+    if "\n" in pixi_command:
+        pixi_command = "\n" + pixi_command + "\n"
+        pixi_command = pixi_command.replace("\\\n", "\\\n" + 4 * " ")
+    return string(pixi_command, multiline="\n" in pixi_command)
 
 
 def _install_package_editable(pyproject: ModifiablePyproject) -> None:

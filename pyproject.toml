@@ -192,7 +192,7 @@ sphinx-build \
 cmd = """
 sphinx-autobuild \
     --open-browser \
-    --re-ignore '.*\\..egg-info' \
+    --re-ignore '.*\\.egg-info' \
     --re-ignore '.*/__pycache__/.*' \
     --re-ignore 'docs/_build/.*' \
     --re-ignore 'docs/api/.*' \
@@ -207,6 +207,15 @@ sphinx-build \
     --builder linkcheck \
     --show-traceback \
     docs/ docs/_build/linkcheck
+"""
+
+[tool.pixi.feature.dev.tasks.pydeps]
+cmd = """
+pydeps compwa_policy \
+    -o module_structure.svg \
+    --exclude '*._*' \
+    --max-bacon=1 \
+    --noshow
 """
 
 [tool.pixi.feature.dev.tasks.sty]
