@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from tomlkit.items import Array
 
 
-def to_toml_array(items: Iterable[Any], enforce_multiline: bool = False) -> Array:
+def to_toml_array(items: Iterable[Any], multiline: bool = False) -> Array:
     array = tomlkit.array()
     array.extend(items)
-    if enforce_multiline or len(array) > 1:
+    if multiline or len(array) > 1:
         array.multiline(True)
     else:
         array.multiline(False)

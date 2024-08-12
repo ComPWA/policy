@@ -107,7 +107,7 @@ def _update_taplo_config() -> None:
     excludes = filter_patterns(expected["exclude"])  # type:ignore[arg-type]
     if excludes:
         sorted_excludes = sorted(excludes, key=str.lower)
-        expected["exclude"] = to_toml_array(sorted_excludes, enforce_multiline=True)
+        expected["exclude"] = to_toml_array(sorted_excludes, multiline=True)
     else:
         del expected["exclude"]
     with open(CONFIG_PATH.taplo) as f:

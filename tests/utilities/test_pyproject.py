@@ -68,7 +68,7 @@ def test_edit_and_dump():
         work = pyproject.get_table("owner.work", create=True)
         work["type"] = "scientist"
         tools = pyproject.get_table("tool", create=True)
-        tools["black"] = to_toml_array(["--line-length=79"], enforce_multiline=True)
+        tools["black"] = to_toml_array(["--line-length=79"], multiline=True)
 
     new_content = pyproject.dumps()
     expected = dedent("""
