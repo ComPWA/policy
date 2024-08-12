@@ -30,26 +30,25 @@ if TYPE_CHECKING:
 
 
 def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
-    with Executor() as do:
-        with ModifiablePyproject.load() as pyproject:
-            do(_configure_setuptools_scm, pyproject)
-            do(_define_minimal_project, pyproject)
-            if is_python_package:
-                do(_install_package_editable, pyproject)
-            do(_import_conda_dependencies, pyproject)
-            do(_import_conda_environment, pyproject)
-            do(_import_tox_tasks, pyproject)
-            do(_define_combined_ci_job, pyproject)
-            do(_set_dev_python_version, pyproject, dev_python_version)
-            do(_update_dev_environment, pyproject)
-            do(_clean_up_task_env, pyproject)
-            do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
-            do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
-            do(
-                vscode.update_settings,
-                {"files.associations": {"**/pixi.lock": "yaml"}},
-            )
-        if has_pixi_config():
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
+        do(_configure_setuptools_scm, pyproject)
+        do(_define_minimal_project, pyproject)
+        if is_python_package:
+            do(_install_package_editable, pyproject)
+        do(_import_conda_dependencies, pyproject)
+        do(_import_conda_environment, pyproject)
+        do(_import_tox_tasks, pyproject)
+        do(_define_combined_ci_job, pyproject)
+        do(_set_dev_python_version, pyproject, dev_python_version)
+        do(_update_dev_environment, pyproject)
+        do(_clean_up_task_env, pyproject)
+        do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
+        do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
+        do(
+            vscode.update_settings,
+            {"files.associations": {"**/pixi.lock": "yaml"}},
+        )
+        if has_pixi_config(pyproject):
             do(_update_gitattributes)
             do(_update_gitignore)
 
@@ -381,7 +380,9 @@ def ___overwrite_cmd(task: Table, template_task: Table) -> bool:
     return False
 
 
-def has_pixi_config() -> bool:
+def has_pixi_config(pyproject: Pyproject | None = None) -> bool:
     if filter_files(["pixi.lock", "pixi.toml"]):
         return True
+    if pyproject is not None:
+        return pyproject.has_table("tool.pixi")
     return CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi")
