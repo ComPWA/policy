@@ -5,15 +5,17 @@ from tomlkit import inline_table
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject.getters import PythonVersion
 from compwa_policy.utilities.toml import to_toml_array
 
 
-def main(is_python_package: bool) -> None:
+def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_configure_setuptools_scm, pyproject)
         do(_define_minimal_project, pyproject)
         if is_python_package:
             do(_install_package_editable, pyproject)
+        do(_set_dev_python_version, pyproject, dev_python_version)
         do(_update_dev_environment, pyproject)
         do(
             vscode.update_settings,
@@ -60,6 +62,17 @@ def _install_package_editable(pyproject: ModifiablePyproject) -> None:
     if dict(existing.get(package_name, {})) != dict(editable):
         existing[package_name] = editable
         msg = "Installed Python package in editable mode in Pixi"
+        pyproject.append_to_changelog(msg)
+
+
+def _set_dev_python_version(
+    pyproject: ModifiablePyproject, dev_python_version: PythonVersion
+) -> None:
+    dependencies = pyproject.get_table("tool.pixi.dependencies", create=True)
+    version = f"{dev_python_version}.*"
+    if dependencies.get("python") != version:
+        dependencies["python"] = version
+        msg = f"Set Python version for Pixi developer environment to {version}"
         pyproject.append_to_changelog(msg)
 
 
