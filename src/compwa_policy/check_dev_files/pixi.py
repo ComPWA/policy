@@ -1,17 +1,23 @@
 """Update pixi implementation."""
 
+from __future__ import annotations
+
 import re
 from configparser import ConfigParser
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 from tomlkit import inline_table, string
-from tomlkit.items import InlineTable, String
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
-from compwa_policy.utilities.pyproject.getters import PythonVersion
 from compwa_policy.utilities.toml import to_toml_array
+
+if TYPE_CHECKING:
+    from tomlkit.items import InlineTable, String
+
+    from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
 def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
