@@ -36,6 +36,7 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
             do(_define_minimal_project, pyproject)
             if is_python_package:
                 do(_install_package_editable, pyproject)
+            do(_import_conda_dependencies, pyproject)
             do(_import_conda_environment, pyproject)
             do(_import_tox_tasks, pyproject)
             do(_define_combined_ci_job, pyproject)
@@ -103,6 +104,58 @@ def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
         pyproject.append_to_changelog(msg)
 
 
+def _import_conda_dependencies(pyproject: ModifiablePyproject) -> None:
+    if not CONFIG_PATH.conda.exists():
+        return
+    with CONFIG_PATH.conda.open() as stream:
+        conda = yaml.safe_load(stream)
+    conda_dependencies = conda.get("dependencies", [])
+    if not conda_dependencies:
+        return
+    blacklisted_dependencies = {"pip"}
+    expected_dependencies = {}
+    for dep in conda.get("dependencies", []):
+        if not isinstance(dep, str):
+            continue
+        package, version = __to_pixi_dependency(dep)
+        if package in blacklisted_dependencies:
+            continue
+        expected_dependencies[package] = version
+    dependencies = pyproject.get_table("tool.pixi.dependencies", create=True)
+    if not complies_with_subset(dependencies, expected_dependencies):
+        dependencies.update(expected_dependencies)
+        msg = "Imported conda dependencies into Pixi"
+        pyproject.append_to_changelog(msg)
+
+
+def __to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
+    """Extract package name and version from a conda dependency string.
+
+    >>> __to_pixi_dependency("julia")
+    ('julia', '*')
+    >>> __to_pixi_dependency("python==3.9.*")
+    ('python', '3.9.*')
+    >>> __to_pixi_dependency("graphviz  # for binder")
+    ('graphviz', '*')
+    >>> __to_pixi_dependency("pip > 19  # needed")
+    ('pip', '>19')
+    >>> __to_pixi_dependency("compwa-policy!= 3.14")
+    ('compwa-policy', '!=3.14')
+    >>> __to_pixi_dependency("my_package~=1.2")
+    ('my_package', '~=1.2')
+    """
+    matches = re.match(r"^([a-zA-Z0-9_-]+)([\!<=>~\s]*)([^ ^#]*)", conda_dependency)
+    if not matches:
+        msg = f"Could not extract package name and version from {conda_dependency}"
+        raise ValueError(msg)
+    package, operator, version = matches.groups()
+    if not version:
+        version = "*"
+    if operator in {"=", "=="}:
+        operator = ""
+    return package.strip(), f"{operator.strip()}{version.strip()}"
+
+
 def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
     if not CONFIG_PATH.conda.exists():
         return
@@ -114,7 +167,9 @@ def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
     activation_table = pyproject.get_table("tool.pixi.activation", create=True)
     pixi_variables = dict(activation_table.get("env", {}))
     if not complies_with_subset(pixi_variables, conda_variables):
-        activation_table["env"] = dict(**pixi_variables, **conda_variables)
+        new_env = pixi_variables
+        new_env.update(conda_variables)
+        activation_table["env"] = new_env
         msg = "Imported conda environment variables for Pixi"
         pyproject.append_to_changelog(msg)
 
