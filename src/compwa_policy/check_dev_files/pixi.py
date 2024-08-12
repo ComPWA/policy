@@ -12,6 +12,7 @@ from tomlkit import inline_table, string
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -278,3 +279,9 @@ def ___overwrite_cmd(task: Table, template_task: Table) -> bool:
         task["cmd"] = template_task["cmd"]
         return True
     return False
+
+
+def has_pixi_config() -> bool:
+    if filter_files(["pixi.lock", "pixi.toml"]):
+        return True
+    return CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi")

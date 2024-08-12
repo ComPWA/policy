@@ -6,6 +6,7 @@ from textwrap import dedent, indent
 
 import rtoml
 
+from compwa_policy.check_dev_files.pixi import has_pixi_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
@@ -16,11 +17,7 @@ def main() -> None:
         (".venv", "source .venv/bin/activate"),
         ("venv", "source venv/bin/activate"),
     ]
-    if (
-        CONFIG_PATH.pixi_lock.exists()
-        or CONFIG_PATH.pixi_toml.exists()
-        or (CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi"))
-    ):
+    if has_pixi_config():
         dev_environment = __determine_pixi_dev_environment()
         if dev_environment is None:
             environment_flag = ""
