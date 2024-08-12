@@ -58,7 +58,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(citation.main, precommit_config)
         do(commitlint.main)
         do(conda.main, dev_python_version)
-        do(cspell.main, precommit_config, args.no_cspell_update)
         do(dependabot.main, args.dependabot)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
@@ -114,6 +113,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(gitpod.main, args.no_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(tox.main, has_notebooks)
+        do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
 
 
