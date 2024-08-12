@@ -8,10 +8,12 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with
 from compwa_policy.utilities.toml import to_toml_array
 
 
-def main() -> None:
+def main(is_python_package: bool) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_configure_setuptools_scm, pyproject)
         do(_define_minimal_project, pyproject)
+        if is_python_package:
+            do(_install_package_editable, pyproject)
         do(_update_dev_environment, pyproject)
         do(
             vscode.update_settings,
@@ -44,6 +46,20 @@ def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(settings, minimal_settings, exact_value_match=False):
         settings.update(minimal_settings)
         msg = "Defined minimal Pixi project settings"
+        pyproject.append_to_changelog(msg)
+
+
+def _install_package_editable(pyproject: ModifiablePyproject) -> None:
+    editable = inline_table()
+    editable.update({
+        "path": ".",
+        "editable": True,
+    })
+    package_name = pyproject.get_package_name(raise_on_missing=True)
+    existing = pyproject.get_table("tool.pixi.pypi-dependencies", create=True)
+    if dict(existing.get(package_name, {})) != dict(editable):
+        existing[package_name] = editable
+        msg = "Installed Python package in editable mode in Pixi"
         pyproject.append_to_changelog(msg)
 
 
