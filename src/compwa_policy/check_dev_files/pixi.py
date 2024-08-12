@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import yaml
 from tomlkit import inline_table, string
 
+from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_files
@@ -27,23 +28,39 @@ if TYPE_CHECKING:
 
 
 def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_configure_setuptools_scm, pyproject)
-        do(_define_minimal_project, pyproject)
-        if is_python_package:
-            do(_install_package_editable, pyproject)
-        do(_import_conda_environment, pyproject)
-        do(_import_tox_tasks, pyproject)
-        do(_define_combined_ci_job, pyproject)
-        do(_set_dev_python_version, pyproject, dev_python_version)
-        do(_update_dev_environment, pyproject)
-        do(_clean_up_task_env, pyproject)
-        do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
-        do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
-        do(
-            vscode.update_settings,
-            {"files.associations": {"**/pixi.lock": "yaml"}},
-        )
+    with Executor() as do:
+        with ModifiablePyproject.load() as pyproject:
+            do(_configure_setuptools_scm, pyproject)
+            do(_define_minimal_project, pyproject)
+            if is_python_package:
+                do(_install_package_editable, pyproject)
+            do(_import_conda_environment, pyproject)
+            do(_import_tox_tasks, pyproject)
+            do(_define_combined_ci_job, pyproject)
+            do(_set_dev_python_version, pyproject, dev_python_version)
+            do(_update_dev_environment, pyproject)
+            do(_clean_up_task_env, pyproject)
+            do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
+            do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
+            do(
+                vscode.update_settings,
+                {"files.associations": {"**/pixi.lock": "yaml"}},
+            )
+        do(_check_gitignore)
+
+
+def _check_gitignore() -> None:
+    if not has_pixi_config():
+        return
+    ignore_path = ".pixi/"
+    msg = f"Please list {ignore_path} under {CONFIG_PATH.gitignore}"
+    if not CONFIG_PATH.gitignore.exists():
+        raise PrecommitError(msg)
+    with CONFIG_PATH.gitignore.open() as stream:
+        lines = stream.readlines()
+    paths = {line.strip() for line in lines}
+    if ignore_path not in paths:
+        raise PrecommitError(msg)
 
 
 def _configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
@@ -123,7 +140,10 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         if section.startswith("testenv")  # cspell:ignore testenv
     ]
     imported_tasks = []
+    blacklisted_jobs = {"jcache"}  # cspell:ignore jcache
     for job_name in tox_jobs:
+        if job_name in blacklisted_jobs:
+            continue
         task_name = job_name or "tests"
         pixi_table_name = f"tool.pixi.feature.dev.tasks.{task_name}"
         if pyproject.has_table(pixi_table_name):

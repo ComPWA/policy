@@ -24,6 +24,7 @@ class _ConfigFilePaths(NamedTuple):
     editorconfig: Path = Path(".editorconfig")
     envrc: Path = Path(".envrc")
     github_workflow_dir: Path = Path(".github/workflows")
+    gitignore: Path = Path(".gitignore")
     gitpod: Path = Path(".gitpod.yml")
     pip_constraints: Path = Path(".constraints")
     pixi_lock: Path = Path("pixi.lock")
