@@ -81,7 +81,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if has_notebooks:
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
-        do(pixi.main, is_python_repo, dev_python_version)
+        do(pixi.main, is_python_repo, dev_python_version, args.outsource_pixi_to_tox)
         do(direnv.main)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
@@ -179,6 +179,12 @@ def _create_argparse() -> ArgumentParser:
         help="Do not overwrite the PR linting workflow",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--outsource-pixi-to-tox",
+        action="store_false",
+        default=True,
+        help="Run ",
     )
     parser.add_argument(
         "--no-cspell-update",

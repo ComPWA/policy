@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from configparser import ConfigParser
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -12,6 +11,7 @@ from tomlkit import inline_table, string
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.pyproject import (
@@ -22,6 +22,7 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from configparser import ConfigParser
     from pathlib import Path
 
     from tomlkit.items import InlineTable, String, Table
@@ -29,7 +30,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
-def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
+def main(
+    is_python_package: bool,
+    dev_python_version: PythonVersion,
+    outsource_pixi_to_tox: bool,
+) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_configure_setuptools_scm, pyproject)
         do(_define_minimal_project, pyproject)
@@ -48,6 +53,8 @@ def main(is_python_package: bool, dev_python_version: PythonVersion) -> None:
             vscode.update_settings,
             {"files.associations": {"**/pixi.lock": "yaml"}},
         )
+        if outsource_pixi_to_tox:
+            do(_outsource_pixi_tasks_to_tox, pyproject)
         if has_pixi_config(pyproject):
             do(_update_gitattributes)
             do(_update_gitignore)
@@ -176,16 +183,11 @@ def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
 def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
     if not CONFIG_PATH.tox.exists():
         return
-    cfg = ConfigParser()
-    cfg.read(CONFIG_PATH.tox)
-    tox_jobs = [
-        section[8:]
-        for section in cfg.sections()
-        if section.startswith("testenv")  # cspell:ignore testenv
-    ]
+    tox = open_config(CONFIG_PATH.tox)
+    tox_jobs = __get_tox_job_names(tox)
     imported_tasks = []
     blacklisted_jobs = {"jcache"}  # cspell:ignore jcache
-    for job_name in tox_jobs:
+    for job_name, task_name in tox_jobs.items():
         if job_name in blacklisted_jobs:
             continue
         task_name = job_name or "tests"
@@ -193,13 +195,13 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         if pyproject.has_table(pixi_table_name):
             continue
         section = f"testenv:{job_name}" if job_name else "testenv"
-        if not cfg.has_option(section, "commands"):
+        if not tox.has_option(section, "commands"):
             continue
-        command = cfg.get(section, option="commands", raw=True)
+        command = tox.get(section, option="commands", raw=True)
         pixi_table = pyproject.get_table(pixi_table_name, create=True)
         pixi_table["cmd"] = __to_pixi_command(command)
-        if cfg.has_option(section, "setenv"):  # cspell:ignore setenv
-            job_environment = cfg.get(section, option="setenv", raw=True)
+        if tox.has_option(section, "setenv"):  # cspell:ignore setenv
+            job_environment = tox.get(section, option="setenv", raw=True)
             environment_variables = __convert_tox_environment_variables(
                 job_environment,
                 blacklisted_keys={"FORCE_COLOR"},
@@ -210,6 +212,15 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
     if imported_tasks:
         msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
         pyproject.append_to_changelog(msg)
+
+
+def __get_tox_job_names(cfg: ConfigParser) -> dict[str, str]:
+    tox_jobs = [
+        section[8:]
+        for section in cfg.sections()
+        if section.startswith("testenv")  # cspell:ignore testenv
+    ]
+    return {job: job or "tests" for job in tox_jobs if job}
 
 
 def __convert_tox_environment_variables(
@@ -290,6 +301,28 @@ def _install_package_editable(pyproject: ModifiablePyproject) -> None:
     if dict(existing.get(package_name, {})) != dict(editable):
         existing[package_name] = editable
         msg = "Installed Python package in editable mode in Pixi"
+        pyproject.append_to_changelog(msg)
+
+
+def _outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
+    if not CONFIG_PATH.tox.exists():
+        return
+    tox = open_config(CONFIG_PATH.tox)
+    blacklisted_jobs = {"sty"}
+    updated_tasks = []
+    for tox_job, pixi_task in __get_tox_job_names(tox).items():
+        if pixi_task in blacklisted_jobs:
+            continue
+        if not pyproject.has_table(f"tool.pixi.feature.dev.tasks.{pixi_task}"):
+            continue
+        task = pyproject.get_table(f"tool.pixi.feature.dev.tasks.{pixi_task}")
+        expected_cmd = f"tox -e {tox_job}"
+        if task.get("cmd") != expected_cmd:
+            task["cmd"] = expected_cmd
+            task.pop("env", None)
+            updated_tasks.append(pixi_task)
+    if updated_tasks:
+        msg = f"Outsourced Pixi tasks to tox: {', '.join(updated_tasks)}"
         pyproject.append_to_changelog(msg)
 
 

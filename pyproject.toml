@@ -173,53 +173,19 @@ compwa-policy = {features = [
 depends_on = ["cov", "doc", "linkcheck", "sty"]
 
 [tool.pixi.feature.dev.tasks.cov]
-cmd = """
-pytest \
-    --cov-fail-under=35 \
-    --cov-report=html \
-    --cov-report=xml \
-    --cov=compwa_policy
-"""
+cmd = "tox -e cov"
 
 [tool.pixi.feature.dev.tasks.doc]
-cmd = """
-sphinx-build \
-    --builder html \
-    --fail-on-warning \
-    --keep-going \
-    --show-traceback \
-    docs/ docs/_build/html
-"""
+cmd = "tox -e doc"
 
 [tool.pixi.feature.dev.tasks.doclive]
-cmd = """
-sphinx-autobuild \
-    --open-browser \
-    --re-ignore '.*\\.egg-info' \
-    --re-ignore '.*/__pycache__/.*' \
-    --re-ignore 'docs/_build/.*' \
-    --re-ignore 'docs/api/.*' \
-    --watch docs \
-    --watch src \
-    docs/ docs/_build/html
-"""
+cmd = "tox -e doclive"
 
 [tool.pixi.feature.dev.tasks.linkcheck]
-cmd = """
-sphinx-build \
-    --builder linkcheck \
-    --show-traceback \
-    docs/ docs/_build/linkcheck
-"""
+cmd = "tox -e linkcheck"
 
 [tool.pixi.feature.dev.tasks.pydeps]
-cmd = """
-pydeps compwa_policy \
-    -o module_structure.svg \
-    --exclude '*._*' \
-    --max-bacon=1 \
-    --noshow
-"""
+cmd = "tox -e pydeps"
 
 [tool.pixi.feature.dev.tasks.sty]
 cmd = "pre-commit run --all-files"
