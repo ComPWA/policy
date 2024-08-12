@@ -60,7 +60,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(conda.main, dev_python_version)
         do(cspell.main, precommit_config, args.no_cspell_update)
         do(dependabot.main, args.dependabot)
-        do(direnv.main)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
             do(github_labels.main)
@@ -84,6 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(pixi.main, is_python_repo, dev_python_version)
+        do(direnv.main)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
