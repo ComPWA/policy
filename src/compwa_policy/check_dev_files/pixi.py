@@ -265,11 +265,13 @@ def __to_pixi_command(tox_command: str) -> String:
 
     >>> __to_pixi_command("pytest {posargs}")
     'pytest'
+    >>> __to_pixi_command("pytest {posargs:benchmarks}")
+    'pytest benchmarks'
     >>> __to_pixi_command("pytest {posargs src tests}")
     'pytest src tests'
     """
     # cspell:ignore posargs
-    tox_command = re.sub(r"\s*{posargs\s*([^}]*)}", r" \1", tox_command)
+    tox_command = re.sub(r"\s*{posargs:?\s*([^}]*)}", r" \1", tox_command)
     pixi_command = dedent(tox_command).strip()
     if "\n" in pixi_command:
         pixi_command = "\n" + pixi_command + "\n"
