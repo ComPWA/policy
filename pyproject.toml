@@ -48,6 +48,7 @@ dev = [
     "compwa-policy[sty]",
     "compwa-policy[test]",
     "labels",
+    "pydeps",
     "sphinx-autobuild",
     "tox >=1.9", # for skip_install, use_develop
 ]
