@@ -38,6 +38,7 @@ prof/
 .pixi/
 .tox/
 pyvenv*/
+pixi.lock
 
 # Settings
 .idea/
