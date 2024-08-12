@@ -190,7 +190,6 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
     for job_name, task_name in tox_jobs.items():
         if job_name in blacklisted_jobs:
             continue
-        task_name = job_name or "tests"
         pixi_table_name = f"tool.pixi.feature.dev.tasks.{task_name}"
         if pyproject.has_table(pixi_table_name):
             continue
@@ -217,7 +216,7 @@ def __get_tox_job_names(cfg: ConfigParser) -> dict[str, str]:
         for section in cfg.sections()
         if section.startswith("testenv")  # cspell:ignore testenv
     ]
-    return {job: job or "tests" for job in tox_jobs if job}
+    return {job: job or "tests" for job in tox_jobs}
 
 
 def __convert_tox_environment_variables(tox_env: str) -> InlineTable:
