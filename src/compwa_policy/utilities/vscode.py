@@ -46,13 +46,26 @@ def _remove_keys(obj: Any, keys: RemovedKeys) -> dict:
     {'b': 2, 'd': [4, 5], 'sub_key': {'d': 6, 'e': [7, 8]}}
     >>> _remove_keys(dct, {"sub_key": {"d"}})
     {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5], 'sub_key': {'e': [7, 8]}}
+    >>> _remove_keys(dct, {"sub_key": {"d", "e"}})
+    {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5]}
     """
     if not keys:
         return obj
     if not isinstance(obj, dict):
         return obj
     if isinstance(keys, dict):
-        return {k: _remove_keys(v, keys.get(k, {})) for k, v in obj.items()}
+        new_dict = {}
+        for key, value in obj.items():
+            sub_keys_to_remove = keys.get(key, {})
+            new_value = _remove_keys(value, sub_keys_to_remove)
+            if (
+                isinstance(new_value, abc.Iterable)
+                and not isinstance(new_value, str)
+                and len(new_value) == 0
+            ):
+                continue
+            new_dict[key] = _remove_keys(value, keys.get(key, {}))
+        return new_dict
     if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
         removed_keys = set(keys)
         return {k: v for k, v in obj.items() if k not in removed_keys}
