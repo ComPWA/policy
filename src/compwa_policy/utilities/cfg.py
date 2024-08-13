@@ -50,8 +50,8 @@ def __write_config(cfg: ConfigParser, output_path: Path | str) -> None:
 
 
 def format_config(
-    input: Path | (io.TextIOBase | str),  # noqa: A002
-    output: Path | (io.TextIOBase | str),
+    input: Path | io.TextIOBase | str,  # noqa: A002
+    output: Path | io.TextIOBase | str,
     additional_rules: Iterable[Callable[[str], str]] | None = None,
 ) -> None:
     content = read(input)
@@ -74,7 +74,7 @@ def format_config(
     write(content, target=output)
 
 
-def open_config(definition: Path | (io.TextIOBase | str)) -> ConfigParser:
+def open_config(definition: Path | io.TextIOBase | str) -> ConfigParser:
     cfg = ConfigParser()
     if isinstance(definition, io.TextIOBase):
         text = definition.read()
@@ -97,7 +97,7 @@ def open_config(definition: Path | (io.TextIOBase | str)) -> ConfigParser:
     return cfg
 
 
-def write_config(cfg: ConfigParser, output: Path | (io.TextIOBase | str)) -> None:
+def write_config(cfg: ConfigParser, output: Path | io.TextIOBase | str) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
     elif isinstance(output, (Path, str)):

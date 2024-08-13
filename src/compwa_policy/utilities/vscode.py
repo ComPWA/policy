@@ -5,8 +5,16 @@ from __future__ import annotations
 import collections
 import json
 from collections import abc
-from copy import deepcopy
-from typing import TYPE_CHECKING, Iterable, OrderedDict, TypeVar, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    OrderedDict,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
@@ -20,31 +28,49 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-def remove_setting(key: str | dict) -> None:
-    old = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new = deepcopy(old)
-    _recursive_remove_setting(key, new)
-    _update_settings_if_changed(old, new)
+RemovedKeys = Union[Iterable[str], Dict[str, "RemovedKeys"]]
+"""Type for keys to be removed from a (nested) dictionary."""
 
 
-def _recursive_remove_setting(nested_keys: str | dict, settings: dict) -> None:
-    if isinstance(nested_keys, str) and nested_keys in settings:
-        settings.pop(nested_keys)
-    elif isinstance(nested_keys, dict):
-        for key, sub_keys in nested_keys.items():
-            if key not in settings:
-                continue
-            if isinstance(sub_keys, str):
-                sub_keys = [sub_keys]
-            for sub_key in sub_keys:
-                _recursive_remove_setting(sub_key, settings[key])
-
-
-def remove_settings(keys: Iterable[str]) -> None:
-    removed_keys = set(keys)
+def remove_settings(keys: RemovedKeys) -> None:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new_settings = {k: v for k, v in settings.items() if k not in removed_keys}
+    new_settings = _remove_keys(settings, keys)
     _update_settings_if_changed(settings, new=new_settings)
+
+
+def _remove_keys(obj: Any, keys: RemovedKeys) -> dict:
+    """Recursively remove keys from a (nested) dictionary.
+
+    >>> dct = {"a": 1, "b": 2, "c": 3, "d": [4, 5], "sub_key": {"d": 6, "e": [7, 8]}}
+    >>> _remove_keys(dct, {"a", "c"})
+    {'b': 2, 'd': [4, 5], 'sub_key': {'d': 6, 'e': [7, 8]}}
+    >>> _remove_keys(dct, {"sub_key": {"d"}})
+    {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5], 'sub_key': {'e': [7, 8]}}
+    >>> _remove_keys(dct, {"sub_key": {"d", "e"}})
+    {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5]}
+    """
+    if not keys:
+        return obj
+    if not isinstance(obj, dict):
+        return obj
+    if isinstance(keys, dict):
+        new_dict = {}
+        for key, value in obj.items():
+            sub_keys_to_remove = keys.get(key, {})
+            new_value = _remove_keys(value, sub_keys_to_remove)
+            if (
+                isinstance(new_value, abc.Iterable)
+                and not isinstance(new_value, str)
+                and len(new_value) == 0
+            ):
+                continue
+            new_dict[key] = _remove_keys(value, keys.get(key, {}))
+        return new_dict
+    if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
+        removed_keys = set(keys)
+        return {k: v for k, v in obj.items() if k not in removed_keys}
+    msg = f"Invalid type for removed keys: {type(keys)}"
+    raise TypeError(msg)
 
 
 def update_settings(new_settings: dict) -> None:
