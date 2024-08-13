@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sys
 from argparse import ArgumentParser
+from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Sequence
 
 from compwa_policy.check_dev_files import (
@@ -52,12 +53,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
     dev_python_version = __get_python_version(args.dev_python_version)
+    package_managers: set[conda.PackageManagerChoice] = set(
+        _to_list(args.package_managers)  # type: ignore[arg-type]
+    )
     with Executor(
         raise_exception=False
     ) as do, ModifiablePrecommit.load() as precommit_config:
         do(citation.main, precommit_config)
         do(commitlint.main)
-        do(conda.main, dev_python_version)
+        do(conda.main, dev_python_version, package_managers)
         do(dependabot.main, args.dependabot)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
@@ -267,6 +271,16 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not push to matching major/minor version branches upon tagging",
+    )
+    package_manager_choices = ", ".join(sorted(conda.PackageManagerChoice.__args__))  # type:ignore[attr-defined]
+    parser.add_argument(
+        "--package-managers",
+        default=package_manager_choices,
+        help=dedent(f"""
+            Specify which package managers to use for the project as a comma-separated
+            list. Possible options: {package_manager_choices}
+        """).replace("\n", " "),
+        type=str,
     )
     parser.add_argument(
         "--pin-requirements",
