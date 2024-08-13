@@ -407,6 +407,10 @@ def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
 def _remove_pixi_configuration() -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(__remove_pixi_configuration, pyproject)
+        do(
+            vscode.remove_settings,
+            {"files.associations": ["**/pixi.lock", "pixi.lock"]},
+        )
 
 
 def __remove_pixi_configuration(pyproject: ModifiablePyproject) -> None:
