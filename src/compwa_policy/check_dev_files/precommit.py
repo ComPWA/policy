@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
@@ -153,7 +152,7 @@ def _update_conda_environment(precommit: Precommit) -> None:
     key = "PRETTIER_LEGACY_CLI"
     if __has_prettier_v4alpha(precommit.document):
         if key not in variables:
-            variables[key] = DoubleQuotedScalarString("1")
+            variables[key] = 1
             conda_env["variables"] = variables
             yaml.dump(conda_env, path)
             msg = f"Set {key} environment variable in {path}"
