@@ -51,6 +51,24 @@ CONFIG_PATH = _ConfigFilePaths()
 COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()
 
 
+def append_safe(expected_line: str, path: Path) -> bool:
+    """Add a line to a file if it is not already present."""
+    if path.exists() and contains_line(path, expected_line):
+        return False
+    with path.open("a") as stream:
+        stream.write(expected_line + "\n")
+    return True
+
+
+def contains_line(input: Path | io.TextIOBase | str, expected_line: str) -> bool:  # noqa: A002
+    if isinstance(input, io.TextIOBase):
+        lines = input.readlines()
+    else:
+        with open(input) as stream:
+            lines = stream.readlines()
+    return expected_line in {line.strip() for line in lines}
+
+
 def hash_file(path: Path | str) -> str:
     # https://stackoverflow.com/a/22058673
     buffer_size = 65_536
