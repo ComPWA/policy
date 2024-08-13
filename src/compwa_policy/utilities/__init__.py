@@ -64,7 +64,7 @@ def hash_file(path: Path | str) -> str:
     return sha256.hexdigest()
 
 
-def read(input: Path | (io.TextIOBase | str)) -> str:  # noqa: A002
+def read(input: Path | io.TextIOBase | str) -> str:  # noqa: A002
     if isinstance(input, (Path, str)):
         with open(input) as input_stream:
             return input_stream.read()
@@ -74,7 +74,7 @@ def read(input: Path | (io.TextIOBase | str)) -> str:  # noqa: A002
     raise TypeError(msg)
 
 
-def write(content: str, target: Path | (io.TextIOBase | str)) -> None:
+def write(content: str, target: Path | io.TextIOBase | str) -> None:
     if isinstance(target, str):
         target = Path(target)
     if isinstance(target, Path):
