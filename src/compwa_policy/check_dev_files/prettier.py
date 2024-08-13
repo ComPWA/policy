@@ -49,7 +49,7 @@ def _fix_config_content(no_prettierrc: bool) -> None:
     if no_prettierrc:
         with Executor() as do:
             do(__remove_prettierrc)
-            do(vscode.remove_setting, {"[markdown]": "editor.wordWrap"})
+            do(vscode.remove_settings, {"[markdown]": {"editor.wordWrap"}})
     else:
         if not CONFIG_PATH.prettier.exists():
             existing_content = ""

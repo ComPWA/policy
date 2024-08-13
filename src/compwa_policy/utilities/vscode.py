@@ -5,7 +5,6 @@ from __future__ import annotations
 import collections
 import json
 from collections import abc
-from copy import deepcopy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -27,26 +26,6 @@ if TYPE_CHECKING:
 
 K = TypeVar("K")
 V = TypeVar("V")
-
-
-def remove_setting(key: str | dict) -> None:
-    old = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new = deepcopy(old)
-    _recursive_remove_setting(key, new)
-    _update_settings_if_changed(old, new)
-
-
-def _recursive_remove_setting(nested_keys: str | dict, settings: dict) -> None:
-    if isinstance(nested_keys, str) and nested_keys in settings:
-        settings.pop(nested_keys)
-    elif isinstance(nested_keys, dict):
-        for key, sub_keys in nested_keys.items():
-            if key not in settings:
-                continue
-            if isinstance(sub_keys, str):
-                sub_keys = [sub_keys]
-            for sub_key in sub_keys:
-                _recursive_remove_setting(sub_key, settings[key])
 
 
 RemovedKeys = Union[Iterable[str], Dict[str, "RemovedKeys"]]
