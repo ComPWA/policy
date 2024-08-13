@@ -10,7 +10,7 @@ import yaml
 from tomlkit import inline_table, string
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_files
@@ -348,28 +348,18 @@ def __set_dev_python_version(
 
 def __update_gitattributes() -> None:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
-    msg = f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
-    return ___safe_update_file(expected_line, CONFIG_PATH.gitattributes, msg)
+    if append_safe(expected_line, CONFIG_PATH.gitattributes):
+        msg = (
+            f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
+        )
+        raise PrecommitError(msg)
 
 
 def __update_gitignore() -> None:
     ignore_path = ".pixi/"
-    msg = f"Added {ignore_path} under {CONFIG_PATH.gitignore}"
-    return ___safe_update_file(ignore_path, CONFIG_PATH.gitignore, msg)
-
-
-def ___safe_update_file(expected_line: str, path: Path, msg: str) -> None:
-    if path.exists() and ___contains_line(path, expected_line):
-        return
-    with path.open("a") as stream:
-        stream.write(expected_line + "\n")
-    raise PrecommitError(msg)
-
-
-def ___contains_line(path: Path, expected_line: str) -> bool:
-    with path.open() as stream:
-        lines = stream.readlines()
-    return expected_line in {line.strip() for line in lines}
+    if append_safe(ignore_path, CONFIG_PATH.gitignore):
+        msg = f"Added {ignore_path} under {CONFIG_PATH.gitignore}"
+        raise PrecommitError(msg)
 
 
 def __update_dev_environment(pyproject: ModifiablePyproject) -> None:
