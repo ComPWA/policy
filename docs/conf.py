@@ -26,6 +26,10 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "P.args": ("attr", "typing.ParamSpec.args"),
     "P.kwargs": ("attr", "typing.ParamSpec.kwargs"),
     "P": "typing.ParamSpec",
+    "PackageManagerChoice": (
+        "obj",
+        "compwa_policy.check_dev_files.conda.PackageManagerChoice",
+    ),
     "Path": "pathlib.Path",
     "ProjectURLs": "list",
     "PyprojectTOML": "dict",

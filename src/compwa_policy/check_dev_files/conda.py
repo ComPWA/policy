@@ -24,6 +24,7 @@ else:
     from typing_extensions import Literal
 
 PackageManagerChoice = Literal["conda", "pixi", "uv", "venv"]
+"""Package managers you want to develop the project with."""
 
 
 def main(
