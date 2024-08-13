@@ -63,7 +63,7 @@ def _update_tomlsort_config() -> None:
         if tool_table.get("tomlsort") == expected_config:
             return
         tool_table["tomlsort"] = expected_config
-        pyproject.append_to_changelog("Updated toml-sort configuration")
+        pyproject.changelog.append("Updated toml-sort configuration")
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:

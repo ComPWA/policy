@@ -227,9 +227,10 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             msg = "Modifications can only be made within a context"
             raise RuntimeError(msg)
 
-    def append_to_changelog(self, message: str) -> None:
+    @property
+    def changelog(self) -> list[str]:
         self.__assert_is_in_context()
-        self._changelog.append(message)
+        return self._changelog
 
 
 def complies_with_subset(

@@ -42,7 +42,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
     if sorted_repos != repos:
         precommit.document["repos"] = sorted_repos
         msg = "Sorted all pre-commit hooks"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def __repo_sort_key(repo: Repo) -> tuple[int, str]:
@@ -100,7 +100,7 @@ def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
     if autoupdate_commit_msg != expected_msg:
         precommit_ci[key] = expected_msg  # type:ignore[literal-required]
         msg = f"Set ci.{key} to {expected_msg!r}"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
@@ -114,13 +114,13 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     if not expected_skips and existing_skips is not None:
         del precommit_ci["skip"]
         msg = "Removed redundant ci.skip section"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
     if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast(CommentedMap, precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
         msg = "Updated ci.skip section"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def get_local_hooks(config: PrecommitConfig) -> list[str]:
@@ -201,4 +201,4 @@ def _update_repo_urls(precommit: ModifiablePrecommit) -> None:
         msg = "Updated repo URLs:"
         for url, new_url in updated_repos:
             msg += f"\n  {url} -> {new_url}"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)

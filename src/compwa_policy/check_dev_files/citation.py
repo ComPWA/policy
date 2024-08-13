@@ -207,7 +207,7 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     repos_yaml = cast(CommentedSeq, existing_repos)
     repos_yaml.yaml_set_comment_before_after_key(repo_idx + 1, before="\n")
     msg = f"Updated pre-commit hook {repo_url}"
-    precommit.append_to_changelog(msg)
+    precommit.changelog.append(msg)
 
 
 def update_vscode_settings() -> None:
