@@ -53,6 +53,7 @@ def main(precommit: ModifiablePrecommit, allowed_cell_metadata: list[str]) -> No
             Hook(
                 id="nbstripout",
                 args=[
+                    "--drop-empty-cells",
                     "--extra-keys",
                     LiteralScalarString("\n".join(sorted(extra_keys_argument)) + "\n"),
                 ],
