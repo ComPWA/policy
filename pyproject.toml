@@ -259,7 +259,6 @@ src = [
     "src",
     "tests",
 ]
-target-version = "py37"
 
 [tool.ruff.format]
 docstring-code-format = true
