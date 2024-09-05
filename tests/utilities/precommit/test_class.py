@@ -26,7 +26,7 @@ class TestModifiablePrecommit:
             expected_exception=RuntimeError,
             match=r"^Modifications can only be made within a context$",
         ):
-            precommit.append_to_changelog("Fake modification")
+            precommit.changelog.append("Fake modification")
 
     def test_context_manager_path(self, example_config: str):
         input_stream = io.StringIO(example_config)
@@ -34,7 +34,7 @@ class TestModifiablePrecommit:
             PrecommitError,
             match=r"Fake modification$",
         ), ModifiablePrecommit.load(input_stream) as precommit:
-            precommit.append_to_changelog("Fake modification")
+            precommit.changelog.append("Fake modification")
         yaml = precommit.dumps()
         assert yaml == example_config
 
@@ -43,7 +43,7 @@ class TestModifiablePrecommit:
         with pytest.raises(
             PrecommitError, match=r"Fake modification$"
         ), ModifiablePrecommit.load(stream) as precommit:
-            precommit.append_to_changelog("Fake modification")
+            precommit.changelog.append("Fake modification")
         stream.seek(0)
         yaml = stream.read()
         assert yaml == example_config
