@@ -56,7 +56,7 @@ def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
             removed_options.add(option)
     if removed_options:
         msg = f"Removed {', '.join(sorted(removed_options))} option from black configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def _update_black_settings(pyproject: ModifiablePyproject) -> None:
@@ -67,7 +67,7 @@ def _update_black_settings(pyproject: ModifiablePyproject) -> None:
         if settings.get("target-version") is not None:
             settings.pop("target-version")
             msg = "Removed target-version from black configuration"
-            pyproject.append_to_changelog(msg)
+            pyproject.changelog.append(msg)
     else:
         versions = pyproject.get_supported_python_versions()
         target_version = to_toml_array(
@@ -77,7 +77,7 @@ def _update_black_settings(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated black configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def _update_precommit_repo(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:

@@ -28,7 +28,7 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     tool_table.update(mypy_config)
     os.remove(old_config_path)
     msg = f"Imported mypy configuration from {old_config_path}"
-    pyproject.append_to_changelog(msg)
+    pyproject.changelog.append(msg)
 
 
 def _update_vscode_settings(pyproject: Pyproject) -> None:

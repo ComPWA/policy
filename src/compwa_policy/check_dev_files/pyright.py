@@ -44,7 +44,7 @@ def _merge_config_into_pyproject(
     if remove:
         os.remove(old_config_path)
     msg = f"Imported pyright configuration from {old_config_path}"
-    pyproject.append_to_changelog(msg)
+    pyproject.changelog.append(msg)
 
 
 def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
@@ -68,7 +68,7 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(pyright_settings, minimal_settings):
         pyright_settings.update(minimal_settings)
         msg = "Updated pyright configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __has_pyright(pyproject: Pyproject) -> bool:

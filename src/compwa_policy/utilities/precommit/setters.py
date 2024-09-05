@@ -28,7 +28,7 @@ def remove_precommit_hook(
     else:
         hooks.pop(hook_idx)
     msg = f"Removed {hook_id!r} hook"
-    precommit.append_to_changelog(msg)
+    precommit.changelog.append(msg)
 
 
 def __find_repo_and_hook_idx(
@@ -71,7 +71,7 @@ def update_single_hook_precommit_repo(
             before="\n",
         )
         msg = f"Added {hook_id} hook to {CONFIG_PATH.precommit}."
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
     if idx_and_repo is None:
         return
     idx, existing_hook = idx_and_repo
@@ -83,7 +83,7 @@ def update_single_hook_precommit_repo(
         repos_map = cast(CommentedMap, repos)
         repos_map.yaml_set_comment_before_after_key(idx + 1, before="\n")
         msg = f"Updated {hook_id} hook"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def _determine_expected_repo_index(config: PrecommitConfig, hook_id: str) -> int:
@@ -128,12 +128,12 @@ def update_precommit_hook(
             repos = cast(CommentedMap, precommit.document["repos"])
             repos.yaml_set_comment_before_after_key(repo_idx + 1, before="\n")
         msg = f"Added {expected_hook['id']!r} to {repo_name} pre-commit config"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
     if hooks[hook_idx] != expected_hook:
         hooks[hook_idx] = expected_hook
         msg = f"Updated args of {expected_hook['id']!r} {repo_name} pre-commit hook"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def __find_hook_idx(hooks: list[Hook], hook_id: str) -> int | None:
