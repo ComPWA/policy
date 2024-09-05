@@ -36,6 +36,7 @@ def main(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
         do(_rename_taplo_config)
         do(_update_taplo_config)
+        do(_rename_precommit_url, precommit)
         do(_update_precommit_repo, precommit)
         do(_update_tomlsort_config)
         do(_update_tomlsort_hook, precommit)
@@ -121,11 +122,32 @@ def _update_taplo_config() -> None:
         raise PrecommitError(msg)
 
 
-def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
+def _rename_precommit_url(precommit: ModifiablePrecommit) -> None:
+    mirrors_repo_with_idx = precommit.find_repo_with_index(r"^.*/mirrors-taplo$")
+    rev = ""
+    if mirrors_repo_with_idx is not None:
+        idx, repo = mirrors_repo_with_idx
+        rev = repo["rev"]
+        precommit.document["repos"].pop(idx)
+        precommit.changelog.append("Renamed mirrors-taplo repo to taplo-pre-commit")
     expected_hook = Repo(
-        repo="https://github.com/ComPWA/mirrors-taplo",
+        repo="https://github.com/ComPWA/taplo-pre-commit",
+        rev=rev,
+        hooks=[Hook(id="taplo-format")],
+    )
+    precommit.update_single_hook_repo(expected_hook)
+
+
+def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
+    mirrors_repo_with_idx = precommit.find_repo_with_index(r"^.*/mirrors-taplo$")
+    if mirrors_repo_with_idx is not None:
+        idx, _ = mirrors_repo_with_idx
+        precommit.document["repos"].pop(idx)
+        precommit.changelog.append("Renamed mirrors-taplo repo to taplo-pre-commit")
+    expected_hook = Repo(
+        repo="https://github.com/ComPWA/taplo-pre-commit",
         rev="",
-        hooks=[Hook(id="taplo")],
+        hooks=[Hook(id="taplo-format")],
     )
     precommit.update_single_hook_repo(expected_hook)
 
