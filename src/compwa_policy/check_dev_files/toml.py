@@ -55,7 +55,6 @@ def _update_tomlsort_config() -> None:
         ignore_case=True,
         in_place=True,
         sort_first=to_toml_array(sort_first),
-        sort_table_keys=True,
         spaces_indent_inline_array=4,
         trailing_comma_inline_array=True,
     )
