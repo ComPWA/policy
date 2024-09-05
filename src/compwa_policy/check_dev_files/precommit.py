@@ -63,6 +63,7 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
         "isort",
         "prettier",
         "taplo",
+        "taplo-format",
         "toml-sort",
     }
     if hook_id in formatter_hooks:
