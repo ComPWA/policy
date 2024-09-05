@@ -231,12 +231,6 @@ def _create_argparse() -> ArgumentParser:
         help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
-        "--no-gitpod",
-        action="store_true",
-        default=False,
-        help="Do not create a GitPod config file",
-    )
-    parser.add_argument(
         "--no-prettierrc",
         action="store_true",
         default=False,
