@@ -173,7 +173,7 @@ def _update_conda_environment(precommit: Precommit) -> None:
 
 
 def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
-    repo = find_repo(config, search_pattern=r"^.*/mirrors-prettier$")
+    repo = find_repo(config, search_pattern=r"^.*/(mirrors-)?prettier(-pre-commit)?$")
     if repo is None:
         return False
     rev = repo.get("rev", "")
