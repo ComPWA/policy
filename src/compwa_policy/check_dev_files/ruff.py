@@ -205,11 +205,18 @@ def __update_global_settings(
     pyproject: ModifiablePyproject, has_notebooks: bool
 ) -> None:
     settings = pyproject.get_table("tool.ruff", create=True)
-    minimal_settings = {
+    minimal_settings: dict[str, Any] = {
         "preview": True,
         "show-fixes": True,
-        "target-version": ___get_target_version(pyproject),
     }
+    project = pyproject.get_table("project", create=True)
+    if "requires-python" in project:
+        if settings.get("target-version") is not None:
+            settings.pop("target-version")
+            msg = "Removed target-version from Ruff configuration"
+            pyproject.changelog.append(msg)
+    else:
+        minimal_settings["target-version"] = ___get_target_version(pyproject)
     if has_notebooks:
         key = "extend-include"
         default_includes = sorted({

@@ -1,5 +1,7 @@
 """Update :file:`pyproject.toml` black configuration."""
 
+from typing import Any
+
 from ruamel.yaml import YAML
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
@@ -59,12 +61,19 @@ def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:
 
 def _update_black_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.black", create=True)
-    versions = pyproject.get_supported_python_versions()
-    target_version = to_toml_array(sorted("py" + v.replace(".", "") for v in versions))
-    minimal_settings = {
-        "preview": True,
-        "target-version": target_version,
-    }
+    minimal_settings: dict[str, Any] = {"preview": True}
+    project_root = pyproject.get_table("project", create=True)
+    if "requires-python" in project_root:
+        if settings.get("target-version") is not None:
+            settings.pop("target-version")
+            msg = "Removed target-version from black configuration"
+            pyproject.changelog.append(msg)
+    else:
+        versions = pyproject.get_supported_python_versions()
+        target_version = to_toml_array(
+            sorted("py" + v.replace(".", "") for v in versions)
+        )
+        minimal_settings["target-version"] = target_version
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated black configuration"
