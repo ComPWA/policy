@@ -50,7 +50,6 @@ repos:
         args:
           - --allow-labels
           - --dependabot=update
-          - --no-gitpod
           - --no-notebooks
           - --no-prettierrc
           - --no-pypi

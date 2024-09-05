@@ -52,6 +52,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.repo_title:
         args.repo_title = args.repo_name
     has_notebooks = not args.no_notebooks
+    use_gitpod = args.gitpod
     dev_python_version = __get_python_version(args.dev_python_version)
     package_managers: set[conda.PackageManagerChoice] = set(
         _to_list(args.package_managers)  # type: ignore[arg-type]
@@ -120,7 +121,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(readthedocs.main, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
         do(vscode.main, has_notebooks)
-        do(gitpod.main, args.no_gitpod, dev_python_version)
+        do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(tox.main, has_notebooks)
         do(cspell.main, precommit_config, args.no_cspell_update)
@@ -179,6 +180,12 @@ def _create_argparse() -> ArgumentParser:
         help="Host documentation on GitHub Pages",
     )
     parser.add_argument(
+        "--gitpod",
+        action="store_true",
+        default=False,
+        help="Create a GitPod config file",
+    )
+    parser.add_argument(
         "--keep-issue-templates",
         help="Do not remove the .github/ISSUE_TEMPLATE directory",
         action="store_true",
@@ -222,12 +229,6 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Skip check that concern config files for Python projects.",
-    )
-    parser.add_argument(
-        "--no-gitpod",
-        action="store_true",
-        default=False,
-        help="Do not create a GitPod config file",
     )
     parser.add_argument(
         "--no-prettierrc",
