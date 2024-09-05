@@ -86,9 +86,7 @@ def __remove_prettierrc() -> None:
 
 
 def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:
-    repo = precommit.find_repo(r".*/mirrors-prettier$")
-    if repo is None:
-        repo = precommit.find_repo(r".*/prettier$")
+    repo = precommit.find_repo(r".*/(mirrors-)?prettier$")
     if repo is None:
         return
     repo["repo"] = "https://github.com/ComPWA/prettier-pre-commit"
