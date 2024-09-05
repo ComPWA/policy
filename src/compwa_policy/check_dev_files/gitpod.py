@@ -16,11 +16,11 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
 
-def main(no_gitpod: bool, python_version: PythonVersion) -> None:
-    if no_gitpod:
+def main(use_gitpod: bool, python_version: PythonVersion) -> None:
+    if not use_gitpod:
         if CONFIG_PATH.gitpod.exists():
             os.remove(CONFIG_PATH.gitpod)
-            msg = f"Removed {CONFIG_PATH.gitpod} as requested by --no-gitpod"
+            msg = f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"
             raise PrecommitError(msg)
         remove_badge(r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
         return
