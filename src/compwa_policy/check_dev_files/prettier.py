@@ -11,7 +11,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit import Precommit
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 # cspell:ignore esbenp rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
@@ -25,14 +25,15 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
     __EXPECTED_CONFIG = __STREAM.read()
 
 
-def main(precommit: Precommit, no_prettierrc: bool) -> None:
-    if precommit.find_repo(r".*/mirrors-prettier") is None:
+def main(precommit: ModifiablePrecommit, no_prettierrc: bool) -> None:
+    if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
         _remove_configuration()
     else:
         with Executor() as do:
             do(_fix_config_content, no_prettierrc)
             do(add_badge, __BADGE)
             do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
+            do(_update_prettier_hook, precommit)
             do(_update_prettier_ignore)
 
 
@@ -82,6 +83,14 @@ def __remove_prettierrc() -> None:
     CONFIG_PATH.prettier.unlink()
     msg = f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
     raise PrecommitError(msg)
+
+
+def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:
+    repo = precommit.find_repo(r".*/(mirrors-)?prettier$")
+    if repo is None:
+        return
+    repo["repo"] = "https://github.com/ComPWA/prettier-pre-commit"
+    precommit.changelog.append("Updated URL for Prettier pre-commit hook")
 
 
 def _update_prettier_ignore() -> None:
