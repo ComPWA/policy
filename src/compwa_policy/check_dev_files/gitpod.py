@@ -7,6 +7,7 @@ import yaml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -18,11 +19,9 @@ from compwa_policy.utilities.yaml import write_yaml
 
 def main(use_gitpod: bool, python_version: PythonVersion) -> None:
     if not use_gitpod:
-        if CONFIG_PATH.gitpod.exists():
-            os.remove(CONFIG_PATH.gitpod)
-            msg = f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"
-            raise PrecommitError(msg)
-        remove_badge(r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
+        with Executor() as do:
+            do(remove_gitpod_config)
+            do(remove_badge, r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
         return
     error_message = ""
     expected_config = _generate_gitpod_config(python_version)
@@ -44,6 +43,13 @@ def main(use_gitpod: bool, python_version: PythonVersion) -> None:
         )
     except PrecommitError:
         pass
+
+
+def remove_gitpod_config() -> None:
+    if CONFIG_PATH.gitpod.exists():
+        os.remove(CONFIG_PATH.gitpod)
+        msg = f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"
+        raise PrecommitError(msg)
 
 
 def _extract_extensions() -> dict:
