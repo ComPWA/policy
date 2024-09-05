@@ -130,12 +130,17 @@ def get_local_hooks(config: PrecommitConfig) -> list[str]:
 
 
 def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
+    skipped_hooks = {
+        "check-jsonschema",
+        "pyright",
+        "taplo",
+    }
     return [
         hook["id"]
         for repo in config["repos"]
         for hook in repo["hooks"]
         if repo["repo"]
-        if hook["id"] in __get_skipped_hooks(config)
+        if hook["id"] in skipped_hooks
     ]
 
 
@@ -165,17 +170,6 @@ def _update_conda_environment(precommit: Precommit) -> None:
         yaml.dump(conda_env, path)
         msg = f"Removed {key} environment variable {path}"
         raise PrecommitError(msg)
-
-
-def __get_skipped_hooks(config: PrecommitConfig) -> set[str]:
-    skipped_hooks = {
-        "check-jsonschema",
-        "pyright",
-        "taplo",
-    }
-    if __has_prettier_v4alpha(config):
-        skipped_hooks.add("prettier")
-    return skipped_hooks
 
 
 def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:
