@@ -342,6 +342,5 @@ sort_first = [
     "tool.setuptools",
     "tool.setuptools_scm",
 ]
-sort_table_keys = true
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = true
