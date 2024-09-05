@@ -4,10 +4,8 @@ ci:
   skip:
     - check-dev-files
     - mypy
-    - prettier
     - pyright
     - self-check
-    - taplo
 
 repos:
   - repo: meta
@@ -16,7 +14,7 @@ repos:
       - id: check-useless-excludes
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.5
+    rev: v0.6.3
     hooks:
       - id: ruff
         args: [--fix]
@@ -70,10 +68,10 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/ComPWA/mirrors-taplo
-    rev: v0.8.1
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
     hooks:
-      - id: taplo
+      - id: taplo-format
 
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.23.1
@@ -83,12 +81,12 @@ repos:
         exclude: (?x)^(labels/.*\.toml)$
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.13.0
+    rev: v8.13.3
     hooks:
       - id: cspell
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 2.7.3
+    rev: 3.0.3
     hooks:
       - id: editorconfig-checker
         name: editorconfig
@@ -109,6 +107,6 @@ repos:
           - python
 
   - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.374
+    rev: v1.1.379
     hooks:
       - id: pyright
