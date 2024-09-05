@@ -185,12 +185,9 @@ def __import_conda_environment(pyproject: ModifiablePyproject) -> None:
     conda_variables = {k: str(v) for k, v in conda.get("variables", {}).items()}
     if not conda_variables:
         return
-    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
-    pixi_variables = dict(activation_table.get("env", {}))
-    if not complies_with_subset(pixi_variables, conda_variables):
-        new_env = pixi_variables
-        new_env.update(conda_variables)
-        activation_table["env"] = new_env
+    env_table = pyproject.get_table("tool.pixi.activation.env", create=True)
+    if not complies_with_subset(env_table, conda_variables):
+        env_table.update(conda_variables)
         msg = "Imported conda environment variables for Pixi"
         pyproject.changelog.append(msg)
 
