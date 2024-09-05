@@ -42,8 +42,8 @@ def main(precommit: ModifiablePrecommit, allowed_cell_metadata: list[str]) -> No
     existing_hooks = repo["hooks"]
     if existing_hooks:
         args = existing_hooks[0].get("args", [])
-        if len(args) >= 2:  # noqa: PLR2004
-            existing_keys = {line.strip() for line in args[1].split("\n")}
+        if len(args) >= 3:  # noqa: PLR2004
+            existing_keys = {line.strip() for line in args[2].split("\n")}
             existing_keys = {key for key in existing_keys if key}
             extra_keys_argument.update(existing_keys)
     expected_repo = Repo(
