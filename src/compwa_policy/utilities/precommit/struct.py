@@ -1,4 +1,4 @@
-# noqa: D100
+# noqa: A005, D100
 from __future__ import annotations
 
 import sys
