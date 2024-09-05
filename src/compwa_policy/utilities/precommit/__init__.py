@@ -127,9 +127,10 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             msg = f"Target of type {type(target).__name__} is not supported"
             raise TypeError(msg)
 
-    def append_to_changelog(self, message: str) -> None:
+    @property
+    def changelog(self) -> list[str]:
         self.__assert_is_in_context()
-        self.__changelog.append(message)
+        return self.__changelog
 
     def __assert_is_in_context(self) -> None:
         if not self.__is_in_context:

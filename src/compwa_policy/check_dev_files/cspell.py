@@ -67,7 +67,7 @@ def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
             continue
         repo["repo"] = __REPO_URL
         msg = f"Updated cSpell pre-commit repo URL to {__REPO_URL}"
-        precommit.append_to_changelog(msg)
+        precommit.changelog.append(msg)
 
 
 def _remove_configuration() -> None:

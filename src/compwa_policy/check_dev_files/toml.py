@@ -64,7 +64,7 @@ def _update_tomlsort_config() -> None:
         if tool_table.get("tomlsort") == expected_config:
             return
         tool_table["tomlsort"] = expected_config
-        pyproject.append_to_changelog("Updated toml-sort configuration")
+        pyproject.changelog.append("Updated toml-sort configuration")
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
@@ -129,7 +129,7 @@ def _rename_precommit_url(precommit: ModifiablePrecommit) -> None:
         idx, repo = mirrors_repo_with_idx
         rev = repo["rev"]
         precommit.document["repos"].pop(idx)
-        precommit.append_to_changelog("Renamed mirrors-taplo repo to taplo-pre-commit")
+        precommit.changelog.append("Renamed mirrors-taplo repo to taplo-pre-commit")
     expected_hook = Repo(
         repo="https://github.com/ComPWA/taplo-pre-commit",
         rev=rev,
@@ -143,7 +143,7 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     if mirrors_repo_with_idx is not None:
         idx, _ = mirrors_repo_with_idx
         precommit.document["repos"].pop(idx)
-        precommit.append_to_changelog("Renamed mirrors-taplo repo to taplo-pre-commit")
+        precommit.changelog.append("Renamed mirrors-taplo repo to taplo-pre-commit")
     expected_hook = Repo(
         repo="https://github.com/ComPWA/taplo-pre-commit",
         rev="",

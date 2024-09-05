@@ -109,7 +109,7 @@ def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
         return
     nbqa_table.pop(option)
     msg = f"Removed {option!r} nbQA options from [{table_key}]"
-    pyproject.append_to_changelog(msg)
+    pyproject.changelog.append(msg)
 
 
 def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None:
@@ -117,7 +117,7 @@ def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None
     if isinstance(tools, dict) and tool_table in tools:
         tools.pop(tool_table)
         msg = f"Removed [tool.{tool_table}] table"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def _remove_pydocstyle(
@@ -180,7 +180,7 @@ def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
     for key in lint_settings:
         del global_settings[key]
     if lint_arrays or lint_tables:
-        pyproject.append_to_changelog("Moved linting configuration to [tool.ruff.lint]")
+        pyproject.changelog.append("Moved linting configuration to [tool.ruff.lint]")
 
 
 def _update_ruff_config(
@@ -231,7 +231,7 @@ def __update_global_settings(
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated Ruff configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___get_target_version(pyproject: Pyproject) -> str:
@@ -273,7 +273,7 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated Ruff formatter configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
@@ -314,11 +314,11 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated Ruff linting configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
     if "extend-select" in settings:
         del settings["extend-select"]
         msg = "Removed [tool.ruff.lint.extend-select] configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___get_task_tags(ruff_settings: Mapping[str, Any]) -> Array:
@@ -415,7 +415,7 @@ def __update_per_file_ignores(
     if not complies_with_subset(per_file_ignores, minimal_settings):
         per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___get_per_file_ignores(
@@ -527,7 +527,7 @@ def ___update_ruff_lint_table(
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = f"Updated Ruff {table_name} settings"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __remove_nbqa(
@@ -548,7 +548,7 @@ def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
         del tool_table["nbqa"]
     if nbqa_addopts:
         msg = "Removed Ruff configuration for nbQA"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:

@@ -87,7 +87,7 @@ def __configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(setuptools_scm, expected_scheme):
         setuptools_scm.update(expected_scheme)
         msg = "Configured setuptools_scm to not include git info in package version for pixi"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __define_combined_ci_job(pyproject: ModifiablePyproject) -> None:
@@ -109,7 +109,7 @@ def __define_combined_ci_job(pyproject: ModifiablePyproject) -> None:
         depends_on = expected | existing & tasks
         ci["depends_on"] = to_toml_array(sorted(depends_on), multiline=False)
         msg = "Updated combined CI job for Pixi"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __define_minimal_project(pyproject: ModifiablePyproject) -> None:
@@ -122,7 +122,7 @@ def __define_minimal_project(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(settings, minimal_settings, exact_value_match=False):
         settings.update(minimal_settings)
         msg = "Defined minimal Pixi project settings"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __import_conda_dependencies(pyproject: ModifiablePyproject) -> None:
@@ -146,7 +146,7 @@ def __import_conda_dependencies(pyproject: ModifiablePyproject) -> None:
     if not complies_with_subset(dependencies, expected_dependencies):
         dependencies.update(expected_dependencies)
         msg = "Imported conda dependencies into Pixi"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
@@ -192,7 +192,7 @@ def __import_conda_environment(pyproject: ModifiablePyproject) -> None:
         new_env.update(conda_variables)
         activation_table["env"] = new_env
         msg = "Imported conda environment variables for Pixi"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __import_tox_tasks(pyproject: ModifiablePyproject) -> None:
@@ -224,7 +224,7 @@ def __import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         imported_tasks.append(task_name)
     if imported_tasks:
         msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___get_tox_job_names(cfg: ConfigParser) -> dict[str, str]:
@@ -270,7 +270,7 @@ def __clean_up_task_env(pyproject: ModifiablePyproject) -> None:
             updated_tasks.append(task_name)
     if updated_tasks:
         msg = f"Removed redundant environment variables from Pixi tasks {', '.join(updated_tasks)}"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___load_pixi_environment_variables(pyproject: Pyproject) -> dict[str, str]:
@@ -310,7 +310,7 @@ def __install_package_editable(pyproject: ModifiablePyproject) -> None:
     if dict(existing.get(package_name, {})) != dict(editable):
         existing[package_name] = editable
         msg = "Installed Python package in editable mode in Pixi"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
@@ -332,7 +332,7 @@ def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
             updated_tasks.append(pixi_task)
     if updated_tasks:
         msg = f"Outsourced Pixi tasks to tox: {', '.join(updated_tasks)}"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __set_dev_python_version(
@@ -343,7 +343,7 @@ def __set_dev_python_version(
     if dependencies.get("python") != version:
         dependencies["python"] = version
         msg = f"Set Python version for Pixi developer environment to {version}"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __update_gitattributes() -> None:
@@ -372,7 +372,7 @@ def __update_dev_environment(pyproject: ModifiablePyproject) -> None:
     if environments.get("default") != expected:
         environments["default"] = expected
         msg = "Updated Pixi developer environment"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __update_docnb_and_doclive(pyproject: ModifiablePyproject, table_key: str) -> None:
@@ -393,7 +393,7 @@ def __update_docnb_and_doclive(pyproject: ModifiablePyproject, table_key: str) -
                 updated_tasks.append(task_name)
     if updated_tasks:
         msg = f"Updated `cmd` of Pixi tasks {', '.join(updated_tasks)}"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
@@ -422,7 +422,7 @@ def __remove_pixi_configuration(pyproject: ModifiablePyproject) -> None:
         updated = True
     if updated:
         msg = "Removed Pixi configuration files"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def ___remove(path: Path) -> bool:

@@ -40,7 +40,7 @@ def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
     tool_table = pyproject.get_table("tool.coverage.run", create=True)
     tool_table.update(coverage_config)
     msg = f"Imported Coverage.py configuration from {CONFIG_PATH.pytest_ini}"
-    pyproject.append_to_changelog(msg)
+    pyproject.changelog.append(msg)
 
 
 def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -55,7 +55,7 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     tool_table.update(pytest_config)
     CONFIG_PATH.pytest_ini.unlink()
     msg = f"Imported pytest configuration from {CONFIG_PATH.pytest_ini}"
-    pyproject.append_to_changelog(msg)
+    pyproject.changelog.append(msg)
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
@@ -68,7 +68,7 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
     if isinstance(existing, str) or sorted(existing) != sorted(expected):
         config["addopts"] = expected
         msg = f"Updated [{table_key}]"
-        pyproject.append_to_changelog(msg)
+        pyproject.changelog.append(msg)
 
 
 def __get_expected_addopts(existing: str | Iterable) -> Array:
