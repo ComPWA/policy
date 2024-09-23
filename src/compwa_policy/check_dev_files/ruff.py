@@ -45,7 +45,7 @@ def main(
         do(_remove_pylint, precommit, pyproject)
         do(_move_ruff_lint_config, pyproject)
         if has_notebooks and imports_on_top:
-            do(_sort_imports_on_top, precommit)
+            do(_sort_imports_on_top, precommit, pyproject)
         do(_update_ruff_config, precommit, pyproject, has_notebooks)
         do(_update_precommit_hook, precommit, has_notebooks)
         do(_update_lint_dependencies, pyproject)
@@ -582,7 +582,25 @@ def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) 
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _sort_imports_on_top(precommit: ModifiablePrecommit) -> None:
+def _sort_imports_on_top(
+    precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
+) -> None:
+    __add_isort_configuration(pyproject)
+    __add_nbqa_isort_pre_commit(precommit)
+
+
+def __add_isort_configuration(pyproject: ModifiablePyproject) -> None:
+    isort_settings = pyproject.get_table("tool.isort", create=True)
+    minimal_settings = dict(
+        profile="black",
+    )
+    if not complies_with_subset(isort_settings, minimal_settings):
+        isort_settings.update(minimal_settings)
+        msg = "Made isort configuration compatible with Ruff"
+        pyproject.changelog.append(msg)
+
+
+def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
     existing_repo = precommit.find_repo("https://github.com/nbQA-dev/nbQA")
     excludes = None
     if existing_repo is not None and existing_repo.get("hooks"):
