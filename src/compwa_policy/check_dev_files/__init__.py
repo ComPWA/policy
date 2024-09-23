@@ -201,7 +201,7 @@ def _create_argparse() -> ArgumentParser:
         "--outsource-pixi-to-tox",
         action="store_true",
         default=False,
-        help="Run ",
+        help="Run tox command through pixi",
     )
     parser.add_argument(
         "--no-cspell-update",
