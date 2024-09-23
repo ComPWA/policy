@@ -27,7 +27,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
+def main(
+    precommit: ModifiablePrecommit,
+    has_notebooks: bool,
+    imports_on_top: bool,
+) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(
             add_badge,
@@ -36,10 +40,12 @@ def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
         do(pyproject.remove_dependency, "radon")
         do(_remove_black, precommit, pyproject)
         do(_remove_flake8, precommit, pyproject)
-        do(_remove_isort, precommit, pyproject)
+        do(_remove_isort, precommit, pyproject, imports_on_top)
         do(_remove_pydocstyle, precommit, pyproject)
         do(_remove_pylint, precommit, pyproject)
         do(_move_ruff_lint_config, pyproject)
+        if has_notebooks and imports_on_top:
+            do(_sort_imports_on_top, precommit)
         do(_update_ruff_config, precommit, pyproject, has_notebooks)
         do(_update_precommit_hook, precommit, has_notebooks)
         do(_update_lint_dependencies, pyproject)
@@ -87,6 +93,7 @@ def _remove_flake8(
 def _remove_isort(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    imports_on_top: bool,
 ) -> None:
     with Executor() as do:
         do(__remove_nbqa_option, pyproject, "black")
@@ -94,7 +101,8 @@ def _remove_isort(
         do(__remove_tool_table, pyproject, "isort")
         do(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
         do(precommit.remove_hook, "isort")
-        do(precommit.remove_hook, "nbqa-isort")
+        if not imports_on_top:
+            do(precommit.remove_hook, "nbqa-isort")
         do(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
         do(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
 
@@ -571,6 +579,26 @@ def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) 
         rev="",
         hooks=[lint_hook, format_hook],
     )
+    precommit.update_single_hook_repo(expected_repo)
+
+
+def _sort_imports_on_top(precommit: ModifiablePrecommit) -> None:
+    existing_repo = precommit.find_repo("https://github.com/nbQA-dev/nbQA")
+    excludes = None
+    if existing_repo is not None and existing_repo.get("hooks"):
+        nbqa_hook_candidates = [
+            h for h in existing_repo["hooks"] if h["id"] == "nbqa-isort"
+        ]
+        if nbqa_hook_candidates:
+            nbqa_hook = nbqa_hook_candidates[0]
+            excludes = nbqa_hook.get("exclude")
+    expected_repo = Repo(
+        repo="https://github.com/nbQA-dev/nbQA",
+        rev="1.9.0",
+        hooks=[Hook(id="nbqa-isort", args=YAML(typ="rt").load("[--float-to-top]"))],
+    )
+    if excludes is not None:
+        expected_repo["hooks"][0]["exclude"] = excludes
     precommit.update_single_hook_repo(expected_repo)
 
 
