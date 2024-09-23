@@ -111,7 +111,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
-                do(ruff.main, precommit_config, has_notebooks)
+                do(ruff.main, precommit_config, has_notebooks, args.imports_on_top)
         if args.pin_requirements != "no":
             do(
                 update_pip_constraints.main,
@@ -198,10 +198,16 @@ def _create_argparse() -> ArgumentParser:
         default=False,
     )
     parser.add_argument(
+        "--imports-on-top",
+        action="store_true",
+        default=False,
+        help="Sort notebook imports on the top",
+    )
+    parser.add_argument(
         "--outsource-pixi-to-tox",
         action="store_true",
         default=False,
-        help="Run ",
+        help="Run tox command through pixi",
     )
     parser.add_argument(
         "--no-cspell-update",
