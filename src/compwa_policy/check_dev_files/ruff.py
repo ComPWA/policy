@@ -97,11 +97,11 @@ def _remove_isort(
 ) -> None:
     with Executor() as do:
         do(__remove_nbqa_option, pyproject, "black")
-        do(__remove_nbqa_option, pyproject, "isort")
-        do(__remove_tool_table, pyproject, "isort")
         do(vscode.remove_extension_recommendation, "ms-python.isort", unwanted=True)
         do(precommit.remove_hook, "isort")
         if not imports_on_top:
+            do(__remove_tool_table, pyproject, "isort")
+            do(__remove_nbqa_option, pyproject, "isort")
             do(precommit.remove_hook, "nbqa-isort")
         do(vscode.remove_settings, ["isort.check", "isort.importStrategy"])
         do(remove_badge, r".*https://img\.shields\.io/badge/%20imports\-isort")
