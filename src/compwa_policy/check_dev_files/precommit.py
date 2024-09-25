@@ -45,7 +45,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
         precommit.changelog.append(msg)
 
 
-def __repo_sort_key(repo: Repo) -> tuple[int, str]:
+def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # noqa: PLR0911
     repo_url = repo["repo"]
     if repo_url == "meta":
         return 0, repo_url
@@ -54,8 +54,10 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
     hooks = repo["hooks"]
     if any(hook["id"] == "nbstripout" for hook in hooks):
         return 2, repo_url
-    if len(hooks) > 1:
+    if any(hook["id"] == "nbqa-isort" for hook in hooks):
         return 3, repo_url
+    if len(hooks) > 1:
+        return 4, repo_url
     hook_id = hooks[0]["id"]
     formatter_hooks = {
         "black",
@@ -67,8 +69,8 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:
         "toml-sort",
     }
     if hook_id in formatter_hooks:
-        return 4, hook_id
-    return 5, hook_id
+        return 5, hook_id
+    return 6, hook_id
 
 
 def _update_policy_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
