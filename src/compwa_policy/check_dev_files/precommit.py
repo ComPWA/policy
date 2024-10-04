@@ -51,14 +51,14 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # noqa: PLR0911
         return 0, repo_url
     if re.match(r"^.*/(ComPWA-)?policy$", repo_url) is not None:
         return 1, repo_url
-    hooks = repo["hooks"]
-    if any(hook["id"] == "nbstripout" for hook in hooks):
+    hook_ids = [hook["id"] for hook in repo["hooks"]]
+    if any(i == "nbstripout" for i in hook_ids):
         return 2, repo_url
-    if any(hook["id"] == "nbqa-isort" for hook in hooks):
+    if any(i == "nbqa-isort" for i in hook_ids):
         return 3, repo_url
-    if len(hooks) > 1:
+    if len(hook_ids) > 1:
         return 4, repo_url
-    hook_id = hooks[0]["id"]
+    hook_id = hook_ids[0]
     formatter_hooks = {
         "black",
         "blacken-docs",
