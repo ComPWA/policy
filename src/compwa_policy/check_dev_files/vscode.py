@@ -90,6 +90,7 @@ def _remove_outdated_settings() -> None:
         "githubPullRequests.telemetry.enabled",
         "gitlens.advanced.telemetry.enabled",
         "python.analysis.diagnosticMode",
+        "python.analysis.typeCheckingMode",
         "python.formatting.provider",
         "python.linting.banditEnabled",
         "python.linting.enabled",
