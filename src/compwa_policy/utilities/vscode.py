@@ -2,19 +2,9 @@
 
 from __future__ import annotations
 
-import collections
 import json
 from collections import abc
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    OrderedDict,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, TypeVar, Union
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
@@ -183,44 +173,8 @@ def __to_lower(lst: list[str]) -> list[str]:
 
 def __dump_config(config: dict, path: Path) -> None:
     with open(path, "w") as stream:
-        json.dump(sort_case_insensitive(config), stream, indent=2)
+        json.dump(config, stream, indent=2, sort_keys=True)
         stream.write("\n")
-
-
-@overload
-def sort_case_insensitive(dct: dict[K, V]) -> OrderedDict[K, V]: ...  # type: ignore[misc]
-@overload
-def sort_case_insensitive(dct: str) -> str: ...  # type: ignore[misc]
-@overload
-def sort_case_insensitive(dct: Iterable[K]) -> list[K]: ...  # type: ignore[misc]
-@overload
-def sort_case_insensitive(dct: K) -> K: ...
-def sort_case_insensitive(dct):  # type: ignore[no-untyped-def]
-    """Order a `dict` by key, **case-insensitive**.
-
-    This function is implemented in order to :func:`~json.dump` a JSON file with a
-    sorting that is the same as `the one used by VS Code
-    <https://code.visualstudio.com/updates/v1_76#_jsonc-document-sorting>`_.
-
-    >>> import sys
-    >>> import pytest
-    >>> if sys.version_info >= (3, 12):
-    ...     pytest.skip()
-    >>> sort_case_insensitive({
-    ...     "cSpell.enabled": True,
-    ...     "coverage-gutters": ["test", "coverage.xml"],
-    ... })
-    OrderedDict([('coverage-gutters', ['coverage.xml', 'test']), ('cSpell.enabled', True)])
-    """
-    if isinstance(dct, abc.Mapping):
-        return collections.OrderedDict({
-            k: sort_case_insensitive(dct[k]) for k in sorted(dct, key=str.lower)
-        })
-    if isinstance(dct, str):
-        return dct
-    if isinstance(dct, abc.Iterable):
-        return sorted(dct, key=lambda t: str(t).lower())
-    return dct
 
 
 def __load_config(path: Path, create: bool = False) -> dict:
