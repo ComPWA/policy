@@ -23,7 +23,6 @@
     "**/Project.toml",
     "*.ico",
     "*.root",
-    "*.rst_t",
     "*.svg",
     "*particle*.*ml",
     ".constraints/*.txt",
