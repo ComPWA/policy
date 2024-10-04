@@ -152,9 +152,14 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
 
 
 def _update_vscode_extensions() -> None:
-    # cspell:ignore bungcip tamasfe
+    # cspell:ignore betterer bungcip panekj tamasfe
     with Executor() as do:
-        do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
+        do(vscode.add_extension_recommendation, "panekj.even-betterer-toml")
+        do(
+            vscode.remove_extension_recommendation,
+            "tamasfe.even-better-toml",
+            unwanted=True,
+        )
         do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)
 
 

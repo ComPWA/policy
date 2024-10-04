@@ -14,12 +14,12 @@
     "ms-python.vscode-pylance",
     "ms-vscode.live-server",
     "ms-vsliveshare.vsliveshare",
+    "panekj.even-betterer-toml",
     "redhat.vscode-yaml",
     "ryanluker.vscode-coverage-gutters",
     "soulcode.vscode-unwanted-extensions",
     "stkb.rewrap",
     "streetsidesoftware.code-spell-checker",
-    "tamasfe.even-better-toml",
     "yzhang.markdown-all-in-one"
   ],
   "unwantedRecommendations": [
@@ -30,6 +30,7 @@
     "ms-python.flake8",
     "ms-python.isort",
     "ms-python.pylint",
+    "tamasfe.even-better-toml",
     "travisillig.vscode-json-stable-stringify",
     "tyriar.sort-lines"
   ]
