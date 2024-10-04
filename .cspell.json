@@ -31,6 +31,7 @@
     ".gitpod.*",
     ".pre-commit-config.yaml",
     ".prettierignore",
+    ".taplo.toml",
     ".vscode/*",
     "codecov.yml",
     "docs/_templates/*",
