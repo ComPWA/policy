@@ -344,3 +344,120 @@ sort_first = [
 ]
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = true
+
+[tool.tox]
+env_list = [
+    "doc",
+    "py",
+    "sty",
+]
+requires = ["tox>=4.19"]
+skip_install = true
+skip_missing_interpreters = true
+skipsdist = true
+
+[tool.tox.env.cov]
+allowlist_externals = ["pytest"]
+commands = [
+    [
+        "pytest",
+        "--cov-fail-under=35",
+        "--cov-report=html",
+        "--cov-report=xml",
+        "--cov=compwa_policy",
+        "{posargs}",
+    ],
+]
+description = "Compute test coverage"
+
+[tool.tox.env.doc]
+allowlist_externals = ["sphinx-build"]
+commands = [
+    [
+        "sphinx-build",
+        "docs/",
+        "docs/_build/html",
+        "--builder=html",
+        "--fail-on-warning",
+        "--keep-going",
+        "--show-traceback",
+    ],
+]
+description = "Build documentation and API through Sphinx"
+setenv = [
+    {"FORCE_COLOR" = "yes"},
+]
+
+[tool.tox.env.doclive]
+allowlist_externals = ["sphinx-autobuild"]
+commands = [
+    [
+        "sphinx-autobuild",
+        "docs/",
+        "docs/_build/html",
+        "--open-browser",
+        "--re-ignore=.*/__pycache__/.*",
+        "--re-ignore=.*\\.egg-info",
+        "--re-ignore=docs/_build/.*",
+        "--re-ignore=docs/api/.*",
+        "--watch=docs",
+        "--watch=src",
+    ],
+]
+description = "Set up a server to directly preview changes to the HTML pages"
+setenv = [
+    {"FORCE_COLOR" = "yes"},
+]
+
+[tool.tox.env.linkcheck]
+allowlist_externals = [
+    "sphinx-build",
+]
+commands = [
+    [
+        "sphinx-build",
+        "docs/",
+        "docs/_build/linkcheck",
+        "--builder=linkcheck",
+        "--show-traceback",
+    ],
+]
+description = "Check external links in the documentation (requires internet connection)"
+setenv = [
+    {"FORCE_COLOR" = "yes"},
+]
+
+[tool.tox.env.pydeps]
+allowlist_externals = ["pydeps"]
+changedir = "src"
+commands = [
+    [
+        "pydeps",
+        "compwa_policy",
+        "--exclude=*._*",
+        "--max-bacon=1",
+        "--noshow",
+        "-o=module_structure.svg",
+    ],
+]
+description = "Visualize module dependencies"
+
+[tool.tox.env.sty]
+allowlist_externals = [
+    "pre-commit",
+]
+commands = [
+    ["pre-commit", "run", "--all-files", "{posargs}"],
+]
+description = "Perform all linting, formatting, and spelling checks"
+setenv = [
+    {"SKIP" = "pyright"},
+]
+
+[tool.tox.env_run_base]
+allowlist_externals = ["pytest"]
+commands = [
+    ["pytest", "{posargs}"],
+]
+description = "Run all unit tests"
+passenv = ["*"]
