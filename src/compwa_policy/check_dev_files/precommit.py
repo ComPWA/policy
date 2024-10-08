@@ -4,15 +4,20 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, MutableMapping, cast
 
-from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook
-from compwa_policy.utilities.python import has_constraint_files
+from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.python import (
+    has_constraint_files,
+    split_dependency_definition,
+)
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -25,13 +30,14 @@ if TYPE_CHECKING:
 
 
 def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    with Executor() as do:
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_sort_hooks, precommit)
         do(_update_conda_environment, precommit)
         do(_update_precommit_ci_commit_msg, precommit)
         do(_update_precommit_ci_skip, precommit)
         do(_update_policy_hook, precommit, has_notebooks)
         do(_update_repo_urls, precommit)
+        do(_switch_to_precommit_uv, pyproject)
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:
@@ -199,3 +205,78 @@ def _update_repo_urls(precommit: ModifiablePrecommit) -> None:
         for url, new_url in updated_repos:
             msg += f"\n  {url} -> {new_url}"
         precommit.changelog.append(msg)
+
+
+def _switch_to_precommit_uv(pyproject: ModifiablePyproject) -> None:
+    __replace_precommit_in_conda()
+    __replace_precommit_in_pyproject(pyproject)
+
+
+def __replace_precommit_in_conda() -> None:
+    if not CONFIG_PATH.conda.exists():
+        return
+    yaml = create_prettier_round_trip_yaml()
+    conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)
+    dependencies: CommentedSeq = conda_env.get("dependencies")
+    if dependencies is None:
+        return
+    precommit_idx = ___get_precommit_idx(dependencies)
+    if precommit_idx is None:
+        return
+    dependencies.pop(precommit_idx)
+    if "pip" not in dependencies:
+        dependencies.append("pip")
+    pip_dependencies = ___find_conda_pip_dict(dependencies)
+    if pip_dependencies is None:
+        pip_dependencies = CommentedMap({"pip": ["pre-commit-uv"]})
+        dependencies.append(pip_dependencies)
+    else:
+        pip_dependencies["pip"].append("pre-commit-uv")
+    pip_dependencies["pip"] = sorted(pip_dependencies["pip"])
+    yaml.dump(conda_env, CONFIG_PATH.conda)
+    msg = f"Switched to pre-commit-uv in {CONFIG_PATH.conda}"
+    raise PrecommitError(msg)
+
+
+def ___get_precommit_idx(dependencies: list[str]) -> int | None:
+    for idx, dep in enumerate(dependencies):
+        if not isinstance(dep, str):
+            continue
+        name, *_ = split_dependency_definition(dep)
+        if name.lower() == "pre-commit":
+            return idx
+    return None
+
+
+def ___find_conda_pip_dict(
+    dependencies: CommentedSeq,
+) -> CommentedMap | None:
+    for dep in dependencies:
+        if isinstance(dep, CommentedMap) and "pip" in dep:
+            return dep
+    return None
+
+
+def __replace_precommit_in_pyproject(pyproject: ModifiablePyproject) -> None:
+    table_key = "project.optional-dependencies"
+    if not pyproject.has_table(table_key):
+        return
+    optional_dependencies = pyproject.get_table(table_key)
+    updated = ___update_dependency_group(optional_dependencies, key="dev")
+    updated |= ___update_dependency_group(optional_dependencies, key="sty")
+    if updated:
+        msg = "Switched to pre-commit-uv in pyproject.toml"
+        pyproject.changelog.append(msg)
+
+
+def ___update_dependency_group(
+    optional_dependencies: MutableMapping[str, Any], key: str
+) -> bool:
+    dependencies: list[str] | None = optional_dependencies.get(key)
+    if dependencies is None:
+        return False
+    precommit_idx = ___get_precommit_idx(dependencies)
+    if precommit_idx is None:
+        return False
+    dependencies[precommit_idx] = "pre-commit-uv"
+    return True
