@@ -224,4 +224,4 @@ def __sort_section(content: Iterable[Any], section_name: str) -> list[str]:
         return sorted(content, key=sort_key)
     if section_name == "ignoreWords":
         return sorted(content)
-    return vscode.sort_case_insensitive(content)
+    return sorted(content, key=str.casefold)
