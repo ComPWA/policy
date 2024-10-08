@@ -23,7 +23,6 @@
     "**/*.rst_t",
     "**/.cspell.json",
     "*.ico",
-    "*.rst_t",
     ".editorconfig",
     ".envrc",
     ".gitattributes",
