@@ -37,7 +37,7 @@ def _update_os(config: ReadTheDocs) -> None:
     if build is None:
         return
     os: str | None = build.get("os")
-    expected_os = "ubuntu-22.04"
+    expected_os = "ubuntu-24.04"
     if os == expected_os:
         return
     build["os"] = expected_os
