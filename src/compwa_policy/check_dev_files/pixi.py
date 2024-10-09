@@ -19,6 +19,7 @@ from compwa_policy.utilities.pyproject import (
     Pyproject,
     complies_with_subset,
 )
+from compwa_policy.utilities.python import split_dependency_definition
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -165,16 +166,12 @@ def ___to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
     >>> ___to_pixi_dependency("my_package~=1.2")
     ('my_package', '~=1.2')
     """
-    matches = re.match(r"^([a-zA-Z0-9_-]+)([\!<=>~\s]*)([^ ^#]*)", conda_dependency)
-    if not matches:
-        msg = f"Could not extract package name and version from {conda_dependency}"
-        raise ValueError(msg)
-    package, operator, version = matches.groups()
+    package, operator, version = split_dependency_definition(conda_dependency)
     if not version:
         version = "*"
     if operator in {"=", "=="}:
         operator = ""
-    return package.strip(), f"{operator.strip()}{version.strip()}"
+    return package, f"{operator}{version}"
 
 
 def __import_conda_environment(pyproject: ModifiablePyproject) -> None:
