@@ -27,7 +27,7 @@ def test_update_readthedocs_extend(this_dir: Path):
 
     exception_msg = dedent("""
       Updated .readthedocs.yml:
-        - Set build.os to ubuntu-22.04
+        - Set build.os to ubuntu-24.04
         - Set build.tools.python to '3.9'
         - Updated pip install steps
     """)
@@ -65,7 +65,7 @@ def test_update_readthedocs_overwrite(
 
     exception_msg = dedent(f"""
       Updated .readthedocs.yml:
-        - Set build.os to ubuntu-22.04
+        - Set build.os to ubuntu-24.04
         - Set build.tools.python to {python_version!r}
         - Updated pip install steps
     """)
