@@ -250,7 +250,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--dev-python-version",
-        default="3.9",
+        default="3.12",
         help="Specify the Python version for your developer environment",
         required=False,
         type=str,
