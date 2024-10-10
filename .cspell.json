@@ -37,7 +37,6 @@
     "labels/*.toml",
     "pyproject.toml",
     "pyrightconfig.json",
-    "tox.ini",
     "typings"
   ],
   "language": "en-US",

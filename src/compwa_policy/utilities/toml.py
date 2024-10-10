@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterable
 
 import tomlkit
+from tomlkit.items import String, StringType, Trivia
 
 if TYPE_CHECKING:
     from tomlkit.items import Array
@@ -18,3 +19,7 @@ def to_toml_array(items: Iterable[Any], multiline: bool | None = None) -> Array:
     else:
         array.multiline(multiline)
     return array
+
+
+def to_multiline_string(value: str) -> String:
+    return String(StringType.MLB, value, value, Trivia())
