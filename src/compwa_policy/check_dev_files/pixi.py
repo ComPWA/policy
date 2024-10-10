@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING
 import yaml
 from tomlkit import inline_table, string
 
+from compwa_policy.check_dev_files.tox import read_tox_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
-from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.pyproject import (
@@ -190,9 +190,9 @@ def __import_conda_environment(pyproject: ModifiablePyproject) -> None:
 
 
 def __import_tox_tasks(pyproject: ModifiablePyproject) -> None:
-    if not CONFIG_PATH.tox.exists():
+    tox = read_tox_config()
+    if tox is None:
         return
-    tox = open_config(CONFIG_PATH.tox)
     tox_jobs = ___get_tox_job_names(tox)
     imported_tasks = []
     blacklisted_jobs = {"jcache"}  # cspell:ignore jcache
@@ -308,9 +308,9 @@ def __install_package_editable(pyproject: ModifiablePyproject) -> None:
 
 
 def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
-    if not CONFIG_PATH.tox.exists():
+    tox = read_tox_config()
+    if tox is None:
         return
-    tox = open_config(CONFIG_PATH.tox)
     blacklisted_jobs = {"sty"}
     updated_tasks = []
     for tox_job, pixi_task in ___get_tox_job_names(tox).items():
