@@ -5,48 +5,11 @@ from __future__ import annotations
 import io
 import re
 from configparser import ConfigParser
-from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Iterable
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH, read, write
-
-
-def extract_config_section(
-    extract_from: Path | str,
-    extract_to: Path | str,
-    sections: list[str],
-) -> None:
-    cfg = open_config(extract_from)
-    if any(map(cfg.has_section, sections)):
-        old_cfg, extracted_cfg = __split_config(cfg, sections)
-        __write_config(old_cfg, extract_from)
-        __write_config(extracted_cfg, extract_to)
-        msg = (
-            f'Section "{", ".join(sections)}"" in "./{CONFIG_PATH.tox}" has been'
-            f' extracted to a "./{extract_to}" config file.'
-        )
-        raise PrecommitError(msg)
-
-
-def __split_config(
-    cfg: ConfigParser, extracted_sections: list[str]
-) -> tuple[ConfigParser, ConfigParser]:
-    old_config = deepcopy(cfg)
-    extracted_config = deepcopy(cfg)
-    for section in cfg.sections():
-        if section in extracted_sections:
-            old_config.remove_section(section)
-        else:
-            extracted_config.remove_section(section)
-    return old_config, extracted_config
-
-
-def __write_config(cfg: ConfigParser, output_path: Path | str) -> None:
-    with open(output_path, "w") as stream:
-        cfg.write(stream)
-    format_config(input=output_path, output=output_path)
+from compwa_policy.utilities import read, write
 
 
 def format_config(
