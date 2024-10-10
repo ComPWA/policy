@@ -105,7 +105,7 @@ repos:
         types:
           - python
 
-  - repo: https://github.com/ComPWA/mirrors-pyright
-    rev: v1.1.379
+  - repo: https://github.com/ComPWA/pyright-pre-commit
+    rev: v1.1.384
     hooks:
       - id: pyright

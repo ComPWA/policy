@@ -50,9 +50,15 @@ def _merge_config_into_pyproject(
 def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
     if not __has_pyright(pyproject):
         return
+    old_url = "https://github.com/ComPWA/mirrors-pyright"
+    old_repo = precommit.find_repo(old_url)
+    rev = ""
+    if old_repo is not None:
+        precommit.remove_hook("pyright", old_url)
+        rev = old_repo["rev"]
     repo = Repo(
-        repo="https://github.com/ComPWA/mirrors-pyright",
-        rev="",
+        repo="https://github.com/ComPWA/pyright-pre-commit",
+        rev=rev,
         hooks=[Hook(id="pyright")],
     )
     precommit.update_single_hook_repo(repo)
