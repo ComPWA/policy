@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import sys
-from functools import lru_cache
+from functools import cache
 from typing import ForwardRef
 
 if sys.version_info < (3, 8):
@@ -76,7 +76,7 @@ def validate(config: PrecommitConfig) -> None:
         raise ValueError(msg)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_required_keys(struct: type) -> set[str]:
     annotations: dict[str, ForwardRef] = struct.__annotations__
     return {

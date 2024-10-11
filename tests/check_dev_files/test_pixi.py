@@ -25,10 +25,10 @@ def test_update_docnb_and_doclive(table_key: str):
         [{table_key}.docnb-test]
         cmd = "should not change"
     """)
-    with pytest.raises(
-        PrecommitError,
-        match="Updated `cmd` of Pixi tasks docnb",
-    ), ModifiablePyproject.load(content) as pyproject:
+    with (
+        pytest.raises(PrecommitError, match="Updated `cmd` of Pixi tasks docnb"),
+        ModifiablePyproject.load(content) as pyproject,
+    ):
         __update_docnb_and_doclive(pyproject, table_key)
     new_content = pyproject.dumps()
     expected = dedent(f"""

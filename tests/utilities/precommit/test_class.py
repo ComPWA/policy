@@ -30,19 +30,20 @@ class TestModifiablePrecommit:
 
     def test_context_manager_path(self, example_config: str):
         input_stream = io.StringIO(example_config)
-        with pytest.raises(
-            PrecommitError,
-            match=r"Fake modification$",
-        ), ModifiablePrecommit.load(input_stream) as precommit:
+        with (
+            pytest.raises(PrecommitError, match=r"Fake modification$"),
+            ModifiablePrecommit.load(input_stream) as precommit,
+        ):
             precommit.changelog.append("Fake modification")
         yaml = precommit.dumps()
         assert yaml == example_config
 
     def test_context_manager_string_stream(self, example_config: str):
         stream = io.StringIO(example_config)
-        with pytest.raises(
-            PrecommitError, match=r"Fake modification$"
-        ), ModifiablePrecommit.load(stream) as precommit:
+        with (
+            pytest.raises(PrecommitError, match=r"Fake modification$"),
+            ModifiablePrecommit.load(stream) as precommit,
+        ):
             precommit.changelog.append("Fake modification")
         stream.seek(0)
         yaml = stream.read()

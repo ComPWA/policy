@@ -8,17 +8,7 @@ from collections import abc
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    Sequence,
-    TypeVar,
-    overload,
-)
+from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
 
 import rtoml
 import tomlkit
@@ -54,6 +44,7 @@ if sys.version_info < (3, 12):
 else:
     from typing import override
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
     from types import TracebackType
 
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML

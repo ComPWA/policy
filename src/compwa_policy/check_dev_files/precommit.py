@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, MutableMapping, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
@@ -21,6 +21,8 @@ from compwa_policy.utilities.python import (
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
+
     from compwa_policy.utilities.precommit import (
         ModifiablePrecommit,
         Precommit,

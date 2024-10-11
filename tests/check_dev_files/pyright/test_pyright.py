@@ -23,10 +23,13 @@ def this_dir() -> Path:
 def test_merge_config_into_pyproject(this_dir: Path):
     input_stream = io.StringIO()
     old_config_path = this_dir / "pyrightconfig.json"
-    with pytest.raises(
-        PrecommitError,
-        match=re.escape(f"Imported pyright configuration from {old_config_path}"),
-    ), ModifiablePyproject.load(input_stream) as pyproject:
+    with (
+        pytest.raises(
+            PrecommitError,
+            match=re.escape(f"Imported pyright configuration from {old_config_path}"),
+        ),
+        ModifiablePyproject.load(input_stream) as pyproject,
+    ):
         _merge_config_into_pyproject(pyproject, old_config_path, remove=False)
 
     result = input_stream.getvalue()
@@ -45,9 +48,10 @@ def test_update_precommit(this_dir: Path):
     pyproject = Pyproject.load(this_dir / "pyproject-bad.toml")
     with open(this_dir / ".pre-commit-config-bad.yaml") as stream:
         input_stream = io.StringIO(stream.read())
-    with pytest.raises(PrecommitError), ModifiablePrecommit.load(
-        input_stream
-    ) as precommit:
+    with (
+        pytest.raises(PrecommitError),
+        ModifiablePrecommit.load(input_stream) as precommit,
+    ):
         _update_precommit(precommit, pyproject)
 
     result = input_stream.getvalue()
@@ -59,9 +63,10 @@ def test_update_precommit(this_dir: Path):
 def test_update_settings(this_dir: Path):
     with open(this_dir / "pyproject-bad.toml") as stream:
         input_stream = io.StringIO(stream.read())
-    with pytest.raises(
-        PrecommitError, match=r"Updated pyright configuration"
-    ), ModifiablePyproject.load(input_stream) as pyproject:
+    with (
+        pytest.raises(PrecommitError, match=r"Updated pyright configuration"),
+        ModifiablePyproject.load(input_stream) as pyproject,
+    ):
         _update_settings(pyproject)
 
     result = input_stream.getvalue()

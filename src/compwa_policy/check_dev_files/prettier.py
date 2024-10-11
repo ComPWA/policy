@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
@@ -11,6 +11,8 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 # cspell:ignore esbenp rettier

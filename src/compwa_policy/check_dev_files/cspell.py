@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING, Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
@@ -18,6 +18,7 @@ from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
     from pathlib import Path
 
     from compwa_policy.utilities.precommit import ModifiablePrecommit
