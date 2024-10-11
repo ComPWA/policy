@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 if TYPE_CHECKING:
     from pathlib import Path
 

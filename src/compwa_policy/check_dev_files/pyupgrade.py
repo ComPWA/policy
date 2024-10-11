@@ -46,7 +46,7 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     """Get the --py3x-plus argument for pyupgrade.
 
     >>> __get_pyupgrade_version_argument()
-    ['--py37-plus']
+    ['--py39-plus']
     """
     supported_python_versions = Pyproject.load().get_supported_python_versions()
     lowest_version = supported_python_versions[0]

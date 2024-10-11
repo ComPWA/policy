@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import rtoml
 from ini2toml.api import Translator
@@ -14,6 +14,8 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from tomlkit.items import Array
 
 

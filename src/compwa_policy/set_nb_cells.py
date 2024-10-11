@@ -24,12 +24,15 @@ import argparse
 import sys
 from functools import lru_cache
 from textwrap import dedent
-from typing import Sequence
+from typing import TYPE_CHECKING
 
 import nbformat
 
 from compwa_policy.utilities.notebook import load_notebook
 from compwa_policy.utilities.pyproject import Pyproject
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 __CONFIG_CELL_CONTENT = """
 import os

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from collections import abc
-from typing import TYPE_CHECKING, Any, Iterable, Mapping
+from typing import TYPE_CHECKING, Any
 
 from ruamel.yaml import YAML
 
@@ -22,6 +22,8 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from tomlkit.items import Array
 
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -254,7 +256,7 @@ def ___get_target_version(pyproject: Pyproject) -> str:
 
     >>> pyproject = Pyproject.load()
     >>> ___get_target_version(pyproject)
-    'py37'
+    'py39'
     """
     supported_python_versions = pyproject.get_supported_python_versions()
     versions = {f'py{v.replace(".", "")}' for v in supported_python_versions}

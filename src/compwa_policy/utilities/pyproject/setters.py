@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from collections import abc
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, MutableMapping, Sequence, cast
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
 

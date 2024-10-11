@@ -5,12 +5,8 @@ See https://github.com/sphinx-doc/sphinx/issues/11039.
 """
 
 import sys
-from typing import Dict, List
+from typing import TypedDict
 
-if sys.version_info < (3, 8):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
 else:
@@ -21,7 +17,7 @@ PyprojectTOML = TypedDict(
     {
         "build-system": NotRequired["BuildSystem"],
         "project": "Project",
-        "tool": NotRequired[Dict[str, Dict[str, str]]],
+        "tool": NotRequired[dict[str, dict[str, str]]],
     },
 )
 """Structure of a `pyproject.toml` file.
@@ -34,7 +30,7 @@ specification](https://packaging.python.org/en/latest/specifications/pyproject-t
 BuildSystem = TypedDict(
     "BuildSystem",
     {
-        "requires": List[str],
+        "requires": list[str],
         "build-backend": str,
     },
 )
@@ -45,8 +41,8 @@ Project = TypedDict(
     {
         "name": str,
         "version": NotRequired[str],
-        "dependencies": NotRequired[List[str]],
-        "optional-dependencies": NotRequired[Dict[str, List[str]]],
+        "dependencies": NotRequired[list[str]],
+        "optional-dependencies": NotRequired[dict[str, list[str]]],
         "urls": NotRequired["ProjectURLs"],
     },
 )

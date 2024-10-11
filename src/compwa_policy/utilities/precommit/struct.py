@@ -2,13 +2,9 @@
 from __future__ import annotations
 
 import sys
-from functools import lru_cache
-from typing import ForwardRef
+from functools import cache
+from typing import ForwardRef, Literal, TypedDict
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal, TypedDict
-else:
-    from typing import Literal, TypedDict
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
 else:
@@ -76,7 +72,7 @@ def validate(config: PrecommitConfig) -> None:
         raise ValueError(msg)
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_required_keys(struct: type) -> set[str]:
     annotations: dict[str, ForwardRef] = struct.__annotations__
     return {

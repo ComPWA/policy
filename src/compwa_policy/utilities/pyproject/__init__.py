@@ -8,17 +8,7 @@ from collections import abc
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    Sequence,
-    TypeVar,
-    overload,
-)
+from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, final, overload
 
 import rtoml
 import tomlkit
@@ -41,10 +31,6 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
 )
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal, final
-else:
-    from typing import Literal, final
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
@@ -54,6 +40,7 @@ if sys.version_info < (3, 12):
 else:
     from typing import override
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
     from types import TracebackType
 
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
@@ -114,7 +101,7 @@ class Pyproject:
         """Extract sorted, supported Python versions from package classifiers.
 
         >>> Pyproject.load().get_supported_python_versions()
-        ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        ['3.9', '3.10', '3.11', '3.12']
         """
         return get_supported_python_versions(self._document)
 

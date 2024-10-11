@@ -14,9 +14,10 @@ def test_update_precommit_config():
         src = file.read()
 
     stream = io.StringIO(src)
-    with pytest.raises(
-        PrecommitError, match=r"Updated editorconfig-checker hook"
-    ), ModifiablePrecommit.load(stream) as precommit:
+    with (
+        pytest.raises(PrecommitError, match=r"Updated editorconfig-checker hook"),
+        ModifiablePrecommit.load(stream) as precommit,
+    ):
         _update_precommit_config(precommit)
 
     result = precommit.dumps()

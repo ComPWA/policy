@@ -9,9 +9,10 @@ from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
 
 
 def test_update_cspell_repo_url(bad_yaml: io.StringIO, good_yaml: io.StringIO):
-    with pytest.raises(
-        PrecommitError, match=r"Updated cSpell pre-commit repo URL"
-    ), ModifiablePrecommit.load(bad_yaml) as bad:
+    with (
+        pytest.raises(PrecommitError, match=r"Updated cSpell pre-commit repo URL"),
+        ModifiablePrecommit.load(bad_yaml) as bad,
+    ):
         _update_cspell_repo_url(bad)
 
     good = Precommit.load(good_yaml)

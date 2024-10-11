@@ -6,7 +6,7 @@ import re
 import sys
 from argparse import ArgumentParser
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 from compwa_policy.check_dev_files import (
     black,
@@ -42,6 +42,8 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from compwa_policy.utilities.pyproject import PythonVersion
 
 
@@ -57,9 +59,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     package_managers: set[conda.PackageManagerChoice] = set(
         _to_list(args.package_managers)  # type: ignore[arg-type]
     )
-    with Executor(
-        raise_exception=False
-    ) as do, ModifiablePrecommit.load() as precommit_config:
+    with (
+        Executor(raise_exception=False) as do,
+        ModifiablePrecommit.load() as precommit_config,
+    ):
         do(citation.main, precommit_config)
         do(commitlint.main)
         do(conda.main, dev_python_version, package_managers)

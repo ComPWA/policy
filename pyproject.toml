@@ -16,8 +16,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python",
     "Typing :: Typed",
@@ -30,9 +28,9 @@ dependencies = [
     "nbformat",
     "pathspec",
     "pip-tools",
+    "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
     "tomlkit", # preserve original TOML formatting
-    'rtoml', # fast, read-only parsing
     'typing-extensions; python_version <"3.12.0"', # override
 ]
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
@@ -40,7 +38,7 @@ dynamic = ["version"]
 license = {text = "BSD 3-Clause License"}
 maintainers = [{email = "compwa-admin@ep1.rub.de"}]
 name = "compwa-policy"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 
 [project.optional-dependencies]
 dev = [
@@ -50,7 +48,6 @@ dev = [
     "labels",
     "sphinx-autobuild",
     "tox >=1.9", # for skip_install, use_develop
-    'sphinx-autobuild!=2024.4.*; python_version <"3.10.0"',
 ]
 doc = [
     "Sphinx",

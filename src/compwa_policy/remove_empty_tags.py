@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Sequence
+from typing import TYPE_CHECKING
 
 import nbformat
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.notebook import load_notebook
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def main(argv: Sequence[str] | None = None) -> int:

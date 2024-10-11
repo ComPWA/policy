@@ -6,10 +6,13 @@ import io
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import TYPE_CHECKING, Callable
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import read, write
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def format_config(
