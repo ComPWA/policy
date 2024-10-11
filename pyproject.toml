@@ -28,9 +28,9 @@ dependencies = [
     "nbformat",
     "pathspec",
     "pip-tools",
+    "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
     "tomlkit", # preserve original TOML formatting
-    'rtoml', # fast, read-only parsing
     'typing-extensions; python_version <"3.12.0"', # override
 ]
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
@@ -48,7 +48,6 @@ dev = [
     "labels",
     "sphinx-autobuild",
     "tox >=1.9", # for skip_install, use_develop
-    'sphinx-autobuild!=2024.4.*; python_version <"3.10.0"',
 ]
 doc = [
     "Sphinx",
