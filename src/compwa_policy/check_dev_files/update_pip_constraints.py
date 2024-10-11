@@ -7,8 +7,7 @@ See Also:
 
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from compwa_policy.check_dev_files.github_workflows import (
     remove_workflow,
@@ -22,11 +21,6 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import Precommit
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
 
 
 Frequency = Literal[

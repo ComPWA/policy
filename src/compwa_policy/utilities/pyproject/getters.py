@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import sys
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from compwa_policy.errors import PrecommitError
 
@@ -12,11 +11,6 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from compwa_policy.utilities.pyproject._struct import ProjectURLs, PyprojectTOML
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal
-else:
-    from typing import Literal
 
 
 PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]

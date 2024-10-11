@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import sys
-from typing import NoReturn
+from typing import Literal, NoReturn
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
@@ -17,11 +16,6 @@ from compwa_policy.utilities.pyproject import (
     get_constraints_file,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
-
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
 
 PackageManagerChoice = Literal["conda", "pixi", "uv", "venv"]
 """Package managers you want to develop the project with."""

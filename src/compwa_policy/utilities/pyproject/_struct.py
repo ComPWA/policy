@@ -5,11 +5,8 @@ See https://github.com/sphinx-doc/sphinx/issues/11039.
 """
 
 import sys
+from typing import TypedDict
 
-if sys.version_info < (3, 8):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
 else:

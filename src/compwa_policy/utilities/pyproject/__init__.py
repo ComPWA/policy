@@ -8,7 +8,7 @@ from collections import abc
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
+from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, final, overload
 
 import rtoml
 import tomlkit
@@ -31,10 +31,6 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
 )
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Literal, final
-else:
-    from typing import Literal, final
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
