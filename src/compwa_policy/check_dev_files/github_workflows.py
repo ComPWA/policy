@@ -64,22 +64,31 @@ def main(
         do(_recommend_vscode_extension)
 
 
-def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:
+def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:  # noqa: C901
     def update() -> None:
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
+        banned_jobs = set()
         if no_pypi or get_build_system() is None:
-            del expected_data["jobs"]["package-name"]
-            del expected_data["jobs"]["pypi"]
+            banned_jobs.add("package-name")
+            banned_jobs.add("pypi")
         if no_version_branches:
-            del expected_data["jobs"]["push"]
+            banned_jobs.add("push")
+        if not expected_data["jobs"]:
+            remove_workflow("cd.yml")
+            return
+        for name in banned_jobs:
+            expected_data["jobs"].pop(name, None)
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
         for name, job_def in existing_data["jobs"].items():
-            if name not in expected_data["jobs"]:
-                expected_data["jobs"][name] = job_def
+            if name in banned_jobs:
+                continue
+            if name in expected_data["jobs"]:
+                continue
+            expected_data["jobs"][name] = job_def
         if existing_data != expected_data:
             update_workflow(yaml, expected_data, workflow_path)
 

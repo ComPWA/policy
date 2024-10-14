@@ -7,25 +7,13 @@ requires = [
 
 [project]
 authors = [{name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de"}]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python",
-    "Typing :: Typed",
-]
 dependencies = [
     "PyYAML",
     "attrs >=20.1.0", # https://www.attrs.org/changelog.html#id82
     "html2text",
     "ini2toml",
     "nbformat",
+    "packaging",
     "pathspec",
     "pip-tools",
     "rtoml", # fast, read-only parsing

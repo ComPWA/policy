@@ -5,6 +5,9 @@ from __future__ import annotations
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload
 
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+
 from compwa_policy.errors import PrecommitError
 
 if TYPE_CHECKING:
@@ -14,6 +17,7 @@ if TYPE_CHECKING:
 
 
 PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+PYTHON_VERSIONS = set(PythonVersion.__args__)  # type:ignore[attr-defined]
 
 
 @overload
@@ -83,7 +87,11 @@ def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersio
         return []
     project_table = get_sub_table(pyproject, "project")
     classifiers = project_table.get("classifiers", [])
-    python_versions = _extract_python_versions(classifiers)
+    if classifiers:
+        python_versions = _extract_python_versions(classifiers)
+    else:
+        requires_python: str = project_table.get("requires-python", "")
+        python_versions = _get_allowed_versions(requires_python)
     if not python_versions:
         msg = "Could not determine Python version classifiers of this package"
         raise PrecommitError(msg)
@@ -109,6 +117,24 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
     version_classifiers = [s for s in classifiers if s.startswith(identifier)]
     prefix = identifier[:-2]
     return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
+
+
+def _get_allowed_versions(
+    version_range: str, exclude: set[str] | None = None
+) -> list[PythonVersion]:
+    """Get a list of allowed versions from a version range specifier.
+
+    >>> _get_allowed_versions(">=3.9,<3.13")
+    ['3.10', '3.11', '3.12', '3.9']
+    >>> _get_allowed_versions(">=3.9", exclude={"3.9"})
+    ['3.10', '3.11', '3.12']
+    """
+    specifier = SpecifierSet(version_range)
+    versions_to_check = [Version(v) for v in sorted(PYTHON_VERSIONS)]
+    allowed_versions = [str(v) for v in versions_to_check if v in specifier]
+    if exclude is not None:
+        allowed_versions = [v for v in allowed_versions if v not in exclude]
+    return allowed_versions  # type:ignore[return-value]
 
 
 def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str, Any]:
