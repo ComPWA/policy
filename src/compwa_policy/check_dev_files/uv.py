@@ -9,19 +9,25 @@ from typing import TYPE_CHECKING
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
 def main(
-    dev_python_version: PythonVersion, package_managers: set[PackageManagerChoice]
+    dev_python_version: PythonVersion,
+    package_managers: set[PackageManagerChoice],
+    precommit_config: ModifiablePrecommit,
 ) -> None:
     if "uv" in package_managers:
         with Executor() as do:
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
+            do(_update_uv_lock_hook, precommit_config)
             if {"uv"} == package_managers:
                 do(_remove_pip_constraint_files)
                 do(
@@ -78,3 +84,13 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> None:
         stream.write(dev_python_version + "\n")
     msg = f"Updated {python_version_file} to {dev_python_version}"
     raise PrecommitError(msg)
+
+
+def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
+    if filter_files(["uv.lock"]):
+        repo = Repo(
+            repo="https://github.com/astral-sh/uv-pre-commit",
+            rev="0.4.20",
+            hooks=[Hook(id="uv-lock")],
+        )
+        precommit.update_single_hook_repo(repo)
