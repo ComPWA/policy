@@ -57,8 +57,6 @@ def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
                 "telemetry.telemetryLevel": "off",
             },
         )
-        if is_python_repo:
-            do(vscode.update_settings, {"rewrap.wrappingColumn": 88})
         do(
             vscode.update_settings,
             {
@@ -81,8 +79,13 @@ def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
                 vscode.update_settings,
                 {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
             )
-        if CONFIG_PATH.envrc.exists():
-            do(vscode.update_settings, {"python.terminal.activateEnvironment": False})
+        if is_python_repo:
+            do(vscode.update_settings, {"rewrap.wrappingColumn": 88})
+            if CONFIG_PATH.envrc.exists():
+                do(
+                    vscode.update_settings,
+                    {"python.terminal.activateEnvironment": False},
+                )
 
 
 def _remove_outdated_settings() -> None:
