@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from textwrap import indent
 from typing import IO, TYPE_CHECKING, cast
@@ -15,11 +16,14 @@ from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
 def main(
-    python_version: PythonVersion, source: IO | Path | str = CONFIG_PATH.readthedocs
+    package_managers: set[PackageManagerChoice],
+    python_version: PythonVersion,
+    source: IO | Path | str = CONFIG_PATH.readthedocs,
 ) -> None:
     if isinstance(source, str):
         source = Path(source)
@@ -28,7 +32,7 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    _update_post_install(rtd, python_version)
+    _update_post_install(rtd, python_version, package_managers)
     rtd.finalize()
 
 
@@ -60,14 +64,18 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
     config.changelog.append(msg)
 
 
-def _update_post_install(config: ReadTheDocs, python_version: PythonVersion) -> None:
+def _update_post_install(
+    config: ReadTheDocs,
+    python_version: PythonVersion,
+    package_managers: set[PackageManagerChoice],
+) -> None:
     jobs = get_nested_dict(config.document, ["build", "jobs"])
     steps: list[str] = jobs.get("post_install", [])
-    expected_pip_install_steps = __get_install_steps(python_version)
-    start = __find_step(steps, pattern="pip install")
+    expected_pip_install_steps = __get_install_steps(python_version, package_managers)
+    start = __find_step(steps, pattern=".*pip install.*")
     if start is None:
         start = 0
-    end = __find_step(steps, pattern="pip install", invert=True)
+    end = __find_step(steps, pattern=".*(pip install|uv sync).*", invert=True)
     if end is None:
         end = len(steps)
     existing_pip_install_steps = steps[start:end]
@@ -82,10 +90,15 @@ def _update_post_install(config: ReadTheDocs, python_version: PythonVersion) -> 
     config.changelog.append(msg)
 
 
-def __get_install_steps(python_version: PythonVersion) -> list[str]:
+def __get_install_steps(
+    python_version: PythonVersion,
+    package_managers: set[PackageManagerChoice],
+) -> list[str]:
     pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
-    if constraints_file is None:
+    if {"uv"} == package_managers:
+        install_statement = "python -m uv sync --extra=doc"
+    elif constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"
     else:
         install_statement = f"{pip_install} -c {constraints_file} -e .[doc]"
@@ -98,9 +111,9 @@ def __get_install_steps(python_version: PythonVersion) -> list[str]:
 def __find_step(steps: list[str], pattern: str, invert: bool = False) -> int | None:
     for idx, step in enumerate(steps):
         if invert:
-            if pattern not in step:
+            if re.match(pattern, step) is None:
                 return idx
-        elif pattern in step:
+        elif re.match(pattern, step) is not None:
             return idx
     return None
 

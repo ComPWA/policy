@@ -128,7 +128,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 precommit_config,
                 frequency=args.pin_requirements,
             )
-        do(readthedocs.main, dev_python_version)
+        do(readthedocs.main, package_managers, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
         do(vscode.main, has_notebooks)
         do(gitpod.main, use_gitpod, dev_python_version)
