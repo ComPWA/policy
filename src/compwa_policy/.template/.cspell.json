@@ -22,7 +22,6 @@
     "**/Manifest.toml",
     "**/Project.toml",
     "*.csl",
-    "*.csl",
     "*.ico",
     "*.root",
     "*.svg",
