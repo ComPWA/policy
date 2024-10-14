@@ -27,7 +27,7 @@ def main(
     precommit_config: ModifiablePrecommit,
     repo_name: str,
 ) -> None:
-    if package_manager == "uv":
+    if "uv" in package_manager:
         with Executor() as do:
             do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)

@@ -74,7 +74,7 @@ def _update_excludes(
     pyright_settings = pyproject.get_table("tool.pyright")
     existing_excludes = pyright_settings.get("exclude", [])
     expected_excludes = set(existing_excludes)
-    if package_manager == "uv":
+    if "uv" in package_manager:
         expected_excludes.add("**/.venv/")
     expected_excludes_list = sorted(expected_excludes)
     if existing_excludes != expected_excludes_list:
