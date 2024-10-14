@@ -63,6 +63,7 @@
   "ruff.organizeImports": true,
   "search.exclude": {
     "**/tests/**/__init__.py": true,
+    "**/uv.lock": true,
     ".github/workflows/cd.yml": true,
     ".github/workflows/ci.yml": true,
     ".taplo.toml": true,

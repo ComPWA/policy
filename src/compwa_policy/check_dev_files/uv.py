@@ -29,6 +29,7 @@ def main(
 ) -> None:
     if "uv" in package_managers:
         with Executor() as do:
+            do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
@@ -48,6 +49,11 @@ def main(
                         ]
                     },
                 )
+
+
+def _hide_uv_lock_from_vscode_search() -> None:
+    if __has_uv_lock_file():
+        vscode.update_settings({"search.exclude": {"**/uv.lock": True}})
 
 
 def _remove_pip_constraint_files() -> None:
