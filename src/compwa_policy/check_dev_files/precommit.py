@@ -14,10 +14,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook
 from compwa_policy.utilities.pyproject import ModifiablePyproject
-from compwa_policy.utilities.python import (
-    has_constraint_files,
-    split_dependency_definition,
-)
+from compwa_policy.utilities.python import split_dependency_definition
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -102,10 +99,7 @@ def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
     precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
-    if has_constraint_files():
-        expected_msg = "MAINT: update pip constraints and pre-commit"
-    else:
-        expected_msg = "MAINT: autoupdate pre-commit hooks"
+    expected_msg = "MAINT: update lock files"
     key = "autoupdate_commit_msg"
     autoupdate_commit_msg = precommit_ci.get(key)
     if autoupdate_commit_msg != expected_msg:
