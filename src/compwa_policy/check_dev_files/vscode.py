@@ -7,10 +7,10 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.python import has_constraint_files
 
 
-def main(has_notebooks: bool) -> None:
+def main(has_notebooks: bool, is_python_repo: bool) -> None:
     with Executor() as do:
         do(_update_extensions)
-        do(_update_settings, has_notebooks)
+        do(_update_settings, has_notebooks, is_python_repo)
 
 
 def _update_extensions() -> None:
@@ -44,7 +44,7 @@ def _update_extensions() -> None:
         )
 
 
-def _update_settings(has_notebooks: bool) -> None:
+def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
     with Executor() as do:
         do(
             vscode.update_settings,
@@ -54,7 +54,6 @@ def _update_settings(has_notebooks: bool) -> None:
                 "gitlens.telemetry.enabled": False,
                 "multiDiffEditor.experimental.enabled": True,
                 "redhat.telemetry.enabled": False,
-                "rewrap.wrappingColumn": 88,  # black
                 "telemetry.telemetryLevel": "off",
             },
         )
@@ -80,8 +79,13 @@ def _update_settings(has_notebooks: bool) -> None:
                 vscode.update_settings,
                 {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
             )
-        if CONFIG_PATH.envrc.exists():
-            do(vscode.update_settings, {"python.terminal.activateEnvironment": False})
+        if is_python_repo:
+            do(vscode.update_settings, {"rewrap.wrappingColumn": 88})
+            if CONFIG_PATH.envrc.exists():
+                do(
+                    vscode.update_settings,
+                    {"python.terminal.activateEnvironment": False},
+                )
 
 
 def _remove_outdated_settings() -> None:
@@ -113,11 +117,12 @@ def _update_doc_settings() -> None:
     }
     with Executor() as do:
         do(vscode.update_settings, settings)
-        do(
-            vscode.add_extension_recommendation,
-            "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
-        )
         do(vscode.add_extension_recommendation, "ms-vscode.live-server")
+        # cspell:ignore executablebookproject
+        myst_extension = "executablebookproject.myst-highlight"
+        unwanted_extensions = vscode.get_unwanted_extensions()
+        if myst_extension not in unwanted_extensions:
+            do(vscode.add_extension_recommendation, myst_extension)
 
 
 def _update_notebook_settings() -> None:

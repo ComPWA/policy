@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.check_dev_files.pixi import __update_docnb_and_doclive
+from compwa_policy.check_dev_files.pixi._update import _update_docnb_and_doclive
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
@@ -29,7 +29,7 @@ def test_update_docnb_and_doclive(table_key: str):
         pytest.raises(PrecommitError, match="Updated `cmd` of Pixi tasks docnb"),
         ModifiablePyproject.load(content) as pyproject,
     ):
-        __update_docnb_and_doclive(pyproject, table_key)
+        _update_docnb_and_doclive(pyproject, table_key)
     new_content = pyproject.dumps()
     expected = dedent(f"""
         [{table_key}.doc]

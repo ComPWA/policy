@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, overload
 
@@ -90,7 +91,7 @@ def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersio
     if classifiers:
         python_versions = _extract_python_versions(classifiers)
     else:
-        requires_python: str = project_table.get("requires-python", "")
+        requires_python = _get_requires_python(project_table)
         python_versions = _get_allowed_versions(requires_python)
     if not python_versions:
         msg = "Could not determine Python version classifiers of this package"
@@ -119,22 +120,43 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
     return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
 
 
+def _get_requires_python(project: Mapping[str, Any]) -> str:
+    requires_python = project.get("requires-python")
+    if requires_python is not None:
+        return requires_python
+    python_version_file = Path(".python-version")
+    if python_version_file.exists():
+        pinned_version = python_version_file.read_text().strip()
+        return f"~={pinned_version}"
+    return ""
+
+
 def _get_allowed_versions(
     version_range: str, exclude: set[str] | None = None
 ) -> list[PythonVersion]:
     """Get a list of allowed versions from a version range specifier.
 
     >>> _get_allowed_versions(">=3.9,<3.13")
-    ['3.10', '3.11', '3.12', '3.9']
+    ['3.9', '3.10', '3.11', '3.12']
     >>> _get_allowed_versions(">=3.9", exclude={"3.9"})
     ['3.10', '3.11', '3.12']
+    >>> _get_allowed_versions("~=3.12")
+    ['3.12']
+    >>> _get_allowed_versions("")
+    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     """
     specifier = SpecifierSet(version_range)
-    versions_to_check = [Version(v) for v in sorted(PYTHON_VERSIONS)]
+    versions_to_check = [
+        Version(v) for v in sorted(PYTHON_VERSIONS, key=__sort_version)
+    ]
     allowed_versions = [str(v) for v in versions_to_check if v in specifier]
     if exclude is not None:
         allowed_versions = [v for v in allowed_versions if v not in exclude]
     return allowed_versions  # type:ignore[return-value]
+
+
+def __sort_version(version: str) -> tuple[int, ...]:
+    return tuple(int(i) for i in version.split("."))
 
 
 def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str, Any]:

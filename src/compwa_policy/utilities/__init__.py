@@ -123,27 +123,30 @@ def __remove_file(path: str) -> None:
     raise PrecommitError(msg)
 
 
-def remove_from_gitignore(pattern: str) -> None:
-    gitignore_path = ".gitignore"
-    if not os.path.exists(gitignore_path):
-        return
-    with open(gitignore_path) as f:
-        lines = f.readlines()
-    filtered_lines = [s for s in lines if pattern not in s]
-    if filtered_lines == lines:
-        return
-    with open(gitignore_path, "w") as f:
-        f.writelines(filtered_lines)
-    msg = f"Removed {pattern} from {gitignore_path}"
-    raise PrecommitError(msg)
-
-
 def rename_file(old: str, new: str) -> None:
     """Rename a file and raise a `.PrecommitError`."""
     if os.path.exists(old):
         os.rename(old, new)
         msg = f"File {old} has been renamed to {new}"
         raise PrecommitError(msg)
+
+
+def remove_lines(file: Path, pattern: str, flags: re.RegexFlag = re.IGNORECASE) -> None:
+    if not file.exists():
+        return
+    with open(file) as stream:
+        lines = stream.readlines()
+    filtered_lines = [s for s in lines if not re.match(pattern, s.strip(), flags)]
+    if not any(line.strip() for line in filtered_lines):
+        file.unlink()
+        msg = f"Removed {pattern!r} from {file} and removed file because it was empty."
+        raise PrecommitError(msg)
+    if len(filtered_lines) == len(lines):
+        return
+    with open(file, "w") as stream:
+        stream.writelines(filtered_lines)
+    msg = f"Removed {pattern!r} from {file}"
+    raise PrecommitError(msg)
 
 
 def natural_sorting(text: str) -> list[float | str]:

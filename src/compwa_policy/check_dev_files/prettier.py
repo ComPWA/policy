@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
@@ -49,6 +50,8 @@ def _remove_configuration() -> None:
 
 
 def _fix_config_content(no_prettierrc: bool) -> None:
+    if filter_files([".prettierrc.yml"]):
+        return
     if no_prettierrc:
         with Executor() as do:
             do(__remove_prettierrc)
@@ -67,7 +70,6 @@ def _fix_config_content(no_prettierrc: bool) -> None:
 
     wrong_config_paths = [  # https://prettier.io/docs/en/configuration.html
         ".prettierrc.json",
-        ".prettierrc.yml",
         ".prettierrc.yaml",
         ".prettierrc.json5",
         ".prettierrc.toml",

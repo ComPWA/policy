@@ -23,7 +23,7 @@ def test_update_readthedocs_extend(this_dir: Path):
     with open(this_dir / "extend" / ".readthedocs-bad.yml") as f:
         input_stream = io.StringIO(f.read())
     with pytest.raises(PrecommitError) as exception:
-        readthedocs.main(python_version="3.12", source=input_stream)
+        readthedocs.main("conda", python_version="3.12", source=input_stream)
 
     exception_msg = dedent("""
       Updated .readthedocs.yml:
@@ -44,7 +44,7 @@ def test_update_readthedocs_extend(this_dir: Path):
 def test_update_readthedocs_good(this_dir: Path, example: str):
     with open(this_dir / example / ".readthedocs-good.yml") as f:
         input_stream = io.StringIO(f.read())
-    readthedocs.main(python_version="3.12", source=input_stream)
+    readthedocs.main("conda", python_version="3.12", source=input_stream)
 
     with open(this_dir / example / ".readthedocs-good.yml") as f:
         expected_output = f.read()
@@ -61,7 +61,7 @@ def test_update_readthedocs_overwrite(
     with open(this_dir / "overwrite" / f".readthedocs-{suffix}.yml") as f:
         input_stream = io.StringIO(f.read())
     with pytest.raises(PrecommitError) as exception:
-        readthedocs.main(python_version, source=input_stream)
+        readthedocs.main("conda", python_version, source=input_stream)
 
     exception_msg = dedent(f"""
       Updated .readthedocs.yml:

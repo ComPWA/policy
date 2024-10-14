@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Literal, NoReturn
+from typing import Literal
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities import CONFIG_PATH, remove_lines
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -17,17 +18,15 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
-PackageManagerChoice = Literal["conda", "pixi", "uv", "venv"]
+PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
-def main(
-    python_version: PythonVersion, package_managers: set[PackageManagerChoice]
-) -> None:
-    if "conda" in package_managers:
+def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -> None:
+    if package_manager == "conda":
         update_conda_environment(python_version)
-    elif CONFIG_PATH.conda.exists():
-        _remove_conda_configuration(package_managers)
+    else:
+        _remove_conda_configuration()
 
 
 def update_conda_environment(python_version: PythonVersion) -> None:
@@ -106,9 +105,19 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration(
-    package_managers: set[PackageManagerChoice],
-) -> NoReturn:
+def _remove_conda_configuration() -> None:
+    with Executor() as do:
+        do(__remove_environment_yml)
+        # cspell:ignore condaenv
+        do(remove_lines, CONFIG_PATH.gitignore, r".*condaenv.*")
+        do(remove_lines, CONFIG_PATH.gitignore, r".*environment\.yml.*")
+
+
+def __remove_environment_yml() -> None:
+    if not CONFIG_PATH.conda.exists():
+        return
     CONFIG_PATH.conda.unlink()
-    msg = f"Removed Conda configuration, because --package-managers={','.join(sorted(package_managers))}"
+    msg = (
+        "Removed Conda configuration, because conda was not selected as package manager"
+    )
     raise PrecommitError(msg)

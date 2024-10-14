@@ -25,7 +25,6 @@
     "*.ico",
     ".editorconfig",
     ".envrc",
-    ".gitattributes",
     ".gitignore",
     ".gitpod.*",
     ".pre-commit-config.yaml",

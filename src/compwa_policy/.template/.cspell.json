@@ -21,6 +21,7 @@
     "**/.cspell.json",
     "**/Manifest.toml",
     "**/Project.toml",
+    "*.csl",
     "*.ico",
     "*.root",
     "*.svg",
@@ -31,6 +32,7 @@
     ".gitattributes",
     ".gitignore",
     ".gitpod.*",
+    ".htaccess",
     ".mypy.ini",
     ".pre-commit-config.yaml",
     ".prettierignore",
@@ -53,7 +55,8 @@
     "setup.cfg",
     "setup.py",
     "tox.ini",
-    "typings"
+    "typings",
+    "update-www"
   ],
   "language": "en-US",
   "words": [

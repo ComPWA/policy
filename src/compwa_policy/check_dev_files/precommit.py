@@ -14,10 +14,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook
 from compwa_policy.utilities.pyproject import ModifiablePyproject
-from compwa_policy.utilities.python import (
-    has_constraint_files,
-    split_dependency_definition,
-)
+from compwa_policy.utilities.python import split_dependency_definition
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -32,14 +29,16 @@ if TYPE_CHECKING:
 
 
 def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
+    with Executor() as do:
         do(_sort_hooks, precommit)
         do(_update_conda_environment, precommit)
         do(_update_precommit_ci_commit_msg, precommit)
         do(_update_precommit_ci_skip, precommit)
         do(_update_policy_hook, precommit, has_notebooks)
         do(_update_repo_urls, precommit)
-        do(_switch_to_precommit_uv, pyproject)
+        if CONFIG_PATH.pyproject.exists():
+            with ModifiablePyproject.load() as pyproject:
+                do(_switch_to_precommit_uv, pyproject)
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:
@@ -102,10 +101,7 @@ def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
     precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
-    if has_constraint_files():
-        expected_msg = "MAINT: update pip constraints and pre-commit"
-    else:
-        expected_msg = "MAINT: autoupdate pre-commit hooks"
+    expected_msg = "MAINT: update lock files"
     key = "autoupdate_commit_msg"
     autoupdate_commit_msg = precommit_ci.get(key)
     if autoupdate_commit_msg != expected_msg:
@@ -144,6 +140,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "check-jsonschema",
         "pyright",
         "taplo",
+        "uv-lock",
     }
     return [
         hook["id"]

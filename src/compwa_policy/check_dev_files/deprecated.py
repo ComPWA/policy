@@ -3,7 +3,7 @@
 import os
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import remove_configs, remove_from_gitignore, vscode
+from compwa_policy.utilities import CONFIG_PATH, remove_configs, remove_lines, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -29,7 +29,7 @@ def _remove_github_issue_templates() -> None:
 def _remove_markdownlint(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
         do(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
-        do(remove_from_gitignore, ".markdownlint.json")
+        do(remove_lines, CONFIG_PATH.gitignore, r"\.markdownlint\.json")
         do(
             vscode.remove_extension_recommendation,
             # cspell:ignore davidanson markdownlint
