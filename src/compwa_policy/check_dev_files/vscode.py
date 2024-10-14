@@ -117,11 +117,12 @@ def _update_doc_settings() -> None:
     }
     with Executor() as do:
         do(vscode.update_settings, settings)
-        do(
-            vscode.add_extension_recommendation,
-            "executablebookproject.myst-highlight",  # cspell:ignore executablebookproject
-        )
         do(vscode.add_extension_recommendation, "ms-vscode.live-server")
+        # cspell:ignore executablebookproject
+        myst_extension = "executablebookproject.myst-highlight"
+        unwanted_extensions = vscode.get_unwanted_extensions()
+        if myst_extension not in unwanted_extensions:
+            do(vscode.add_extension_recommendation, myst_extension)
 
 
 def _update_notebook_settings() -> None:

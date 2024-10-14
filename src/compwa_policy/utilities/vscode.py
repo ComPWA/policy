@@ -23,6 +23,12 @@ RemovedKeys = Union[Iterable[str], dict[str, "RemovedKeys"]]
 """Type for keys to be removed from a (nested) dictionary."""
 
 
+def get_unwanted_extensions() -> set[str]:
+    config = __load_config(CONFIG_PATH.vscode_extensions)
+    unwanted_extensions = config.get("unwantedRecommendations", set())
+    return {ext.lower() for ext in unwanted_extensions}
+
+
 def remove_settings(keys: RemovedKeys) -> None:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new_settings = _remove_keys(settings, keys)
