@@ -296,7 +296,7 @@ def _create_argparse() -> ArgumentParser:
     package_manager_choices = ", ".join(sorted(conda.PackageManagerChoice.__args__))  # type:ignore[attr-defined]
     parser.add_argument(
         "--package-managers",
-        default=package_manager_choices,
+        default="uv",
         help=dedent(f"""
             Specify which package managers to use for the project as a comma-separated
             list. Possible options: {package_manager_choices}
