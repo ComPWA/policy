@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 def remove_pixi_configuration() -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
+    with Executor() as do:
         do(remove_lines, CONFIG_PATH.gitattributes, "pixi")
         do(remove_lines, CONFIG_PATH.gitignore, ".*pixi.*")
         do(_remove_file, CONFIG_PATH.pixi_lock)
@@ -20,10 +20,12 @@ def remove_pixi_configuration() -> None:
             vscode.remove_settings,
             {"files.associations": ["**/pixi.lock", "pixi.lock"]},
         )
-        if not pyproject.has_table("tool.pixi"):
-            return
-        del pyproject._document["tool"]["pixi"]  # pyright: ignore[reportTypedDictNotRequiredAccess] # noqa: SLF001
-        pyproject.changelog.append("Removed Pixi configuration table")
+        if CONFIG_PATH.pyproject.exists():
+            with ModifiablePyproject.load() as pyproject:
+                if not pyproject.has_table("tool.pixi"):
+                    return
+                del pyproject._document["tool"]["pixi"]  # pyright: ignore[reportTypedDictNotRequiredAccess] # noqa: SLF001
+                pyproject.changelog.append("Removed Pixi configuration table")
 
 
 def _remove_file(path: Path) -> None:

@@ -29,14 +29,16 @@ if TYPE_CHECKING:
 
 
 def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
+    with Executor() as do:
         do(_sort_hooks, precommit)
         do(_update_conda_environment, precommit)
         do(_update_precommit_ci_commit_msg, precommit)
         do(_update_precommit_ci_skip, precommit)
         do(_update_policy_hook, precommit, has_notebooks)
         do(_update_repo_urls, precommit)
-        do(_switch_to_precommit_uv, pyproject)
+        if CONFIG_PATH.pyproject.exists():
+            with ModifiablePyproject.load() as pyproject:
+                do(_switch_to_precommit_uv, pyproject)
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:
