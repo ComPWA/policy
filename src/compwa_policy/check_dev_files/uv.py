@@ -6,8 +6,10 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+from jinja2 import Environment, FileSystemLoader
+
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.precommit.struct import Hook, Repo
@@ -22,6 +24,7 @@ def main(
     dev_python_version: PythonVersion,
     package_managers: set[PackageManagerChoice],
     precommit_config: ModifiablePrecommit,
+    repo_name: str,
 ) -> None:
     if "uv" in package_managers:
         with Executor() as do:
@@ -29,6 +32,7 @@ def main(
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
             if {"uv"} == package_managers:
+                do(_update_contributing_file, repo_name)
                 do(_remove_pip_constraint_files)
                 do(
                     vscode.remove_settings,
@@ -94,3 +98,22 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
             hooks=[Hook(id="uv-lock")],
         )
         precommit.update_single_hook_repo(repo)
+
+
+def _update_contributing_file(repo_name: str) -> None:
+    template_dir = COMPWA_POLICY_DIR / ".template"
+    env = Environment(
+        autoescape=True,
+        loader=FileSystemLoader(template_dir),
+    )
+    template = env.get_template("CONTRIBUTING.md.jinja")
+    context = {"REPO_NAME": repo_name}
+    expected_content = template.render(context) + "\n"
+    existing_content = ""
+    contributing_file = Path("CONTRIBUTING.md")
+    if contributing_file.exists():
+        existing_content = contributing_file.read_text()
+    if expected_content != existing_content:
+        contributing_file.write_text(expected_content)
+        msg = f"Updated {contributing_file} to latest template"
+        raise PrecommitError(msg)

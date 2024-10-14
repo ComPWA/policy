@@ -135,7 +135,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(precommit.main, precommit_config, has_notebooks)
         do(setuptools_scm.main)
         do(tox.main, has_notebooks)
-        do(uv.main, dev_python_version, package_managers, precommit_config)
+        do(
+            uv.main,
+            dev_python_version,
+            package_managers,
+            precommit_config,
+            args.repo_name,
+        )
         do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
 
