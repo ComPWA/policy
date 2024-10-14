@@ -18,6 +18,7 @@ from compwa_policy.utilities.pyproject import (
     complies_with_subset,
 )
 from compwa_policy.utilities.python import split_dependency_definition
+from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -44,6 +45,10 @@ def update_pixi_configuration(
         config_path = CONFIG_PATH.pixi_toml
         CONFIG_PATH.pixi_toml.touch()
     with Executor() as do, ModifiablePyproject.load(config_path) as config:
+        do(
+            add_badge,
+            "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
+        )
         do(_define_minimal_project, config)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
