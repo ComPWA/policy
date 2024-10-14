@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 
 if TYPE_CHECKING:
@@ -19,6 +20,21 @@ def main(
     if "uv" in package_managers:
         with Executor() as do:
             do(_update_python_version_file, dev_python_version)
+            if {"uv"} == package_managers:
+                do(_remove_pip_constraint_files)
+
+
+def _remove_pip_constraint_files() -> None:
+    if not CONFIG_PATH.pip_constraints.exists():
+        return
+    for item in CONFIG_PATH.pip_constraints.iterdir():
+        if item.is_dir():
+            item.rmdir()
+        else:
+            item.unlink()
+    CONFIG_PATH.pip_constraints.rmdir()
+    msg = f"Removed deprecated {CONFIG_PATH.pip_constraints}. Use uv.lock instead."
+    raise PrecommitError(msg)
 
 
 def _update_python_version_file(dev_python_version: PythonVersion) -> None:
