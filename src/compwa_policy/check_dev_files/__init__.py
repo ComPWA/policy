@@ -37,6 +37,7 @@ from compwa_policy.check_dev_files import (
     toml,
     tox,
     update_pip_constraints,
+    uv,
     vscode,
 )
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
@@ -134,6 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(precommit.main, precommit_config, has_notebooks)
         do(setuptools_scm.main)
         do(tox.main, has_notebooks)
+        do(uv.main, dev_python_version, package_managers)
         do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
 
