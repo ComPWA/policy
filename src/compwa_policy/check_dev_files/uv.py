@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import cache
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -11,7 +12,7 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
@@ -65,6 +66,8 @@ def _remove_pip_constraint_files() -> None:
 def _update_editor_config() -> None:
     if not CONFIG_PATH.editorconfig.exists():
         return
+    if not __has_uv_lock_file():
+        return
     expected_content = dedent("""
     [uv.lock]
     indent_size = 4
@@ -91,7 +94,7 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> None:
 
 
 def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
-    if filter_files(["uv.lock"]):
+    if __has_uv_lock_file():
         repo = Repo(
             repo="https://github.com/astral-sh/uv-pre-commit",
             rev="0.4.20",
@@ -119,3 +122,9 @@ def _update_contributing_file(repo_name: str) -> None:
         contributing_file.write_text(expected_content)
         msg = f"Updated {contributing_file} to latest template"
         raise PrecommitError(msg)
+
+
+@cache
+def __has_uv_lock_file() -> bool:
+    files = git_ls_files(untracked=True)
+    return any(matches_patterns(file, ["uv.lock"]) for file in files)
