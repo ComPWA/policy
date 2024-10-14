@@ -26,6 +26,7 @@ dependencies = [
     "html2text",
     "ini2toml",
     "nbformat",
+    "packaging",
     "pathspec",
     "pip-tools",
     "rtoml", # fast, read-only parsing

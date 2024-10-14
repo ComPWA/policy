@@ -26,6 +26,7 @@ from compwa_policy.check_dev_files import (
     pixi,
     precommit,
     prettier,
+    pyproject,
     pyright,
     pytest,
     pyupgrade,
@@ -111,6 +112,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     organization=args.repo_organization,
                 )
             do(mypy.main)
+            do(pyproject.main, args.excluded_python_versions)
             do(pyright.main, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
@@ -171,10 +173,14 @@ def _create_argparse() -> ArgumentParser:
     parser.add_argument(
         "--doc-apt-packages",
         default="",
-        help=(
-            "Comma- or space-separated list of APT packages that are required to build"
-            " documentation"
-        ),
+        help="Comma- or space-separated list of APT packages that are required to build documentation",
+        required=False,
+        type=str,
+    )
+    parser.add_argument(
+        "--excluded-python-versions",
+        default="",
+        help="Comma- or space-separated list of Python versions you do NOT want to support",
         required=False,
         type=str,
     )
