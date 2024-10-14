@@ -140,6 +140,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "check-jsonschema",
         "pyright",
         "taplo",
+        "uv-lock",
     }
     return [
         hook["id"]
