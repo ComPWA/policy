@@ -18,7 +18,7 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
-PackageManagerChoice = Literal["conda", "pixi", "uv", "venv"]
+PackageManagerChoice = Literal["none", "conda", "pixi", "uv", "venv"]
 """Package managers you want to develop the project with."""
 
 
