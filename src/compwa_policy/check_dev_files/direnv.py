@@ -16,11 +16,13 @@ if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
 
-def main(package_managers: set[PackageManagerChoice]) -> None:
+def main(
+    package_managers: set[PackageManagerChoice], variables: dict[str, str]
+) -> None:
     if {"none"} == package_managers:
         return
     if {"uv"} == package_managers:
-        _update_envrc_for_uv_only()
+        _update_envrc_for_uv_only(variables)
     else:
         statements: list[tuple[str | None, str]] = [
             (".venv", "source .venv/bin/activate"),
@@ -42,13 +44,15 @@ def main(package_managers: set[PackageManagerChoice]) -> None:
         _update_envrc(statements)
 
 
-def _update_envrc_for_uv_only() -> None:
+def _update_envrc_for_uv_only(variables: dict[str, str]) -> None:
     expected = dedent(
         """
     uv sync --all-extras --quiet
     source .venv/bin/activate
     """
     ).strip()
+    for name, value in variables.items():
+        expected += f"\nexport {name}={value}"
     __update_envrc_content(expected + "\n")
 
 

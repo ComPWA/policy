@@ -54,6 +54,7 @@ if TYPE_CHECKING:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _create_argparse()
     args = parser.parse_args(argv)
+    environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
     if not args.repo_title:
         args.repo_title = args.repo_name
@@ -102,7 +103,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dev_python_version,
             args.outsource_pixi_to_tox,
         )
-        do(direnv.main, package_managers)
+        do(direnv.main, package_managers, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
@@ -185,6 +186,13 @@ def _create_argparse() -> ArgumentParser:
         "--doc-apt-packages",
         default="",
         help="Comma- or space-separated list of APT packages that are required to build documentation",
+        required=False,
+        type=str,
+    )
+    parser.add_argument(
+        "--environment-variables",
+        default="",
+        help="Comma- or space-separated list of environment variables, e.g. PYTHONHASHSEED=0,SKIP=pyright",
         required=False,
         type=str,
     )
@@ -352,6 +360,39 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     return parser
+
+
+def _get_environment_variables(arg: str) -> dict[str, str]:
+    """Create a dictionary of environment variables from a string argument.
+
+    >>> _get_environment_variables("A=1, B=2")
+    {'A': '1', 'B': '2'}
+    >>> _get_environment_variables("A=1 B=2")
+    {'A': '1', 'B': '2'}
+    >>> _get_environment_variables("A=1")
+    {'A': '1'}
+    >>> _get_environment_variables("A=1,")
+    {'A': '1'}
+    >>> _get_environment_variables("A=1, B=2,")
+    {'A': '1', 'B': '2'}
+    >>> _get_environment_variables("A=1, B=2, ")
+    {'A': '1', 'B': '2'}
+    >>> _get_environment_variables("A=1, B=2, C=3")
+    {'A': '1', 'B': '2', 'C': '3'}
+    >>> _get_environment_variables("A=1, B=2, C=3,")
+    {'A': '1', 'B': '2', 'C': '3'}
+    >>> _get_environment_variables("A=1, B=2, C=3, ")
+    {'A': '1', 'B': '2', 'C': '3'}
+    >>> _get_environment_variables("A=1, B=2, C=3, D=4")
+    {'A': '1', 'B': '2', 'C': '3', 'D': '4'}
+    """
+    if not arg:
+        return {}
+    return dict(
+        pair.split("=")
+        for pair in arg.replace(",", " ").split()
+        if pair and "=" in pair
+    )
 
 
 def _to_list(arg: str) -> list[str]:
