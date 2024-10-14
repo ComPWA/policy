@@ -28,6 +28,15 @@ def main(
                     vscode.remove_settings,
                     {"files.associations": ["**/.constraints/py*.txt"]},
                 )
+                do(
+                    vscode.remove_settings,
+                    {
+                        "search.exclude": [
+                            "**/.constraints/py*.txt",
+                            ".constraints/*.txt",
+                        ]
+                    },
+                )
 
 
 def _remove_pip_constraint_files() -> None:
