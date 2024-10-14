@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import ModifiablePyproject
-from compwa_policy.utilities.pyproject.getters import _get_allowed_versions
+from compwa_policy.utilities.pyproject.getters import (
+    _get_allowed_versions,
+    _get_requires_python,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
 
@@ -27,8 +30,8 @@ def _update_python_version_classifiers(
             msg = "Removed Python version classifiers because of --no-pypi"
             pyproject.changelog.append(msg)
     else:
-        requires_python = project.get("requires-python")
-        if requires_python is None:
+        requires_python = _get_requires_python(project)
+        if not requires_python:
             return
         prefix = "Programming Language :: Python :: "
         expected_version_classifiers = [
