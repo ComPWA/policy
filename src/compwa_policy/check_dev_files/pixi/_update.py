@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import InlineTable, String, Table
 
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
@@ -32,20 +33,25 @@ def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     outsource_pixi_to_tox: bool,
+    package_manager: PackageManagerChoice,
 ) -> None:
+    if "pixi" not in package_manager:
+        return
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_define_minimal_project, pyproject)
-        if is_python_package:
-            do(_install_package_editable, pyproject)
         do(_import_conda_dependencies, pyproject)
         do(_import_conda_environment, pyproject)
-        do(_import_tox_tasks, pyproject)
-        do(_define_combined_ci_job, pyproject)
-        do(_set_dev_python_version, pyproject, dev_python_version)
-        do(_update_dev_environment, pyproject)
+        if package_manager == "pixi+uv":
+            do(_import_tox_tasks, pyproject)
+            do(_define_combined_ci_job, pyproject)
+        else:
+            if is_python_package:
+                do(_install_package_editable, pyproject)
+            do(_set_dev_python_version, pyproject, dev_python_version)
+            do(_update_dev_environment, pyproject)
+            do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
+            do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
         do(_clean_up_task_env, pyproject)
-        do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
-        do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
         do(
             vscode.update_settings,
             {"files.associations": {"**/pixi.lock": "yaml"}},

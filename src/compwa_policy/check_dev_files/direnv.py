@@ -20,38 +20,44 @@ def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> No
     if package_manager == "none":
         return
     if package_manager == "uv":
-        _update_envrc_for_uv_only(variables)
+        script = __get_uv_direnv(variables) + "\n"
+        __update_envrc_content(script)
+    elif package_manager == "pixi+uv":
+        script = __get_pixi_direnv() + "\n"
+        script += __get_uv_direnv(variables) + "\n"
+        __update_envrc_content(script)
     else:
         statements: list[tuple[str | None, str]] = [
             (".venv", "source .venv/bin/activate"),
             ("venv", "source venv/bin/activate"),
         ]
         if has_pixi_config():
-            dev_environment = __determine_pixi_dev_environment()
-            if dev_environment is None:
-                environment_flag = ""
-            else:
-                environment_flag = f" --environment {dev_environment}"
-            script = f"""
-                watch_file pixi.lock
-                eval "$(pixi shell-hook{environment_flag})"
-            """
+            script = __get_pixi_direnv()
             statements.append((".pixi", script))
         if CONFIG_PATH.conda.exists():
             statements.append((None, "layout anaconda"))
         _update_envrc(statements)
 
 
-def _update_envrc_for_uv_only(variables: dict[str, str]) -> None:
-    expected = dedent(
-        """
+def __get_pixi_direnv() -> str:
+    environment_flag = ""
+    dev_environment = __determine_pixi_dev_environment()
+    if dev_environment is not None:
+        environment_flag = f" --environment {dev_environment}"
+    return dedent(f"""
+        watch_file pixi.lock
+        eval "$(pixi shell-hook{environment_flag})"
+    """).strip()
+
+
+def __get_uv_direnv(variables: dict[str, str]) -> str:
+    script = dedent("""
     uv sync --all-extras --quiet
     source .venv/bin/activate
-    """
-    ).strip()
+    """)
     for name, value in variables.items():
-        expected += f"\nexport {name}={value}"
-    __update_envrc_content(expected + "\n")
+        script += f"\nexport {name}={value}"
+    return script.strip()
 
 
 def __determine_pixi_dev_environment() -> str | None:
