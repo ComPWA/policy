@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 
 if TYPE_CHECKING:
@@ -22,6 +22,10 @@ def main(
             do(_update_python_version_file, dev_python_version)
             if {"uv"} == package_managers:
                 do(_remove_pip_constraint_files)
+                do(
+                    vscode.remove_settings,
+                    {"files.associations": ["**/.constraints/py*.txt"]},
+                )
 
 
 def _remove_pip_constraint_files() -> None:
