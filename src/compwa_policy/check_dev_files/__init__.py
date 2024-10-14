@@ -117,7 +117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             do(mypy.main)
             do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
-            do(pyright.main, precommit_config)
+            do(pyright.main, package_managers, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
