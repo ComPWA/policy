@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from tomlkit import inline_table, string
@@ -21,6 +21,7 @@ from compwa_policy.utilities.python import split_dependency_definition
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
     from configparser import ConfigParser
 
     from tomlkit.items import InlineTable, String, Table
@@ -37,36 +38,41 @@ def update_pixi_configuration(
 ) -> None:
     if "pixi" not in package_manager:
         return
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_define_minimal_project, pyproject)
-        do(_import_conda_dependencies, pyproject)
-        do(_import_conda_environment, pyproject)
+    if package_manager == "pixi":
+        config_path = CONFIG_PATH.pyproject
+    else:
+        config_path = CONFIG_PATH.pixi_toml
+        CONFIG_PATH.pixi_toml.touch()
+    with Executor() as do, ModifiablePyproject.load(config_path) as config:
+        do(_define_minimal_project, config)
+        do(_import_conda_dependencies, config)
+        do(_import_conda_environment, config)
         if package_manager == "pixi+uv":
-            do(_import_tox_tasks, pyproject)
-            do(_define_combined_ci_job, pyproject)
+            do(_import_tox_tasks, config)
+            do(_define_combined_ci_job, config)
         else:
             if is_python_package:
-                do(_install_package_editable, pyproject)
-            do(_set_dev_python_version, pyproject, dev_python_version)
-            do(_update_dev_environment, pyproject)
-            do(_update_docnb_and_doclive, pyproject, "tool.pixi.tasks")
-            do(_update_docnb_and_doclive, pyproject, "tool.pixi.feature.dev.tasks")
-        do(_clean_up_task_env, pyproject)
+                do(_install_package_editable, config)
+            do(_set_dev_python_version, config, dev_python_version)
+            do(_update_dev_environment, config)
+            do(_update_docnb_and_doclive, config, "tasks")
+            do(_update_docnb_and_doclive, config, "feature.dev.tasks")
+        do(_clean_up_task_env, config)
         do(
             vscode.update_settings,
             {"files.associations": {"**/pixi.lock": "yaml"}},
         )
         if outsource_pixi_to_tox:
-            do(__outsource_pixi_tasks_to_tox, pyproject)
-        if has_pixi_config(pyproject):
+            do(__outsource_pixi_tasks_to_tox, config)
+        if has_pixi_config(config):
             do(__update_gitattributes)
             do(__update_gitignore)
 
 
-def _define_combined_ci_job(pyproject: ModifiablePyproject) -> None:
-    if not pyproject.has_table("tool.pixi.feature.dev.tasks"):
+def _define_combined_ci_job(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "feature.dev.tasks"):
         return
-    tasks = set(pyproject.get_table("tool.pixi.feature.dev.tasks"))
+    tasks = set(__get_table(config, "feature.dev.tasks"))
     expected = {"linkcheck", "sty"} & tasks
     if {"cov", "coverage"} & tasks:
         expected.add("cov")
@@ -76,29 +82,34 @@ def _define_combined_ci_job(pyproject: ModifiablePyproject) -> None:
         expected.add("docnb")
     elif "doc" in tasks:
         expected.add("doc")
-    ci = pyproject.get_table("tool.pixi.feature.dev.tasks.ci", create=True)
+    ci = __get_table(config, "feature.dev.tasks.ci", create=True)
     existing = set(ci.get("depends_on", set()))
     if not expected <= existing:
         depends_on = expected | existing & tasks
         ci["depends_on"] = to_toml_array(sorted(depends_on), multiline=False)
         msg = "Updated combined CI job for Pixi"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def _define_minimal_project(pyproject: ModifiablePyproject) -> None:
+def _define_minimal_project(config: ModifiablePyproject) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
-    settings = pyproject.get_table("tool.pixi.project", create=True)
-    minimal_settings = dict(
+    settings = __get_table(config, "project", create=True)
+    minimal_settings: dict[str, Any] = dict(
         channels=["conda-forge"],
         platforms=["linux-64"],
     )
+    if config._source == CONFIG_PATH.pixi_toml and CONFIG_PATH.pyproject.exists():  # noqa: SLF001
+        pyproject = Pyproject.load()
+        package_name = pyproject.get_package_name()
+        if package_name is not None:
+            minimal_settings["name"] = package_name
     if not complies_with_subset(settings, minimal_settings, exact_value_match=False):
         settings.update(minimal_settings)
         msg = "Defined minimal Pixi project settings"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def _import_conda_dependencies(pyproject: ModifiablePyproject) -> None:
+def _import_conda_dependencies(config: ModifiablePyproject) -> None:
     if not CONFIG_PATH.conda.exists():
         return
     with CONFIG_PATH.conda.open() as stream:
@@ -115,11 +126,11 @@ def _import_conda_dependencies(pyproject: ModifiablePyproject) -> None:
         if package in blacklisted_dependencies:
             continue
         expected_dependencies[package] = version
-    dependencies = pyproject.get_table("tool.pixi.dependencies", create=True)
+    dependencies = __get_table(config, "dependencies", create=True)
     if not complies_with_subset(dependencies, expected_dependencies):
         dependencies.update(expected_dependencies)
         msg = "Imported conda dependencies into Pixi"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
 def __to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
@@ -146,7 +157,7 @@ def __to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
     return package, f"{operator}{version}"
 
 
-def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
+def _import_conda_environment(config: ModifiablePyproject) -> None:
     if not CONFIG_PATH.conda.exists():
         return
     with CONFIG_PATH.conda.open() as stream:
@@ -154,14 +165,14 @@ def _import_conda_environment(pyproject: ModifiablePyproject) -> None:
     conda_variables = {k: str(v) for k, v in conda.get("variables", {}).items()}
     if not conda_variables:
         return
-    env_table = pyproject.get_table("tool.pixi.activation.env", create=True)
+    env_table = __get_table(config, "activation.env", create=True)
     if not complies_with_subset(env_table, conda_variables):
         env_table.update(conda_variables)
         msg = "Imported conda environment variables for Pixi"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
+def _import_tox_tasks(config: ModifiablePyproject) -> None:
     tox = read_tox_config()
     if tox is None:
         return
@@ -171,14 +182,14 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
     for job_name, task_name in tox_jobs.items():
         if job_name in blacklisted_jobs:
             continue
-        pixi_table_name = f"tool.pixi.feature.dev.tasks.{task_name}"
-        if pyproject.has_table(pixi_table_name):
+        pixi_table_name = f"feature.dev.tasks.{task_name}"
+        if __has_table(config, pixi_table_name):
             continue
         section = f"testenv:{job_name}" if job_name else "testenv"
         if not tox.has_option(section, "commands"):
             continue
         command = tox.get(section, option="commands", raw=True)
-        pixi_table = pyproject.get_table(pixi_table_name, create=True)
+        pixi_table = __get_table(config, pixi_table_name, create=True)
         pixi_table["cmd"] = __to_pixi_command(command)
         if tox.has_option(section, "setenv"):  # cspell:ignore setenv
             job_environment = tox.get(section, option="setenv", raw=True)
@@ -188,7 +199,7 @@ def _import_tox_tasks(pyproject: ModifiablePyproject) -> None:
         imported_tasks.append(task_name)
     if imported_tasks:
         msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
 def __get_tox_job_names(cfg: ConfigParser) -> dict[str, str]:
@@ -214,11 +225,11 @@ def __convert_tox_environment_variables(tox_env: str) -> InlineTable:
     return environment_variables
 
 
-def _clean_up_task_env(pyproject: ModifiablePyproject) -> None:
-    if not pyproject.has_table("tool.pixi.feature.dev.tasks"):
+def _clean_up_task_env(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "feature.dev.tasks"):
         return
-    global_env = __load_pixi_environment_variables(pyproject)
-    tasks = pyproject.get_table("tool.pixi.feature.dev.tasks")
+    global_env = __load_pixi_environment_variables(config)
+    tasks = __get_table(config, "feature.dev.tasks")
     updated_tasks = []
     for task_name, task_table in tasks.items():
         local_env = task_table.get("env", {})
@@ -234,13 +245,13 @@ def _clean_up_task_env(pyproject: ModifiablePyproject) -> None:
             updated_tasks.append(task_name)
     if updated_tasks:
         msg = f"Removed redundant environment variables from Pixi tasks {', '.join(updated_tasks)}"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def __load_pixi_environment_variables(pyproject: Pyproject) -> dict[str, str]:
-    if not pyproject.has_table("tool.pixi.activation"):
+def __load_pixi_environment_variables(config: ModifiablePyproject) -> dict[str, str]:
+    if not __has_table(config, "activation"):
         return {}
-    activation_table = pyproject.get_table("tool.pixi.activation", create=True)
+    activation_table = __get_table(config, "activation", create=True)
     return dict(activation_table.get("env", {}))
 
 
@@ -263,21 +274,21 @@ def __to_pixi_command(tox_command: str) -> String:
     return string(pixi_command, multiline="\n" in pixi_command)
 
 
-def _install_package_editable(pyproject: ModifiablePyproject) -> None:
+def _install_package_editable(config: ModifiablePyproject) -> None:
     editable = inline_table()
     editable.update({
         "path": ".",
         "editable": True,
     })
-    package_name = pyproject.get_package_name(raise_on_missing=True)
-    existing = pyproject.get_table("tool.pixi.pypi-dependencies", create=True)
+    package_name = config.get_package_name(raise_on_missing=True)
+    existing = __get_table(config, "pypi-dependencies", create=True)
     if dict(existing.get(package_name, {})) != dict(editable):
         existing[package_name] = editable
         msg = "Installed Python package in editable mode in Pixi"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
+def __outsource_pixi_tasks_to_tox(config: ModifiablePyproject) -> None:
     tox = read_tox_config()
     if tox is None:
         return
@@ -286,9 +297,9 @@ def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
     for tox_job, pixi_task in __get_tox_job_names(tox).items():
         if pixi_task in blacklisted_jobs:
             continue
-        if not pyproject.has_table(f"tool.pixi.feature.dev.tasks.{pixi_task}"):
+        if not __has_table(config, f"feature.dev.tasks.{pixi_task}"):
             continue
-        task = pyproject.get_table(f"tool.pixi.feature.dev.tasks.{pixi_task}")
+        task = __get_table(config, f"feature.dev.tasks.{pixi_task}")
         expected_cmd = f"tox -e {tox_job}"
         if task.get("cmd") != expected_cmd:
             task["cmd"] = expected_cmd
@@ -296,18 +307,18 @@ def __outsource_pixi_tasks_to_tox(pyproject: ModifiablePyproject) -> None:
             updated_tasks.append(pixi_task)
     if updated_tasks:
         msg = f"Outsourced Pixi tasks to tox: {', '.join(updated_tasks)}"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
 def _set_dev_python_version(
-    pyproject: ModifiablePyproject, dev_python_version: PythonVersion
+    config: ModifiablePyproject, dev_python_version: PythonVersion
 ) -> None:
-    dependencies = pyproject.get_table("tool.pixi.dependencies", create=True)
+    dependencies = __get_table(config, "dependencies", create=True)
     version = f"{dev_python_version}.*"
     if dependencies.get("python") != version:
         dependencies["python"] = version
         msg = f"Set Python version for Pixi developer environment to {version}"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
 def __update_gitattributes() -> None:
@@ -326,23 +337,23 @@ def __update_gitignore() -> None:
         raise PrecommitError(msg)
 
 
-def _update_dev_environment(pyproject: ModifiablePyproject) -> None:
-    if not pyproject.has_table("project.optional-dependencies"):
+def _update_dev_environment(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "project.optional-dependencies"):
         return
-    optional_dependencies = pyproject.get_table("project.optional-dependencies")
+    optional_dependencies = __get_table(config, "project.optional-dependencies")
     expected = inline_table()
     expected["features"] = to_toml_array(sorted(optional_dependencies))
-    environments = pyproject.get_table("tool.pixi.environments", create=True)
+    environments = __get_table(config, "environments", create=True)
     if environments.get("default") != expected:
         environments["default"] = expected
         msg = "Updated Pixi developer environment"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
-def _update_docnb_and_doclive(pyproject: ModifiablePyproject, table_key: str) -> None:
-    if not pyproject.has_table(table_key):
+def _update_docnb_and_doclive(config: ModifiablePyproject, table_key: str) -> None:
+    if not __has_table(config, table_key):
         return
-    tasks = pyproject.get_table(table_key)
+    tasks = __get_table(config, table_key)
     tables_to_overwrite = {
         "doc": ["docnb", "docnb-force"],
         "doclive": ["docnblive"],
@@ -357,7 +368,7 @@ def _update_docnb_and_doclive(pyproject: ModifiablePyproject, table_key: str) ->
                 updated_tasks.append(task_name)
     if updated_tasks:
         msg = f"Updated `cmd` of Pixi tasks {', '.join(updated_tasks)}"
-        pyproject.changelog.append(msg)
+        config.changelog.append(msg)
 
 
 def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
@@ -366,3 +377,17 @@ def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
         task["cmd"] = expected_cmd
         return True
     return False
+
+
+def __get_table(
+    config: ModifiablePyproject, key: str, create: bool = False
+) -> MutableMapping[str, Any]:
+    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+        key = f"tool.pixi.{key}"
+    return config.get_table(key, create=create)
+
+
+def __has_table(config: Pyproject, key: str) -> bool:
+    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+        key = f"tool.pixi.{key}"
+    return config.has_table(key)
