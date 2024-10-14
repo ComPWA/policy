@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 
 def main(package_managers: set[PackageManagerChoice]) -> None:
+    if {"none"} == package_managers:
+        return
     if {"uv"} == package_managers:
         _update_envrc_for_uv_only()
     else:
