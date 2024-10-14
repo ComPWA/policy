@@ -101,6 +101,9 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
 
 
 def _update_contributing_file(repo_name: str) -> None:
+    contributing_file = Path("CONTRIBUTING.md")
+    if not contributing_file.exists():
+        return
     template_dir = COMPWA_POLICY_DIR / ".template"
     env = Environment(
         autoescape=True,
@@ -110,7 +113,6 @@ def _update_contributing_file(repo_name: str) -> None:
     context = {"REPO_NAME": repo_name}
     expected_content = template.render(context) + "\n"
     existing_content = ""
-    contributing_file = Path("CONTRIBUTING.md")
     if contributing_file.exists():
         existing_content = contributing_file.read_text()
     if expected_content != existing_content:
