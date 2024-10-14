@@ -15,7 +15,22 @@ def main(excluded_python_versions: set[str], no_pypi: bool) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     with ModifiablePyproject.load() as pyproject:
+        _update_requires_python(pyproject)
         _update_python_version_classifiers(pyproject, excluded_python_versions, no_pypi)
+
+
+def _update_requires_python(pyproject: ModifiablePyproject) -> None:
+    if not pyproject.has_table("project"):
+        return
+    project = pyproject.get_table("project")
+    if "requires-python" in project:
+        return
+    requires_python = _get_requires_python(project)
+    if requires_python:
+        minimal_version, *_ = _get_allowed_versions(requires_python)
+        requires_python = f">={minimal_version}"
+        project["requires-python"] = requires_python
+        pyproject.changelog.append(f'Set requires-python = "{requires_python}" field')
 
 
 def _update_python_version_classifiers(

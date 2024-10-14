@@ -137,18 +137,26 @@ def _get_allowed_versions(
     """Get a list of allowed versions from a version range specifier.
 
     >>> _get_allowed_versions(">=3.9,<3.13")
-    ['3.10', '3.11', '3.12', '3.9']
+    ['3.9', '3.10', '3.11', '3.12']
     >>> _get_allowed_versions(">=3.9", exclude={"3.9"})
     ['3.10', '3.11', '3.12']
     >>> _get_allowed_versions("~=3.12")
     ['3.12']
+    >>> _get_allowed_versions("")
+    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     """
     specifier = SpecifierSet(version_range)
-    versions_to_check = [Version(v) for v in sorted(PYTHON_VERSIONS)]
+    versions_to_check = [
+        Version(v) for v in sorted(PYTHON_VERSIONS, key=__sort_version)
+    ]
     allowed_versions = [str(v) for v in versions_to_check if v in specifier]
     if exclude is not None:
         allowed_versions = [v for v in allowed_versions if v not in exclude]
     return allowed_versions  # type:ignore[return-value]
+
+
+def __sort_version(version: str) -> tuple[int, ...]:
+    return tuple(int(i) for i in version.split("."))
 
 
 def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str, Any]:
