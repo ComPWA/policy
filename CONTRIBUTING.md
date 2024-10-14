@@ -18,3 +18,9 @@ Now it's simply a matter of creating and activating the [virtual environment](ht
 uv sync
 source .venv/bin/activate
 ```
+
+Formatting and linting checks are automatically performed when committing changes. This is done with [pre-commit](https://pre-commit.com). To install the hooks in your local repository, run [`pre-commit install`](https://pre-commit.com/#3-install-the-git-hook-scripts) **once**:
+
+```shell
+pre-commit install --install-hooks
+```
