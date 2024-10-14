@@ -14,6 +14,7 @@ from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
+from compwa_policy.utilities.readme import add_badge
 
 if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
@@ -29,6 +30,10 @@ def main(
 ) -> None:
     if "uv" in package_manager:
         with Executor() as do:
+            do(
+                add_badge,
+                "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
+            )
             do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
