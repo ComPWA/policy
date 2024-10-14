@@ -112,7 +112,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     organization=args.repo_organization,
                 )
             do(mypy.main)
-            do(pyproject.main, args.excluded_python_versions)
+            do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
             do(pyright.main, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
