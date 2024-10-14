@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 def remove_pixi_configuration() -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(remove_lines, CONFIG_PATH.gitattributes, "pixi")
+        do(remove_lines, CONFIG_PATH.gitignore, ".*pixi.*")
         do(_remove_file, CONFIG_PATH.pixi_lock)
         do(_remove_file, CONFIG_PATH.pixi_toml)
         do(
