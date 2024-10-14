@@ -225,4 +225,6 @@ def __sort_section(content: Iterable[Any], section_name: str) -> list[str]:
         return sorted(content, key=sort_key)
     if section_name == "ignoreWords":
         return sorted(content)
-    return sorted(content, key=str.casefold)
+    str_content = [s for s in content if isinstance(s, str)]
+    other_content = [s for s in content if not isinstance(s, str)]
+    return sorted(str_content, key=str.casefold) + other_content
