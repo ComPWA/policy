@@ -20,13 +20,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(
-    package_managers: set[PackageManagerChoice], precommit: ModifiablePrecommit
-) -> None:
+def main(package_manager: PackageManagerChoice, precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
         _merge_config_into_pyproject(pyproject)
         _update_precommit(precommit, pyproject)
-        _update_excludes(package_managers, pyproject)
+        _update_excludes(package_manager, pyproject)
         _update_settings(pyproject)
 
 
@@ -69,14 +67,14 @@ def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> N
 
 
 def _update_excludes(
-    package_managers: set[PackageManagerChoice], pyproject: ModifiablePyproject
+    package_manager: PackageManagerChoice, pyproject: ModifiablePyproject
 ) -> None:
     if not __has_pyright(pyproject):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
     existing_excludes = pyright_settings.get("exclude", [])
     expected_excludes = set(existing_excludes)
-    if "uv" in package_managers:
+    if package_manager == "uv":
         expected_excludes.add("**/.venv/")
     expected_excludes_list = sorted(expected_excludes)
     if existing_excludes != expected_excludes_list:

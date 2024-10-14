@@ -16,12 +16,10 @@ if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
 
-def main(
-    package_managers: set[PackageManagerChoice], variables: dict[str, str]
-) -> None:
-    if {"none"} == package_managers:
+def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> None:
+    if package_manager == "none":
         return
-    if {"uv"} == package_managers:
+    if package_manager == "uv":
         _update_envrc_for_uv_only(variables)
     else:
         statements: list[tuple[str | None, str]] = [

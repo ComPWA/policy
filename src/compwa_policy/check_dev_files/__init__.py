@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 import sys
 from argparse import ArgumentParser
-from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.check_dev_files import (
@@ -48,6 +47,7 @@ from compwa_policy.utilities.precommit import ModifiablePrecommit
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject import PythonVersion
 
 
@@ -63,16 +63,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     use_gitpod = args.gitpod
     dev_python_version = __get_python_version(args.dev_python_version)
-    package_managers: set[conda.PackageManagerChoice] = set(
-        _to_list(args.package_managers)  # type: ignore[arg-type]
-    )
+    package_manager: PackageManagerChoice = args.package_manager
     with (
         Executor(raise_exception=False) as do,
         ModifiablePrecommit.load() as precommit_config,
     ):
         do(citation.main, precommit_config)
         do(commitlint.main)
-        do(conda.main, dev_python_version, package_managers)
+        do(conda.main, dev_python_version, package_manager)
         do(dependabot.main, args.dependabot)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
@@ -98,12 +96,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(
             pixi.main,
-            package_managers,
+            package_manager,
             is_python_repo,
             dev_python_version,
             args.outsource_pixi_to_tox,
         )
-        do(direnv.main, package_managers, environment_variables)
+        do(direnv.main, package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
@@ -118,7 +116,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             do(mypy.main)
             do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
-            do(pyright.main, package_managers, precommit_config)
+            do(pyright.main, package_manager, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
@@ -129,7 +127,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 precommit_config,
                 frequency=args.pin_requirements,
             )
-        do(readthedocs.main, package_managers, dev_python_version)
+        do(readthedocs.main, package_manager, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
         do(vscode.main, has_notebooks, is_python_repo)
         do(gitpod.main, use_gitpod, dev_python_version)
@@ -139,7 +137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(
             uv.main,
             dev_python_version,
-            package_managers,
+            package_manager,
             precommit_config,
             args.repo_name,
         )
@@ -309,14 +307,11 @@ def _create_argparse() -> ArgumentParser:
         default=False,
         help="Do not push to matching major/minor version branches upon tagging",
     )
-    package_manager_choices = ", ".join(sorted(conda.PackageManagerChoice.__args__))  # type:ignore[attr-defined]
     parser.add_argument(
-        "--package-managers",
+        "--package-manager",
+        choices=sorted(conda.PackageManagerChoice.__args__),  # type:ignore[attr-defined]
         default="uv",
-        help=dedent(f"""
-            Specify which package managers to use for the project as a comma-separated
-            list. Possible options: {package_manager_choices}
-        """).replace("\n", " "),
+        help="Specify which package manager to use for the project",
         type=str,
     )
     parser.add_argument(

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def main(
-    package_managers: set[PackageManagerChoice],
+    package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     source: IO | Path | str = CONFIG_PATH.readthedocs,
 ) -> None:
@@ -32,7 +32,7 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    _update_post_install(rtd, python_version, package_managers)
+    _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
 
 
@@ -67,11 +67,11 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
 def _update_post_install(
     config: ReadTheDocs,
     python_version: PythonVersion,
-    package_managers: set[PackageManagerChoice],
+    package_manager: PackageManagerChoice,
 ) -> None:
     jobs = get_nested_dict(config.document, ["build", "jobs"])
     steps: list[str] = jobs.get("post_install", [])
-    expected_pip_install_steps = __get_install_steps(python_version, package_managers)
+    expected_pip_install_steps = __get_install_steps(python_version, package_manager)
     start = __find_step(steps, pattern=".*pip install.*")
     if start is None:
         start = 0
@@ -92,11 +92,11 @@ def _update_post_install(
 
 def __get_install_steps(
     python_version: PythonVersion,
-    package_managers: set[PackageManagerChoice],
+    package_manager: PackageManagerChoice,
 ) -> list[str]:
     pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
-    if {"uv"} == package_managers:
+    if package_manager == "uv":
         install_statement = "python -m uv sync --extra=doc"
     elif constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"

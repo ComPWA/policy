@@ -18,14 +18,12 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
-PackageManagerChoice = Literal["none", "conda", "pixi", "uv", "venv"]
+PackageManagerChoice = Literal["none", "uv", "conda", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
-def main(
-    python_version: PythonVersion, package_managers: set[PackageManagerChoice]
-) -> None:
-    if "conda" in package_managers:
+def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -> None:
+    if package_manager == "conda":
         update_conda_environment(python_version)
     else:
         _remove_conda_configuration()
@@ -119,5 +117,7 @@ def __remove_environment_yml() -> None:
     if not CONFIG_PATH.conda.exists():
         return
     CONFIG_PATH.conda.unlink()
-    msg = "Removed Conda configuration, because conda was not listed in --package-managers"
+    msg = (
+        "Removed Conda configuration, because conda was not selected as package manager"
+    )
     raise PrecommitError(msg)

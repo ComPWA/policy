@@ -23,32 +23,31 @@ if TYPE_CHECKING:
 
 def main(
     dev_python_version: PythonVersion,
-    package_managers: set[PackageManagerChoice],
+    package_manager: PackageManagerChoice,
     precommit_config: ModifiablePrecommit,
     repo_name: str,
 ) -> None:
-    if "uv" in package_managers:
+    if package_manager == "uv":
         with Executor() as do:
             do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
-            if {"uv"} == package_managers:
-                do(_update_contributing_file, repo_name)
-                do(_remove_pip_constraint_files)
-                do(
-                    vscode.remove_settings,
-                    {"files.associations": ["**/.constraints/py*.txt"]},
-                )
-                do(
-                    vscode.remove_settings,
-                    {
-                        "search.exclude": [
-                            "**/.constraints/py*.txt",
-                            ".constraints/*.txt",
-                        ]
-                    },
-                )
+            do(_update_contributing_file, repo_name)
+            do(_remove_pip_constraint_files)
+            do(
+                vscode.remove_settings,
+                {"files.associations": ["**/.constraints/py*.txt"]},
+            )
+            do(
+                vscode.remove_settings,
+                {
+                    "search.exclude": [
+                        "**/.constraints/py*.txt",
+                        ".constraints/*.txt",
+                    ]
+                },
+            )
 
 
 def _hide_uv_lock_from_vscode_search() -> None:
