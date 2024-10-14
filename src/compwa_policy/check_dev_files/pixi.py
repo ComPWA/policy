@@ -52,7 +52,6 @@ def _update_pixi_configuration(
     outsource_pixi_to_tox: bool,
 ) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(__configure_setuptools_scm, pyproject)
         do(__define_minimal_project, pyproject)
         if is_python_package:
             do(__install_package_editable, pyproject)
@@ -74,21 +73,6 @@ def _update_pixi_configuration(
         if has_pixi_config(pyproject):
             do(__update_gitattributes)
             do(__update_gitignore)
-
-
-def __configure_setuptools_scm(pyproject: ModifiablePyproject) -> None:
-    """Configure :code:`setuptools_scm` to not include git info in package version."""
-    if not pyproject.has_table("tool.setuptools_scm"):
-        return
-    setuptools_scm = pyproject.get_table("tool.setuptools_scm")
-    expected_scheme = {
-        "local_scheme": "no-local-version",
-        "version_scheme": "post-release",
-    }
-    if not complies_with_subset(setuptools_scm, expected_scheme):
-        setuptools_scm.update(expected_scheme)
-        msg = "Configured setuptools_scm to not include git info in package version for pixi"
-        pyproject.changelog.append(msg)
 
 
 def __define_combined_ci_job(pyproject: ModifiablePyproject) -> None:

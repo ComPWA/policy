@@ -32,6 +32,7 @@ from compwa_policy.check_dev_files import (
     readthedocs,
     release_drafter,
     ruff,
+    setuptools_scm,
     toml,
     tox,
     update_pip_constraints,
@@ -126,6 +127,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         do(vscode.main, has_notebooks)
         do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
+        do(setuptools_scm.main)
         do(tox.main, has_notebooks)
         do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
