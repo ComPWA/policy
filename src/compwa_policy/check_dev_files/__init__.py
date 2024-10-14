@@ -41,6 +41,7 @@ from compwa_policy.check_dev_files import (
 )
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 if TYPE_CHECKING:
@@ -55,7 +56,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     is_python_repo = not args.no_python
     if not args.repo_title:
         args.repo_title = args.repo_name
-    has_notebooks = not args.no_notebooks
+    has_notebooks = any(
+        matches_patterns(file, ["**/*.ipynb"]) for file in git_ls_files(untracked=True)
+    )
     use_gitpod = args.gitpod
     dev_python_version = __get_python_version(args.dev_python_version)
     package_managers: set[conda.PackageManagerChoice] = set(
@@ -271,12 +274,6 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Do not run test job on macOS",
-    )
-    parser.add_argument(
-        "--no-notebooks",
-        action="store_true",
-        default=False,
-        help="This repository does not contain Jupyter notebooks",
     )
     parser.add_argument(
         "--no-pypi",
