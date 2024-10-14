@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textwrap import dedent, indent
+from typing import TYPE_CHECKING
 
 import rtoml
 
@@ -11,26 +12,42 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 
+if TYPE_CHECKING:
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
-def main() -> None:
-    statements: list[tuple[str | None, str]] = [
-        (".venv", "source .venv/bin/activate"),
-        ("venv", "source venv/bin/activate"),
-    ]
-    if has_pixi_config():
-        dev_environment = __determine_pixi_dev_environment()
-        if dev_environment is None:
-            environment_flag = ""
-        else:
-            environment_flag = f" --environment {dev_environment}"
-        script = f"""
-            watch_file pixi.lock
-            eval "$(pixi shell-hook{environment_flag})"
+
+def main(package_managers: set[PackageManagerChoice]) -> None:
+    if {"uv"} == package_managers:
+        _update_envrc_for_uv_only()
+    else:
+        statements: list[tuple[str | None, str]] = [
+            (".venv", "source .venv/bin/activate"),
+            ("venv", "source venv/bin/activate"),
+        ]
+        if has_pixi_config():
+            dev_environment = __determine_pixi_dev_environment()
+            if dev_environment is None:
+                environment_flag = ""
+            else:
+                environment_flag = f" --environment {dev_environment}"
+            script = f"""
+                watch_file pixi.lock
+                eval "$(pixi shell-hook{environment_flag})"
+            """
+            statements.append((".pixi", script))
+        if CONFIG_PATH.conda.exists():
+            statements.append((None, "layout anaconda"))
+        _update_envrc(statements)
+
+
+def _update_envrc_for_uv_only() -> None:
+    expected = dedent(
         """
-        statements.append((".pixi", script))
-    if CONFIG_PATH.conda.exists():
-        statements.append((None, "layout anaconda"))
-    _update_envrc(statements)
+    uv sync --all-extras --quiet
+    source .venv/bin/activate
+    """
+    ).strip()
+    __update_envrc_content(expected + "\n")
 
 
 def __determine_pixi_dev_environment() -> str | None:
@@ -69,12 +86,15 @@ def _update_envrc(statements: list[tuple[str | None, str]]) -> None:
         script = dedent(script).strip()
         expected += indent(script, prefix="  ") + "\n"
     expected += "fi\n"
-    existing = __get_existing_envrc()
-    if existing == expected:
+    __update_envrc_content(expected)
+
+
+def __update_envrc_content(expected: str) -> None:
+    if __get_existing_envrc() == expected:
         return
-    with open(".envrc", "w") as f:
+    with open(CONFIG_PATH.envrc, "w") as f:
         f.write(expected)
-    msg = "Updated .envrc for direnv"
+    msg = f"Updated {CONFIG_PATH.envrc} for direnv"
     raise PrecommitError(msg)
 
 

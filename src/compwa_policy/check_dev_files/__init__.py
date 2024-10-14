@@ -102,7 +102,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dev_python_version,
             args.outsource_pixi_to_tox,
         )
-        do(direnv.main)
+        do(direnv.main, package_managers)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config, args.no_prettierrc)
         if is_python_repo:
