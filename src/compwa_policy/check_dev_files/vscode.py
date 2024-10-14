@@ -7,10 +7,10 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.python import has_constraint_files
 
 
-def main(has_notebooks: bool) -> None:
+def main(has_notebooks: bool, is_python_repo: bool) -> None:
     with Executor() as do:
         do(_update_extensions)
-        do(_update_settings, has_notebooks)
+        do(_update_settings, has_notebooks, is_python_repo)
 
 
 def _update_extensions() -> None:
@@ -44,7 +44,7 @@ def _update_extensions() -> None:
         )
 
 
-def _update_settings(has_notebooks: bool) -> None:
+def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
     with Executor() as do:
         do(
             vscode.update_settings,
@@ -54,10 +54,11 @@ def _update_settings(has_notebooks: bool) -> None:
                 "gitlens.telemetry.enabled": False,
                 "multiDiffEditor.experimental.enabled": True,
                 "redhat.telemetry.enabled": False,
-                "rewrap.wrappingColumn": 88,  # black
                 "telemetry.telemetryLevel": "off",
             },
         )
+        if is_python_repo:
+            do(vscode.update_settings, {"rewrap.wrappingColumn": 88})
         do(
             vscode.update_settings,
             {

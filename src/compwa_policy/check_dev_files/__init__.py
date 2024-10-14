@@ -130,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         do(readthedocs.main, package_managers, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
-        do(vscode.main, has_notebooks)
+        do(vscode.main, has_notebooks, is_python_repo)
         do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(setuptools_scm.main)
