@@ -40,6 +40,7 @@ def main(
             pixi_packages.add("uv")
         _install_pixi(rtd, pixi_packages)
         _remove_redundant_settings(rtd)
+        _update_build_step(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
@@ -161,6 +162,36 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
         return False
     del dct[key]
     return True
+
+
+def _update_build_step(config: ReadTheDocs) -> None:
+    cmd = dedent(R"""
+        export UV_LINK_MODE=copy
+        uv run \
+          --extra doc \
+          --locked \
+          --with tox \
+          tox -e doc
+        mv docs/_build/html $READTHEDOCS_OUTPUT
+    """).strip()
+    commands = __get_commands(config)
+    idx = None
+    for i, command in enumerate(commands):
+        if (
+            "python3 -m sphinx" in command
+            or "sphinx-build" in command
+            or "tox -e" in command
+        ):
+            idx = i
+            break
+    if idx is None:
+        commands.append(LiteralScalarString(cmd))
+    elif commands[idx] != cmd:
+        commands[idx] = LiteralScalarString(cmd)
+    else:
+        return
+    msg = "Updated Sphinx build step in Read the Docs"
+    config.changelog.append(msg)
 
 
 def _update_post_install(
