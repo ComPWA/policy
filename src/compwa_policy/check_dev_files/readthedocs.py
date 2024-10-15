@@ -172,6 +172,7 @@ def _update_build_step(config: ReadTheDocs) -> None:
           --locked \
           --with tox \
           tox -e doc
+        mkdir -p $READTHEDOCS_OUTPUT
         mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
     commands = __get_commands(config)
