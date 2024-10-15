@@ -1,6 +1,11 @@
 {
   "version": "0.2",
-  "enableFiletypes": ["git-commit", "github-actions-workflow", "julia", "jupyter"],
+  "enableFiletypes": [
+    "git-commit",
+    "github-actions-workflow",
+    "julia",
+    "jupyter"
+  ],
   "flagWords": [
     "analyse",
     "colour",
@@ -104,7 +109,6 @@
     "precommit",
     "prereleased",
     "prettierignore",
-    "prettierrc",
     "pyright",
     "pyupgrade",
     "redeboer",

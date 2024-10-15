@@ -51,7 +51,6 @@ repos:
         args:
           - --allow-labels
           - --dependabot=update
-          - --no-prettierrc
           - --no-pypi
           - --repo-name=policy
           - --repo-title=ComPWA repository policy

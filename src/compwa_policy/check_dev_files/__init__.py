@@ -103,7 +103,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         do(direnv.main, package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
-        do(prettier.main, precommit_config, args.no_prettierrc)
+        do(prettier.main, precommit_config)
         if is_python_repo:
             if args.no_ruff:
                 do(black.main, precommit_config, has_notebooks)
@@ -252,12 +252,6 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Skip check that concern config files for Python projects.",
-    )
-    parser.add_argument(
-        "--no-prettierrc",
-        action="store_true",
-        default=False,
-        help="Remove the prettierrc, so that Prettier's default values are used.",
     )
     parser.add_argument(
         "--allow-labels",
