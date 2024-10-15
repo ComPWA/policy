@@ -37,6 +37,7 @@ def main(
             _install_asdf_plugin(rtd, "uv")
         if "pixi" in package_manager:
             _install_asdf_plugin(rtd, "pixi")
+        _import_graphviz_if_available(rtd)
         _remove_redundant_settings(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
@@ -84,6 +85,22 @@ def _install_asdf_plugin(config: ReadTheDocs, plugin_name: str) -> None:
         return
     commands.insert(0, LiteralScalarString(cmd))
     msg = f"Added asdf plugin installation for {plugin_name}"
+    config.changelog.append(msg)
+
+
+def _import_graphviz_if_available(config: ReadTheDocs) -> None:
+    apt_packages = config.document.get("build", {}).get("apt_packages", [])
+    if "graphviz" not in set(apt_packages):
+        return
+    _install_asdf_plugin(config, "pixi")
+    commands = config.document["build"]["commands"]
+    idx = 0
+    for cmd in commands:
+        if "asdf" not in cmd:
+            break
+        idx += 1
+    commands.insert(idx, "pixi global install graphviz")
+    msg = "Graphviz is now installed through pixi in Read the Docs"
     config.changelog.append(msg)
 
 
