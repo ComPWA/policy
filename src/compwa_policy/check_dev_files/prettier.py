@@ -6,9 +6,8 @@ import os
 from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
@@ -24,16 +23,11 @@ __BADGE = """
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.prettier) as __STREAM:
-    __EXPECTED_CONFIG = __STREAM.read()
-
-
-def main(precommit: ModifiablePrecommit, no_prettierrc: bool) -> None:
+def main(precommit: ModifiablePrecommit) -> None:
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
         _remove_configuration()
     else:
         with Executor() as do:
-            do(_fix_config_content, no_prettierrc)
             do(add_badge, __BADGE)
             do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
             do(_update_prettier_hook, precommit)
@@ -41,52 +35,25 @@ def main(precommit: ModifiablePrecommit, no_prettierrc: bool) -> None:
 
 
 def _remove_configuration() -> None:
-    if CONFIG_PATH.prettier.exists():
-        os.remove(CONFIG_PATH.prettier)
-        msg = f'"{CONFIG_PATH.prettier}" is no longer required and has been removed'
+    old_config_files = [
+        ".prettierrc.json",
+        ".prettierrc.json5",
+        ".prettierrc.toml",
+        ".prettierrc.yaml",
+        ".prettierrc.yml",
+        ".prettierrc",
+    ]
+    removed_paths = []
+    for path in old_config_files:
+        if os.path.exists(path):
+            os.remove(path)
+            removed_paths.append(path)
+    if removed_paths:
+        removed_paths_str = ", ".join(removed_paths)
+        msg = f"Removed redundant configuration files: {removed_paths_str}"
         raise PrecommitError(msg)
     remove_badge(__BADGE_PATTERN)
     vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
-
-
-def _fix_config_content(no_prettierrc: bool) -> None:
-    if filter_files([".prettierrc.yml"]):
-        return
-    if no_prettierrc:
-        with Executor() as do:
-            do(__remove_prettierrc)
-            do(vscode.remove_settings, {"[markdown]": {"editor.wordWrap"}})
-    else:
-        if not CONFIG_PATH.prettier.exists():
-            existing_content = ""
-        else:
-            with open(CONFIG_PATH.prettier) as stream:
-                existing_content = stream.read()
-        if existing_content != __EXPECTED_CONFIG:
-            with open(CONFIG_PATH.prettier, "w") as stream:
-                stream.write(__EXPECTED_CONFIG)
-            msg = f"Updated {CONFIG_PATH.prettier} config file"
-            raise PrecommitError(msg)
-
-    wrong_config_paths = [  # https://prettier.io/docs/en/configuration.html
-        ".prettierrc.json",
-        ".prettierrc.yaml",
-        ".prettierrc.json5",
-        ".prettierrc.toml",
-    ]
-    for path in wrong_config_paths:
-        if os.path.exists(path):
-            os.remove(path)
-            msg = f'Removed "{path}": "{CONFIG_PATH.prettier}" should suffice'
-            raise PrecommitError(msg)
-
-
-def __remove_prettierrc() -> None:
-    if not CONFIG_PATH.prettier.exists():
-        return
-    CONFIG_PATH.prettier.unlink()
-    msg = f"Removed {CONFIG_PATH.prettier} as requested by --no-prettierrc"
-    raise PrecommitError(msg)
 
 
 def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:

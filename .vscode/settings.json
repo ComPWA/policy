@@ -71,7 +71,6 @@
     "src/compwa_policy/.github/workflows/pr-linting.yml": true,
     "src/compwa_policy/.github/workflows/release-drafter.yml": true,
     "src/compwa_policy/.template/.gitpod.yml": true,
-    "src/compwa_policy/.template/.prettierrc": true,
     "tests/**/.pre-commit-config*.yaml": true,
     "tests/**/pyproject*.toml": true,
     "tests/**/pyrightconfig*.json": true
