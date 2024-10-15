@@ -42,6 +42,7 @@ def main(
     github_pages: bool,
     keep_pr_linting: bool,
     no_macos: bool,
+    no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
     python_version: PythonVersion,
@@ -50,7 +51,7 @@ def main(
     test_extras: list[str],
 ) -> None:
     with Executor() as do:
-        do(_update_cd_workflow, no_pypi, no_version_branches)
+        do(_update_cd_workflow, no_milestones, no_pypi, no_version_branches)
         do(
             _update_ci_workflow,
             precommit,
@@ -68,12 +69,16 @@ def main(
         do(_recommend_vscode_extension)
 
 
-def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:  # noqa: C901
-    def update() -> None:
+def _update_cd_workflow(  # noqa: C901
+    no_milestones: bool, no_pypi: bool, no_version_branches: bool
+) -> None:
+    def update() -> None:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
         banned_jobs = set()
+        if no_milestones:
+            banned_jobs.add("milestone")
         if no_pypi or not has_pyproject_package_name():
             banned_jobs.add("package-name")
             banned_jobs.add("pypi")
@@ -84,6 +89,9 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:  # no
             return
         for name in banned_jobs:
             expected_data["jobs"].pop(name, None)
+        if not expected_data["jobs"]:
+            remove_workflow("cd.yml")
+            return
         if not workflow_path.exists():
             update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
