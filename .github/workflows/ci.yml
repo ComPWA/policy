@@ -2,7 +2,7 @@ name: CI
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: >-
+  cancel-in-progress: |-
     ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 env:
@@ -28,7 +28,7 @@ on:
 
 jobs:
   doc:
-    uses: ComPWA/actions/.github/workflows/ci-docs.yml@v1
+    uses: ComPWA/actions/.github/workflows/ci-docs.yml@v2
     permissions:
       pages: write
       id-token: write
@@ -36,7 +36,7 @@ jobs:
       gh-pages: true
       specific-pip-packages: ${{ inputs.specific-pip-packages }}
   pytest:
-    uses: ComPWA/actions/.github/workflows/pytest.yml@v1
+    uses: ComPWA/actions/.github/workflows/pytest.yml@v2
     with:
       coverage-target: compwa_policy
       macos-python-version: "3.9"
@@ -45,4 +45,4 @@ jobs:
     if: inputs.specific-pip-packages == ''
     secrets:
       token: ${{ secrets.PAT }}
-    uses: ComPWA/actions/.github/workflows/pre-commit.yml@v1
+    uses: ComPWA/actions/.github/workflows/pre-commit.yml@v2
