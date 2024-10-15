@@ -20,6 +20,7 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -615,7 +616,7 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
     expected_repo = Repo(
         repo="https://github.com/nbQA-dev/nbQA",
         rev="1.9.0",
-        hooks=[Hook(id="nbqa-isort", args=YAML(typ="rt").load("[--float-to-top]"))],
+        hooks=[Hook(id="nbqa-isort", args=read_preserved_yaml("[--float-to-top]"))],
     )
     if excludes is not None:
         expected_repo["hooks"][0]["exclude"] = excludes

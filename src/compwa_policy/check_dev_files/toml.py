@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import tomlkit
-from ruamel.yaml import YAML
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
@@ -16,6 +15,7 @@ from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -70,7 +70,7 @@ def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo="https://github.com/pappasam/toml-sort",
         rev="",
-        hooks=[Hook(id="toml-sort", args=YAML(typ="rt").load("[--in-place]"))],
+        hooks=[Hook(id="toml-sort", args=read_preserved_yaml("[--in-place]"))],
     )
     excludes = filter_patterns([
         "**/Manifest.toml",

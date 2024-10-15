@@ -2,14 +2,13 @@
 
 from typing import Any
 
-from ruamel.yaml import YAML
-
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.yaml import read_preserved_yaml
 
 
 def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
@@ -89,8 +88,8 @@ def _update_precommit_repo(precommit: ModifiablePrecommit, has_notebooks: bool) 
     if has_notebooks:
         black_jupyter = Hook(
             id="black-jupyter",
-            args=YAML(typ="rt").load("[--line-length=85]"),
-            types_or=YAML(typ="rt").load("[jupyter]"),
+            args=read_preserved_yaml("[--line-length=85]"),
+            types_or=read_preserved_yaml("[jupyter]"),
         )
         expected_repo["hooks"].append(black_jupyter)
     precommit.update_single_hook_repo(expected_repo)

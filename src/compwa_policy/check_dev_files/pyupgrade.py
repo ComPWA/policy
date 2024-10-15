@@ -1,12 +1,12 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
-from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import Pyproject
+from compwa_policy.utilities.yaml import read_preserved_yaml
 
 
 def main(precommit: ModifiablePrecommit, no_ruff: bool) -> None:
@@ -51,8 +51,7 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
     supported_python_versions = Pyproject.load().get_supported_python_versions()
     lowest_version = supported_python_versions[0]
     version_repr = lowest_version.replace(".", "")
-    yaml = YAML(typ="rt")
-    return yaml.load(f"[--py{version_repr}-plus]")
+    return read_preserved_yaml(f"[--py{version_repr}-plus]")
 
 
 def _remove_pyupgrade(precommit: ModifiablePrecommit) -> None:
