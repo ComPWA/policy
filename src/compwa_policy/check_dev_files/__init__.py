@@ -84,6 +84,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
                 no_macos=args.no_macos,
+                no_milestones=args.no_milestones,
                 no_pypi=args.no_pypi,
                 no_version_branches=args.no_version_branches,
                 python_version=dev_python_version,
@@ -246,6 +247,12 @@ def _create_argparse() -> ArgumentParser:
             " workflows that do the same as the workflows enforced by the"
             " check-dev-files hook."
         ),
+    )
+    parser.add_argument(
+        "--no-milestones",
+        action="store_true",
+        default=False,
+        help="This repository does not use milestones and therefore no close workflow.",
     )
     parser.add_argument(
         "--no-python",
