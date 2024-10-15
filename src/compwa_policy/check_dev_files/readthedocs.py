@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from textwrap import indent
+from textwrap import dedent, indent
 from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
@@ -33,6 +33,10 @@ def main(
     _update_os(rtd)
     _update_python_version(rtd, python_version)
     if "uv" in package_manager or "pixi" in package_manager:
+        if "uv" in package_manager:
+            _install_asdf_plugin(rtd, "uv")
+        if "pixi" in package_manager:
+            _install_asdf_plugin(rtd, "pixi")
         _remove_redundant_settings(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
@@ -64,6 +68,22 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
         return
     tools["python"] = expected_version
     msg = f"Set build.tools.python to {python_version!r}"
+    config.changelog.append(msg)
+
+
+def _install_asdf_plugin(config: ReadTheDocs, plugin_name: str) -> None:
+    if "build" not in config.document:
+        config.document["build"] = {}
+    commands: list[str] = config.document["build"]["commands"]
+    cmd = dedent(f"""
+        asdf plugin add {plugin_name}
+        asdf install {plugin_name} latest
+        asdf global {plugin_name} latest
+    """).strip()
+    if cmd in commands:
+        return
+    commands.insert(0, LiteralScalarString(cmd))
+    msg = f"Added asdf plugin installation for {plugin_name}"
     config.changelog.append(msg)
 
 
