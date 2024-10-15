@@ -35,8 +35,10 @@ def main(
     if "uv" in package_manager or "pixi" in package_manager:
         if "uv" in package_manager:
             _install_asdf_plugin(rtd, "uv")
-        if "pixi" in package_manager:
-            _install_asdf_plugin(rtd, "pixi")
+        apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
+        pixi_packages = apt_packages & {"graphviz"}
+        if "pixi" in package_manager or pixi_packages:
+            _install_pixi(rtd, pixi_packages)
         _import_graphviz_if_available(rtd)
         _remove_redundant_settings(rtd)
     else:
@@ -73,19 +75,50 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
 
 
 def _install_asdf_plugin(config: ReadTheDocs, plugin_name: str) -> None:
-    if "build" not in config.document:
-        config.document["build"] = {}
-    commands: list[str] = config.document["build"]["commands"]
     cmd = dedent(f"""
         asdf plugin add {plugin_name}
         asdf install {plugin_name} latest
         asdf global {plugin_name} latest
     """).strip()
+    commands = __get_commands(config)
     if cmd in commands:
         return
     commands.insert(0, LiteralScalarString(cmd))
     msg = f"Added asdf plugin installation for {plugin_name}"
     config.changelog.append(msg)
+
+
+def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
+    pixi_cmd = dedent("""
+        export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+        curl -fsSL https://pixi.sh/install.sh | bash
+    """).strip()
+    if packages:
+        packages_str = " ".join(sorted(packages))
+        pixi_cmd += "\n" + "\n".join(f"pixi global install {packages_str}")
+    commands = __get_commands(config)
+    idx = 0
+    for cmd in commands:
+        if "pixi" in cmd:
+            break
+        idx += 1
+    if commands:
+        commands.append(LiteralScalarString(pixi_cmd))
+    elif commands[idx] != pixi_cmd:
+        commands[idx] = LiteralScalarString(pixi_cmd)
+    else:
+        return
+    msg = "Updated Pixi installation in Read the Docs"
+    config.changelog.append(msg)
+
+
+def __get_commands(config: ReadTheDocs) -> list[str]:
+    if "build" not in config.document:
+        config.document["build"] = {}
+    build = config.document["build"]
+    if "commands" not in build:
+        build["commands"] = []
+    return build["commands"]
 
 
 def _import_graphviz_if_available(config: ReadTheDocs) -> None:
