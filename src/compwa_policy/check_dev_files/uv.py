@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING
 from jinja2 import Environment, FileSystemLoader
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.readme import add_badge
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 
 if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
@@ -28,10 +28,10 @@ def main(
     precommit_config: ModifiablePrecommit,
     repo_name: str,
 ) -> None:
-    if "uv" in package_manager:
-        with Executor() as do:
+    with Executor() as do:
+        if "uv" in package_manager:
             do(
-                add_badge,
+                readme.add_badge,
                 "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
             )
             do(_hide_uv_lock_from_vscode_search)
@@ -53,6 +53,15 @@ def main(
                     ]
                 },
             )
+        else:
+            do(_remove_uv_configuration)
+            do(_remove_uv_lock)
+            do(precommit_config.remove_hook, "uv-lock")
+            do(
+                readme.remove_badge,
+                r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
+            )
+            do(vscode.remove_settings, {"search.exclude": ["uv.lock", "**/uv.lock"]})
 
 
 def _hide_uv_lock_from_vscode_search() -> None:
@@ -71,6 +80,26 @@ def _remove_pip_constraint_files() -> None:
     CONFIG_PATH.pip_constraints.rmdir()
     msg = f"Removed deprecated {CONFIG_PATH.pip_constraints}. Use uv.lock instead."
     raise PrecommitError(msg)
+
+
+def _remove_uv_configuration() -> None:
+    readonly_pyproject = Pyproject.load()._document  # noqa: SLF001
+    if "tool" not in readonly_pyproject:
+        return
+    if "uv" not in readonly_pyproject["tool"]:
+        return
+    with ModifiablePyproject.load() as pyproject:
+        tool_table = pyproject.get_table("tool")
+        tool_table.pop("uv")
+        pyproject.changelog.append("Removed uv configuration from pyproject.toml.")
+
+
+def _remove_uv_lock() -> None:
+    uv_lock_path = Path("uv.lock")
+    if uv_lock_path.exists():
+        uv_lock_path.unlink()
+        msg = f"Removed {uv_lock_path} file."
+        raise PrecommitError(msg)
 
 
 def _update_editor_config() -> None:
