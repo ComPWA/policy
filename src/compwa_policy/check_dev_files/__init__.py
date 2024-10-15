@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.check_dev_files import (
@@ -56,8 +57,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
-    if not args.repo_title:
-        args.repo_title = args.repo_name
+    repo_name, repo_title = _determine_repo_name_and_title(args)
     has_notebooks = any(
         matches_patterns(file, ["**/*.ipynb"]) for file in git_ls_files(untracked=True)
     )
@@ -108,12 +108,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.no_ruff:
                 do(black.main, precommit_config, has_notebooks)
             if not args.no_github_actions:
-                do(
-                    release_drafter.main,
-                    args.repo_name,
-                    args.repo_title,
-                    organization=args.repo_organization,
-                )
+                do(release_drafter.main, repo_name, repo_title, args.repo_organization)
             do(mypy.main)
             do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
             do(pyright.main, package_manager, precommit_config)
@@ -139,7 +134,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dev_python_version,
             package_manager,
             precommit_config,
-            args.repo_name,
+            repo_name,
         )
         do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
@@ -325,11 +320,11 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--repo-name",
+        default="",
         help=(
             "Name of the repository. This can usually be found in the URL of the"
             " repository on GitHub or GitLab"
         ),
-        required=True,
         type=str,
     )
     parser.add_argument(
@@ -348,6 +343,14 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     return parser
+
+
+def _determine_repo_name_and_title(args: Namespace) -> tuple[str, str]:
+    repo_name = args.repo_name
+    if not repo_name:
+        repo_name = os.path.basename(os.getcwd())
+    repo_title = args.repo_title or repo_name
+    return repo_name, repo_title
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:
