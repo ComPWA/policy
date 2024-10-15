@@ -157,21 +157,18 @@ def _create_argparse() -> ArgumentParser:
         "--allowed-cell-metadata",
         default="",
         help="Comma-separated list of allowed metadata in Jupyter notebook cells, e.g. editable,slideshow.",
-        required=False,
         type=str,
     )
     parser.add_argument(
         "--ci-skipped-tests",
         default="",
         help="Avoid running CI test on the following Python versions",
-        required=False,
         type=str,
     )
     parser.add_argument(
         "--ci-test-extras",
         default="",
         help="Comma-separated list of extras that are required for running tests on CI",
-        required=False,
         type=str,
     )
     parser.add_argument(
@@ -184,21 +181,18 @@ def _create_argparse() -> ArgumentParser:
         "--doc-apt-packages",
         default="",
         help="Comma- or space-separated list of APT packages that are required to build documentation",
-        required=False,
         type=str,
     )
     parser.add_argument(
         "--environment-variables",
         default="",
         help="Comma- or space-separated list of environment variables, e.g. PYTHONHASHSEED=0,SKIP=pyright",
-        required=False,
         type=str,
     )
     parser.add_argument(
         "--excluded-python-versions",
         default="",
         help="Comma- or space-separated list of Python versions you do NOT want to support",
-        required=False,
         type=str,
     )
     parser.add_argument(
@@ -280,7 +274,6 @@ def _create_argparse() -> ArgumentParser:
         "--dev-python-version",
         default="3.12",
         help="Specify the Python version for your developer environment",
-        required=False,
         type=str,
     )
     parser.add_argument(
