@@ -140,6 +140,8 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
             hooks=[Hook(id="uv-lock")],
         )
         precommit.update_single_hook_repo(repo)
+    else:
+        precommit.remove_hook("uv-lock")
 
 
 def _update_contributing_file(repo_name: str) -> None:
