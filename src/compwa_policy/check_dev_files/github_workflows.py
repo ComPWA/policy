@@ -18,7 +18,11 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import Pyproject, PythonVersion, get_build_system
+from compwa_policy.utilities.pyproject import (
+    Pyproject,
+    PythonVersion,
+    has_pyproject_package_name,
+)
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -70,7 +74,7 @@ def _update_cd_workflow(no_pypi: bool, no_version_branches: bool) -> None:  # no
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
         banned_jobs = set()
-        if no_pypi or get_build_system() is None:
+        if no_pypi or not has_pyproject_package_name():
             banned_jobs.add("package-name")
             banned_jobs.add("pypi")
         if no_version_branches:

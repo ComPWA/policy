@@ -16,7 +16,7 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     complies_with_subset,
-    get_build_system,
+    has_pyproject_package_name,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
@@ -624,7 +624,7 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
 
 
 def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
-    if get_build_system() is None:
+    if not has_pyproject_package_name():
         return
     python_versions = pyproject.get_supported_python_versions()
     if "3.6" in python_versions:
