@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yaml
 from ruamel.yaml import YAML
@@ -29,6 +29,18 @@ def create_prettier_round_trip_yaml() -> YAML:
     yaml_parser.indent = 4
     yaml_parser.block_seq_indent = 2
     return yaml_parser
+
+
+def read_preserved_yaml(src: str) -> Any:
+    """Get a `ruamel.yaml` object from a YAML string.
+
+    >>> formatted_obj = read_preserved_yaml("[--line-length=85]")
+    >>> formatted_obj
+    ['--line-length=85']
+    >>> type(formatted_obj)
+    <class 'ruamel.yaml.comments.CommentedSeq'>
+    """
+    return YAML(typ="rt").load(src)
 
 
 def write_yaml(definition: dict, output_path: Path | str) -> None:
