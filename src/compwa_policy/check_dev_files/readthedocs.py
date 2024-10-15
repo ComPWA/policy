@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from textwrap import indent
+from textwrap import dedent, indent
 from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.comments import CommentedMap
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
@@ -32,7 +32,17 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    _update_post_install(rtd, python_version, package_manager)
+    if "uv" in package_manager or "pixi" in package_manager:
+        apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
+        pixi_packages = apt_packages & {"graphviz"}
+        pixi_packages |= _get_existing_pixi_packages(rtd)
+        if "uv" in package_manager:
+            pixi_packages.add("uv")
+        _install_pixi(rtd, pixi_packages)
+        _remove_redundant_settings(rtd)
+        _update_build_step(rtd)
+    else:
+        _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
 
 
@@ -61,6 +71,127 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
         return
     tools["python"] = expected_version
     msg = f"Set build.tools.python to {python_version!r}"
+    config.changelog.append(msg)
+
+
+def _get_existing_pixi_packages(config: ReadTheDocs) -> set[str]:
+    commands = __get_commands(config, create=False)
+    for cmd in commands:
+        packages = __get_pixi_packages(cmd)
+        if packages is not None:
+            return set(packages)
+    return set()
+
+
+def __get_pixi_packages(cmd: str) -> list[str] | None:
+    '''Get the set of Pixi packages already installed.
+
+    >>> __get_pixi_packages("""
+    ...     export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+    ...     curl -fsSL https://pixi.sh/install.sh | bash
+    ...     pixi global install graphviz uv
+    ... """)
+    ['graphviz', 'uv']
+    '''
+    if "pixi global install" not in cmd:
+        return None
+    for sub_cmd in cmd.split("\n"):
+        match = re.match(r"pixi global install (.*)", sub_cmd.strip())
+        if match:
+            return match.group(1).split()
+    return None
+
+
+def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
+    pixi_cmd = dedent("""
+        export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+        curl -fsSL https://pixi.sh/install.sh | bash
+    """).strip()
+    if packages:
+        pixi_cmd += "\n" f"pixi global install {' '.join(sorted(packages))}"
+    commands = __get_commands(config)
+    idx: int | None = None
+    for i, cmd in enumerate(commands):
+        if "pixi" in cmd:
+            idx = i
+            break
+    if idx is None:
+        commands.insert(0, LiteralScalarString(pixi_cmd))
+    elif commands[idx] != pixi_cmd:
+        commands[idx] = LiteralScalarString(pixi_cmd)
+    else:
+        return
+    msg = "Updated Pixi installation in Read the Docs"
+    config.changelog.append(msg)
+
+
+def __get_commands(config: ReadTheDocs, create: bool = True) -> list[str]:
+    if not create:
+        return config.document.get("build", {}).get("commands", [])
+    if "build" not in config.document:
+        config.document["build"] = {}
+    build = config.document["build"]
+    if "commands" not in build:
+        build["commands"] = []
+    return build["commands"]
+
+
+def _remove_redundant_settings(config: ReadTheDocs) -> None:
+    redundant_keys = [
+        "build.apt_packages",
+        "build.jobs",
+        "formats",
+        "sphinx",
+    ]
+    removed_keys = [
+        key for key in redundant_keys if __remove_nested_key(config.document, key)
+    ]
+    if removed_keys:
+        msg = f"Removed redundant keys from Read the Docs configuration: {', '.join(removed_keys)}"
+        config.changelog.append(msg)
+
+
+def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
+    keys = dotted_key.split(".")
+    for key in keys[:-1]:
+        if key not in dct:
+            return False
+        dct = dct[key]
+    key = keys[-1]
+    if key not in dct:
+        return False
+    del dct[key]
+    return True
+
+
+def _update_build_step(config: ReadTheDocs) -> None:
+    cmd = dedent(R"""
+        export UV_LINK_MODE=copy
+        uv run \
+          --extra doc \
+          --locked \
+          --with tox \
+          tox -e doc
+        mkdir -p $READTHEDOCS_OUTPUT
+        mv docs/_build/html $READTHEDOCS_OUTPUT
+    """).strip()
+    commands = __get_commands(config)
+    idx = None
+    for i, command in enumerate(commands):
+        if (
+            "python3 -m sphinx" in command
+            or "sphinx-build" in command
+            or "tox -e" in command
+        ):
+            idx = i
+            break
+    if idx is None:
+        commands.append(LiteralScalarString(cmd))
+    elif commands[idx] != cmd:
+        commands[idx] = LiteralScalarString(cmd)
+    else:
+        return
+    msg = "Updated Sphinx build step in Read the Docs"
     config.changelog.append(msg)
 
 
