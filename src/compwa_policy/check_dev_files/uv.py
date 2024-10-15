@@ -83,6 +83,8 @@ def _remove_pip_constraint_files() -> None:
 
 
 def _remove_uv_configuration() -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
     readonly_pyproject = Pyproject.load()._document  # noqa: SLF001
     if "tool" not in readonly_pyproject:
         return
