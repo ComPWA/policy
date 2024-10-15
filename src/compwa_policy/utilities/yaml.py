@@ -32,7 +32,7 @@ def create_prettier_round_trip_yaml() -> YAML:
 
 
 def read_preserved_yaml(src: str) -> Any:
-    """Get a `ruamel.yaml` object from a YAML string.
+    """Get a :code:`ruamel.yaml` object from a YAML string.
 
     >>> formatted_obj = read_preserved_yaml("[--line-length=85]")
     >>> formatted_obj
