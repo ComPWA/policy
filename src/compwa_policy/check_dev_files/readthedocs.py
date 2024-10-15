@@ -33,13 +33,12 @@ def main(
     _update_os(rtd)
     _update_python_version(rtd, python_version)
     if "uv" in package_manager or "pixi" in package_manager:
-        if "uv" in package_manager:
-            _install_asdf_plugin(rtd, "uv")
         apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
         pixi_packages = apt_packages & {"graphviz"}
-        if "pixi" in package_manager or pixi_packages:
-            _install_pixi(rtd, pixi_packages)
-        _import_graphviz_if_available(rtd)
+        pixi_packages |= _get_existing_pixi_packages(rtd)
+        if "uv" in package_manager:
+            pixi_packages.add("uv")
+        _install_pixi(rtd, pixi_packages)
         _remove_redundant_settings(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
@@ -74,18 +73,32 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
     config.changelog.append(msg)
 
 
-def _install_asdf_plugin(config: ReadTheDocs, plugin_name: str) -> None:
-    cmd = dedent(f"""
-        asdf plugin add {plugin_name}
-        asdf install {plugin_name} latest
-        asdf global {plugin_name} latest
-    """).strip()
-    commands = __get_commands(config)
-    if cmd in commands:
-        return
-    commands.insert(0, LiteralScalarString(cmd))
-    msg = f"Added asdf plugin installation for {plugin_name}"
-    config.changelog.append(msg)
+def _get_existing_pixi_packages(config: ReadTheDocs) -> set[str]:
+    commands = __get_commands(config, create=False)
+    for cmd in commands:
+        packages = __get_pixi_packages(cmd)
+        if packages is not None:
+            return set(packages)
+    return set()
+
+
+def __get_pixi_packages(cmd: str) -> list[str] | None:
+    '''Get the set of Pixi packages already installed.
+
+    >>> __get_pixi_packages("""
+    ...     export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+    ...     curl -fsSL https://pixi.sh/install.sh | bash
+    ...     pixi global install graphviz uv
+    ... """)
+    ['graphviz', 'uv']
+    '''
+    if "pixi global install" not in cmd:
+        return None
+    for sub_cmd in cmd.split("\n"):
+        match = re.match(r"pixi global install (.*)", sub_cmd.strip())
+        if match:
+            return match.group(1).split()
+    return None
 
 
 def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
@@ -94,16 +107,15 @@ def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
         curl -fsSL https://pixi.sh/install.sh | bash
     """).strip()
     if packages:
-        packages_str = " ".join(sorted(packages))
-        pixi_cmd += "\n" + "\n".join(f"pixi global install {packages_str}")
+        pixi_cmd += "\n" f"pixi global install {' '.join(sorted(packages))}"
     commands = __get_commands(config)
-    idx = 0
-    for cmd in commands:
+    idx: int | None = None
+    for i, cmd in enumerate(commands):
         if "pixi" in cmd:
+            idx = i
             break
-        idx += 1
-    if commands:
-        commands.append(LiteralScalarString(pixi_cmd))
+    if idx is None:
+        commands.insert(0, LiteralScalarString(pixi_cmd))
     elif commands[idx] != pixi_cmd:
         commands[idx] = LiteralScalarString(pixi_cmd)
     else:
@@ -112,29 +124,15 @@ def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
     config.changelog.append(msg)
 
 
-def __get_commands(config: ReadTheDocs) -> list[str]:
+def __get_commands(config: ReadTheDocs, create: bool = True) -> list[str]:
+    if not create:
+        return config.document.get("build", {}).get("commands", [])
     if "build" not in config.document:
         config.document["build"] = {}
     build = config.document["build"]
     if "commands" not in build:
         build["commands"] = []
     return build["commands"]
-
-
-def _import_graphviz_if_available(config: ReadTheDocs) -> None:
-    apt_packages = config.document.get("build", {}).get("apt_packages", [])
-    if "graphviz" not in set(apt_packages):
-        return
-    _install_asdf_plugin(config, "pixi")
-    commands = config.document["build"]["commands"]
-    idx = 0
-    for cmd in commands:
-        if "asdf" not in cmd:
-            break
-        idx += 1
-    commands.insert(idx, "pixi global install graphviz")
-    msg = "Graphviz is now installed through pixi in Read the Docs"
-    config.changelog.append(msg)
 
 
 def _remove_redundant_settings(config: ReadTheDocs) -> None:
