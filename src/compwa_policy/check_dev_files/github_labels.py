@@ -11,7 +11,6 @@ from functools import lru_cache
 from pathlib import Path
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.match import filter_files
 
 __LABELS_CONFIG_FILE = "labels.toml"
@@ -56,7 +55,6 @@ def _get_requirement_files() -> list[Path]:
     patterns = [
         "**/requirements*.in",
         "**/requirements*.txt",
-        str(CONFIG_PATH.setup_cfg),
     ]
     filenames = filter_files(patterns)
     return [Path(file) for file in filenames]

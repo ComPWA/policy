@@ -16,7 +16,6 @@ from attrs import field, frozen
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.pyproject.getters import (
     PythonVersion,
     get_package_name,
@@ -265,15 +264,11 @@ def _complies_minimally(obj: Any, other: Any) -> bool:
     return obj == other
 
 
-def get_build_system() -> Literal["pyproject", "setup.cfg"] | None:
-    if _has_setup_cfg_build_system():
-        return "setup.cfg"
+def has_pyproject_package_name() -> bool:
     if not CONFIG_PATH.pyproject.exists():
-        return None
+        return False
     pyproject = Pyproject.load()
-    if pyproject.get_package_name() is None:
-        return None
-    return "pyproject"
+    return pyproject.get_package_name() is not None
 
 
 def get_constraints_file(python_version: PythonVersion) -> Path | None:
@@ -281,13 +276,6 @@ def get_constraints_file(python_version: PythonVersion) -> Path | None:
     if path.exists():
         return path
     return None
-
-
-def _has_setup_cfg_build_system() -> bool:
-    if not CONFIG_PATH.setup_cfg.exists():
-        return False
-    cfg = open_config(CONFIG_PATH.setup_cfg)
-    return cfg.has_section("metadata")
 
 
 def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectTOML:

@@ -1,6 +1,9 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities.pyproject import ModifiablePyproject, get_build_system
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    has_pyproject_package_name,
+)
 
 
 def main(no_ruff: bool) -> None:
@@ -8,7 +11,7 @@ def main(no_ruff: bool) -> None:
 
 
 def _update_dev_requirements(no_ruff: bool) -> None:
-    if get_build_system() is None:
+    if not has_pyproject_package_name():
         return
     with ModifiablePyproject.load() as pyproject:
         supported_python_versions = pyproject.get_supported_python_versions()

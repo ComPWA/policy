@@ -13,8 +13,8 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
-    get_build_system,
     get_constraints_file,
+    has_pyproject_package_name,
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -30,7 +30,7 @@ def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -
 
 
 def update_conda_environment(python_version: PythonVersion) -> None:
-    if get_build_system() is None:
+    if not has_pyproject_package_name():
         return
     yaml = create_prettier_round_trip_yaml()
     updated = False
