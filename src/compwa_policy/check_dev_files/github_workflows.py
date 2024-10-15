@@ -226,7 +226,7 @@ def __update_pytest_section(
     else:
         with_section = config["jobs"]["pytest"]["with"]
         if test_extras:
-            with_section["additional-extras"] = ",".join(test_extras)
+            with_section["additional-extras"] = " ".join(test_extras)
         if CONFIG_PATH.codecov.exists():
             with_section["coverage-target"] = __get_package_name()
         if not no_macos:
