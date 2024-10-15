@@ -32,7 +32,10 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    _update_post_install(rtd, python_version, package_manager)
+    if "uv" in package_manager or "pixi" in package_manager:
+        _remove_redundant_settings(rtd)
+    else:
+        _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
 
 
@@ -62,6 +65,34 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
     tools["python"] = expected_version
     msg = f"Set build.tools.python to {python_version!r}"
     config.changelog.append(msg)
+
+
+def _remove_redundant_settings(config: ReadTheDocs) -> None:
+    redundant_keys = [
+        "build.apt_packages",
+        "build.jobs",
+        "formats",
+        "sphinx",
+    ]
+    removed_keys = [
+        key for key in redundant_keys if __remove_nested_key(config.document, key)
+    ]
+    if removed_keys:
+        msg = f"Removed redundant keys from Read the Docs configuration: {', '.join(removed_keys)}"
+        config.changelog.append(msg)
+
+
+def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
+    keys = dotted_key.split(".")
+    for key in keys[:-1]:
+        if key not in dct:
+            return False
+        dct = dct[key]
+    key = keys[-1]
+    if key not in dct:
+        return False
+    del dct[key]
+    return True
 
 
 def _update_post_install(
