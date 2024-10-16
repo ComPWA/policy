@@ -17,6 +17,10 @@ def _update_extensions() -> None:
     with Executor() as do:
         do(
             vscode.add_extension_recommendation,
+            "eamodio.gitlens",  # cspell:ignore eamodio
+        )
+        do(
+            vscode.add_extension_recommendation,
             "mhutchie.git-graph",  # cspell:ignore mhutchie
         )
         do(
