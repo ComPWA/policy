@@ -69,7 +69,7 @@ def _remove_black(
         do(
             pyproject.remove_dependency,
             package="black",
-            ignored_sections=["doc", "test"],
+            ignored_sections=["doc", "notebooks", "test"],
         )
         do(remove_badge, r".*https://github\.com/psf.*/black.*")
         do(precommit.remove_hook, "black-jupyter")

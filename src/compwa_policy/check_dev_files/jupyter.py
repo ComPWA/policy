@@ -25,7 +25,9 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             "python-lsp-server[rope]",
         }
         if not no_ruff:
-            pyproject.remove_dependency("black", ignored_sections=["doc", "test"])
+            pyproject.remove_dependency(
+                "black", ignored_sections=["doc", "notebooks", "test"]
+            )
             pyproject.remove_dependency("isort")
             pyproject.remove_dependency("jupyterlab-code-formatter")
             ruff_packages = {
