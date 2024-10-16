@@ -36,7 +36,7 @@ from compwa_policy.check_dev_files import (
     setuptools_scm,
     toml,
     tox,
-    update_pip_constraints,
+    update_lock,
     uv,
     vscode,
 )
@@ -117,11 +117,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
                 do(ruff.main, precommit_config, has_notebooks, args.imports_on_top)
-        if args.pin_requirements != "no":
+        if args.update_lock_files != "no":
             do(
-                update_pip_constraints.main,
+                update_lock.main,
                 precommit_config,
-                frequency=args.pin_requirements,
+                frequency=args.update_lock_files,
             )
         do(readthedocs.main, package_manager, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
@@ -304,12 +304,12 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     parser.add_argument(
-        "--pin-requirements",
-        choices=update_pip_constraints.Frequency.__args__,  # type:ignore[attr-defined]
+        "--update-lock-files",
+        choices=update_lock.Frequency.__args__,  # type:ignore[attr-defined]
         default="no",
         help=(
-            "Add a script to pin developer requirements to a constraint file."
-            " Argument is the frequency of the cron job"
+            "Add a workflow to update lock files, like uv.lock, .pre-commit-config.yml, "
+            "and pip .constraints/ files. The argument is the frequency of the cron job"
         ),
         type=str,
     )
