@@ -54,10 +54,12 @@ def _check_optional_dependencies() -> None:
 
 def _update_apt_txt(apt_packages: list[str]) -> None:
     apt_txt = CONFIG_PATH.binder / "apt.txt"
-    if not apt_packages and apt_txt.exists():
-        apt_txt.unlink()
-        msg = f"Removed {apt_txt}, because --doc-apt-packages does not specify any packages."
-        raise PrecommitError(msg)
+    if not apt_packages:
+        if apt_txt.exists():
+            apt_txt.unlink()
+            msg = f"Removed {apt_txt}, because --doc-apt-packages does not specify any packages."
+            raise PrecommitError(msg)
+        return
     apt_packages = sorted(set(apt_packages))
     __update_file(
         expected_content="\n".join(apt_packages) + "\n",
