@@ -13,6 +13,7 @@ on:
     paths:
       - .constraints/py3.*.txt
       - .pre-commit-config.yaml
+      - uv.lock
   schedule:
     - cron: "0 3 7 */2 *"
   workflow_dispatch:
