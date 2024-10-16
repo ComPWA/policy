@@ -65,11 +65,18 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
         )
         yaml = create_prettier_round_trip_yaml()
         expected_data = yaml.load(expected_workflow_path)
+        original_paths = expected_data["on"]["pull_request"]["paths"]
+        existing_paths = filter_patterns(original_paths)
+        if not existing_paths:
+            msg = (
+                "No paths defined for pull_request trigger. Expecting any of "
+                ", ".join(original_paths)
+            )
+            raise ValueError(msg)
+        expected_data["on"]["pull_request"]["paths"] = existing_paths
         if frequency == "outsource":
             del expected_data["on"]["schedule"]
         else:
-            paths = filter_patterns(expected_data["on"]["pull_request"]["paths"])
-            expected_data["on"]["pull_request"]["paths"] = paths
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
