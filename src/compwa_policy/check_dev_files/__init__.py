@@ -109,8 +109,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         if is_python_repo:
             if args.no_ruff:
                 do(black.main, precommit_config, has_notebooks)
-            if not args.no_github_actions and not args.no_cd:
-                do(release_drafter.main, repo_name, repo_title, args.repo_organization)
+            if not args.no_github_actions:
+                do(
+                    release_drafter.main,
+                    args.no_cd,
+                    repo_name,
+                    repo_title,
+                    args.repo_organization,
+                )
             do(mypy.main)
             do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
             do(pyright.main, package_manager, precommit_config)

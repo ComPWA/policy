@@ -10,9 +10,21 @@ from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
-def main(repo_name: str, repo_title: str, organization: str) -> None:
-    update_file(CONFIG_PATH.release_drafter_workflow)
-    _update_draft(repo_name, repo_title, organization)
+def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> None:
+    if no_cd:
+        paths_to_remove = [
+            CONFIG_PATH.release_drafter_workflow,
+            CONFIG_PATH.release_drafter_config,
+        ]
+        paths_to_remove = [p for p in paths_to_remove if p.is_file()]
+        if paths_to_remove:
+            for path in paths_to_remove:
+                path.unlink()
+            msg = f"Removed {', '.join(map(str, paths_to_remove))}"
+            raise PrecommitError(msg)
+    else:
+        update_file(CONFIG_PATH.release_drafter_workflow)
+        _update_draft(repo_name, repo_title, organization)
 
 
 def _update_draft(repo_name: str, repo_title: str, organization: str) -> None:

@@ -52,7 +52,9 @@ def main(
     test_extras: list[str],
 ) -> None:
     with Executor() as do:
-        if not no_cd:
+        if no_cd:
+            remove_workflow("cd.yml")
+        else:
             do(_update_cd_workflow, no_milestones, no_pypi, no_version_branches)
         do(
             _update_ci_workflow,
