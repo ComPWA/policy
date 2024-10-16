@@ -83,6 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 doc_apt_packages=_to_list(args.doc_apt_packages),
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
+                no_cd=args.no_cd,
                 no_macos=args.no_macos,
                 no_milestones=args.no_milestones,
                 no_pypi=args.no_pypi,
@@ -108,7 +109,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if is_python_repo:
             if args.no_ruff:
                 do(black.main, precommit_config, has_notebooks)
-            if not args.no_github_actions:
+            if not args.no_github_actions and not args.no_cd:
                 do(release_drafter.main, repo_name, repo_title, args.repo_organization)
             do(mypy.main)
             do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
@@ -226,6 +227,12 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Run tox command through pixi",
+    )
+    parser.add_argument(
+        "--no-cd",
+        action="store_true",
+        default=False,
+        help="Do not add any GitHub workflows for continuous deployment",
     )
     parser.add_argument(
         "--no-cspell-update",

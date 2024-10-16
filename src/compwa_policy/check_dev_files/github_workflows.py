@@ -41,6 +41,7 @@ def main(
     doc_apt_packages: list[str],
     github_pages: bool,
     keep_pr_linting: bool,
+    no_cd: bool,
     no_macos: bool,
     no_milestones: bool,
     no_pypi: bool,
@@ -51,7 +52,8 @@ def main(
     test_extras: list[str],
 ) -> None:
     with Executor() as do:
-        do(_update_cd_workflow, no_milestones, no_pypi, no_version_branches)
+        if not no_cd:
+            do(_update_cd_workflow, no_milestones, no_pypi, no_version_branches)
         do(
             _update_ci_workflow,
             precommit,
