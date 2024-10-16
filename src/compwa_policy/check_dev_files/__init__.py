@@ -96,7 +96,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                 test_extras=_to_list(args.ci_test_extras),
             )
         if has_notebooks:
-            do(binder.main, dev_python_version, doc_apt_packages)
+            if not args.no_binder:
+                do(binder.main, dev_python_version, doc_apt_packages)
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(
@@ -236,6 +237,12 @@ def _create_argparse() -> ArgumentParser:
         action="store_true",
         default=False,
         help="Run tox command through pixi",
+    )
+    parser.add_argument(
+        "--no-binder",
+        action="store_true",
+        default=False,
+        help="Do not update the Binder configuration",
     )
     parser.add_argument(
         "--no-cd",
