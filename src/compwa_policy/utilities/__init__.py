@@ -17,6 +17,7 @@ from compwa_policy.utilities.executor import Executor
 
 
 class _ConfigFilePaths(NamedTuple):
+    binder: Path = Path(".binder")
     citation: Path = Path("CITATION.cff")
     codecov: Path = Path("codecov.yml")
     conda: Path = Path("environment.yml")
