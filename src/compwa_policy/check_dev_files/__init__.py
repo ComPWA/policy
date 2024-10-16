@@ -9,6 +9,7 @@ from argparse import ArgumentParser, Namespace
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.check_dev_files import (
+    binder,
     black,
     citation,
     commitlint,
@@ -52,9 +53,10 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject import PythonVersion
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
     parser = _create_argparse()
     args = parser.parse_args(argv)
+    doc_apt_packages = _to_list(args.doc_apt_packages)
     environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
     repo_name, repo_title = _determine_repo_name_and_title(args)
@@ -80,7 +82,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 github_workflows.main,
                 precommit_config,
                 allow_deprecated=args.allow_deprecated_workflows,
-                doc_apt_packages=_to_list(args.doc_apt_packages),
+                doc_apt_packages=doc_apt_packages,
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
                 no_cd=args.no_cd,
@@ -94,6 +96,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 test_extras=_to_list(args.ci_test_extras),
             )
         if has_notebooks:
+            do(binder.main, dev_python_version, doc_apt_packages)
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(
