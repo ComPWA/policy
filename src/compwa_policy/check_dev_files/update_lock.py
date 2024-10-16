@@ -79,7 +79,8 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
             update_workflow(yaml, expected_data, workflow_path)
 
     with Executor() as do:
-        do(overwrite_workflow, "requirements.yml")
+        do(overwrite_workflow, "lock.yml")
+        do(remove_workflow, "requirements.yml")
         do(remove_workflow, "requirements-cron.yml")
         do(remove_workflow, "requirements-pr.yml")
 
