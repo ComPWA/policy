@@ -1,4 +1,4 @@
-name: Update lock files
+name: Update
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
