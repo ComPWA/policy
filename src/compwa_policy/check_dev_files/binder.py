@@ -18,13 +18,18 @@ from compwa_policy.utilities.pyproject import Pyproject
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject import PythonVersion
 
 
-def main(python_version: PythonVersion, apt_packages: list[str]) -> None:
+def main(
+    package_manager: PackageManagerChoice,
+    python_version: PythonVersion,
+    apt_packages: list[str],
+) -> None:
     with Executor() as do:
         do(_update_apt_txt, apt_packages)
-        do(_update_post_build)
+        do(_update_post_build, package_manager)
         do(_make_executable, CONFIG_PATH.binder / "postBuild")
         do(_update_runtime_txt, python_version)
 
@@ -44,14 +49,34 @@ def _update_apt_txt(apt_packages: list[str]) -> None:
     )
 
 
-def _update_post_build() -> None:
+def _update_post_build(package_manager: PackageManagerChoice) -> None:
+    if package_manager == "pixi+uv":
+        expected_content = __get_post_builder_for_pixi_with_uv()
+    elif package_manager == "uv":
+        expected_content = __get_post_builder_for_uv()
+    else:
+        msg = f"Package manager {package_manager} is not supported."
+        raise NotImplementedError(msg)
+    __update_file(
+        expected_content.strip() + "\n",
+        path=CONFIG_PATH.binder / "postBuild",
+    )
+
+
+def __get_post_builder_for_pixi_with_uv() -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        source $HOME/.cargo/env
-    """).strip()
+        curl -LsSf https://pixi.sh/install.sh | bash
+        export PATH="$HOME/.pixi/bin:$PATH"
 
+        pixi_packages="$(NO_COLOR= pixi list --explicit --no-install | awk 'NR > 1 {print $1}')"
+        if [[ -n "$pixi_packages" ]]; then
+          pixi global install $pixi_packages
+        fi
+        pixi clean cache --yes
+    """).strip()
+    expected_content += "\n"
     notebook_extras = __get_notebook_extras()
     if "uv.lock" in set(git_ls_files(untracked=True)):
         expected_content += "\nuv export \\"
@@ -74,10 +99,39 @@ def _update_post_build() -> None:
               --no-cache \
               --system
         """)
-    __update_file(
-        expected_content.strip() + "\n",
-        path=CONFIG_PATH.binder / "postBuild",
-    )
+    return expected_content
+
+
+def __get_post_builder_for_uv() -> str:
+    expected_content = dedent("""
+        #!/bin/bash
+        set -ex
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        source $HOME/.cargo/env
+    """).strip()
+    notebook_extras = __get_notebook_extras()
+    if "uv.lock" in set(git_ls_files(untracked=True)):
+        expected_content += "\nuv export \\"
+        for extra in notebook_extras:
+            expected_content += f"\n  --extra {extra} \\"
+        expected_content += dedent(R"""
+              > requirements.txt
+            uv pip install \
+              --requirement requirements.txt \
+              --system
+            uv cache clean
+        """)
+    else:
+        package = "."
+        if notebook_extras:
+            package = f"'.[{','.join(notebook_extras)}]'"
+        expected_content += dedent(Rf"""
+            uv pip install \
+              --editable {package} \
+              --no-cache \
+              --system
+        """)
+    return expected_content
 
 
 def __get_notebook_extras() -> list[str]:
