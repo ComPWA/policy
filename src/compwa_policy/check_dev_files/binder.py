@@ -74,9 +74,12 @@ def __get_post_builder_for_pixi_with_uv() -> str:
         if [[ -n "$pixi_packages" ]]; then
           pixi global install $pixi_packages
         fi
-        pixi clean cache --yes
     """).strip()
-    expected_content += "\n"
+    activation_scripts = ___get_pixi_activation_scripts()
+    if activation_scripts:
+        for script in activation_scripts:
+            expected_content += "\nbash " + script
+    expected_content += "\npixi clean cache --yes\n"
     notebook_extras = __get_notebook_extras()
     if "uv.lock" in set(git_ls_files(untracked=True)):
         expected_content += "\nuv export \\"
@@ -100,6 +103,16 @@ def __get_post_builder_for_pixi_with_uv() -> str:
               --system
         """)
     return expected_content
+
+
+def ___get_pixi_activation_scripts() -> list[str] | None:
+    if not CONFIG_PATH.pixi_toml.exists():
+        return None
+    pixi = Pyproject.load(CONFIG_PATH.pixi_toml)
+    if not pixi.has_table("activation"):
+        return None
+    activation = pixi.get_table("activation")
+    return activation.get("scripts")
 
 
 def __get_post_builder_for_uv() -> str:
