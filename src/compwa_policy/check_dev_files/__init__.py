@@ -97,7 +97,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
             )
         if has_notebooks:
             if not args.no_binder:
-                do(binder.main, dev_python_version, doc_apt_packages)
+                do(binder.main, package_manager, dev_python_version, doc_apt_packages)
             do(jupyter.main, args.no_ruff)
         do(nbstripout.main, precommit_config, _to_list(args.allowed_cell_metadata))
         do(
