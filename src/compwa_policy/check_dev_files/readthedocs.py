@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import IO, TYPE_CHECKING, cast
+from typing import IO, TYPE_CHECKING, Callable, cast
 
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
@@ -32,7 +32,10 @@ def main(
     rtd = ReadTheDocs(source)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
-    if "uv" in package_manager or "pixi" in package_manager:
+    if package_manager == "pixi+uv":
+        _remove_redundant_settings(rtd)
+        _update_build_step_for_pixi(rtd)
+    elif package_manager == "uv":
         apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
         pixi_packages = apt_packages & {"graphviz"}
         pixi_packages |= _get_existing_pixi_packages(rtd)
@@ -40,7 +43,7 @@ def main(
             pixi_packages.add("uv")
         _install_pixi(rtd, pixi_packages)
         _remove_redundant_settings(rtd)
-        _update_build_step(rtd)
+        _update_build_step_for_uv(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
@@ -103,10 +106,7 @@ def __get_pixi_packages(cmd: str) -> list[str] | None:
 
 
 def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
-    pixi_cmd = dedent("""
-        export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
-        curl -fsSL https://pixi.sh/install.sh | bash
-    """).strip()
+    pixi_cmd = __get_pixi_install_statement()
     if packages:
         pixi_cmd += "\n" f"pixi global install {' '.join(sorted(packages))}"
     commands = __get_commands(config)
@@ -123,6 +123,13 @@ def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
         return
     msg = "Updated Pixi installation in Read the Docs"
     config.changelog.append(msg)
+
+
+def __get_pixi_install_statement() -> str:
+    return dedent("""
+        export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+        curl -fsSL https://pixi.sh/install.sh | bash
+    """).strip()
 
 
 def __get_commands(config: ReadTheDocs, create: bool = True) -> list[str]:
@@ -164,31 +171,60 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
     return True
 
 
-def _update_build_step(config: ReadTheDocs) -> None:
-    cmd = dedent(R"""
+def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
+    new_command = __get_pixi_install_statement() + "\n"
+    new_command += dedent(R"""
         export UV_LINK_MODE=copy
-        uv run \
-          --extra doc \
-          --locked \
-          --with tox \
-          tox -e doc
+        pixi run \
+          uv run \
+            --extra doc \
+            --locked \
+            --with tox \
+            tox -e doc
         mkdir -p $READTHEDOCS_OUTPUT
         mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
-    commands = __get_commands(config)
-    idx = None
-    for i, command in enumerate(commands):
-        if (
+    __update_build_step(
+        config,
+        new_command,
+        search_function=lambda command: "pixi" in command,
+    )
+
+
+def _update_build_step_for_uv(config: ReadTheDocs) -> None:
+    __update_build_step(
+        config,
+        new_command=dedent(R"""
+            export UV_LINK_MODE=copy
+            uv run \
+              --extra doc \
+              --locked \
+              --with tox \
+              tox -e doc
+            mkdir -p $READTHEDOCS_OUTPUT
+            mv docs/_build/html $READTHEDOCS_OUTPUT
+        """).strip(),
+        search_function=lambda command: (
             "python3 -m sphinx" in command
             or "sphinx-build" in command
             or "tox -e" in command
-        ):
+        ),
+    )
+
+
+def __update_build_step(
+    config: ReadTheDocs, new_command: str, search_function: Callable[[str], bool]
+) -> None:
+    commands = __get_commands(config)
+    idx = None
+    for i, command in enumerate(commands):
+        if search_function(command):
             idx = i
             break
     if idx is None:
-        commands.append(LiteralScalarString(cmd))
-    elif commands[idx] != cmd:
-        commands[idx] = LiteralScalarString(cmd)
+        commands.append(LiteralScalarString(new_command))
+    elif commands[idx] != new_command:
+        commands[idx] = LiteralScalarString(new_command)
     else:
         return
     msg = "Updated Sphinx build step in Read the Docs"
