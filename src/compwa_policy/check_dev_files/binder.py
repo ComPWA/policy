@@ -6,6 +6,7 @@ See also https://mybinder.readthedocs.io/en/latest/using/config_files.html.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -74,9 +75,15 @@ def __get_post_builder_for_pixi_with_uv() -> str:
         if [[ -n "$pixi_packages" ]]; then
           pixi global install $pixi_packages
         fi
-        pixi clean cache --yes
     """).strip()
-    expected_content += "\n"
+    activation = ___get_pixi_activation()
+    if activation.environment:
+        for key, value in activation.environment.items():
+            expected_content += f'\nexport {key}="{value}"'
+    if activation.scripts:
+        for script in activation.scripts:
+            expected_content += "\nbash " + script
+    expected_content += "\npixi clean cache --yes\n"
     notebook_extras = __get_notebook_extras()
     if "uv.lock" in set(git_ls_files(untracked=True)):
         expected_content += "\nuv export \\"
@@ -100,6 +107,25 @@ def __get_post_builder_for_pixi_with_uv() -> str:
               --system
         """)
     return expected_content
+
+
+@dataclass
+class PixiActivation:
+    scripts: list[str] | None = None
+    environment: dict[str, str] | None = None
+
+
+def ___get_pixi_activation() -> PixiActivation:
+    if not CONFIG_PATH.pixi_toml.exists():
+        return PixiActivation()
+    pixi = Pyproject.load(CONFIG_PATH.pixi_toml)
+    if not pixi.has_table("activation"):
+        return PixiActivation()
+    activation = pixi.get_table("activation")
+    return PixiActivation(
+        scripts=activation.get("scripts"),
+        environment=activation.get("env"),
+    )
 
 
 def __get_post_builder_for_uv() -> str:
