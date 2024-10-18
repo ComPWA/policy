@@ -12,6 +12,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -192,18 +193,24 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 
 
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
+    new_command = "export UV_LINK_MODE=copy"
+    if "uv.lock" in set(git_ls_files(untracked=True)):
+        new_command += dedent(R"""
+            uv run --extra doc --locked --with tox \
+              tox -e doc
+        """)
+    else:
+        new_command += dedent(R"""
+            uv run --extra doc --with tox \
+              tox -e doc
+        """)
+    new_command += dedent(R"""
+        mkdir -p $READTHEDOCS_OUTPUT
+        mv docs/_build/html $READTHEDOCS_OUTPUT
+    """).strip()
     __update_build_step(
         config,
-        new_command=dedent(R"""
-            export UV_LINK_MODE=copy
-            uv run \
-              --extra doc \
-              --locked \
-              --with tox \
-              tox -e doc
-            mkdir -p $READTHEDOCS_OUTPUT
-            mv docs/_build/html $READTHEDOCS_OUTPUT
-        """).strip(),
+        new_command,
         search_function=lambda command: (
             "python3 -m sphinx" in command
             or "sphinx-build" in command
