@@ -13,6 +13,8 @@ on:
     paths:
       - .constraints/py3.*.txt
       - .pre-commit-config.yaml
+      - "**/Manifest.toml"
+      - pixi.lock
       - uv.lock
   schedule:
     - cron: "0 3 7 */2 *"
