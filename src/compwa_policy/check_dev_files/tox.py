@@ -84,6 +84,7 @@ def read_tox_config() -> ConfigParser | None:
         if tox_config_str is not None:
             config = ConfigParser()
             config.read_string(tox_config_str)
+            return config
     return None
 
 
