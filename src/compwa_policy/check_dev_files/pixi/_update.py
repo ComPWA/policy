@@ -17,7 +17,7 @@ from compwa_policy.utilities.pyproject import (
     Pyproject,
     complies_with_subset,
 )
-from compwa_policy.utilities.python import split_dependency_definition
+from compwa_policy.utilities.pyproject.setters import split_dependency_definition
 from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.toml import to_toml_array
 

@@ -36,7 +36,6 @@ dev = [
     "compwa-policy[test]",
     "labels",
     "sphinx-autobuild",
-    "tox >=1.9", # for skip_install, use_develop
 ]
 doc = [
     "Sphinx",
