@@ -50,6 +50,7 @@
     "mypy",
     "oneline",
     "pixi",
+    "PyPA",
     "pytest",
     "PYTHONHASHSEED",
     "rtoml",
