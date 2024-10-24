@@ -29,9 +29,8 @@ def _update_dev_requirements(no_ruff: bool) -> None:
                 "black", ignored_sections=["doc", "notebooks", "test"]
             )
             pyproject.remove_dependency("isort")
-            pyproject.remove_dependency("jupyterlab-code-formatter")
             ruff_packages = {
-                "jupyterlab-code-formatter >=3.0.0",
+                "jupyterlab-code-formatter",
                 "python-lsp-ruff",
             }
             packages.update(ruff_packages)
