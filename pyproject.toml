@@ -51,7 +51,6 @@ doc = [
 sty = [
     "compwa-policy[types]",
     "mypy",
-    "pre-commit-uv",
     "ruff",
 ]
 test = [

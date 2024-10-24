@@ -108,6 +108,7 @@
     "precommit",
     "prereleased",
     "prettierignore",
+    "pyproject",
     "pyright",
     "pyupgrade",
     "redeboer",

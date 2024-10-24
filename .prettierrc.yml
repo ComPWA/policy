@@ -1,0 +1,4 @@
+overrides:
+  - files: "**.md.jinja"
+    options:
+      parser: markdown
