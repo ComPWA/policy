@@ -52,8 +52,9 @@ def update_pixi_configuration(
         do(_define_minimal_project, config)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
-        if package_manager == "pixi+uv":
+        if package_manager == "pixi":
             do(_import_tox_tasks, config)
+        if package_manager == "pixi+uv":
             do(_define_combined_ci_job, config)
         else:
             if is_python_package:
