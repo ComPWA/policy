@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import abc
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
@@ -85,7 +86,7 @@ def get_sub_table(
     return cast(MutableMapping[str, Any], table)
 
 
-def remove_dependency(
+def remove_dependency(  # noqa: C901
     pyproject: PyprojectTOML,
     package: str,
     ignored_sections: Iterable[str] | None = None,
@@ -95,23 +96,54 @@ def remove_dependency(
         return False
     updated = False
     dependencies = project.get("dependencies")
-    if dependencies is not None and package in dependencies:
-        dependencies.remove(package)
-        updated = True
+    if dependencies is not None:
+        package_names = [split_dependency_definition(p)[0] for p in dependencies]
+        if package in set(package_names):
+            idx = package_names.index(package)
+            dependencies.pop(idx)
+            updated = True
     optional_dependencies = project.get("optional-dependencies")
     if optional_dependencies is not None:
         if ignored_sections is None:
             ignored_sections = set()
         else:
             ignored_sections = set(ignored_sections)
-        for section, values in optional_dependencies.items():
+        for section, dependencies in optional_dependencies.items():
             if section in ignored_sections:
                 continue
-            if package in values:
-                values.remove(package)
+            package_names = [split_dependency_definition(p)[0] for p in dependencies]
+            if package in set(package_names):
+                idx = package_names.index(package)
+                dependencies.pop(idx)
                 updated = True
         if updated:
             empty_sections = [k for k, v in optional_dependencies.items() if not v]
             for section in empty_sections:
                 del optional_dependencies[section]
     return updated
+
+
+def split_dependency_definition(definition: str) -> tuple[str, str, str]:
+    """Get the package name, operator, and version from a PyPI dependency definition.
+
+    >>> split_dependency_definition("julia")
+    ('julia', '', '')
+    >>> split_dependency_definition("python==3.9.*")
+    ('python', '==', '3.9.*')
+    >>> split_dependency_definition("graphviz  # for binder")
+    ('graphviz', '', '')
+    >>> split_dependency_definition("pip > 19  # needed")
+    ('pip', '>', '19')
+    >>> split_dependency_definition("compwa-policy!= 3.14")
+    ('compwa-policy', '!=', '3.14')
+    >>> split_dependency_definition("my_package~=1.2")
+    ('my_package', '~=', '1.2')
+    >>> split_dependency_definition("any_version_package==*")
+    ('any_version_package', '==', '*')
+    """
+    matches = re.match(r"^([a-zA-Z0-9_-]+)([\!<=>~\s]*)([^ ^#]*)", definition)
+    if not matches:
+        msg = f"Could not extract package name and version from {definition}"
+        raise ValueError(msg)
+    package, operator, version = matches.groups()
+    return package.strip(), operator.strip(), version.strip()

@@ -17,24 +17,27 @@ if TYPE_CHECKING:
 
 
 def main(has_notebooks: bool) -> None:
-    _merge_tox_ini_into_pyproject()
     tox = read_tox_config()
     if tox is None:
         return
+    if CONFIG_PATH.pyproject.is_file():
+        with ModifiablePyproject.load() as pyproject:
+            _merge_tox_ini_into_pyproject(pyproject)
+            pyproject.remove_dependency("tox")
+            pyproject.remove_dependency("tox-uv")
     _check_expected_sections(tox, has_notebooks)
 
 
-def _merge_tox_ini_into_pyproject() -> None:
+def _merge_tox_ini_into_pyproject(pyproject: ModifiablePyproject) -> None:
     if not CONFIG_PATH.tox.is_file():
         return
     with open(CONFIG_PATH.tox) as file:
         tox_ini = file.read()
-    with ModifiablePyproject.load() as pyproject:
-        tox_table = pyproject.get_table("tool.tox", create=True)
-        tox_table["legacy_tox_ini"] = __ini_to_toml(tox_ini)
-        CONFIG_PATH.tox.unlink()
-        msg = f"Merged {CONFIG_PATH.tox} into {CONFIG_PATH.pyproject}"
-        pyproject.changelog.append(msg)
+    tox_table = pyproject.get_table("tool.tox", create=True)
+    tox_table["legacy_tox_ini"] = __ini_to_toml(tox_ini)
+    CONFIG_PATH.tox.unlink()
+    msg = f"Merged {CONFIG_PATH.tox} into {CONFIG_PATH.pyproject}"
+    pyproject.changelog.append(msg)
 
 
 def __ini_to_toml(ini: str) -> String:
@@ -81,6 +84,7 @@ def read_tox_config() -> ConfigParser | None:
         if tox_config_str is not None:
             config = ConfigParser()
             config.read_string(tox_config_str)
+            return config
     return None
 
 
