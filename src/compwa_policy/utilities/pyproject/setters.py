@@ -120,9 +120,7 @@ def remove_dependency(  # noqa: C901, PLR0912
             empty_sections = [k for k, v in optional_dependencies.items() if not v]
             for section in empty_sections:
                 del optional_dependencies[section]
-    dependency_groups = cast(
-        "dict[str, list[str]] | None", pyproject.get("dependency-groups")
-    )
+    dependency_groups = pyproject.get("dependency-groups")
     if dependency_groups is not None:
         for section, dependencies in dependency_groups.items():
             if section in ignored_sections:

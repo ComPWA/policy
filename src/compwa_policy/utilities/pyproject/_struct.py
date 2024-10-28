@@ -17,6 +17,7 @@ PyprojectTOML = TypedDict(
     {
         "build-system": NotRequired["BuildSystem"],
         "project": "Project",
+        "dependency-groups": NotRequired[dict[str, list[str]]],
         "tool": NotRequired[dict[str, dict[str, str]]],
     },
 )
