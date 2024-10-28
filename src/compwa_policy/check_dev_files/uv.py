@@ -26,6 +26,7 @@ def main(
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
     precommit_config: ModifiablePrecommit,
+    organization: str,
     repo_name: str,
 ) -> None:
     with Executor() as do:
@@ -38,7 +39,7 @@ def main(
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
-            do(_update_contributing_file, repo_name)
+            do(_update_contributing_file, organization, repo_name)
             do(_remove_pip_constraint_files)
             do(
                 vscode.remove_settings,
@@ -156,7 +157,7 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
         precommit.remove_hook("uv-lock")
 
 
-def _update_contributing_file(repo_name: str) -> None:
+def _update_contributing_file(organization: str, repo_name: str) -> None:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
         return
@@ -166,7 +167,10 @@ def _update_contributing_file(repo_name: str) -> None:
         loader=FileSystemLoader(template_dir),
     )
     template = env.get_template("CONTRIBUTING.md.jinja")
-    context = {"REPO_NAME": repo_name}
+    context = {
+        "ORGANIZATION": organization,
+        "REPO_NAME": repo_name,
+    }
     expected_content = template.render(context) + "\n"
     existing_content = ""
     if contributing_file.exists():
