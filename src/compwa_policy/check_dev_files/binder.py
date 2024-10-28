@@ -88,6 +88,7 @@ def __get_post_builder_for_pixi_with_uv() -> str:
     for groups in __get_notebook_groups():
         expected_content += f"\n  --group {groups} \\"
     expected_content += dedent(R"""
+          --no-dev \
           > requirements.txt
         uv pip install \
           --requirement requirements.txt \
@@ -127,6 +128,7 @@ def __get_post_builder_for_uv() -> str:
     for group in __get_notebook_groups():
         expected_content += f"\n  --group {group} \\"
     expected_content += dedent(R"""
+          --no-dev \
           > requirements.txt
         uv pip install \
           --requirement requirements.txt \
