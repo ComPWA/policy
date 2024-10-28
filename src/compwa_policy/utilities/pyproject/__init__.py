@@ -191,10 +191,15 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         return super().get_table(dotted_header)  # type:ignore[return-value]
 
     def add_dependency(
-        self, package: str, optional_key: str | Sequence[str] | None = None
+        self,
+        package: str,
+        dependency_group: str | Sequence[str] | None = None,
+        optional_key: str | Sequence[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
-        updated = add_dependency(self._document, package, optional_key)
+        updated = add_dependency(
+            self._document, package, dependency_group, optional_key
+        )
         if updated:
             msg = f"Listed {package} as a dependency"
             self._changelog.append(msg)

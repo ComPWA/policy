@@ -260,7 +260,7 @@ def ___get_target_version(pyproject: Pyproject) -> str:
     'py39'
     """
     supported_python_versions = pyproject.get_supported_python_versions()
-    versions = {f'py{v.replace(".", "")}' for v in supported_python_versions}
+    versions = {f"py{v.replace('.', '')}" for v in supported_python_versions}
     versions &= {"py37", "py38", "py39", "py310", "py311", "py312"}
     if not versions:
         return "py37"
@@ -631,7 +631,8 @@ def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    pyproject.add_dependency(ruff, optional_key=["sty", "dev"])
+    pyproject.add_dependency(ruff, dependency_group="dev")
+    pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 
 def _update_vscode_settings() -> None:

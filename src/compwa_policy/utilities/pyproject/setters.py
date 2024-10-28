@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from collections import abc
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -18,22 +19,64 @@ from compwa_policy.utilities.toml import to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Table
 
-    from compwa_policy.utilities.pyproject._struct import PyprojectTOML
+    from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
 def add_dependency(
     pyproject: PyprojectTOML,
     package: str,
+    dependency_group: str | Sequence[str] | None = None,
     optional_key: str | Sequence[str] | None = None,
 ) -> bool:
-    if optional_key is None:
-        project = get_sub_table(pyproject, "project")
-        existing_dependencies: set[str] = set(project.get("dependencies", []))
-        if package in existing_dependencies:
+    if optional_key is None and dependency_group is None:
+        return _add_direct_dependency(pyproject, package)
+    if dependency_group is not None:
+        return _add_to_dependency_group(pyproject, package, dependency_group)
+    if optional_key is not None:
+        return _add_to_optional_dependencies(pyproject, package, optional_key)
+    return False
+
+
+def _add_direct_dependency(pyproject: PyprojectTOML, package: str) -> bool:
+    project = get_sub_table(pyproject, "project")
+    existing_dependencies = set(project.get("dependencies", []))
+    if package in existing_dependencies:
+        return False
+    existing_dependencies.add(package)
+    project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
+    return True
+
+
+def _add_to_dependency_group(
+    pyproject: PyprojectTOML, package: str, dependency_group: str | Sequence[str]
+) -> bool:
+    if "dependency-groups" not in pyproject:
+        pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
+    dependency_groups = pyproject["dependency-groups"]
+    if isinstance(dependency_group, str):
+        dependencies = dependency_groups.get(dependency_group, [])
+        if package in dependencies:
             return False
-        existing_dependencies.add(package)
-        project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
+        dependencies.append(package)
+        dependency_groups[dependency_group] = to_toml_array(dependencies)
         return True
+    if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
+        updated = add_dependency(pyproject, package, dependency_group[0])
+        for previous, current in itertools.pairwise(dependency_group):
+            dependencies = dependency_groups.get(current, [])
+            expected: IncludeGroup = {"include-group": previous}
+            if expected in dependencies:
+                continue
+            updated &= True
+            dependencies.append(expected)
+        return updated
+    msg = f"Unsupported type for dependency group: {type(dependency_group)}"
+    raise NotImplementedError(msg)
+
+
+def _add_to_optional_dependencies(
+    pyproject: PyprojectTOML, package: str, optional_key: str | Sequence[str]
+) -> bool:
     if isinstance(optional_key, str):
         table_key = "project.optional-dependencies"
         optional_dependencies = get_sub_table(pyproject, table_key)
@@ -43,20 +86,20 @@ def add_dependency(
         existing_dependencies.add(package)
         existing_dependencies = set(existing_dependencies)
         optional_dependencies[optional_key] = to_toml_array(
-            _sort_taplo(existing_dependencies)
+            _sort_taplo(existing_dependencies)  # type:ignore[arg-type]
         )
         return True
     if isinstance(optional_key, abc.Sequence):
-        if len(optional_key) < 2:  # noqa: PLR2004
-            msg = "Need at least two keys to define nested optional dependencies"
+        if len(optional_key) == 0:
+            msg = "Need at least one key to define nested optional dependencies"
             raise ValueError(msg)
         this_package = get_package_name(pyproject, raise_on_missing=True)
         updated = False
-        for key, previous in zip(optional_key, [None, *optional_key]):
-            if previous is None:
-                updated &= add_dependency(pyproject, package, key)
-            else:
-                updated &= add_dependency(pyproject, f"{this_package}[{previous}]", key)
+        updated &= add_dependency(pyproject, package, optional_key=optional_key[0])
+        for previous, key in itertools.pairwise(optional_key):
+            updated &= add_dependency(
+                pyproject, f"{this_package}[{previous}]", optional_key=key
+            )
         return updated
     msg = f"Unsupported type for optional_key: {type(optional_key)}"
     raise NotImplementedError(msg)
@@ -86,7 +129,7 @@ def get_sub_table(
     return cast(MutableMapping[str, Any], table)
 
 
-def remove_dependency(  # noqa: C901
+def remove_dependency(  # noqa: C901, PLR0912
     pyproject: PyprojectTOML,
     package: str,
     ignored_sections: Iterable[str] | None = None,
@@ -102,12 +145,12 @@ def remove_dependency(  # noqa: C901
             idx = package_names.index(package)
             dependencies.pop(idx)
             updated = True
+    if ignored_sections is None:
+        ignored_sections = set()
+    else:
+        ignored_sections = set(ignored_sections)
     optional_dependencies = project.get("optional-dependencies")
     if optional_dependencies is not None:
-        if ignored_sections is None:
-            ignored_sections = set()
-        else:
-            ignored_sections = set(ignored_sections)
         for section, dependencies in optional_dependencies.items():
             if section in ignored_sections:
                 continue
@@ -120,6 +163,27 @@ def remove_dependency(  # noqa: C901
             empty_sections = [k for k, v in optional_dependencies.items() if not v]
             for section in empty_sections:
                 del optional_dependencies[section]
+            if not optional_dependencies:
+                del project["optional-dependencies"]
+    dependency_groups = pyproject.get("dependency-groups")
+    if dependency_groups is not None:
+        for section, dependencies in dependency_groups.items():  # type:ignore[assignment]
+            if section in ignored_sections:
+                continue
+            package_names = [
+                split_dependency_definition(p)[0] if isinstance(p, str) else p
+                for p in dependencies  # type:ignore[union-attr]
+            ]
+            if package in package_names:
+                idx = package_names.index(package)
+                dependencies.pop(idx)  # type:ignore[union-attr]
+                updated = True
+        if updated:
+            empty_sections = [k for k, v in dependency_groups.items() if not v]
+            for section in empty_sections:
+                del dependency_groups[section]
+            if not dependency_groups:
+                del pyproject["dependency-groups"]
     return updated
 
 

@@ -12,11 +12,13 @@ if sys.version_info < (3, 11):
 else:
     from typing import NotRequired
 
+IncludeGroup = TypedDict("IncludeGroup", {"include-group": str})
 PyprojectTOML = TypedDict(
     "PyprojectTOML",
     {
         "build-system": NotRequired["BuildSystem"],
         "project": "Project",
+        "dependency-groups": NotRequired[dict[str, list[str | IncludeGroup]]],
         "tool": NotRequired[dict[str, dict[str, str]]],
     },
 )

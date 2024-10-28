@@ -29,41 +29,6 @@ maintainers = [{email = "compwa-admin@ep1.rub.de"}]
 name = "compwa-policy"
 requires-python = ">=3.9"
 
-[project.optional-dependencies]
-dev = [
-    "compwa-policy[doc]",
-    "compwa-policy[sty]",
-    "compwa-policy[test]",
-    "labels",
-    "sphinx-autobuild",
-]
-doc = [
-    "Sphinx",
-    "myst-parser",
-    "sphinx-api-relink >=0.0.4",
-    "sphinx-api-relink",
-    "sphinx-argparse",
-    "sphinx-book-theme",
-    "sphinx-codeautolink",
-    "sphinx-copybutton",
-]
-sty = [
-    "compwa-policy[types]",
-    "mypy",
-    "ruff",
-]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-]
-types = [
-    "pytest",
-    "sphinx-api-relink >=0.0.3",
-    "types-PyYAML",
-    "types-toml",
-]
-
 [project.readme]
 content-type = "text/markdown"
 file = "README.md"
@@ -79,6 +44,40 @@ set-nb-cells = "compwa_policy.set_nb_cells:main"
 [project.urls]
 Source = "https://github.com/ComPWA/policy"
 Tracker = "https://github.com/ComPWA/policy/issues"
+
+[dependency-groups]
+dev = [
+    "labels",
+    "ruff",
+    "sphinx-autobuild",
+    {include-group = "doc"},
+    {include-group = "style"},
+    {include-group = "test"},
+]
+doc = [
+    "myst-parser",
+    "sphinx",
+    "sphinx-api-relink",
+    "sphinx-argparse",
+    "sphinx-book-theme",
+    "sphinx-codeautolink",
+    "sphinx-copybutton",
+]
+style = [
+    "mypy",
+    {include-group = "types"},
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
+types = [
+    "pytest",
+    "sphinx-api-relink",
+    "types-PyYAML",
+    "types-toml",
+]
 
 [tool.setuptools]
 include-package-data = false
@@ -169,6 +168,8 @@ reportUnusedFunction = true
 reportUnusedImport = true
 reportUnusedVariable = true
 typeCheckingMode = "strict"
+venv = ".venv"
+venvPath = "."
 
 [tool.pytest.ini_options]
 addopts = [
@@ -358,8 +359,6 @@ setenv =
 allowlist_externals =
     pre-commit
 commands =
-    pre-commit run {posargs} --all-files
+    pre-commit run --all-files {posargs}
 description = Perform all linting, formatting, and spelling checks
-setenv =
-    SKIP = pyright
 """

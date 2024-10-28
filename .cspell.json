@@ -53,6 +53,7 @@
     "PyPA",
     "pytest",
     "PYTHONHASHSEED",
+    "QRules",
     "rtoml",
     "sympy",
     "toctree",
