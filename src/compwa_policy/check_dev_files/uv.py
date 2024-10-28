@@ -121,7 +121,17 @@ def _update_editor_config() -> None:
 
 
 def _update_python_version_file(dev_python_version: PythonVersion) -> None:
+    pyproject = Pyproject.load()
     python_version_file = Path(".python-version")
+    if pyproject.has_table("project"):
+        requires_python = pyproject.get_table("project").get("requires-python", "")
+        if "==" in requires_python or "~=" in requires_python:
+            if python_version_file.exists():
+                python_version_file.unlink()
+                msg = f"Removed {python_version_file} file because requires-python already pins the Python version"
+                raise PrecommitError(msg)
+            return
+
     existing_python_version = ""
     if python_version_file.exists():
         with open(python_version_file) as stream:
