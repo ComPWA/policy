@@ -136,27 +136,16 @@ def __get_post_builder_for_uv() -> str:
         source $HOME/.cargo/env
     """).strip()
     notebook_extras = __get_notebook_extras()
-    if "uv.lock" in set(git_ls_files(untracked=True)):
-        expected_content += "\nuv export \\"
-        for extra in notebook_extras:
-            expected_content += f"\n  --extra {extra} \\"
-        expected_content += dedent(R"""
-              > requirements.txt
-            uv pip install \
-              --requirement requirements.txt \
-              --system
-            uv cache clean
-        """)
-    else:
-        package = "."
-        if notebook_extras:
-            package = f"'.[{','.join(notebook_extras)}]'"
-        expected_content += dedent(Rf"""
-            uv pip install \
-              --editable {package} \
-              --no-cache \
-              --system
-        """)
+    expected_content += "\nuv export \\"
+    for extra in notebook_extras:
+        expected_content += f"\n  --extra {extra} \\"
+    expected_content += dedent(R"""
+          > requirements.txt
+        uv pip install \
+          --requirement requirements.txt \
+          --system
+        uv cache clean
+    """)
     return expected_content
 
 
