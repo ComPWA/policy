@@ -631,7 +631,8 @@ def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    pyproject.add_dependency(ruff, dependency_group=["style", "dev"])
+    pyproject.add_dependency(ruff, dependency_group="dev")
+    pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 
 def _update_vscode_settings() -> None:

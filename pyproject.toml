@@ -48,6 +48,7 @@ Tracker = "https://github.com/ComPWA/policy/issues"
 [dependency-groups]
 dev = [
     "labels",
+    "ruff",
     "sphinx-autobuild",
     {include-group = "doc"},
     {include-group = "style"},
@@ -64,7 +65,6 @@ doc = [
 ]
 style = [
     "mypy",
-    "ruff",
     {include-group = "types"},
 ]
 test = [
