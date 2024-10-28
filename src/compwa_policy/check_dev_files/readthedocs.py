@@ -109,7 +109,7 @@ def __get_pixi_packages(cmd: str) -> list[str] | None:
 def _install_pixi(config: ReadTheDocs, packages: set[str]) -> None:
     pixi_cmd = __get_pixi_install_statement()
     if packages:
-        pixi_cmd += "\n" f"pixi global install {' '.join(sorted(packages))}"
+        pixi_cmd += f"\npixi global install {' '.join(sorted(packages))}"
     commands = __get_commands(config)
     idx: int | None = None
     for i, cmd in enumerate(commands):

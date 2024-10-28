@@ -70,7 +70,7 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
         if not existing_paths:
             msg = (
                 "No paths defined for pull_request trigger. Expecting any of "
-                ", ".join(original_paths)
+                + ", ".join(original_paths)
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
