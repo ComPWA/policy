@@ -66,7 +66,7 @@ def __convert_to_dependency_group(
     ...     package_name="qrules",
     ...     dev_dependencies={"dev"},
     ... )
-    [{'include-group': 'dev'}, 'mypy']
+    [{'include-group': 'dev'}, 'qrules[viz]', 'mypy']
     """
     new_dependencies = []
     for dependency in dependencies:
@@ -86,6 +86,7 @@ def __convert_to_include(
     >>> __convert_to_include("ruff", "compwa-policy", {"dev"})
     'ruff'
     >>> __convert_to_include("qrules[viz]", "qrules", {"dev"})
+    'qrules[viz]'
     """
     if package_name is not None:
         matches = re.match(rf"{package_name}\[(.+)\]", dependency)
@@ -93,7 +94,6 @@ def __convert_to_include(
             include_name = matches.group(1)
             if include_name in dev_dependencies:
                 return {"include-group": include_name}
-            return None
     return dependency
 
 
