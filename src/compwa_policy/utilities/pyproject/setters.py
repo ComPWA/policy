@@ -86,7 +86,7 @@ def get_sub_table(
     return cast(MutableMapping[str, Any], table)
 
 
-def remove_dependency(  # noqa: C901
+def remove_dependency(  # noqa: C901, PLR0912
     pyproject: PyprojectTOML,
     package: str,
     ignored_sections: Iterable[str] | None = None,
@@ -102,12 +102,12 @@ def remove_dependency(  # noqa: C901
             idx = package_names.index(package)
             dependencies.pop(idx)
             updated = True
+    if ignored_sections is None:
+        ignored_sections = set()
+    else:
+        ignored_sections = set(ignored_sections)
     optional_dependencies = project.get("optional-dependencies")
     if optional_dependencies is not None:
-        if ignored_sections is None:
-            ignored_sections = set()
-        else:
-            ignored_sections = set(ignored_sections)
         for section, dependencies in optional_dependencies.items():
             if section in ignored_sections:
                 continue
@@ -120,6 +120,25 @@ def remove_dependency(  # noqa: C901
             empty_sections = [k for k, v in optional_dependencies.items() if not v]
             for section in empty_sections:
                 del optional_dependencies[section]
+    dependency_groups = cast(
+        "dict[str, list[str]] | None", pyproject.get("dependency-groups")
+    )
+    if dependency_groups is not None:
+        for section, dependencies in dependency_groups.items():
+            if section in ignored_sections:
+                continue
+            package_names = [
+                split_dependency_definition(p)[0] if isinstance(p, str) else p
+                for p in dependencies
+            ]
+            if package in package_names:
+                idx = package_names.index(package)
+                dependencies.pop(idx)
+                updated = True
+        if updated:
+            empty_sections = [k for k, v in dependency_groups.items() if not v]
+            for section in empty_sections:
+                del dependency_groups[section]
     return updated
 
 
