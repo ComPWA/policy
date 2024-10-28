@@ -144,6 +144,7 @@ def __get_post_builder_for_uv() -> str:
         uv pip install \
           --requirement requirements.txt \
           --system
+        rm requirements.txt
         uv cache clean
     """)
     return expected_content
