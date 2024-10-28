@@ -38,9 +38,8 @@ dev = [
     "sphinx-autobuild",
 ]
 doc = [
-    "Sphinx",
     "myst-parser",
-    "sphinx-api-relink >=0.0.4",
+    "sphinx",
     "sphinx-api-relink",
     "sphinx-argparse",
     "sphinx-book-theme",
@@ -59,7 +58,7 @@ test = [
 ]
 types = [
     "pytest",
-    "sphinx-api-relink >=0.0.3",
+    "sphinx-api-relink",
     "types-PyYAML",
     "types-toml",
 ]
