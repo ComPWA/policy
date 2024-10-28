@@ -52,7 +52,6 @@ def test_add_dependency_nested():
     """)
     pyproject = load_pyproject_toml(src, modifiable=True)
     add_dependency(pyproject, "ruff", optional_key=["lint", "style", "dev"])
-
     new_content = tomlkit.dumps(pyproject)
     expected = dedent("""
         [project]
@@ -62,6 +61,18 @@ def test_add_dependency_nested():
         lint = ["ruff"]
         style = ["my-package[lint]"]
         dev = ["my-package[style]"]
+    """)
+    assert new_content == expected
+
+    pyproject = load_pyproject_toml(src, modifiable=True)
+    add_dependency(pyproject, "ruff", optional_key=["lint"])
+    new_content = tomlkit.dumps(pyproject)
+    expected = dedent("""
+        [project]
+        name = "my-package"
+
+        [project.optional-dependencies]
+        lint = ["ruff"]
     """)
     assert new_content == expected
 

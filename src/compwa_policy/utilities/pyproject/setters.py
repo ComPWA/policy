@@ -90,16 +90,16 @@ def _add_to_optional_dependencies(
         )
         return True
     if isinstance(optional_key, abc.Sequence):
-        if len(optional_key) < 2:  # noqa: PLR2004
-            msg = "Need at least two keys to define nested optional dependencies"
+        if len(optional_key) == 0:
+            msg = "Need at least one key to define nested optional dependencies"
             raise ValueError(msg)
         this_package = get_package_name(pyproject, raise_on_missing=True)
         updated = False
+        updated &= add_dependency(pyproject, package, optional_key=optional_key[0])
         for previous, key in itertools.pairwise(optional_key):
-            if previous is None:
-                updated &= add_dependency(pyproject, package, key)
-            else:
-                updated &= add_dependency(pyproject, f"{this_package}[{previous}]", key)
+            updated &= add_dependency(
+                pyproject, f"{this_package}[{previous}]", optional_key=key
+            )
         return updated
     msg = f"Unsupported type for optional_key: {type(optional_key)}"
     raise NotImplementedError(msg)
