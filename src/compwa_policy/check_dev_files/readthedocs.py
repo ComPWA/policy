@@ -178,7 +178,7 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
         export UV_LINK_MODE=copy
         pixi run \
           uv run \
-            --extra doc \
+            --group doc \
             --locked \
             --with tox \
             tox -e doc
@@ -196,12 +196,12 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
     new_command = "export UV_LINK_MODE=copy"
     if "uv.lock" in set(git_ls_files(untracked=True)):
         new_command += dedent(R"""
-            uv run --extra doc --locked --with tox \
+            uv run --group doc --locked --with tox \
               tox -e doc
         """)
     else:
         new_command += dedent(R"""
-            uv run --extra doc --with tox \
+            uv run --group doc --with tox \
               tox -e doc
         """)
     new_command += dedent(R"""
@@ -271,7 +271,7 @@ def __get_install_steps(
     pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
     if package_manager == "uv":
-        install_statement = "python -m uv sync --extra=doc"
+        install_statement = "python -m uv sync --group=doc"
     elif constraints_file is None:
         install_statement = f"{pip_install} -e .[doc]"
     else:
