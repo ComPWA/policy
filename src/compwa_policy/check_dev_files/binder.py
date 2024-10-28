@@ -8,15 +8,15 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
@@ -84,28 +84,16 @@ def __get_post_builder_for_pixi_with_uv() -> str:
         for script in activation.scripts:
             expected_content += "\nbash " + script
     expected_content += "\npixi clean cache --yes\n"
-    notebook_extras = __get_notebook_extras()
-    if "uv.lock" in set(git_ls_files(untracked=True)):
-        expected_content += "\nuv export \\"
-        for extra in notebook_extras:
-            expected_content += f"\n  --extra {extra} \\"
-        expected_content += dedent(R"""
-              > requirements.txt
-            uv pip install \
-              --requirement requirements.txt \
-              --system
-            uv cache clean
-        """)
-    else:
-        package = "."
-        if notebook_extras:
-            package = f"'.[{','.join(notebook_extras)}]'"
-        expected_content += dedent(Rf"""
-            uv pip install \
-              --editable {package} \
-              --no-cache \
-              --system
-        """)
+    expected_content += "\nuv export \\"
+    for groups in __get_notebook_groups():
+        expected_content += f"\n  --group {groups} \\"
+    expected_content += dedent(R"""
+          > requirements.txt
+        uv pip install \
+          --requirement requirements.txt \
+          --system
+        uv cache clean
+    """)
     return expected_content
 
 
@@ -135,10 +123,9 @@ def __get_post_builder_for_uv() -> str:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         source $HOME/.cargo/env
     """).strip()
-    notebook_extras = __get_notebook_extras()
     expected_content += "\nuv export \\"
-    for extra in notebook_extras:
-        expected_content += f"\n  --extra {extra} \\"
+    for group in __get_notebook_groups():
+        expected_content += f"\n  --group {group} \\"
     expected_content += dedent(R"""
           > requirements.txt
         uv pip install \
@@ -150,16 +137,19 @@ def __get_post_builder_for_uv() -> str:
     return expected_content
 
 
-def __get_notebook_extras() -> list[str]:
+def __get_notebook_groups() -> list[str]:
+    dependency_groups = ___safe_get_table("dependency-groups")
+    allowed_groups = {"jupyter", "notebooks"}
+    return sorted(allowed_groups & set(dependency_groups))
+
+
+def ___safe_get_table(dotted_header: str) -> Mapping[str, Any]:
     if not CONFIG_PATH.pyproject.exists():
-        return []
+        return {}
     pyproject = Pyproject.load()
-    table_key = "project.optional-dependencies"
-    if not pyproject.has_table(table_key):
-        return []
-    optional_dependencies = pyproject.get_table(table_key)
-    allowed_sections = {"jupyter", "notebooks"}
-    return sorted(allowed_sections & set(optional_dependencies))
+    if not pyproject.has_table(dotted_header):
+        return {}
+    return pyproject.get_table(dotted_header)
 
 
 def _make_executable(path: Path) -> None:
