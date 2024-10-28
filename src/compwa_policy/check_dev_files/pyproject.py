@@ -43,7 +43,9 @@ def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
     for group, dependencies in dict(optional_dependencies).items():
         if group not in dev_groups:
             continue
-        dependencies = [__convert_to_include(dep, package_name) for dep in dependencies]
+        dependencies = __convert_to_dependency_group(
+            dependencies, package_name, dev_groups
+        )
         dependency_groups[group] = to_toml_array(dependencies)
         optional_dependencies.pop(group)
         updated = True
@@ -54,11 +56,44 @@ def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def __convert_to_include(dependency: str, package_name: str | None) -> str | dict:
+def __convert_to_dependency_group(
+    dependencies: list[str], package_name: str | None, dev_dependencies: set[str]
+) -> list[str | dict]:
+    """Convert a list of optional dependencies to a dependency group.
+
+    >>> __convert_to_dependency_group(
+    ...     ["qrules[dev]", "qrules[viz]", "mypy"],
+    ...     package_name="qrules",
+    ...     dev_dependencies={"dev"},
+    ... )
+    [{'include-group': 'dev'}, 'mypy']
+    """
+    new_dependencies = []
+    for dependency in dependencies:
+        converted = __convert_to_include(dependency, package_name, dev_dependencies)
+        if converted is not None:
+            new_dependencies.append(converted)
+    return new_dependencies
+
+
+def __convert_to_include(
+    dependency: str, package_name: str | None, dev_dependencies: set[str]
+) -> str | dict | None:
+    """Convert a recursive optional dependency to an include group entry.
+
+    >>> __convert_to_include("compwa-policy[dev]", "compwa-policy", {"dev"})
+    {'include-group': 'dev'}
+    >>> __convert_to_include("ruff", "compwa-policy", {"dev"})
+    'ruff'
+    >>> __convert_to_include("qrules[viz]", "qrules", {"dev"})
+    """
     if package_name is not None:
         matches = re.match(rf"{package_name}\[(.+)\]", dependency)
-        if matches:
-            return {"include-group": matches.group(1)}
+        if matches is not None:
+            include_name = matches.group(1)
+            if include_name in dev_dependencies:
+                return {"include-group": include_name}
+            return None
     return dependency
 
 
