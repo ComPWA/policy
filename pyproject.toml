@@ -29,40 +29,6 @@ maintainers = [{email = "compwa-admin@ep1.rub.de"}]
 name = "compwa-policy"
 requires-python = ">=3.9"
 
-[project.optional-dependencies]
-dev = [
-    "compwa-policy[doc]",
-    "compwa-policy[sty]",
-    "compwa-policy[test]",
-    "labels",
-    "sphinx-autobuild",
-]
-doc = [
-    "myst-parser",
-    "sphinx",
-    "sphinx-api-relink",
-    "sphinx-argparse",
-    "sphinx-book-theme",
-    "sphinx-codeautolink",
-    "sphinx-copybutton",
-]
-sty = [
-    "compwa-policy[types]",
-    "mypy",
-    "ruff",
-]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-]
-types = [
-    "pytest",
-    "sphinx-api-relink",
-    "types-PyYAML",
-    "types-toml",
-]
-
 [project.readme]
 content-type = "text/markdown"
 file = "README.md"
@@ -78,6 +44,40 @@ set-nb-cells = "compwa_policy.set_nb_cells:main"
 [project.urls]
 Source = "https://github.com/ComPWA/policy"
 Tracker = "https://github.com/ComPWA/policy/issues"
+
+[dependency-groups]
+dev = [
+    "labels",
+    "sphinx-autobuild",
+    {include-group = "doc"},
+    {include-group = "sty"},
+    {include-group = "test"},
+]
+doc = [
+    "myst-parser",
+    "sphinx",
+    "sphinx-api-relink",
+    "sphinx-argparse",
+    "sphinx-book-theme",
+    "sphinx-codeautolink",
+    "sphinx-copybutton",
+]
+sty = [
+    "mypy",
+    "ruff",
+    {include-group = "types"},
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
+types = [
+    "pytest",
+    "sphinx-api-relink",
+    "types-PyYAML",
+    "types-toml",
+]
 
 [tool.setuptools]
 include-package-data = false
