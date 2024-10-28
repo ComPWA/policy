@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from collections import abc
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
@@ -18,21 +19,43 @@ from compwa_policy.utilities.toml import to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Table
 
-    from compwa_policy.utilities.pyproject._struct import PyprojectTOML
+    from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
-def add_dependency(
+def add_dependency(  # noqa: C901, PLR0911, PLR0912
     pyproject: PyprojectTOML,
     package: str,
+    dependency_group: str | Sequence[str] | None = None,
     optional_key: str | Sequence[str] | None = None,
 ) -> bool:
+    if dependency_group is not None:
+        if "dependency-groups" not in pyproject:
+            pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
+        dependency_groups = pyproject["dependency-groups"]
+        if isinstance(dependency_group, str):
+            dependencies = dependency_groups.get(dependency_group, [])
+            if package in dependencies:
+                return False
+            dependencies.append(package)
+            dependency_groups[dependency_group] = to_toml_array(dependencies)
+            return True
+        if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
+            updated = add_dependency(pyproject, package, dependency_group[0])
+            for previous, current in itertools.pairwise(dependency_group):
+                dependencies = dependency_groups.get(current, [])
+                expected: IncludeGroup = {"include-group": previous}
+                if expected in dependencies:
+                    continue
+                updated &= True
+                dependencies.append(expected)
+            return updated
     if optional_key is None:
         project = get_sub_table(pyproject, "project")
-        existing_dependencies: set[str] = set(project.get("dependencies", []))
+        existing_dependencies = set(project.get("dependencies", []))
         if package in existing_dependencies:
             return False
         existing_dependencies.add(package)
-        project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
+        project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))  # type:ignore[arg-type]
         return True
     if isinstance(optional_key, str):
         table_key = "project.optional-dependencies"
@@ -43,7 +66,7 @@ def add_dependency(
         existing_dependencies.add(package)
         existing_dependencies = set(existing_dependencies)
         optional_dependencies[optional_key] = to_toml_array(
-            _sort_taplo(existing_dependencies)
+            _sort_taplo(existing_dependencies)  # type:ignore[arg-type]
         )
         return True
     if isinstance(optional_key, abc.Sequence):
@@ -52,7 +75,7 @@ def add_dependency(
             raise ValueError(msg)
         this_package = get_package_name(pyproject, raise_on_missing=True)
         updated = False
-        for key, previous in zip(optional_key, [None, *optional_key]):
+        for previous, key in itertools.pairwise(optional_key):
             if previous is None:
                 updated &= add_dependency(pyproject, package, key)
             else:
@@ -124,16 +147,16 @@ def remove_dependency(  # noqa: C901, PLR0912
                 del project["optional-dependencies"]
     dependency_groups = pyproject.get("dependency-groups")
     if dependency_groups is not None:
-        for section, dependencies in dependency_groups.items():
+        for section, dependencies in dependency_groups.items():  # type:ignore[assignment]
             if section in ignored_sections:
                 continue
             package_names = [
                 split_dependency_definition(p)[0] if isinstance(p, str) else p
-                for p in dependencies
+                for p in dependencies  # type:ignore[union-attr]
             ]
             if package in package_names:
                 idx = package_names.index(package)
-                dependencies.pop(idx)
+                dependencies.pop(idx)  # type:ignore[union-attr]
                 updated = True
         if updated:
             empty_sections = [k for k, v in dependency_groups.items() if not v]

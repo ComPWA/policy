@@ -35,4 +35,4 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             }
             packages.update(ruff_packages)
         for package in sorted(packages):
-            pyproject.add_dependency(package, optional_key=["jupyter", "dev"])
+            pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
