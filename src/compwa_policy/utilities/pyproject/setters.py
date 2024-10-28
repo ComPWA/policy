@@ -22,41 +22,61 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
-def add_dependency(  # noqa: C901, PLR0911, PLR0912
+def add_dependency(
     pyproject: PyprojectTOML,
     package: str,
     dependency_group: str | Sequence[str] | None = None,
     optional_key: str | Sequence[str] | None = None,
 ) -> bool:
+    if optional_key is None and dependency_group is None:
+        return _add_direct_dependency(pyproject, package)
     if dependency_group is not None:
-        if "dependency-groups" not in pyproject:
-            pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
-        dependency_groups = pyproject["dependency-groups"]
-        if isinstance(dependency_group, str):
-            dependencies = dependency_groups.get(dependency_group, [])
-            if package in dependencies:
-                return False
-            dependencies.append(package)
-            dependency_groups[dependency_group] = to_toml_array(dependencies)
-            return True
-        if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
-            updated = add_dependency(pyproject, package, dependency_group[0])
-            for previous, current in itertools.pairwise(dependency_group):
-                dependencies = dependency_groups.get(current, [])
-                expected: IncludeGroup = {"include-group": previous}
-                if expected in dependencies:
-                    continue
-                updated &= True
-                dependencies.append(expected)
-            return updated
-    if optional_key is None:
-        project = get_sub_table(pyproject, "project")
-        existing_dependencies = set(project.get("dependencies", []))
-        if package in existing_dependencies:
+        return _add_to_dependency_group(pyproject, package, dependency_group)
+    if optional_key is not None:
+        return _add_to_optional_dependencies(pyproject, package, optional_key)
+    return False
+
+
+def _add_direct_dependency(pyproject: PyprojectTOML, package: str) -> bool:
+    project = get_sub_table(pyproject, "project")
+    existing_dependencies = set(project.get("dependencies", []))
+    if package in existing_dependencies:
+        return False
+    existing_dependencies.add(package)
+    project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
+    return True
+
+
+def _add_to_dependency_group(
+    pyproject: PyprojectTOML, package: str, dependency_group: str | Sequence[str]
+) -> bool:
+    if "dependency-groups" not in pyproject:
+        pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
+    dependency_groups = pyproject["dependency-groups"]
+    if isinstance(dependency_group, str):
+        dependencies = dependency_groups.get(dependency_group, [])
+        if package in dependencies:
             return False
-        existing_dependencies.add(package)
-        project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))  # type:ignore[arg-type]
+        dependencies.append(package)
+        dependency_groups[dependency_group] = to_toml_array(dependencies)
         return True
+    if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
+        updated = add_dependency(pyproject, package, dependency_group[0])
+        for previous, current in itertools.pairwise(dependency_group):
+            dependencies = dependency_groups.get(current, [])
+            expected: IncludeGroup = {"include-group": previous}
+            if expected in dependencies:
+                continue
+            updated &= True
+            dependencies.append(expected)
+        return updated
+    msg = f"Unsupported type for dependency group: {type(dependency_group)}"
+    raise NotImplementedError(msg)
+
+
+def _add_to_optional_dependencies(
+    pyproject: PyprojectTOML, package: str, optional_key: str | Sequence[str]
+) -> bool:
     if isinstance(optional_key, str):
         table_key = "project.optional-dependencies"
         optional_dependencies = get_sub_table(pyproject, table_key)
