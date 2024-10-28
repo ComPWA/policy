@@ -146,6 +146,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
             dev_python_version,
             package_manager,
             precommit_config,
+            args.repo_organization,
             repo_name,
         )
         do(cspell.main, precommit_config, args.no_cspell_update)
