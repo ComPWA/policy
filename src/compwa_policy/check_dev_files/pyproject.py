@@ -33,6 +33,7 @@ def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
         "doc",
         "jupyter",
         "lint",
+        "mypy",
         "notebooks",
         "sty",
         "test",
