@@ -51,7 +51,7 @@ def test_add_dependency_nested():
         name = "my-package"
     """)
     pyproject = load_pyproject_toml(src, modifiable=True)
-    add_dependency(pyproject, "ruff", optional_key=["lint", "sty", "dev"])
+    add_dependency(pyproject, "ruff", optional_key=["lint", "style", "dev"])
 
     new_content = tomlkit.dumps(pyproject)
     expected = dedent("""
@@ -60,8 +60,8 @@ def test_add_dependency_nested():
 
         [project.optional-dependencies]
         lint = ["ruff"]
-        sty = ["my-package[lint]"]
-        dev = ["my-package[sty]"]
+        style = ["my-package[lint]"]
+        dev = ["my-package[style]"]
     """)
     assert new_content == expected
 
@@ -97,7 +97,7 @@ def pyproject_example() -> PyprojectTOML:
             "mypy",
             "ruff",
         ]
-        sty = ["ruff"]
+        style = ["ruff"]
     """)
     return load_pyproject_toml(src, modifiable=True)
 
@@ -114,14 +114,14 @@ def test_remove_dependency(pyproject_example: PyprojectTOML):
             "mypy",
             "ruff",
         ]
-        sty = ["ruff"]
+        style = ["ruff"]
     """)
     new_content = tomlkit.dumps(pyproject_example)
     assert new_content == expected
 
 
 def test_remove_dependency_nested(pyproject_example: PyprojectTOML):
-    remove_dependency(pyproject_example, "ruff", ignored_sections=["sty"])
+    remove_dependency(pyproject_example, "ruff", ignored_sections=["sty", "style"])
     new_content = tomlkit.dumps(pyproject_example)
     expected = dedent("""
         [project]
@@ -132,7 +132,7 @@ def test_remove_dependency_nested(pyproject_example: PyprojectTOML):
         lint = [
             "mypy",
         ]
-        sty = ["ruff"]
+        style = ["ruff"]
     """)
     assert new_content == expected
 

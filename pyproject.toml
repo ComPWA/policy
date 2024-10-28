@@ -50,7 +50,7 @@ dev = [
     "labels",
     "sphinx-autobuild",
     {include-group = "doc"},
-    {include-group = "sty"},
+    {include-group = "style"},
     {include-group = "test"},
 ]
 doc = [
@@ -62,7 +62,7 @@ doc = [
     "sphinx-codeautolink",
     "sphinx-copybutton",
 ]
-sty = [
+style = [
     "mypy",
     "ruff",
     {include-group = "types"},

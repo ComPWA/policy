@@ -18,6 +18,7 @@ def main(excluded_python_versions: set[str], no_pypi: bool) -> None:
         return
     with ModifiablePyproject.load() as pyproject:
         _convert_to_dependency_groups(pyproject)
+        _rename_sty_to_style(pyproject)
         _update_requires_python(pyproject)
         _update_python_version_classifiers(pyproject, excluded_python_versions, no_pypi)
 
@@ -36,6 +37,7 @@ def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
         "mypy",
         "notebooks",
         "sty",
+        "style",
         "test",
         "types",
     }
@@ -55,6 +57,22 @@ def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
     if updated:
         msg = "Converted optional-dependencies to dependency-groups"
         pyproject.changelog.append(msg)
+
+
+def _rename_sty_to_style(pyproject: ModifiablePyproject) -> None:
+    dependency_groups = pyproject.get_table("dependency-groups", create=True)
+    if "sty" not in dependency_groups:
+        return
+    dependency_groups["style"] = to_toml_array(dependency_groups["sty"])
+    del dependency_groups["sty"]
+    for dependencies in dependency_groups.values():
+        for dependency in dependencies:
+            if not isinstance(dependency, dict):
+                continue
+            include_group = dependency.get("include-group")
+            if include_group == "sty":
+                dependency["include-group"] = "style"
+    pyproject.changelog.append("Renamed 'sty' dependency group to 'style'")
 
 
 def __convert_to_dependency_group(
