@@ -116,7 +116,7 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     non_functional_hooks = get_non_functional_hooks(precommit.document)
     expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
     existing_skips = precommit_ci.get("skip")
-    if existing_skips and existing_skips != expected_skips:
+    if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast(CommentedMap, precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
