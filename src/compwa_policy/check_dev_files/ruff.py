@@ -371,12 +371,13 @@ def __update_per_file_ignores(
                 "PLW0603",  # global-statement
                 "S101",  # `assert` detected
                 "T20",  # print found
-                "TCH00",  # type-checking block
+                "TC00",  # type-checking block
                 *___get_existing_nbqa_ignores(pyproject),
             },
             banned_ignores={
                 "F821",  # identify variables that are not defined
                 "ISC003",  # explicit-string-concatenation
+                "TCH00",  # https://astral.sh/blog/ruff-v0.8.0#new-error-codes-for-flake8-type-checking-rules
             },
         )
     docs_dir = "docs"
@@ -615,7 +616,7 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
             excludes = nbqa_hook.get("exclude")
     expected_repo = Repo(
         repo="https://github.com/nbQA-dev/nbQA",
-        rev="1.9.0",
+        rev="1.9.1",
         hooks=[Hook(id="nbqa-isort", args=read_preserved_yaml("[--float-to-top]"))],
     )
     if excludes is not None:
