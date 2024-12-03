@@ -1,4 +1,3 @@
-# noqa: A005
 """This module is hidden Sphinx can't handle `typing.TypedDict` with hyphens.
 
 See https://github.com/sphinx-doc/sphinx/issues/11039.

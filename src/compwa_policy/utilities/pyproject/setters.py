@@ -126,7 +126,7 @@ def get_sub_table(
 ) -> MutableMapping[str, Any]:
     create_sub_table(config, dotted_header)
     table = get_immutable_sub_table(config, dotted_header)
-    return cast(MutableMapping[str, Any], table)
+    return cast("MutableMapping[str, Any]", table)
 
 
 def remove_dependency(  # noqa: C901, PLR0912

@@ -118,7 +118,7 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     existing_skips = precommit_ci.get("skip")
     if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
-        yaml_config = cast(CommentedMap, precommit.document)
+        yaml_config = cast("CommentedMap", precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
         msg = "Updated ci.skip section"
         precommit.changelog.append(msg)

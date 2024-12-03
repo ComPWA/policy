@@ -51,7 +51,7 @@ def main(
 
 
 def _update_os(config: ReadTheDocs) -> None:
-    build = cast(CommentedMap, config.document.get("build"))
+    build = cast("CommentedMap", config.document.get("build"))
     if build is None:
         return
     os: str | None = build.get("os")
@@ -64,7 +64,7 @@ def _update_os(config: ReadTheDocs) -> None:
 
 
 def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -> None:
-    tools = cast(CommentedMap, config.document.get("build", {}).get("tools"))
+    tools = cast("CommentedMap", config.document.get("build", {}).get("tools"))
     if tools is None:
         return
     existing_version: str | None = tools.get("python")
@@ -307,9 +307,9 @@ class ReadTheDocs:
         self.source = source
         if isinstance(source, (Path, str)):
             with open(source) as f:
-                self.document = cast(dict, self.__parser.load(f))
+                self.document = cast("dict", self.__parser.load(f))
         else:
-            self.document = cast(dict, self.__parser.load(source))
+            self.document = cast("dict", self.__parser.load(source))
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None:
