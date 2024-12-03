@@ -6,8 +6,6 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from ruamel.yaml.comments import CommentedMap
-
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
@@ -17,6 +15,8 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedMap
+
     from compwa_policy.utilities.precommit import (
         ModifiablePrecommit,
         Precommit,
@@ -118,7 +118,7 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     existing_skips = precommit_ci.get("skip")
     if existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
-        yaml_config = cast(CommentedMap, precommit.document)
+        yaml_config = cast("CommentedMap", precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
         msg = "Updated ci.skip section"
         precommit.changelog.append(msg)

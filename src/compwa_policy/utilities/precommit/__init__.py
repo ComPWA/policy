@@ -19,10 +19,10 @@ from compwa_policy.utilities.precommit.setters import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
-if sys.version_info < (3, 11):
-    from typing_extensions import Self
-else:
+if sys.version_info >= (3, 11):
     from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from types import TracebackType

@@ -5,10 +5,10 @@ import sys
 from functools import cache
 from typing import ForwardRef, Literal, TypedDict
 
-if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired
-else:
+if sys.version_info >= (3, 11):
     from typing import NotRequired
+else:
+    from typing_extensions import NotRequired
 
 
 class PrecommitConfig(TypedDict):

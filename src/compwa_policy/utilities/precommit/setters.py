@@ -64,7 +64,7 @@ def update_single_hook_precommit_repo(
             expected_yaml.pop("rev", None)
             expected_yaml.insert(1, "rev", "PLEASE-UPDATE")
         idx = _determine_expected_repo_index(precommit.document, hook_id)
-        repos_yaml = cast(CommentedSeq, repos)
+        repos_yaml = cast("CommentedSeq", repos)
         repos_yaml.insert(idx, expected_yaml)
         if isinstance(repos_yaml, CommentedSeq):
             repos_yaml.yaml_set_comment_before_after_key(
@@ -81,7 +81,7 @@ def update_single_hook_precommit_repo(
         if existing_rev is not None:
             expected_yaml.insert(1, "rev", PlainScalarString(existing_rev))
         repos[idx] = expected_yaml  # type: ignore[assignment,call-overload]
-        repos_map = cast(CommentedMap, repos)
+        repos_map = cast("CommentedMap", repos)
         repos_map.yaml_set_comment_before_after_key(idx + 1, before="\n")
         msg = f"Updated {hook_id} hook"
         precommit.changelog.append(msg)
@@ -126,7 +126,7 @@ def update_precommit_hook(
         hook_idx = __determine_expected_hook_idx(hooks, expected_hook["id"])
         hooks.insert(hook_idx, expected_hook)
         if hook_idx == len(hooks) - 1:
-            repos = cast(CommentedMap, precommit.document["repos"][hook_idx])
+            repos = cast("CommentedMap", precommit.document["repos"][hook_idx])
             repos.yaml_set_comment_before_after_key(repo_idx + 1, before="\n")
         msg = f"Added {expected_hook['id']!r} to {repo_name} pre-commit config"
         precommit.changelog.append(msg)
