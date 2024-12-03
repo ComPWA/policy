@@ -7,7 +7,6 @@ from pathlib import Path
 from textwrap import dedent, indent
 from typing import IO, TYPE_CHECKING, Callable, cast
 
-from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy.errors import PrecommitError
@@ -17,6 +16,8 @@ from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedMap
+
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 

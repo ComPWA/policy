@@ -6,8 +6,6 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from ruamel.yaml.comments import CommentedMap
-
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
@@ -17,6 +15,8 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedMap
+
     from compwa_policy.utilities.precommit import (
         ModifiablePrecommit,
         Precommit,

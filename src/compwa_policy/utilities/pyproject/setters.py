@@ -5,7 +5,6 @@ from __future__ import annotations
 import itertools
 import re
 from collections import abc
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
@@ -17,6 +16,8 @@ from compwa_policy.utilities.pyproject.getters import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+
     from tomlkit.items import Table
 
     from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
