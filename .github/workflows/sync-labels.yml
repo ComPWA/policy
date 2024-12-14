@@ -22,15 +22,28 @@ jobs:
           pip install labels
       - name: Sync general issue labels
         run: |
-          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
+          labels sync --filename labels/default.toml --owner ComPWA --repo actions
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform
+          labels sync --filename labels/default.toml --owner ComPWA --repo ampform-dpd
           labels sync --filename labels/default.toml --owner ComPWA --repo benchmarks
           labels sync --filename labels/default.toml --owner ComPWA --repo compwa.github.io
+          labels sync --filename labels/default.toml --owner ComPWA --repo demo
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-amplitude
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar-analysis
+          labels sync --filename labels/default.toml --owner ComPWA --repo polarimetry
           labels sync --filename labels/default.toml --owner ComPWA --repo policy
+          labels sync --filename labels/default.toml --owner ComPWA --repo PWA-JPsi2pbarSigmaKS
+          labels sync --filename labels/default.toml --owner ComPWA --repo PWA-pages
           labels sync --filename labels/default.toml --owner ComPWA --repo qrules
+          labels sync --filename labels/default.toml --owner ComPWA --repo report
+          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
+          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch
+          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch-calendar
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinxcontrib-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo tensorwaves
           labels sync --filename labels/default.toml --owner ComPWA --repo update-pip-constraints
+
       - name: Sync issue labels for physics repositories
         run: |
           labels sync --filename labels/physics.toml --owner ComPWA --repo PWA-pages
