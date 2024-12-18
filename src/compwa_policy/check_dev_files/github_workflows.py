@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
@@ -39,6 +39,7 @@ def main(
     *,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     keep_pr_linting: bool,
     no_cd: bool,
@@ -61,6 +62,7 @@ def main(
             precommit,
             allow_deprecated,
             doc_apt_packages,
+            environment_variables,
             github_pages,
             no_macos,
             python_version,
@@ -128,6 +130,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     precommit: Precommit,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
@@ -140,6 +143,7 @@ def _update_ci_workflow(  # noqa: PLR0917
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             precommit,
             doc_apt_packages,
+            environment_variables,
             github_pages,
             no_macos,
             python_version,
@@ -175,6 +179,7 @@ def _get_ci_workflow(  # noqa: PLR0917
     path: Path,
     precommit: Precommit,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
@@ -184,10 +189,23 @@ def _get_ci_workflow(  # noqa: PLR0917
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
+    __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
     __update_style_section(config, python_version, precommit)
     return yaml, config
+
+
+def __update_env_section(
+    config: CommentedMap, environment_variables: dict[str, str]
+) -> None:
+    env = cast("dict[str, str] | None", config.get("env"))
+    if env is not None:
+        env.clear()
+        for key, value in environment_variables.items():
+            env[key] = value
+        if not env:
+            del config["env"]
 
 
 def __update_doc_section(
