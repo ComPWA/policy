@@ -1,5 +1,4 @@
 {
-  "version": "0.2",
   "enableFiletypes": [
     "git-commit",
     "github-actions-workflow",
@@ -62,21 +61,6 @@
     "typings",
     "update-www"
   ],
-  "language": "en-US",
-  "words": [
-    "Colaboratory",
-    "compwa",
-    "Deepnote",
-    "docstrings",
-    "graphviz",
-    "ipython",
-    "mkdir",
-    "mypy",
-    "pytest",
-    "PYTHONHASHSEED",
-    "toctree",
-    "Zenodo"
-  ],
   "ignoreWords": [
     "MAINT",
     "PyPI",
@@ -124,5 +108,21 @@
     "tomlkit",
     "unittests",
     "venv"
+  ],
+  "language": "en-US",
+  "version": "0.2",
+  "words": [
+    "Colaboratory",
+    "compwa",
+    "Deepnote",
+    "docstrings",
+    "graphviz",
+    "ipython",
+    "mkdir",
+    "mypy",
+    "pytest",
+    "PYTHONHASHSEED",
+    "toctree",
+    "Zenodo"
   ]
 }
