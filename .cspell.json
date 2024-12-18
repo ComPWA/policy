@@ -120,5 +120,6 @@
     "sympy",
     "toctree",
     "Zenodo"
-  ]
+  ],
+  "useGitignore": true
 }

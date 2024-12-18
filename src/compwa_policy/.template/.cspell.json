@@ -110,6 +110,7 @@
     "venv"
   ],
   "language": "en-US",
+  "useGitignore": true,
   "version": "0.2",
   "words": [
     "Colaboratory",
