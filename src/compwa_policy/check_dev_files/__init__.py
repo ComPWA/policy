@@ -83,6 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                 precommit_config,
                 allow_deprecated=args.allow_deprecated_workflows,
                 doc_apt_packages=doc_apt_packages,
+                environment_variables=environment_variables,
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
                 no_cd=args.no_cd,

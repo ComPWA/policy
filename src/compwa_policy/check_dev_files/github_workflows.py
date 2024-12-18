@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
@@ -39,6 +39,7 @@ def main(
     *,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     keep_pr_linting: bool,
     no_cd: bool,
@@ -61,6 +62,7 @@ def main(
             precommit,
             allow_deprecated,
             doc_apt_packages,
+            environment_variables,
             github_pages,
             no_macos,
             python_version,
@@ -128,6 +130,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     precommit: Precommit,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
@@ -159,6 +162,10 @@ def _update_ci_workflow(  # noqa: PLR0917
             existing_data = yaml.load(workflow_path)
             if existing_data != expected_data:
                 update_workflow(yaml, expected_data, workflow_path)
+        env = cast("dict[str, str] | None", expected_data.get("env"))
+        if env is not None:
+            for key, value in environment_variables.items():
+                env[key] = value
 
     with Executor() as do:
         do(update)
