@@ -143,6 +143,7 @@ def _update_ci_workflow(  # noqa: PLR0917
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             precommit,
             doc_apt_packages,
+            environment_variables,
             github_pages,
             no_macos,
             python_version,
@@ -162,10 +163,6 @@ def _update_ci_workflow(  # noqa: PLR0917
             existing_data = yaml.load(workflow_path)
             if existing_data != expected_data:
                 update_workflow(yaml, expected_data, workflow_path)
-        env = cast("dict[str, str] | None", expected_data.get("env"))
-        if env is not None:
-            for key, value in environment_variables.items():
-                env[key] = value
 
     with Executor() as do:
         do(update)
@@ -182,6 +179,7 @@ def _get_ci_workflow(  # noqa: PLR0917
     path: Path,
     precommit: Precommit,
     doc_apt_packages: list[str],
+    environment_variables: dict[str, str],
     github_pages: bool,
     no_macos: bool,
     python_version: PythonVersion,
@@ -191,10 +189,23 @@ def _get_ci_workflow(  # noqa: PLR0917
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
+    __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
     __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
     __update_style_section(config, python_version, precommit)
     return yaml, config
+
+
+def __update_env_section(
+    config: CommentedMap, environment_variables: dict[str, str]
+) -> None:
+    env = cast("dict[str, str] | None", config.get("env"))
+    if env is not None:
+        env.clear()
+        for key, value in environment_variables.items():
+            env[key] = value
+        if not env:
+            del config["env"]
 
 
 def __update_doc_section(
