@@ -1,5 +1,4 @@
 {
-  "version": "0.2",
   "enableFiletypes": [
     "git-commit",
     "github-actions-workflow",
@@ -37,27 +36,6 @@
     "pyproject.toml",
     "pyrightconfig.json",
     "typings"
-  ],
-  "language": "en-US",
-  "words": [
-    "Colaboratory",
-    "compwa",
-    "Deepnote",
-    "docstrings",
-    "graphviz",
-    "ipython",
-    "mkdir",
-    "mypy",
-    "oneline",
-    "pixi",
-    "PyPA",
-    "pytest",
-    "PYTHONHASHSEED",
-    "QRules",
-    "rtoml",
-    "sympy",
-    "toctree",
-    "Zenodo"
   ],
   "ignoreWords": [
     "FURB",
@@ -120,5 +98,28 @@
     "tomlsort",
     "unittests",
     "venv"
-  ]
+  ],
+  "language": "en-US",
+  "version": "0.2",
+  "words": [
+    "Colaboratory",
+    "compwa",
+    "Deepnote",
+    "docstrings",
+    "graphviz",
+    "ipython",
+    "mkdir",
+    "mypy",
+    "oneline",
+    "pixi",
+    "PyPA",
+    "pytest",
+    "PYTHONHASHSEED",
+    "QRules",
+    "rtoml",
+    "sympy",
+    "toctree",
+    "Zenodo"
+  ],
+  "useGitignore": true
 }

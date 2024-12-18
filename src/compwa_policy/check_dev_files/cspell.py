@@ -154,7 +154,7 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
     if section not in __EXPECTED_CONFIG:
         return section_content
     expected_section_content = __EXPECTED_CONFIG[section]
-    if isinstance(expected_section_content, str):
+    if isinstance(expected_section_content, (bool, str)):
         return expected_section_content
     if isinstance(expected_section_content, list):
         if section == "ignorePaths":
