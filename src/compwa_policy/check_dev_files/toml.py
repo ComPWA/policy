@@ -49,6 +49,7 @@ def _update_tomlsort_config() -> None:
         "project",
         "tool.setuptools",
         "tool.setuptools_scm",
+        "tool.tox.env_run_base",
     ]
     expected_config = dict(
         all=False,
