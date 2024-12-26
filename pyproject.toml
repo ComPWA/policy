@@ -301,11 +301,11 @@ allowlist_externals = ["pytest"]
 commands = [
     [
         "pytest",
+        "{posargs}",
         "--cov-fail-under=35",
         "--cov-report=html",
         "--cov-report=xml",
         "--cov=compwa_policy",
-        "{posargs}",
     ],
 ]
 description = "Compute test coverage"
