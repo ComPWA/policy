@@ -292,10 +292,10 @@ env_list = [
     "linkcheck",
     "sty",
 ]
+no_package = true
 requires = ["tox>=4.19"]
 skip_install = true
 skip_missing_interpreters = true
-skipsdist = true
 
 [tool.tox.env_run_base]
 allowlist_externals = ["pytest"]
@@ -303,7 +303,7 @@ commands = [
     ["pytest", "{posargs}"],
 ]
 description = "Run all unit tests"
-passenv = ["*"]
+pass_env = ["*"]
 
 [tool.tox.env.cov]
 allowlist_externals = ["pytest"]
@@ -365,8 +365,8 @@ commands = [
     ],
 ]
 description = "Check external links in the documentation (requires internet connection)"
-setenv = [
-    {"PYTHONWARNINGS" = ""},
+set_env = [
+    {PYTHONWARNINGS = ""},
 ]
 
 [tool.tox.env.sty]
