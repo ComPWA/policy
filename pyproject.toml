@@ -280,6 +280,7 @@ sort_first = [
     "project",
     "tool.setuptools",
     "tool.setuptools_scm",
+    "tool.tox.env_run_base",
 ]
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = true
@@ -295,6 +296,14 @@ requires = ["tox>=4.19"]
 skip_install = true
 skip_missing_interpreters = true
 skipsdist = true
+
+[tool.tox.env_run_base]
+allowlist_externals = ["pytest"]
+commands = [
+    ["pytest", "{posargs}"],
+]
+description = "Run all unit tests"
+passenv = ["*"]
 
 [tool.tox.env.cov]
 allowlist_externals = ["pytest"]
@@ -366,11 +375,3 @@ commands = [
     ["pre-commit", "run", "--all-files", "{posargs}"],
 ]
 description = "Perform all linting, formatting, and spelling checks"
-
-[tool.tox.env_run_base]
-allowlist_externals = ["pytest"]
-commands = [
-    ["pytest", "{posargs}"],
-]
-description = "Run all unit tests"
-passenv = ["*"]
