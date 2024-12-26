@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 def main(has_notebooks: bool) -> None:
-    tox = read_tox_config()
+    tox = read_tox_ini_config()
     if tox is None:
         return
     if CONFIG_PATH.pyproject.is_file():
@@ -72,7 +72,7 @@ def _check_expected_sections(tox: ConfigParser, has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def read_tox_config() -> ConfigParser | None:
+def read_tox_ini_config() -> ConfigParser | None:
     if CONFIG_PATH.tox.is_file():
         return _load_tox_ini()
     if CONFIG_PATH.pyproject.is_file():

@@ -8,7 +8,7 @@ import yaml
 from tomlkit import inline_table, string
 
 from compwa_policy.check_dev_files.pixi._helpers import has_pixi_config
-from compwa_policy.check_dev_files.tox import read_tox_config
+from compwa_policy.check_dev_files.tox import read_tox_ini_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.executor import Executor
@@ -179,7 +179,7 @@ def _import_conda_environment(config: ModifiablePyproject) -> None:
 
 
 def _import_tox_tasks(config: ModifiablePyproject) -> None:
-    tox = read_tox_config()
+    tox = read_tox_ini_config()
     if tox is None:
         return
     tox_jobs = __get_tox_job_names(tox)
@@ -295,7 +295,7 @@ def _install_package_editable(config: ModifiablePyproject) -> None:
 
 
 def __outsource_pixi_tasks_to_tox(config: ModifiablePyproject) -> None:
-    tox = read_tox_config()
+    tox = read_tox_ini_config()
     if tox is None:
         return
     blacklisted_jobs = {"sty"}
