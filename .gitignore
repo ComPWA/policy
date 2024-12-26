@@ -13,6 +13,7 @@ version.py
 .mypy*/
 .pytest_cache/
 __pycache__/
+coverage.xml
 htmlcov/
 oryx-build-commands.txt
 prof/
