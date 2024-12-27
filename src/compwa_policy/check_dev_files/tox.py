@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import tomlkit
 
@@ -15,23 +15,21 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_multiline_string, to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from tomlkit.items import Array, String
 
 
 def main(has_notebooks: bool) -> None:
-    tox = read_tox_ini_config()
-    if tox is None:
+    if not CONFIG_PATH.pyproject.is_file():
         return
-    if CONFIG_PATH.pyproject.is_file():
-        with ModifiablePyproject.load() as pyproject:
-            _merge_tox_ini_into_pyproject(pyproject)
-            _convert_to_native_toml(pyproject)
-            _set_minimal_tox_version(pyproject)
-            pyproject.remove_dependency("tox")
-            pyproject.remove_dependency("tox-uv")
-    _check_expected_sections(tox, has_notebooks)
+    with ModifiablePyproject.load() as pyproject:
+        _merge_tox_ini_into_pyproject(pyproject)
+        _convert_to_native_toml(pyproject)
+        _set_minimal_tox_version(pyproject)
+        pyproject.remove_dependency("tox")
+        pyproject.remove_dependency("tox-uv")
+        _check_expected_sections(pyproject, has_notebooks)
 
 
 def _merge_tox_ini_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -80,18 +78,9 @@ def __convert_ini_dict(ini: Mapping[str, str]) -> dict[str, Any]:
     toml = {}
     for ini_key, ini_value in ini.items():
         key = ___remap_key(ini_key)
-        value = ___convert_ini_value(ini_value)
+        value = ___convert_ini_value(key, ini_value)
         if key == "commands":
-            value = cast("Array", value)
-            value.indent(4)
-            if len(value) <= 2 or ini_value.strip().startswith("pre-commit"):  # noqa: PLR2004
-                value.multiline(False)
-            else:
-                value.multiline(True)
-            array = tomlkit.array()
-            array.multiline(True)
-            array.append(value)
-            value = array
+            value = ___convert_commands(ini_value, value)
         # cspell:ignore passenv
         if key == "pass_env" and isinstance(value, str):
             value = [value]
@@ -127,7 +116,7 @@ def ___remap_key(key: str) -> str:
     # cspell:enable
 
 
-def ___convert_ini_value(value: str) -> Any:
+def ___convert_ini_value(key: str, value: str) -> Any:
     if value.lower() == "false":
         return False
     if value.lower() == "true":
@@ -136,7 +125,7 @@ def ___convert_ini_value(value: str) -> Any:
         toml_array = tomlkit.array()
         lines = [s.strip() for s in value.split("\n")]
         lines = [s for s in lines if s]
-        if all("=" in s and re.match(r"^[A-Za-z].*", s) for s in lines):
+        if key == "set_env":
             for line in lines:
                 key, value = line.split("=", 1)
                 table_item = tomlkit.inline_table()
@@ -151,36 +140,73 @@ def ___convert_ini_value(value: str) -> Any:
     return value
 
 
+def ___convert_commands(ini_value: str, command: Array) -> Array:
+    command = to_toml_array(___merge_posargs(command))
+    command.indent(4)
+    if len(command) <= 2 or ini_value.strip().startswith("pre-commit"):  # noqa: PLR2004
+        command.multiline(False)
+    else:
+        command.multiline(True)
+    command_array = tomlkit.array()
+    command_array.multiline(True)
+    command_array.append(command)
+    return command_array
+
+
+def ___merge_posargs(commands: Sequence[str]) -> list[str]:  # cspell:ignore posargs
+    """Merge commands that contain posargs arguments.
+
+    >>> ___merge_posargs(["pytest", "{posargs:src", "tests/unit}", "--durations=0"])
+    ['pytest', '{posargs:src tests/unit}', '--durations=0']
+    """
+    new_commands: list[str] = []
+    merge_mode = False
+    for command in commands:
+        if merge_mode:
+            new_commands[-1] += f" {command}"
+        else:
+            new_commands.append(command)
+        if command.startswith("{posargs:"):
+            merge_mode = True
+        if command.endswith("}"):
+            merge_mode = False
+    return new_commands
+
+
 def _set_minimal_tox_version(pyproject: ModifiablePyproject) -> None:
     tox_table = pyproject.get_table("tool.tox")
     existing_requires = tox_table.get("requires", [])
-    if any(re.match(r"tox\s*(?:>|>=)\s*.*", req) for req in existing_requires):
+    minimal_version = "4.21.0"
+    if any(
+        re.match(rf"^tox\s*(?:>|>=)\s*{re.escape(minimal_version)}$", req.strip())
+        for req in existing_requires
+    ):
         return
-    minimal_version = "4.19"
     tox_table["requires"] = to_toml_array([f"tox>={minimal_version}"])
     pyproject.changelog.append(f"Set minimal Tox version to {minimal_version}")
 
 
-def _check_expected_sections(tox: ConfigParser, has_notebooks: bool) -> None:
+def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
     # cspell:ignore doclive docnb docnblive testenv
-    sections: set[str] = set(tox)
-    expected_sections: set[str] = set()
+    tox_table = pyproject.get_table("tool.tox")
+    environments = set(tox_table.get("env", set()))
+    expected_environments: set[str] = set()
     if Path("docs").exists():
-        expected_sections |= {
-            "testenv:doc",
-            "testenv:doclive",
+        expected_environments |= {
+            "doc",
+            "doclive",
         }
         if has_notebooks:
-            expected_sections |= {
-                "testenv:docnb",
-                "testenv:docnblive",
-                "testenv:nb",
+            expected_environments |= {
+                "docnb",
+                "docnblive",
+                "nb",
             }
-    missing_sections = expected_sections - sections
-    if missing_sections:
+    missing_environments = expected_environments - environments
+    if missing_environments:
         msg = (
             f"Tox configuration is missing job definitions:"
-            f" {', '.join(sorted(missing_sections))}"
+            f" {', '.join(sorted(missing_environments))}"
         )
         raise PrecommitError(msg)
 

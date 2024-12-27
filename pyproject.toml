@@ -293,7 +293,7 @@ env_list = [
     "sty",
 ]
 no_package = true
-requires = ["tox>=4.19"]
+requires = ["tox>=4.21.0"]
 skip_install = true
 skip_missing_interpreters = true
 
