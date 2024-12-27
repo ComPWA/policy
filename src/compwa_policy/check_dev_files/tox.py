@@ -78,7 +78,7 @@ def __convert_ini_dict(ini: Mapping[str, str]) -> dict[str, Any]:
     toml = {}
     for ini_key, ini_value in ini.items():
         key = ___remap_key(ini_key)
-        value = ___convert_ini_value(ini_value)
+        value = ___convert_ini_value(key, ini_value)
         if key == "commands":
             value = cast("Array", value)
             value.indent(4)
@@ -125,7 +125,7 @@ def ___remap_key(key: str) -> str:
     # cspell:enable
 
 
-def ___convert_ini_value(value: str) -> Any:
+def ___convert_ini_value(key: str, value: str) -> Any:
     if value.lower() == "false":
         return False
     if value.lower() == "true":
@@ -134,17 +134,16 @@ def ___convert_ini_value(value: str) -> Any:
         toml_array = tomlkit.array()
         lines = [s.strip() for s in value.split("\n")]
         lines = [s for s in lines if s]
-        if all("=" in s and re.match(r"^[A-Za-z].*", s) for s in lines):
+        if key == "set_env":
             for line in lines:
                 key, value = line.split("=", 1)
                 table_item = tomlkit.inline_table()
                 table_item[key.strip()] = value.strip()
                 toml_array.append(table_item)
             toml_array.multiline(True)
-        else:
-            for line in lines:
-                toml_array.extend(line.split())
-            toml_array.multiline(len(toml_array) > 1)
+        for line in lines:
+            toml_array.extend(line.split())
+        toml_array.multiline(len(toml_array) > 1)
         return toml_array
     return value
 
