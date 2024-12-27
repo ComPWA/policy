@@ -257,28 +257,34 @@ def __load_pixi_environment_variables(config: ModifiablePyproject) -> dict[str, 
 
 
 def __to_pixi_command(tox_commands: list[list[str]]) -> String:
-    """Convert a tox command to a Pixi command.
+    r"""Convert a tox command to a Pixi command.
 
     >>> __to_pixi_command([["pytest", "{posargs}"]])
     'pytest'
-    >>> __to_pixi_command([["pytest", "{posargs:benchmarks}"]])
-    'pytest benchmarks'
-    >>> __to_pixi_command([["pytest", "{posargs src tests}"]])
-    'pytest src tests'
+    >>> print(__to_pixi_command([["pytest", "{posargs:benchmarks}"]]))
+    pytest benchmarks
+    >>> print(__to_pixi_command([["pytest", "{posargs src tests}"]]))
+    pytest src tests
     >>> print(__to_pixi_command([["pytest", "{posargs:tests}"], ["mypy", "src"]]))
-    <BLANKLINE>
     pytest tests
     mypy src
-    <BLANKLINE>
+    >>> sphinx_commands = [["sphinx", "--builder=html", "docs", "docs/_build/html"]]
+    >>> print(__to_pixi_command(sphinx_commands))
+    sphinx \
+        --builder=html \
+        docs \
+        docs/_build/html
     """
     # cspell:ignore posargs
-    pixi_command = "\n".join(
-        re.sub(r" \s*{posargs:?\s*([^}]*)}", r" \1", " \\\n".join(cmd))
+    normalized_commands = [
+        [re.sub(r"{posargs:?\s*([^}]*)}", r"\1", c) for c in cmd]
         for cmd in tox_commands
+    ]
+    normalized_commands = [[c for c in cmd if c.strip()] for cmd in normalized_commands]
+    pixi_command = "\n".join(
+        (" \\\n    " if len(cmd) > 2 else " ").join(cmd)  # noqa: PLR2004
+        for cmd in normalized_commands
     )
-    if "\n" in pixi_command:
-        pixi_command = "\n" + pixi_command + "\n"
-        pixi_command = pixi_command.replace("\\\n", "\\\n" + 4 * " ")
     return string(pixi_command, multiline="\n" in pixi_command)
 
 
