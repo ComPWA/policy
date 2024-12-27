@@ -127,6 +127,8 @@ def ___convert_ini_value(key: str, value: str) -> Any:
         lines = [s for s in lines if s]
         if key == "set_env":
             for line in lines:
+                if "=" not in line:
+                    continue
                 key, value = line.split("=", 1)
                 table_item = tomlkit.inline_table()
                 table_item[key.strip()] = value.strip()
