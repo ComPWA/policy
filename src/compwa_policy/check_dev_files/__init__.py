@@ -108,6 +108,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
             dev_python_version,
             args.outsource_pixi_to_tox,
         )
+        do(tox.main, has_notebooks)
         do(direnv.main, package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config)
@@ -141,7 +142,6 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
         do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(setuptools_scm.main)
-        do(tox.main, has_notebooks)
         do(
             uv.main,
             dev_python_version,

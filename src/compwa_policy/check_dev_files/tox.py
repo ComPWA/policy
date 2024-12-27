@@ -21,17 +21,15 @@ if TYPE_CHECKING:
 
 
 def main(has_notebooks: bool) -> None:
-    tox = read_tox_ini_config()
-    if tox is None:
+    if not CONFIG_PATH.pyproject.is_file():
         return
-    if CONFIG_PATH.pyproject.is_file():
-        with ModifiablePyproject.load() as pyproject:
-            _merge_tox_ini_into_pyproject(pyproject)
-            _convert_to_native_toml(pyproject)
-            _set_minimal_tox_version(pyproject)
-            pyproject.remove_dependency("tox")
-            pyproject.remove_dependency("tox-uv")
-    _check_expected_sections(tox, has_notebooks)
+    with ModifiablePyproject.load() as pyproject:
+        _merge_tox_ini_into_pyproject(pyproject)
+        _convert_to_native_toml(pyproject)
+        _set_minimal_tox_version(pyproject)
+        pyproject.remove_dependency("tox")
+        pyproject.remove_dependency("tox-uv")
+        _check_expected_sections(pyproject, has_notebooks)
 
 
 def _merge_tox_ini_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -164,26 +162,27 @@ def _set_minimal_tox_version(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(f"Set minimal Tox version to {minimal_version}")
 
 
-def _check_expected_sections(tox: ConfigParser, has_notebooks: bool) -> None:
+def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
     # cspell:ignore doclive docnb docnblive testenv
-    sections: set[str] = set(tox)
-    expected_sections: set[str] = set()
+    tox_table = pyproject.get_table("tool.tox")
+    environments = set(tox_table.get("env", set()))
+    expected_environments: set[str] = set()
     if Path("docs").exists():
-        expected_sections |= {
-            "testenv:doc",
-            "testenv:doclive",
+        expected_environments |= {
+            "doc",
+            "doclive",
         }
         if has_notebooks:
-            expected_sections |= {
-                "testenv:docnb",
-                "testenv:docnblive",
-                "testenv:nb",
+            expected_environments |= {
+                "docnb",
+                "docnblive",
+                "nb",
             }
-    missing_sections = expected_sections - sections
-    if missing_sections:
+    missing_environments = expected_environments - environments
+    if missing_environments:
         msg = (
             f"Tox configuration is missing job definitions:"
-            f" {', '.join(sorted(missing_sections))}"
+            f" {', '.join(sorted(missing_environments))}"
         )
         raise PrecommitError(msg)
 
