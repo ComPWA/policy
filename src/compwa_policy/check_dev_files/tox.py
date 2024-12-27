@@ -154,9 +154,12 @@ def ___convert_ini_value(value: str) -> Any:
 def _set_minimal_tox_version(pyproject: ModifiablePyproject) -> None:
     tox_table = pyproject.get_table("tool.tox")
     existing_requires = tox_table.get("requires", [])
-    if any(re.match(r"tox\s*(?:>|>=)\s*.*", req) for req in existing_requires):
+    minimal_version = "4.21.0"
+    if any(
+        re.match(rf"^tox\s*(?:>|>=)\s*{re.escape(minimal_version)}$", req.strip())
+        for req in existing_requires
+    ):
         return
-    minimal_version = "4.19"
     tox_table["requires"] = to_toml_array([f"tox>={minimal_version}"])
     pyproject.changelog.append(f"Set minimal Tox version to {minimal_version}")
 
