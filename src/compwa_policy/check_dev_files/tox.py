@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from configparser import ConfigParser
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import tomlkit
 
@@ -15,7 +15,7 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_multiline_string, to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from tomlkit.items import Array, String
 
@@ -80,16 +80,7 @@ def __convert_ini_dict(ini: Mapping[str, str]) -> dict[str, Any]:
         key = ___remap_key(ini_key)
         value = ___convert_ini_value(key, ini_value)
         if key == "commands":
-            value = cast("Array", value)
-            value.indent(4)
-            if len(value) <= 2 or ini_value.strip().startswith("pre-commit"):  # noqa: PLR2004
-                value.multiline(False)
-            else:
-                value.multiline(True)
-            array = tomlkit.array()
-            array.multiline(True)
-            array.append(value)
-            value = array
+            value = ___convert_commands(ini_value, value)
         # cspell:ignore passenv
         if key == "pass_env" and isinstance(value, str):
             value = [value]
@@ -146,6 +137,39 @@ def ___convert_ini_value(key: str, value: str) -> Any:
         toml_array.multiline(len(toml_array) > 1)
         return toml_array
     return value
+
+
+def ___convert_commands(ini_value: str, command: Array) -> Array:
+    command = to_toml_array(___merge_posargs(command))
+    command.indent(4)
+    if len(command) <= 2 or ini_value.strip().startswith("pre-commit"):  # noqa: PLR2004
+        command.multiline(False)
+    else:
+        command.multiline(True)
+    command_array = tomlkit.array()
+    command_array.multiline(True)
+    command_array.append(command)
+    return command_array
+
+
+def ___merge_posargs(commands: Sequence[str]) -> list[str]:  # cspell:ignore posargs
+    """Merge commands that contain posargs arguments.
+
+    >>> ___merge_posargs(["pytest", "{posargs:src", "tests/unit}", "--durations=0"])
+    ['pytest', '{posargs:src tests/unit}', '--durations=0']
+    """
+    new_commands: list[str] = []
+    merge_mode = False
+    for command in commands:
+        if merge_mode:
+            new_commands[-1] += f" {command}"
+        else:
+            new_commands.append(command)
+        if command.startswith("{posargs:"):
+            merge_mode = True
+        if command.endswith("}"):
+            merge_mode = False
+    return new_commands
 
 
 def _set_minimal_tox_version(pyproject: ModifiablePyproject) -> None:
