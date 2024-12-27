@@ -132,9 +132,10 @@ def ___convert_ini_value(key: str, value: str) -> Any:
                 table_item[key.strip()] = value.strip()
                 toml_array.append(table_item)
             toml_array.multiline(True)
-        for line in lines:
-            toml_array.extend(line.split())
-        toml_array.multiline(len(toml_array) > 1)
+        else:
+            for line in lines:
+                toml_array.extend(line.split())
+            toml_array.multiline(len(toml_array) > 1)
         return toml_array
     return value
 
