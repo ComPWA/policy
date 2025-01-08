@@ -124,7 +124,7 @@ def ___convert_ini_value(key: str, value: str) -> Any:
         return True
     if "\n" in value:
         toml_array = tomlkit.array()
-        lines = [s.strip() for s in value.split("\n")]
+        lines = [s.strip().rstrip(",") for s in value.split("\n")]
         lines = [s for s in lines if s]
         if key == "set_env":
             for line in lines:
