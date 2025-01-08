@@ -19,11 +19,6 @@ color = "CFD3D7"
 name = "⚪ Duplicate"
 description = "This issue or pull request already exists"
 
-["✨ Feature"]
-color = "C2E0C6"
-name = "✨ Feature"
-description = "New feature added to the package"
-
 ["❔ Question"]
 color = "88506B"
 name = "❔ Question"
@@ -39,10 +34,20 @@ color = "D93F0B"
 name = "🐛 Bug"
 description = "Something isn't working"
 
+["✨ Feature"]
+color = "C2E0C6"
+name = "✨ Feature"
+description = "New feature added to the package"
+
 ["💫 Good first issue"]
 color = "F4EAEF"
 name = "💫 Good first issue"
 description = "Good for newcomers"
+
+["📋 Task"]
+color = "1D76DB"
+name = "📋 Task"
+description = "Task for the to-do list"
 
 ["📖 Analysis"]
 color = "FBE2BD"
