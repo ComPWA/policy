@@ -40,7 +40,6 @@ jobs:
           labels sync --filename labels/default.toml --owner ComPWA --repo policy
           labels sync --filename labels/default.toml --owner ComPWA --repo prettier-pre-commit
           labels sync --filename labels/default.toml --owner ComPWA --repo PWA-JPsi2pbarSigmaKS
-          labels sync --filename labels/default.toml --owner ComPWA --repo PWA-pages
           labels sync --filename labels/default.toml --owner ComPWA --repo pyright-pre-commit
           labels sync --filename labels/default.toml --owner ComPWA --repo qrules
           labels sync --filename labels/default.toml --owner ComPWA --repo report
