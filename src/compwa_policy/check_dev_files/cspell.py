@@ -112,14 +112,14 @@ def _update_config_content() -> None:
     for section_name in __EXPECTED_CONFIG:
         if section_name in {"words", "ignoreWords"}:
             if section_name not in config:
-                fixed_sections.append('"' + section_name + '"')
+                fixed_sections.append(f"{section_name!r}")
                 config[section_name] = []
             continue
         expected_section_content = __get_expected_content(config, section_name)
         section_content = config.get(section_name)
         if section_content == expected_section_content:
             continue
-        fixed_sections.append('"' + section_name + '"')
+        fixed_sections.append(f"{section_name!r}")
         config[section_name] = expected_section_content
     if fixed_sections:
         __write_config(config)
