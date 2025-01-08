@@ -83,7 +83,7 @@ def __convert_ini_dict(ini: Mapping[str, str]) -> dict[str, Any]:
         if key == "commands":
             value = ___convert_commands(ini_value, value)
         # cspell:ignore passenv
-        if key == "pass_env" and isinstance(value, str):
+        if key in {"base", "pass_env"} and isinstance(value, str):
             value = [value]
         toml[key] = value
     return toml
