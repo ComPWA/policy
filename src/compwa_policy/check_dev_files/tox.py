@@ -26,10 +26,11 @@ def main(has_notebooks: bool) -> None:
     with ModifiablePyproject.load() as pyproject:
         _merge_tox_ini_into_pyproject(pyproject)
         _convert_to_native_toml(pyproject)
-        _set_minimal_tox_version(pyproject)
+        if pyproject.has_table("tool.tox"):
+            _check_expected_sections(pyproject, has_notebooks)
+            _set_minimal_tox_version(pyproject)
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
-        _check_expected_sections(pyproject, has_notebooks)
 
 
 def _merge_tox_ini_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -82,7 +83,7 @@ def __convert_ini_dict(ini: Mapping[str, str]) -> dict[str, Any]:
         if key == "commands":
             value = ___convert_commands(ini_value, value)
         # cspell:ignore passenv
-        if key == "pass_env" and isinstance(value, str):
+        if key in {"base", "pass_env"} and isinstance(value, str):
             value = [value]
         toml[key] = value
     return toml
@@ -123,7 +124,7 @@ def ___convert_ini_value(key: str, value: str) -> Any:
         return True
     if "\n" in value:
         toml_array = tomlkit.array()
-        lines = [s.strip() for s in value.split("\n")]
+        lines = [s.strip().rstrip(",") for s in value.split("\n")]
         lines = [s for s in lines if s]
         if key == "set_env":
             for line in lines:
