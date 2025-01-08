@@ -13,7 +13,7 @@ from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
@@ -51,6 +51,8 @@ def _update_tomlsort_config() -> None:
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
+    pyproject = Pyproject.load()
+    sort_first = [table for table in sort_first if pyproject.has_table(table)]
     expected_config = dict(
         all=False,
         ignore_case=True,
