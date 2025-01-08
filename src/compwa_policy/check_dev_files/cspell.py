@@ -121,6 +121,10 @@ def _update_config_content() -> None:
             continue
         fixed_sections.append(f"{section_name!r}")
         config[section_name] = expected_section_content
+    for section_name in list(config):
+        section_content = config[section_name]
+        if not section_content:
+            config.pop(section_name)
     if fixed_sections:
         __write_config(config)
         error_message = __express_list_of_sections(fixed_sections)
