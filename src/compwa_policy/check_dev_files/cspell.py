@@ -122,7 +122,7 @@ def _update_config_content() -> None:
         config[section_name] = expected_section_content
     for section_name in list(config):
         section_content = config[section_name]
-        if not section_content:
+        if section_content in ([], {}):
             config.pop(section_name)
     if config != original_config:
         __write_config(config)
