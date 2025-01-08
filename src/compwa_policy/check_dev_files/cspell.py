@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.errors import PrecommitError
@@ -108,25 +109,28 @@ def _update_config_content() -> None:
         with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
     config = __get_config(CONFIG_PATH.cspell)
-    fixed_sections = []
+    original_config = deepcopy(config)
     for section_name in __EXPECTED_CONFIG:
         if section_name in {"words", "ignoreWords"}:
             if section_name not in config:
-                fixed_sections.append(f"{section_name!r}")
                 config[section_name] = []
             continue
         expected_section_content = __get_expected_content(config, section_name)
         section_content = config.get(section_name)
         if section_content == expected_section_content:
             continue
-        fixed_sections.append(f"{section_name!r}")
         config[section_name] = expected_section_content
     for section_name in list(config):
         section_content = config[section_name]
         if not section_content:
             config.pop(section_name)
-    if fixed_sections:
+    if config != original_config:
         __write_config(config)
+        fixed_sections = sorted(
+            section_name
+            for section_name, section in config.items()
+            if section != original_config[section_name]
+        )
         error_message = __express_list_of_sections(fixed_sections)
         error_message += f" in {CONFIG_PATH.cspell} has been updated."
         raise PrecommitError(error_message)
