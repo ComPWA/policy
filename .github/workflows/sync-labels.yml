@@ -22,33 +22,21 @@ jobs:
           pip install labels
       - name: Sync general issue labels
         run: |
-          labels sync --filename labels/default.toml --owner ComPWA --repo .github
-          labels sync --filename labels/default.toml --owner ComPWA --repo .github-private
           labels sync --filename labels/default.toml --owner ComPWA --repo actions
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform-dpd
           labels sync --filename labels/default.toml --owner ComPWA --repo benchmarks
           labels sync --filename labels/default.toml --owner ComPWA --repo compwa.github.io
           labels sync --filename labels/default.toml --owner ComPWA --repo demo
-          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-amplitude
-          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar
-          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar-analysis
           labels sync --filename labels/default.toml --owner ComPWA --repo jax-mini-benchmark
-          labels sync --filename labels/default.toml --owner ComPWA --repo K-matrix-research
-          labels sync --filename labels/default.toml --owner ComPWA --repo Nstar-docs
-          labels sync --filename labels/default.toml --owner ComPWA --repo polarimetry
           labels sync --filename labels/default.toml --owner ComPWA --repo policy
           labels sync --filename labels/default.toml --owner ComPWA --repo prettier-pre-commit
-          labels sync --filename labels/default.toml --owner ComPWA --repo PWA-JPsi2pbarSigmaKS
           labels sync --filename labels/default.toml --owner ComPWA --repo pyright-pre-commit
           labels sync --filename labels/default.toml --owner ComPWA --repo qrules
-          labels sync --filename labels/default.toml --owner ComPWA --repo report
-          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-api-relink
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-pybtex-etal-style
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinxcontrib-hep-pdgref
-          labels sync --filename labels/default.toml --owner ComPWA --repo strong2020-salamanca
           labels sync --filename labels/default.toml --owner ComPWA --repo taplo-pre-commit
           labels sync --filename labels/default.toml --owner ComPWA --repo tensorwaves
           labels sync --filename labels/default.toml --owner ComPWA --repo update-pip-constraints
@@ -56,4 +44,16 @@ jobs:
 
       - name: Sync issue labels for physics repositories
         run: |
+          labels sync --filename labels/default.toml --owner ComPWA --repo .github
+          labels sync --filename labels/default.toml --owner ComPWA --repo .github-private
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-amplitude
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar
+          labels sync --filename labels/default.toml --owner ComPWA --repo gluex-nstar-analysis
+          labels sync --filename labels/default.toml --owner ComPWA --repo K-matrix-research
+          labels sync --filename labels/default.toml --owner ComPWA --repo Nstar-docs
+          labels sync --filename labels/default.toml --owner ComPWA --repo polarimetry
+          labels sync --filename labels/default.toml --owner ComPWA --repo PWA-JPsi2pbarSigmaKS
+          labels sync --filename labels/default.toml --owner ComPWA --repo report
+          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
+          labels sync --filename labels/default.toml --owner ComPWA --repo strong2020-salamanca
           labels sync --filename labels/physics.toml --owner ComPWA --repo PWA-pages
