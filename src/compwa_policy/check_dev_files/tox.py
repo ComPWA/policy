@@ -26,10 +26,11 @@ def main(has_notebooks: bool) -> None:
     with ModifiablePyproject.load() as pyproject:
         _merge_tox_ini_into_pyproject(pyproject)
         _convert_to_native_toml(pyproject)
-        _set_minimal_tox_version(pyproject)
+        if pyproject.has_table("tool.tox"):
+            _check_expected_sections(pyproject, has_notebooks)
+            _set_minimal_tox_version(pyproject)
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
-        _check_expected_sections(pyproject, has_notebooks)
 
 
 def _merge_tox_ini_into_pyproject(pyproject: ModifiablePyproject) -> None:
