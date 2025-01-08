@@ -23,6 +23,7 @@ jobs:
       - name: Sync general issue labels
         run: |
           labels sync --filename labels/default.toml --owner ComPWA --repo .github
+          labels sync --filename labels/default.toml --owner ComPWA --repo .github-private
           labels sync --filename labels/default.toml --owner ComPWA --repo actions
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform
           labels sync --filename labels/default.toml --owner ComPWA --repo ampform-dpd
@@ -47,6 +48,7 @@ jobs:
           labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch
           labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch-calendar
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-api-relink
+          labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-pybtex-etal-style
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinxcontrib-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo strong2020-salamanca
