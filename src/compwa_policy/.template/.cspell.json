@@ -1,5 +1,4 @@
 {
-  "version": "0.2",
   "enableFiletypes": [
     "git-commit",
     "github-actions-workflow",
@@ -42,8 +41,8 @@
     ".pre-commit-config.yaml",
     ".prettierignore",
     ".readthedocs.yml",
+    ".taplo.toml",
     ".vscode/*",
-    ".vscode/.gitignore",
     "CITATION.cff",
     "codecov.yml",
     "Dockerfile",
@@ -61,21 +60,6 @@
     "tox.ini",
     "typings",
     "update-www"
-  ],
-  "language": "en-US",
-  "words": [
-    "Colaboratory",
-    "compwa",
-    "Deepnote",
-    "docstrings",
-    "graphviz",
-    "ipython",
-    "mkdir",
-    "mypy",
-    "pytest",
-    "PYTHONHASHSEED",
-    "toctree",
-    "Zenodo"
   ],
   "ignoreWords": [
     "MAINT",
@@ -124,5 +108,22 @@
     "tomlkit",
     "unittests",
     "venv"
+  ],
+  "language": "en-US",
+  "useGitignore": true,
+  "version": "0.2",
+  "words": [
+    "Colaboratory",
+    "compwa",
+    "Deepnote",
+    "docstrings",
+    "graphviz",
+    "ipython",
+    "mkdir",
+    "mypy",
+    "pytest",
+    "PYTHONHASHSEED",
+    "toctree",
+    "Zenodo"
   ]
 }

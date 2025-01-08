@@ -1,5 +1,4 @@
 {
-  "version": "0.2",
   "enableFiletypes": [
     "git-commit",
     "github-actions-workflow",
@@ -29,6 +28,7 @@
     ".gitpod.*",
     ".pre-commit-config.yaml",
     ".prettierignore",
+    ".taplo.toml",
     ".vscode/*",
     "codecov.yml",
     "docs/_templates/*",
@@ -37,27 +37,6 @@
     "pyproject.toml",
     "pyrightconfig.json",
     "typings"
-  ],
-  "language": "en-US",
-  "words": [
-    "Colaboratory",
-    "compwa",
-    "Deepnote",
-    "docstrings",
-    "graphviz",
-    "ipython",
-    "mkdir",
-    "mypy",
-    "oneline",
-    "pixi",
-    "PyPA",
-    "pytest",
-    "PYTHONHASHSEED",
-    "QRules",
-    "rtoml",
-    "sympy",
-    "toctree",
-    "Zenodo"
   ],
   "ignoreWords": [
     "FURB",
@@ -120,5 +99,28 @@
     "tomlsort",
     "unittests",
     "venv"
+  ],
+  "language": "en-US",
+  "useGitignore": true,
+  "version": "0.2",
+  "words": [
+    "Colaboratory",
+    "compwa",
+    "Deepnote",
+    "docstrings",
+    "graphviz",
+    "ipython",
+    "mkdir",
+    "mypy",
+    "oneline",
+    "pixi",
+    "PyPA",
+    "pytest",
+    "PYTHONHASHSEED",
+    "QRules",
+    "rtoml",
+    "sympy",
+    "toctree",
+    "Zenodo"
   ]
 }
