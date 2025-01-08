@@ -44,8 +44,6 @@ jobs:
           labels sync --filename labels/default.toml --owner ComPWA --repo qrules
           labels sync --filename labels/default.toml --owner ComPWA --repo report
           labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-AG
-          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch
-          labels sync --filename labels/default.toml --owner ComPWA --repo RUB-EP1-Fritsch-calendar
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-api-relink
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinx-pybtex-etal-style
