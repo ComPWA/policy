@@ -61,6 +61,8 @@ def _update_tomlsort_config() -> None:
         spaces_indent_inline_array=4,
         trailing_comma_inline_array=True,
     )
+    if not sort_first:
+        expected_config.pop("sort_first")
     with ModifiablePyproject.load() as pyproject:
         tool_table = pyproject.get_table("tool", create=True)
         if tool_table.get("tomlsort") == expected_config:
