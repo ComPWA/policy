@@ -115,16 +115,17 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
     local_hooks = get_local_hooks(precommit.document)
     non_functional_hooks = get_non_functional_hooks(precommit.document)
     expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
+    if not expected_skips and "skip" in precommit_ci:
+        del precommit_ci["skip"]
+        msg = "Removed redundant ci.skip section"
+        precommit.changelog.append(msg)
+        return
     existing_skips = precommit_ci.get("skip")
-    if existing_skips != expected_skips:
+    if expected_skips and existing_skips != expected_skips:
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast("CommentedMap", precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
         msg = "Updated ci.skip section"
-        precommit.changelog.append(msg)
-    if not expected_skips and existing_skips:
-        del precommit_ci["skip"]
-        msg = "Removed redundant ci.skip section"
         precommit.changelog.append(msg)
 
 
