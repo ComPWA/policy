@@ -180,7 +180,6 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
         pixi run \
           uv run \
             --group doc \
-            --locked \
             --no-dev \
             --with tox \
             tox -e doc
@@ -200,7 +199,6 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
         new_command += dedent(R"""
             uv run \
               --group doc \
-              --locked \
               --no-dev \
               --with tox \
               tox -e doc
