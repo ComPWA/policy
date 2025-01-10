@@ -36,12 +36,6 @@
   "coverage-gutters.showLineCoverage": true,
   "diffEditor.experimental.showMoves": true,
   "editor.formatOnSave": true,
-  "files.watcherExclude": {
-    "**/*_cache/**": true,
-    "**/.eggs/**": true,
-    "**/.git/**": true,
-    "**/.tox/**": true
-  },
   "git.rebaseWhenSync": true,
   "github-actions.workflows.pinned.workflows": [".github/workflows/ci.yml"],
   "gitlens.telemetry.enabled": false,
@@ -67,8 +61,6 @@
   "search.exclude": {
     "**/tests/**/__init__.py": true,
     "**/uv.lock": true,
-    ".github/workflows/cd.yml": true,
-    ".github/workflows/ci.yml": true,
     ".taplo.toml": true,
     "src/compwa_policy/.github/workflows/clean-caches.yml": true,
     "src/compwa_policy/.github/workflows/pr-linting.yml": true,
