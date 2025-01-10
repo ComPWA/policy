@@ -311,7 +311,7 @@ commands = [
     [
         "pytest",
         "{posargs}",
-        "--cov-fail-under=30",
+        "--cov-fail-under=33",
         "--cov-report=html",
         "--cov-report=xml",
         "--cov=compwa_policy",
