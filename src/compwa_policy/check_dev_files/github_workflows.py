@@ -259,6 +259,7 @@ def __update_pytest_section(
             with_section["additional-extras"] = " ".join(test_extras)
         if CONFIG_PATH.codecov.exists():
             with_section["coverage-target"] = __get_package_name()
+            with_section["CODECOV_TOKEN"] = "${{ secrets.CODECOV_TOKEN }}"  # noqa: S105
         if not no_macos:
             with_section["macos-python-version"] = DoubleQuotedScalarString("3.9")
         if skip_tests:
