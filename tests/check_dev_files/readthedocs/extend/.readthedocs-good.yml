@@ -13,3 +13,5 @@ build:
       - mkdir bin
       - ln -s $PWD/julia-1.9.2/bin/julia bin/julia
       - ./bin/julia docs/InstallIJulia.jl
+sphinx:
+  configuration: docs/conf.py
