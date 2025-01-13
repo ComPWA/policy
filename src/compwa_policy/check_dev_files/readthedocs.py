@@ -11,7 +11,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
-from compwa_policy.utilities.match import git_ls_files
+from compwa_policy.utilities.match import filter_files, git_ls_files
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -32,6 +32,7 @@ def main(
     if isinstance(source, Path) and not source.exists():
         return
     rtd = ReadTheDocs(source)
+    _set_sphinx_configuration(rtd)
     _update_os(rtd)
     _update_python_version(rtd, python_version)
     if package_manager == "pixi+uv":
@@ -49,6 +50,27 @@ def main(
     else:
         _update_post_install(rtd, python_version, package_manager)
     rtd.finalize()
+
+
+def _set_sphinx_configuration(config: ReadTheDocs) -> None:
+    if "sphinx" not in config.document:
+        config.document["sphinx"] = {}
+    sphinx = config.document["sphinx"]
+    if "configuration" not in sphinx:
+        conf_path = __get_sphinx_config_path()
+        sphinx["configuration"] = str(conf_path)
+        msg = f"Set sphinx.configuration to {conf_path}"
+        config.changelog.append(msg)
+
+
+def __get_sphinx_config_path() -> Path | None:
+    conf_path = Path("docs/conf.py")
+    if conf_path.exists():
+        return conf_path
+    candidate_paths = list(filter_files(["**/conf.py"]))
+    if not candidate_paths:
+        return None
+    return Path(candidate_paths[0])
 
 
 def _update_os(config: ReadTheDocs) -> None:
@@ -150,7 +172,6 @@ def _remove_redundant_settings(config: ReadTheDocs) -> None:
         "build.apt_packages",
         "build.jobs",
         "formats",
-        "sphinx",
     ]
     removed_keys = [
         key for key in redundant_keys if __remove_nested_key(config.document, key)

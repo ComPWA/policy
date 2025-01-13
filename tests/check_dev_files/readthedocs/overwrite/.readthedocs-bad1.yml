@@ -6,3 +6,5 @@ build:
   jobs:
     post_install:
       - pip install -e .[doc]
+sphinx:
+  configuration: docs/conf.py
