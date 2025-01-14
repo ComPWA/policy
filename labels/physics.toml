@@ -77,3 +77,8 @@ description = "Maintenance and upkeep improvements"
 color = "FEF2C0"
 name = "🖱️ DX"
 description = "Improvements to the Developer Experience"
+
+["💬 Meeting"]
+color = "BFD4F2"
+name = "💬 Meeting"
+description = "Weekly group meeting"
