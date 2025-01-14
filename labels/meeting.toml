@@ -48,6 +48,21 @@ color = "1D76DB"
 name = "📋 Task"
 description = "Task for the to-do list"
 
+["📖 Analysis"]
+color = "FBE2BD"
+name = "📖 Analysis"
+description = "About HEP analysis techniques"
+
+["📖 Software"]
+color = "FDF3E4"
+name = "📖 Software"
+description = "About software development"
+
+["📖 Theory"]
+color = "F7C57B"
+name = "📖 Theory"
+description = "About PWA theory"
+
 ["📝 Docs"]
 color = "BFD4F2"
 name = "📝 Docs"
@@ -62,3 +77,8 @@ description = "Maintenance and upkeep improvements"
 color = "FEF2C0"
 name = "🖱️ DX"
 description = "Improvements to the Developer Experience"
+
+["💬 Meeting"]
+color = "BFD4F2"
+name = "💬 Meeting"
+description = "Weekly PWA working group meeting"

@@ -54,6 +54,9 @@ jobs:
           labels sync --filename labels/physics.toml --owner ComPWA --repo polarimetry
           labels sync --filename labels/physics.toml --owner ComPWA --repo PWA-JPsi2pbarSigmaKS
           labels sync --filename labels/physics.toml --owner ComPWA --repo report
-          labels sync --filename labels/physics.toml --owner ComPWA --repo RUB-EP1-Fritsch
           labels sync --filename labels/physics.toml --owner ComPWA --repo strong2020-salamanca
           labels sync --filename labels/physics.toml --owner ComPWA --repo PWA-pages
+
+      - name: Sync issue labels for meeting repository
+        run: |
+          labels sync --filename labels/meeting.toml --owner ComPWA --repo RUB-EP1-Fritsch
