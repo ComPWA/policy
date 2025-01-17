@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import itertools
 import re
+import sys
 from collections import abc
 from typing import TYPE_CHECKING, Any, cast
 
@@ -15,6 +15,10 @@ from compwa_policy.utilities.pyproject.getters import (
 )
 from compwa_policy.utilities.toml import to_toml_array
 
+if sys.version_info >= (3, 10):
+    from itertools import pairwise
+else:
+    from more_itertools import pairwise
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 
@@ -63,7 +67,7 @@ def _add_to_dependency_group(
         return True
     if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
         updated = add_dependency(pyproject, package, dependency_group[0])
-        for previous, current in itertools.pairwise(dependency_group):
+        for previous, current in pairwise(dependency_group):
             dependencies = dependency_groups.get(current, [])
             expected: IncludeGroup = {"include-group": previous}
             if expected in dependencies:
@@ -97,7 +101,7 @@ def _add_to_optional_dependencies(
         this_package = get_package_name(pyproject, raise_on_missing=True)
         updated = False
         updated &= add_dependency(pyproject, package, optional_key=optional_key[0])
-        for previous, key in itertools.pairwise(optional_key):
+        for previous, key in pairwise(optional_key):
             updated &= add_dependency(
                 pyproject, f"{this_package}[{previous}]", optional_key=key
             )
