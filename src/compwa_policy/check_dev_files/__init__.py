@@ -34,7 +34,6 @@ from compwa_policy.check_dev_files import (
     readthedocs,
     release_drafter,
     ruff,
-    setuptools_scm,
     toml,
     tox,
     update_lock,
@@ -141,7 +140,6 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
         do(vscode.main, has_notebooks, is_python_repo)
         do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
-        do(setuptools_scm.main)
         do(
             uv.main,
             dev_python_version,
