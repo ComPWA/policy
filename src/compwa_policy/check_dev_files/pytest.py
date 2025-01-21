@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any
 
 import rtoml
 from ini2toml.api import Translator
@@ -10,11 +11,11 @@ from ini2toml.api import Translator
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, MutableMapping
 
     from tomlkit.items import Array
 
@@ -23,6 +24,7 @@ def main() -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
+        do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
 
 
@@ -97,3 +99,26 @@ def __split_options(arg: str) -> list[str]:
         else:
             options.append(elements[i])
     return options
+
+
+def _update_codecov_settings(pyproject: ModifiablePyproject) -> None:
+    if not has_dependency(pyproject, ("coverage", "pytest-cov")):
+        return
+    updated = __update_settings(
+        config=pyproject.get_table("tool.coverage.run", create=True),
+        branch=True,
+        source=["src"],
+    )
+    updated |= __update_settings(
+        config=pyproject.get_table("tool.coverage.report", create=True),
+        exclude_also=to_toml_array(["if TYPE_CHECKING:"], multiline=True),
+    )
+    if updated:
+        msg = "Updated coverage settings"
+        pyproject.changelog.append(msg)
+
+
+def __update_settings(config: MutableMapping, **expected: Any) -> bool:
+    original_config = deepcopy(config)
+    config.update(expected)
+    return config != original_config
