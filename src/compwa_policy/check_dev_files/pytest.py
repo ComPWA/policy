@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 import rtoml
@@ -114,11 +113,11 @@ def _update_codecov_settings(pyproject: ModifiablePyproject) -> None:
         exclude_also=to_toml_array(["if TYPE_CHECKING:"], multiline=True),
     )
     if updated:
-        msg = "Updated coverage settings"
+        msg = "Updated pytest coverage settings"
         pyproject.changelog.append(msg)
 
 
 def __update_settings(config: MutableMapping, **expected: Any) -> bool:
-    original_config = deepcopy(config)
+    original_config = dict(config)
     config.update(expected)
-    return config != original_config
+    return dict(config) != original_config

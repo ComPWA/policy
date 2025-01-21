@@ -281,10 +281,7 @@ def has_dependency(pyproject: Pyproject, package: str | tuple[str, ...]) -> bool
     toml_document: PyprojectTOML = pyproject._document  # noqa: SLF001
     dependencies = set(toml_document.get("project", {}).get("dependencies", []))
     for group in toml_document.get("dependency-groups", {}).values():
-        if isinstance(group, str):
-            dependencies |= set(group)
-    if toml_document.get("dependencies") is None:
-        return False
+        dependencies |= {x for x in group if isinstance(x, str)}
     if isinstance(package, str):
         packages_to_search = {package}
     else:
