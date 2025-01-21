@@ -28,6 +28,7 @@ from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
     create_sub_table,
     remove_dependency,
+    split_dependency_definition,
 )
 
 if sys.version_info >= (3, 11):
@@ -274,6 +275,22 @@ def has_pyproject_package_name() -> bool:
         return False
     pyproject = Pyproject.load()
     return pyproject.get_package_name() is not None
+
+
+def has_dependency(pyproject: Pyproject, package: str | tuple[str, ...]) -> bool:
+    toml_document: PyprojectTOML = pyproject._document  # noqa: SLF001
+    dependencies = set(toml_document.get("project", {}).get("dependencies", []))
+    for group in toml_document.get("dependency-groups", {}).values():
+        dependencies |= {x for x in group if isinstance(x, str)}
+    if isinstance(package, str):
+        packages_to_search = {package}
+    else:
+        packages_to_search = set(package)
+    for dependency in dependencies:
+        dependency_name, *_ = split_dependency_definition(dependency)
+        if dependency_name.lower() in packages_to_search:
+            return True
+    return False
 
 
 def get_constraints_file(python_version: PythonVersion) -> Path | None:

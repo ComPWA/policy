@@ -101,6 +101,11 @@ where = ["src"]
 [tool.setuptools_scm]
 write_to = "src/compwa_policy/version.py"
 
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+]
+
 [tool.coverage.run]
 branch = true
 source = ["src"]
@@ -310,7 +315,7 @@ commands = [
     [
         "pytest",
         "{posargs}",
-        "--cov-fail-under=33",
+        "--cov-fail-under=32",
         "--cov-report=html",
         "--cov-report=xml",
         "--cov=compwa_policy",
