@@ -202,7 +202,7 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
           uv run \
             --group doc \
             --no-dev \
-            --with tox \
+            --with tox-uv \
             tox -e doc
         mkdir -p $READTHEDOCS_OUTPUT
         mv docs/_build/html $READTHEDOCS_OUTPUT
@@ -221,7 +221,7 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
             uv run \
               --group doc \
               --no-dev \
-              --with tox \
+              --with tox-uv \
               tox -e doc
         """)
     else:
@@ -229,7 +229,7 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
             uv run \
               --group doc \
               --no-dev \
-              --with tox \
+              --with tox-uv \
               tox -e doc
         """)
     new_command += dedent(R"""
