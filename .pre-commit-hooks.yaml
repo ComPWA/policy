@@ -43,8 +43,6 @@
 
 - id: set-nb-display-name
   name: Revert display name of the notebook kernel
-  description: >
-    Remove the tags metadata field from Jupyter notebooks if there are no tags
   entry: set-nb-display-name
   language: python
   types:
