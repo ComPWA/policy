@@ -182,6 +182,7 @@ addopts = [
     "--doctest-modules",
     "--durations-min=0",
     "--durations=3",
+    "--ignore=docs/conf.py",
 ]
 filterwarnings = [
     "error",
