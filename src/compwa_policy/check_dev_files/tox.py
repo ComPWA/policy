@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array, String
 
 
-def main(has_notebooks: bool) -> None:
+def main(excluded_python_versions: set[str], has_notebooks: bool) -> None:
     if not CONFIG_PATH.pyproject.is_file():
         return
     with ModifiablePyproject.load() as pyproject:
@@ -29,7 +29,7 @@ def main(has_notebooks: bool) -> None:
         if pyproject.has_table("tool.tox"):
             _check_expected_sections(pyproject, has_notebooks)
             _set_minimal_tox_version(pyproject)
-            _update_python_test_versions(pyproject)
+            _update_python_test_versions(pyproject, excluded_python_versions)
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
 
@@ -220,14 +220,20 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
         raise PrecommitError(msg)
 
 
-def _update_python_test_versions(pyproject: ModifiablePyproject) -> None:
+def _update_python_test_versions(
+    pyproject: ModifiablePyproject, excluded_python_versions: set[str]
+) -> None:
     tox_table = pyproject.get_table("tool.tox")
     env_list = tox_table.get("env_list")
     if not env_list:
         return
     if not any(env.startswith("3.") for env in env_list):
         return
-    python_versions = pyproject.get_supported_python_versions()
+    python_versions = [
+        version
+        for version in pyproject.get_supported_python_versions()
+        if version not in excluded_python_versions
+    ]
     expected = python_versions + sorted(
         (env for env in env_list if not env.startswith("3.")), key=natural_sorting
     )
