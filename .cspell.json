@@ -109,6 +109,7 @@
     "Deepnote",
     "docstrings",
     "graphviz",
+    "ipykernel",
     "ipython",
     "mkdir",
     "mypy",
