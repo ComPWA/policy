@@ -308,7 +308,7 @@ skip_missing_interpreters = true
 
 [tool.tox.env_run_base]
 commands = [
-    ["pytest", "{posargs}"],
+    ["pytest", "--no-summary", "{posargs}"],
 ]
 dependency_groups = ["test"]
 description = "Run test suite on Python {env_name}"
