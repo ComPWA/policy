@@ -64,6 +64,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
     )
     use_gitpod = args.gitpod
     dev_python_version = __get_python_version(args.dev_python_version)
+    excluded_python_versions = set(_to_list(args.excluded_python_versions))
     package_manager: PackageManagerChoice = args.package_manager
     with (
         Executor(raise_exception=False) as do,
@@ -107,7 +108,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
             dev_python_version,
             args.outsource_pixi_to_tox,
         )
-        do(tox.main, has_notebooks)
+        do(tox.main, excluded_python_versions, has_notebooks)
         do(direnv.main, package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
         do(prettier.main, precommit_config)
@@ -123,7 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                     args.repo_organization,
                 )
             do(mypy.main)
-            do(pyproject.main, args.excluded_python_versions, no_pypi=args.no_pypi)
+            do(pyproject.main, excluded_python_versions, no_pypi=args.no_pypi)
             do(pyright.main, package_manager, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
