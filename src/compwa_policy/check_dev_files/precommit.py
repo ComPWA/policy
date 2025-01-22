@@ -86,13 +86,18 @@ def _update_policy_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> 
         msg = "Could not find ComPWA/policy pre-commit repo"
         raise KeyError(msg)
     hook_ids = {h["id"] for h in repo["hooks"]}
-    remove_empty_tags_ids = "remove-empty-tags"
-    if remove_empty_tags_ids in hook_ids:
-        return
-    precommit.update_hook(
-        repo_url=repo["repo"],
-        expected_hook=Hook(id=remove_empty_tags_ids),
-    )
+    with Executor() as do:
+        for expected_hook_id in [
+            "remove-empty-tags",
+            "set-nb-display-name",
+        ]:
+            if expected_hook_id in hook_ids:
+                continue
+            do(
+                precommit.update_hook,
+                repo_url=repo["repo"],
+                expected_hook=Hook(id=expected_hook_id),
+            )
 
 
 def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:

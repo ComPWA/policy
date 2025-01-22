@@ -40,3 +40,10 @@
   language: python
   types:
     - jupyter
+
+- id: set-nb-display-name
+  name: Revert display name of the notebook kernel
+  entry: set-nb-display-name
+  language: python
+  types:
+    - jupyter
