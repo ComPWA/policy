@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import tomlkit
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities import CONFIG_PATH, natural_sorting
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.toml import to_multiline_string, to_toml_array
 
@@ -29,6 +29,7 @@ def main(has_notebooks: bool) -> None:
         if pyproject.has_table("tool.tox"):
             _check_expected_sections(pyproject, has_notebooks)
             _set_minimal_tox_version(pyproject)
+            _update_python_test_versions(pyproject)
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
 
@@ -217,6 +218,26 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
             f" {', '.join(sorted(missing_environments))}"
         )
         raise PrecommitError(msg)
+
+
+def _update_python_test_versions(pyproject: ModifiablePyproject) -> None:
+    tox_table = pyproject.get_table("tool.tox")
+    env_list = tox_table.get("env_list")
+    if not env_list:
+        return
+    if not any(env.startswith("3.") for env in env_list):
+        return
+    python_versions = pyproject.get_supported_python_versions()
+    expected = python_versions + sorted(
+        (env for env in env_list if not env.startswith("3.")), key=natural_sorting
+    )
+    if env_list != expected:
+        tox_table["env_list"] = to_toml_array(expected)
+        pyproject.changelog.append("Updated tool.tox.env_list")
+    label_table = pyproject.get_table("tool.tox.labels", create=True)
+    if label_table.get("test") != python_versions:
+        label_table["test"] = to_toml_array(python_versions)
+        pyproject.changelog.append("Updated tool.tox.labels.test")
 
 
 def read_tox_ini_config() -> ConfigParser | None:
