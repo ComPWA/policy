@@ -75,5 +75,7 @@ def test_update_settings(this_dir: Path):
         include = ["**/*.py"]
         reportUnusedImport = true
         typeCheckingMode = "strict"
+        venv = ".venv"
+        venvPath = "."
     """)
     assert result.strip() == expected_result.strip()

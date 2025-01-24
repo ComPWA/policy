@@ -87,9 +87,11 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
     if not __has_pyright(pyproject):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
-    minimal_settings = {
-        "typeCheckingMode": "strict",
-    }
+    minimal_settings = dict(
+        typeCheckingMode="strict",
+        venv=".venv",
+        venvPath=".",
+    )
     if not complies_with_subset(pyright_settings, minimal_settings):
         pyright_settings.update(minimal_settings)
         msg = "Updated pyright configuration"
