@@ -106,7 +106,7 @@ class Pyproject:
         return get_supported_python_versions(self._document)
 
 
-@frozen
+@frozen(slots=False)
 class ModifiablePyproject(Pyproject, AbstractContextManager):
     """Stateful representation of a :code:`pyproject.toml` file.
 
