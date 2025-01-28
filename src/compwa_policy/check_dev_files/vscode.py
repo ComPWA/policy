@@ -84,7 +84,13 @@ def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
                 {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
             )
         if is_python_repo:
-            do(vscode.update_settings, {"rewrap.wrappingColumn": 88})
+            do(
+                vscode.update_settings,
+                {
+                    "python.defaultInterpreterPath": ".venv/bin/python",
+                    "rewrap.wrappingColumn": 88,
+                },
+            )
             if CONFIG_PATH.envrc.exists():
                 do(
                     vscode.update_settings,
