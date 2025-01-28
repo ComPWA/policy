@@ -16,15 +16,14 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(package_manager: PackageManagerChoice, precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
         _merge_config_into_pyproject(pyproject)
         _update_precommit(precommit, pyproject)
-        _update_excludes(package_manager, pyproject)
+        _remove_excludes(pyproject)
         _update_settings(pyproject)
 
 
@@ -66,21 +65,15 @@ def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> N
     precommit.update_single_hook_repo(repo)
 
 
-def _update_excludes(
-    package_manager: PackageManagerChoice, pyproject: ModifiablePyproject
-) -> None:
+def _remove_excludes(pyproject: ModifiablePyproject) -> None:
     if not __has_pyright(pyproject):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
-    existing_excludes = pyright_settings.get("exclude", [])
-    expected_excludes = set(existing_excludes)
-    if "uv" in package_manager:
-        expected_excludes.add("**/.venv/")
-    expected_excludes_list = sorted(expected_excludes)
-    if existing_excludes != expected_excludes_list:
-        pyright_settings["exclude"] = to_toml_array(expected_excludes_list)
-        msg = "Updated pyright excludes"
-        pyproject.changelog.append(msg)
+    if "exclude" not in pyright_settings:
+        return
+    del pyright_settings["exclude"]
+    msg = "Removed pyright excludes"
+    pyproject.changelog.append(msg)
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
