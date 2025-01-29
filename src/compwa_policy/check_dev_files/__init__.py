@@ -130,7 +130,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                 )
             do(mypy.main)
             do(pyproject.main, excluded_python_versions, no_pypi=args.no_pypi)
-            do(pyright.main, package_manager, precommit_config)
+            do(pyright.main, precommit_config)
             do(pytest.main)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
