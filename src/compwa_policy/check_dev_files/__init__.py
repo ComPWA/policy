@@ -44,12 +44,12 @@ from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.pyproject import PythonVersion
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
-    from compwa_policy.utilities.pyproject import PythonVersion
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
@@ -58,6 +58,9 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
     doc_apt_packages = _to_list(args.doc_apt_packages)
     environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
+    macos_python_version = (
+        None if args.macos_python_version == "disable" else args.macos_python_version
+    )
     repo_name, repo_title = _determine_repo_name_and_title(args)
     has_notebooks = any(
         matches_patterns(file, ["**/*.ipynb"]) for file in git_ls_files(untracked=True)
@@ -86,8 +89,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                 environment_variables=environment_variables,
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
+                macos_python_version=macos_python_version,
                 no_cd=args.no_cd,
-                no_macos=args.no_macos,
                 no_milestones=args.no_milestones,
                 no_pypi=args.no_pypi,
                 no_version_branches=args.no_version_branches,
@@ -302,10 +305,10 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     parser.add_argument(
-        "--no-macos",
-        action="store_true",
-        default=False,
-        help="Do not run test job on macOS",
+        "--macos-python-version",
+        choices=[*sorted(PythonVersion.__args__), "disable"],  # type:ignore[attr-defined]
+        default="3.9",
+        help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     )
     parser.add_argument(
         "--no-pypi",
