@@ -307,7 +307,7 @@ def _create_argparse() -> ArgumentParser:
     parser.add_argument(
         "--macos-python-version",
         choices=[*sorted(PythonVersion.__args__), "disable"],  # type:ignore[attr-defined]
-        default="3.9",
+        default="3.10",
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     )
     parser.add_argument(
