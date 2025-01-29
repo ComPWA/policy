@@ -42,8 +42,8 @@ def main(
     environment_variables: dict[str, str],
     github_pages: bool,
     keep_pr_linting: bool,
+    macos_python_version: PythonVersion | None,
     no_cd: bool,
-    no_macos: bool,
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
@@ -64,7 +64,7 @@ def main(
             doc_apt_packages,
             environment_variables,
             github_pages,
-            no_macos,
+            macos_python_version,
             python_version,
             single_threaded,
             skip_tests,
@@ -132,7 +132,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
     github_pages: bool,
-    no_macos: bool,
+    macos_python_version: PythonVersion | None,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -145,7 +145,7 @@ def _update_ci_workflow(  # noqa: PLR0917
             doc_apt_packages,
             environment_variables,
             github_pages,
-            no_macos,
+            macos_python_version,
             python_version,
             single_threaded,
             skip_tests,
@@ -181,7 +181,7 @@ def _get_ci_workflow(  # noqa: PLR0917
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
     github_pages: bool,
-    no_macos: bool,
+    macos_python_version: PythonVersion | None,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -191,7 +191,9 @@ def _get_ci_workflow(  # noqa: PLR0917
     config = yaml.load(path)
     __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
-    __update_pytest_section(config, no_macos, single_threaded, skip_tests, test_extras)
+    __update_pytest_section(
+        config, macos_python_version, single_threaded, skip_tests, test_extras
+    )
     __update_style_section(config, python_version, precommit)
     return yaml, config
 
@@ -245,7 +247,7 @@ def __is_remove_style_job(precommit: Precommit) -> bool:
 
 def __update_pytest_section(
     config: CommentedMap,
-    no_macos: bool,
+    macos_python_version: PythonVersion | None,
     single_threaded: bool,
     skip_tests: list[str],
     test_extras: list[str],
@@ -263,8 +265,10 @@ def __update_pytest_section(
                 "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}",
             }
             config["jobs"]["pytest"]["secrets"] = secrets
-        if not no_macos:
-            with_section["macos-python-version"] = DoubleQuotedScalarString("3.9")
+        if macos_python_version is not None:
+            with_section["macos-python-version"] = DoubleQuotedScalarString(
+                macos_python_version
+            )
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
         if single_threaded:
