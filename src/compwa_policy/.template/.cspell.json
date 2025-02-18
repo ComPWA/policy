@@ -19,10 +19,11 @@
     "transisions"
   ],
   "ignorePaths": [
-    "**/*.bib",
-    "**/*.rst.jinja",
-    "**/*.rst_t",
+    "**/_extensions/**",
     "**/.cspell.json",
+    "**/*.bib",
+    "**/*.rst_t",
+    "**/*.rst.jinja",
     "**/Manifest.toml",
     "**/Project.toml",
     "*.csl",
