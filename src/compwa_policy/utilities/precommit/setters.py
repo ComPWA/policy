@@ -119,7 +119,7 @@ def update_precommit_hook(
     if idx_and_repo is None:
         return
     repo_idx, repo = idx_and_repo
-    repo_name = repo_url.split("/")[-1]
+    repo_name = repo_url.rsplit("/", maxsplit=1)[0]
     hooks = repo["hooks"]
     hook_idx = __find_hook_idx(hooks, expected_hook["id"])
     if hook_idx is None:
