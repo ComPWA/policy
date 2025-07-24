@@ -51,6 +51,7 @@ repos:
           - --allow-labels
           - --dependabot=update
           - --no-pypi
+          - --pytest-single-threaded
           - --repo-name=policy
           - --repo-title=ComPWA repository policy
 
