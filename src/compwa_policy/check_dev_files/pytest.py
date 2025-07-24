@@ -172,6 +172,7 @@ def _update_vscode_settings(pyproject: Pyproject, single_threaded: bool) -> None
                 vscode.remove_settings,
                 {
                     "python.testing.pytestArgs": [
+                        "--numprocesses auto",
                         "--numprocesses=auto",
                         "-n auto",
                         "-nauto",  # cspell:ignore nauto
@@ -182,6 +183,16 @@ def _update_vscode_settings(pyproject: Pyproject, single_threaded: bool) -> None
             do(
                 vscode.update_settings,
                 {"python.testing.pytestArgs": ["--numprocesses=auto"]},
+            )
+            do(
+                vscode.remove_settings,
+                {
+                    "python.testing.pytestArgs": [
+                        "--numprocesses auto",
+                        "-n auto",
+                        "-nauto",
+                    ]
+                },
             )
         do(
             vscode.remove_settings,
