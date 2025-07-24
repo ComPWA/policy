@@ -24,13 +24,17 @@ if TYPE_CHECKING:
     from tomlkit.items import Array
 
 
-def main() -> None:
+def main(single_threaded: bool) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
         do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
-        do(_update_vscode_settings, pyproject)
+        do(_update_vscode_settings, pyproject, single_threaded)
+        if single_threaded:
+            do(pyproject.remove_dependency, "pytest-xdist")
+        else:
+            do(pyproject.add_dependency, "pytest-xdist", ["test", "dev"])
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -137,7 +141,7 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
     return dict(config) != original_config
 
 
-def _update_vscode_settings(pyproject: Pyproject) -> None:
+def _update_vscode_settings(pyproject: Pyproject, single_threaded: bool) -> None:
     with Executor() as do:
         do(
             # cspell:ignore ryanluker
@@ -162,6 +166,22 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
             do(
                 vscode.remove_settings,
                 {"python.testing.pytestArgs": [f"--cov={module_name}"]},
+            )
+        if single_threaded:
+            do(
+                vscode.remove_settings,
+                {
+                    "python.testing.pytestArgs": [
+                        "--numprocesses=auto",
+                        "-n auto",
+                        "-nauto",  # cspell:ignore nauto
+                    ]
+                },
+            )
+        else:
+            do(
+                vscode.update_settings,
+                {"python.testing.pytestArgs": ["--numprocesses=auto"]},
             )
         do(
             vscode.remove_settings,
