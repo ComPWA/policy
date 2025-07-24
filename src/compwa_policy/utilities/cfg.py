@@ -46,10 +46,7 @@ def open_config(definition: Path | io.TextIOBase | str) -> ConfigParser:
         text = definition.read()
         cfg.read_string(text)
     elif isinstance(definition, (Path, str)):
-        if isinstance(definition, str):
-            path = Path(definition)
-        else:
-            path = definition
+        path = Path(definition)
         if not path.exists():
             msg = f'Config file "{path}" does not exist'
             raise PrecommitError(msg)
