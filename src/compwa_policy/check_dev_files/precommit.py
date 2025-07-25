@@ -29,7 +29,8 @@ def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     with Executor() as do:
         do(_sort_hooks, precommit)
         do(_update_conda_environment, precommit)
-        do(_update_precommit_ci_commit_msg, precommit)
+        do(_update_precommit_ci_autofix_commit_msg, precommit)
+        do(_update_precommit_ci_autoupdate_commit_msg, precommit)
         do(_update_precommit_ci_skip, precommit)
         do(_update_policy_hook, precommit, has_notebooks)
         do(_update_repo_urls, precommit)
@@ -100,14 +101,27 @@ def _update_policy_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> 
             )
 
 
-def _update_precommit_ci_commit_msg(precommit: ModifiablePrecommit) -> None:
+def _update_precommit_ci_autofix_commit_msg(precommit: ModifiablePrecommit) -> None:
     precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
-    expected_msg = "MAINT: update lock files"
+    expected_msg = "MAINT: implement pre-commit autofixes"
+    key = "autofix_commit_msg"
+    msg = precommit_ci.get(key)
+    if msg != expected_msg:
+        precommit_ci[key] = expected_msg  # type:ignore[literal-required]
+        msg = f"Set ci.{key} to {expected_msg!r}"
+        precommit.changelog.append(msg)
+
+
+def _update_precommit_ci_autoupdate_commit_msg(precommit: ModifiablePrecommit) -> None:
+    precommit_ci = precommit.document.get("ci")
+    if precommit_ci is None:
+        return
+    expected_msg = "MAINT: upgrade lock files"
     key = "autoupdate_commit_msg"
-    autoupdate_commit_msg = precommit_ci.get(key)
-    if autoupdate_commit_msg != expected_msg:
+    msg = precommit_ci.get(key)
+    if msg != expected_msg:
         precommit_ci[key] = expected_msg  # type:ignore[literal-required]
         msg = f"Set ci.{key} to {expected_msg!r}"
         precommit.changelog.append(msg)

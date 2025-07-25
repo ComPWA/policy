@@ -340,7 +340,7 @@ def _create_argparse() -> ArgumentParser:
         choices=update_lock.Frequency.__args__,  # type:ignore[attr-defined]
         default="outsource",
         help=(
-            "Add a workflow to update lock files, like uv.lock, .pre-commit-config.yml, "
+            "Add a workflow to upgrade lock files, like uv.lock, .pre-commit-config.yml, "
             "and pip .constraints/ files. The argument is the frequency of the cron job"
         ),
         type=str,
