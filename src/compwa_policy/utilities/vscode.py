@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import abc
-from collections.abc import Iterable
+from collections.abc import Iterable, Sized
 from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from compwa_policy.errors import PrecommitError
@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 K = TypeVar("K")
 V = TypeVar("V")
+T = TypeVar("T", dict, list, Any)
 
 
 RemovedKeys = Union[Iterable[str], dict[str, "RemovedKeys"]]
@@ -35,7 +36,7 @@ def remove_settings(keys: RemovedKeys) -> None:
     _update_settings_if_changed(settings, new=new_settings)
 
 
-def _remove_keys(obj: Any, keys: RemovedKeys) -> dict:
+def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     """Recursively remove keys from a (nested) dictionary.
 
     >>> dct = {"a": 1, "b": 2, "c": 3, "d": [4, 5], "sub_key": {"d": 6, "e": [7, 8]}}
@@ -45,29 +46,34 @@ def _remove_keys(obj: Any, keys: RemovedKeys) -> dict:
     {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5], 'sub_key': {'e': [7, 8]}}
     >>> _remove_keys(dct, {"sub_key": {"d", "e"}})
     {'a': 1, 'b': 2, 'c': 3, 'd': [4, 5]}
+    >>> _remove_keys(dct, {"d": [5]})
+    {'a': 1, 'b': 2, 'c': 3, 'd': [4], 'sub_key': {'d': 6, 'e': [7, 8]}}
     """
     if not keys:
         return obj
-    if not isinstance(obj, dict):
-        return obj
-    if isinstance(keys, dict):
-        new_dict = {}
-        for key, value in obj.items():
-            sub_keys_to_remove = keys.get(key, {})
-            new_value = _remove_keys(value, sub_keys_to_remove)
-            if (
-                isinstance(new_value, abc.Iterable)
-                and not isinstance(new_value, str)
-                and len(new_value) == 0
-            ):
-                continue
-            new_dict[key] = _remove_keys(value, keys.get(key, {}))
-        return new_dict
-    if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
-        removed_keys = set(keys)
-        return {k: v for k, v in obj.items() if k not in removed_keys}
-    msg = f"Invalid type for removed keys: {type(keys)}"
-    raise TypeError(msg)
+    if isinstance(obj, list):
+        return [k for k in obj if k not in keys]
+    if isinstance(obj, dict):
+        if isinstance(keys, dict):
+            new_dict = {}
+            for key, value in obj.items():
+                sub_keys_to_remove = keys.get(key, {})
+                new_value = _remove_keys(value, sub_keys_to_remove)
+                if (
+                    isinstance(new_value, abc.Iterable)
+                    and not isinstance(new_value, str)
+                    and isinstance(new_value, Sized)
+                    and len(new_value) == 0
+                ):
+                    continue
+                new_dict[key] = _remove_keys(value, keys.get(key, {}))
+            return new_dict
+        if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
+            removed_keys = set(keys)
+            return {k: v for k, v in obj.items() if k not in removed_keys}
+        msg = f"Invalid type for removed keys: {type(keys)}"
+        raise TypeError(msg)
+    return obj
 
 
 def update_settings(new_settings: dict) -> None:

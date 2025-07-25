@@ -15,7 +15,6 @@
     "ms-vscode.live-server",
     "ms-vsliveshare.vsliveshare",
     "redhat.vscode-yaml",
-    "ryanluker.vscode-coverage-gutters",
     "samuelcolvin.jinjahtml",
     "soulcode.vscode-unwanted-extensions",
     "stkb.rewrap",
@@ -31,6 +30,7 @@
     "ms-python.flake8",
     "ms-python.isort",
     "ms-python.pylint",
+    "ryanluker.vscode-coverage-gutters",
     "travisillig.vscode-json-stable-stringify",
     "tyriar.sort-lines"
   ]

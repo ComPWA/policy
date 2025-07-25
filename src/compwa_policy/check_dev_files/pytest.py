@@ -7,10 +7,15 @@ from typing import TYPE_CHECKING, Any
 import rtoml
 from ini2toml.api import Translator
 
-from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    has_dependency,
+)
+from compwa_policy.utilities.pyproject.getters import get_package_name
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -25,6 +30,7 @@ def main() -> None:
         do(_merge_pytest_into_pyproject, pyproject)
         do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
+        do(_update_vscode_settings, pyproject)
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -106,6 +112,14 @@ def _update_codecov_settings(pyproject: ModifiablePyproject) -> None:
     updated = __update_settings(
         config=pyproject.get_table("tool.coverage.run", create=True),
         branch=True,
+        omit=[
+            # https://github.com/microsoft/vscode-python/issues/24973#issuecomment-2886889888
+            "benchmarks/**/*.py",
+            "docs/**/*.ipynb",
+            "docs/**/*.py",
+            "examples/**/*.py",
+            "tests/**/*.py",
+        ],
         source=["src"],
     )
     updated |= __update_settings(
@@ -121,3 +135,40 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
     original_config = dict(config)
     config.update(expected)
     return dict(config) != original_config
+
+
+def _update_vscode_settings(pyproject: Pyproject) -> None:
+    with Executor() as do:
+        do(
+            # cspell:ignore ryanluker
+            vscode.remove_extension_recommendation,
+            extension_name="ryanluker.vscode-coverage-gutters",
+            unwanted=True,
+        )
+        do(
+            vscode.update_settings,
+            {
+                "testing.coverageToolbarEnabled": True,
+                "testing.showCoverageInExplorer": True,
+            },
+        )
+        do(
+            vscode.remove_settings,
+            {"python.testing.pytestArgs": ["--color=no", "--no-cov"]},
+        )
+        package_name = get_package_name(pyproject._document)  # noqa: SLF001
+        if package_name is not None:
+            module_name = package_name.replace("-", "_")
+            do(
+                vscode.remove_settings,
+                {"python.testing.pytestArgs": [f"--cov={module_name}"]},
+            )
+        do(
+            vscode.remove_settings,
+            [
+                "coverage-gutters.coverageFileNames",
+                "coverage-gutters.coverageReportFileName",
+                "coverage-gutters.showGutterCoverage",
+                "coverage-gutters.showLineCoverage",
+            ],
+        )
