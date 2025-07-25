@@ -11,7 +11,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
-from compwa_policy.utilities.match import filter_files, git_ls_files
+from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.pyproject import get_constraints_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -198,11 +198,12 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     new_command = __get_pixi_install_statement() + "\n"
     new_command += dedent(R"""
         export UV_LINK_MODE=copy
+        export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
+        uv tool install --with tox-uv tox
         pixi run \
           uv run \
             --group doc \
             --no-dev \
-            --with tox-uv \
             tox -e doc
         mkdir -p $READTHEDOCS_OUTPUT
         mv docs/_build/html $READTHEDOCS_OUTPUT
@@ -215,26 +216,16 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 
 
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
-    new_command = "export UV_LINK_MODE=copy"
-    if "uv.lock" in set(git_ls_files(untracked=True)):
-        new_command += dedent(R"""
-            uv run \
-              --group doc \
-              --no-dev \
-              --with tox-uv \
-              tox -e doc
-        """)
-    else:
-        new_command += dedent(R"""
-            uv run \
-              --group doc \
-              --no-dev \
-              --with tox-uv \
-              tox -e doc
-        """)
-    new_command += dedent(R"""
-        mkdir -p $READTHEDOCS_OUTPUT
-        mv docs/_build/html $READTHEDOCS_OUTPUT
+    new_command = dedent(R"""
+    export UV_LINK_MODE=copy
+    export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
+    uv tool install --with tox-uv tox
+    uv run \
+      --group doc \
+      --no-dev \
+      tox -e doc
+    mkdir -p $READTHEDOCS_OUTPUT
+    mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
     __update_build_step(
         config,
