@@ -118,7 +118,7 @@ def _update_precommit_ci_autoupdate_commit_msg(precommit: ModifiablePrecommit) -
     precommit_ci = precommit.document.get("ci")
     if precommit_ci is None:
         return
-    expected_msg = "MAINT: update lock files"
+    expected_msg = "MAINT: upgrade lock files"
     key = "autoupdate_commit_msg"
     msg = precommit_ci.get(key)
     if msg != expected_msg:

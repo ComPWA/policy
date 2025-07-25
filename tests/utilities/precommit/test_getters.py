@@ -37,7 +37,7 @@ def test_load_precommit_config_path():
     assert "ci" in config
     ci = config.get("ci")
     assert ci is not None
-    assert ci.get("autoupdate_commit_msg") == "MAINT: update lock files"
+    assert ci.get("autoupdate_commit_msg") == "MAINT: upgrade lock files"
 
 
 def test_find_repo(example_yaml: str):
