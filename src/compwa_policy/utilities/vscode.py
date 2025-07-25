@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections import abc
 from collections.abc import Iterable, Sized
-from typing import TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 K = TypeVar("K")
 V = TypeVar("V")
-T = TypeVar("T")
+T = TypeVar("T", dict, list, Any)
 
 
 RemovedKeys = Union[Iterable[str], dict[str, "RemovedKeys"]]
@@ -52,7 +52,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     if not keys:
         return obj
     if isinstance(obj, list):
-        return [k for k in obj if k not in keys]  # type:ignore[return-value]
+        return [k for k in obj if k not in keys]
     if isinstance(obj, dict):
         if isinstance(keys, dict):
             new_dict = {}
@@ -67,10 +67,10 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
                 ):
                     continue
                 new_dict[key] = _remove_keys(value, keys.get(key, {}))
-            return new_dict  # type:ignore[return-value]
+            return new_dict
         if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
             removed_keys = set(keys)
-            return {k: v for k, v in obj.items() if k not in removed_keys}  # type:ignore[return-value]
+            return {k: v for k, v in obj.items() if k not in removed_keys}
         msg = f"Invalid type for removed keys: {type(keys)}"
         raise TypeError(msg)
     return obj
