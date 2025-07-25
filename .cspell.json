@@ -73,6 +73,7 @@
     "nbstripout",
     "noqa",
     "noreply",
+    "numprocesses",
     "orcid",
     "pandoc",
     "pathspec",
