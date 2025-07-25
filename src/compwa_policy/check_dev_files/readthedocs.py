@@ -218,18 +218,18 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
     new_command = "export UV_LINK_MODE=copy"
     if "uv.lock" in set(git_ls_files(untracked=True)):
         new_command += dedent(R"""
+            uv tool install --with tox-uv tox
             uv run \
               --group doc \
               --no-dev \
-              --with tox-uv \
               tox -e doc
         """)
     else:
         new_command += dedent(R"""
+            uv tool install --with tox-uv tox
             uv run \
               --group doc \
               --no-dev \
-              --with tox-uv \
               tox -e doc
         """)
     new_command += dedent(R"""
