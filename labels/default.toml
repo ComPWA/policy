@@ -28,6 +28,11 @@ color = "F9D0C4"
 name = "❗ Behavior"
 description = "Changes that may affect the framework output"
 
+["⬆️ Lock"]
+color = "cfd3d7"
+name = "⬆️ Lock"
+description = "This PR upgrades the lock files"
+
 ["🐛 Bug"]
 color = "D93F0B"
 name = "🐛 Bug"
