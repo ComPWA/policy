@@ -39,7 +39,6 @@ jobs:
           labels sync --filename labels/default.toml --owner ComPWA --repo sphinxcontrib-hep-pdgref
           labels sync --filename labels/default.toml --owner ComPWA --repo taplo-pre-commit
           labels sync --filename labels/default.toml --owner ComPWA --repo tensorwaves
-          labels sync --filename labels/default.toml --owner ComPWA --repo update-pip-constraints
           labels sync --filename labels/default.toml --owner ComPWA --repo update-pre-commit
 
       - name: Sync issue labels for physics repositories
