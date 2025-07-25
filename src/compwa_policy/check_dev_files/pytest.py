@@ -113,6 +113,7 @@ def _update_codecov_settings(pyproject: ModifiablePyproject) -> None:
         config=pyproject.get_table("tool.coverage.run", create=True),
         branch=True,
         omit=[
+            # https://github.com/microsoft/vscode-python/issues/24973#issuecomment-2886889888
             "benchmarks/**/*.py",
             "docs/**/*.ipynb",
             "docs/**/*.py",
@@ -159,7 +160,6 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
         if package_name is not None:
             module_name = package_name.replace("-", "_")
             do(
-                # https://github.com/microsoft/vscode-python/issues/24973#issuecomment-2886889888
                 vscode.remove_settings,
                 {"python.testing.pytestArgs": [f"--cov={module_name}"]},
             )
