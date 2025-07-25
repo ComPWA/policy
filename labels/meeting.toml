@@ -1,8 +1,3 @@
-["💥 Epic"]
-color = "3E4B9E"
-name = "💥 Epic"
-description = "Collection of issues"
-
 ["⚙️ Enhancement"]
 color = "C2E0C6"
 name = "⚙️ Enhancement"
@@ -38,10 +33,20 @@ color = "D93F0B"
 name = "🐛 Bug"
 description = "Something isn't working"
 
+["💥 Epic"]
+color = "3E4B9E"
+name = "💥 Epic"
+description = "Collection of issues"
+
 ["💫 Good first issue"]
 color = "F4EAEF"
 name = "💫 Good first issue"
 description = "Good for newcomers"
+
+["💬 Meeting"]
+color = "BFD4F2"
+name = "💬 Meeting"
+description = "Weekly PWA working group meeting"
 
 ["📋 Task"]
 color = "1D76DB"
@@ -77,8 +82,3 @@ description = "Maintenance and upkeep improvements"
 color = "FEF2C0"
 name = "🖱️ DX"
 description = "Improvements to the Developer Experience"
-
-["💬 Meeting"]
-color = "BFD4F2"
-name = "💬 Meeting"
-description = "Weekly PWA working group meeting"
