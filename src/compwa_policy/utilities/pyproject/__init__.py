@@ -56,7 +56,7 @@ class Pyproject:
     _source: IO | Path | None = field(default=None)
 
     @classmethod
-    def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
+    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         document = load_pyproject_toml(source, modifiable=False)
         if isinstance(source, str):
@@ -119,7 +119,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     @override
     @classmethod
-    def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.pyproject) -> T:
+    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         if isinstance(source, io.IOBase):
             current_position = source.tell()

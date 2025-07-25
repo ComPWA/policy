@@ -36,13 +36,13 @@ def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list
 
 def git_ls_files(untracked: bool = False) -> list[str]:
     """Get the tracked and untracked files, but excluding files in .gitignore."""
-    output = subprocess.check_output([  # noqa: S603, S607
+    output = subprocess.check_output([  # noqa: S607
         "git",
         "ls-files",
     ]).decode("utf-8")
     tracked_files = output.splitlines()
     if untracked:
-        output = subprocess.check_output([  # noqa: S603, S607
+        output = subprocess.check_output([  # noqa: S607
             "git",
             "ls-files",
             "--others",

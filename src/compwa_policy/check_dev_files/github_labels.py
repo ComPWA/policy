@@ -61,7 +61,7 @@ def _get_requirement_files() -> list[Path]:
 
 
 def _get_package_name(line: str) -> str:
-    package_name = line.split("#")[0]  # remove comment
+    package_name = line.split("#", maxsplit=1)[0]
     package_name = package_name.strip()
     package_name = package_name.split("<")[0]
     package_name = package_name.split(">")[0]

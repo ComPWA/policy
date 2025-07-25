@@ -57,7 +57,7 @@ class Precommit:
         return self.__source
 
     @classmethod
-    def load(cls: type[T], source: IO | Path | str = CONFIG_PATH.precommit) -> T:
+    def load(cls, source: IO | Path | str = CONFIG_PATH.precommit) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         config, parser = _load_roundtrip_precommit_config(source)
         if isinstance(source, str):
