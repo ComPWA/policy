@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 def main(single_threaded: bool) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
+        if not has_dependency(pyproject, "pytest"):
+            return
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
         do(_update_codecov_settings, pyproject)
