@@ -22,13 +22,11 @@ def main(
     package_manager: PackageManagerChoice,
     is_python_package: bool,
     dev_python_version: PythonVersion,
-    outsource_pixi_to_tox: bool,
 ) -> None:
     if "pixi" in package_manager:
         update_pixi_configuration(
             is_python_package,
             dev_python_version,
-            outsource_pixi_to_tox,
             package_manager,
         )
     else:

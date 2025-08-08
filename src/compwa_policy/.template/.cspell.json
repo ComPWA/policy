@@ -58,7 +58,6 @@
     "pytest.ini",
     "requirements*.txt",
     "setup.py",
-    "tox.ini",
     "typings",
     "update-www"
   ],

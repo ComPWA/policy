@@ -198,13 +198,12 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     new_command = __get_pixi_install_statement() + "\n"
     new_command += dedent(R"""
         export UV_LINK_MODE=copy
-        export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
-        uv tool install --with tox-uv tox
         pixi run \
           uv run \
             --group doc \
             --no-dev \
-            tox -e doc
+            --with poethepoet \
+            poe doc
         mkdir -p $READTHEDOCS_OUTPUT
         mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
@@ -218,12 +217,11 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
     new_command = dedent(R"""
     export UV_LINK_MODE=copy
-    export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
-    uv tool install --with tox-uv tox
     uv run \
       --group doc \
       --no-dev \
-      tox -e doc
+      --with poethepoet \
+      poe doc
     mkdir -p $READTHEDOCS_OUTPUT
     mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
@@ -232,6 +230,7 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
         new_command,
         search_function=lambda command: (
             "python3 -m sphinx" in command
+            or "poe" in command
             or "sphinx-build" in command
             or "tox -e" in command
         ),

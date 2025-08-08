@@ -115,6 +115,14 @@ def _update_taplo_config() -> None:
         expected["exclude"] = to_toml_array(sorted_excludes, multiline=True)
     else:
         del expected["exclude"]
+
+    if CONFIG_PATH.pyproject.exists():
+        pyproject = Pyproject.load()
+        if not pyproject.has_table("tool.poe"):
+            if "rule" not in expected:
+                return
+            del expected["rule"]
+
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
     expected_str = tomlkit.dumps(expected, sort_keys=True)

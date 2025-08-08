@@ -50,6 +50,7 @@ Tracker = "https://github.com/ComPWA/policy/issues"
 [dependency-groups]
 dev = [
     "labels",
+    "poethepoet",
     "ruff",
     "sphinx-autobuild",
     {include-group = "doc"},
@@ -143,6 +144,118 @@ module = ["ruamel.*"]
 ignore_missing_imports = true
 module = ["nbformat.*"]
 
+[tool.poe]
+executor.type = "uv"
+
+[tool.poe.tasks.all]
+help = "Run all continuous integration tasks locally"
+sequence = [
+    "cov",
+    "doc",
+    "linkcheck",
+    "style",
+    "test-all",
+]
+
+[tool.poe.tasks.cov]
+cmd = """
+pytest \
+    --cov-fail-under=32 \
+    --cov-report=html \
+    --cov-report=xml \
+    ${paths}
+"""
+help = "Compute how much of the source code is covered by tests"
+
+[[tool.poe.tasks.cov.args]]
+default = "src tests"
+multiple = true
+name = "paths"
+positional = true
+
+[tool.poe.tasks.doc]
+cmd = """
+sphinx-build \
+    --builder=html \
+    --fail-on-warning \
+    --keep-going \
+    --show-traceback \
+    docs/ \
+    docs/_build/html/
+"""
+help = "Run all unit tests"
+
+[tool.poe.tasks.doclive]
+cmd = """
+sphinx-autobuild \
+    --builder=html \
+    --port=0 \
+    --re-ignore=/__pycache__(/.*)?$ \
+    --re-ignore=/_build(/.*)?$ \
+    --re-ignore=/\\.egg-info(/.*)?$ \
+    --re-ignore=/api(/.*)?$ \
+    --re-ignore=/docs$ \
+    --re-ignore=/version\\.py$ \
+    --re-ignore=\\.egg-info(/.*)?$ \
+    --re-ignore=\\.png$ \
+    --re-ignore=\\.svg$ \
+    --watch=src \
+    docs/ \
+    docs/_build/html/
+"""
+help = "Run all unit tests"
+
+[tool.poe.tasks.linkcheck]
+cmd = """
+sphinx-build \
+    --builder=linkcheck \
+    --show-traceback \
+    docs/ \
+    docs/_build/linkcheck/
+"""
+help = "Check external links in the documentation (requires internet connection)"
+
+[tool.poe.tasks.style]
+cmd = "pre-commit run --all-files"
+help = "Perform all linting, formatting, and spelling checks"
+
+[tool.poe.tasks.test]
+cmd = "pytest --no-summary ${paths}"
+help = "Run all unit tests"
+
+[[tool.poe.tasks.test.args]]
+default = "src tests"
+multiple = true
+name = "paths"
+positional = true
+
+[tool.poe.tasks.test-all]
+help = "Run all tests on each supported Python version"
+sequence = [
+    {ref = "test-py 3.9"},
+    {ref = "test-py 3.10"},
+    {ref = "test-py 3.11"},
+    {ref = "test-py 3.12"},
+    {ref = "test-py 3.13"},
+]
+
+[tool.poe.tasks.test-py]
+cmd = """
+uv run \
+    --group=test \
+    --isolated \
+    --no-dev \
+    --python=${python} \
+    pytest --no-summary
+"""
+help = "Run all tests on a specific Python version"
+
+[[tool.poe.tasks.test-py.args]]
+default = "3.12"
+help = "Selected Python version"
+name = "python"
+positional = true
+
 [tool.pyright]
 reportArgumentType = false
 reportGeneralTypeIssues = false
@@ -186,7 +299,6 @@ filterwarnings = [
     "ignore: Importing ErrorTree directly from the jsonschema package is deprecated.*",
     "ignore: The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025.:DeprecationWarning",
 ]
-markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 testpaths = [
     "src",
     "tests",
@@ -282,125 +394,6 @@ sort_first = [
     "project",
     "tool.setuptools",
     "tool.setuptools_scm",
-    "tool.tox.env_run_base",
 ]
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = true
-
-[tool.tox]
-env_list = [
-    "3.9",
-    "3.10",
-    "3.11",
-    "3.12",
-    "3.13",
-    "cov",
-    "doc",
-    "linkcheck",
-    "sty",
-]
-no_package = true
-requires = ["tox>=4.21.0"]
-skip_install = true
-skip_missing_interpreters = true
-
-[tool.tox.env_run_base]
-commands = [
-    ["pytest", "--no-summary", "{posargs}"],
-]
-dependency_groups = ["test"]
-description = "Run test suite on Python {env_name}"
-no_package = false
-pass_env = ["*"]
-runner = "uv-venv-lock-runner"
-skip_install = false
-skip_missing_interpreters = false
-
-[tool.tox.env.cov]
-commands = [
-    [
-        "pytest",
-        "{posargs}",
-        "--cov-fail-under=32",
-        "--cov-report=html",
-        "--cov-report=xml",
-        "--cov=compwa_policy",
-    ],
-]
-description = "Compute test coverage"
-
-[tool.tox.env.doc]
-allowlist_externals = ["sphinx-build"]
-base = []
-commands = [
-    [
-        "sphinx-build",
-        "--builder=html",
-        "--fail-on-warning",
-        "--keep-going",
-        "--show-traceback",
-        "docs/",
-        "docs/_build/html/",
-    ],
-]
-description = "Build documentation and API through Sphinx"
-
-[tool.tox.env.doclive]
-allowlist_externals = ["sphinx-autobuild"]
-base = []
-commands = [
-    [
-        "sphinx-autobuild",
-        "--port=0",
-        "--re-ignore=/__pycache__(/.*)?$",
-        "--re-ignore=/_build(/.*)?$",
-        "--re-ignore=/\\.egg-info(/.*)?$",
-        "--re-ignore=/api(/.*)?$",
-        "--re-ignore=/docs$",
-        "--re-ignore=/version\\.py$",
-        "--re-ignore=\\.egg-info(/.*)?$",
-        "--re-ignore=\\.png$",
-        "--re-ignore=\\.svg$",
-        "--watch=src",
-        "docs/",
-        "docs/_build/html/",
-    ],
-]
-description = "Set up a server to directly preview changes to the HTML pages"
-
-[tool.tox.env.linkcheck]
-base = ["tool.tox.env.doc"]
-commands = [
-    [
-        "sphinx-build",
-        "--builder=linkcheck",
-        "--show-traceback",
-        "docs/",
-        "docs/_build/linkcheck/",
-    ],
-]
-description = "Check external links in the documentation (requires internet connection)"
-set_env = [
-    {PYTHONWARNINGS = ""},
-]
-
-[tool.tox.env.sty]
-allowlist_externals = ["pre-commit"]
-base = []
-commands = [
-    ["pre-commit", "run", "--all-files", "{posargs}"],
-]
-description = "Perform all linting, formatting, and spelling checks"
-
-[tool.tox.labels]
-doc = [
-    "doc",
-    "linkcheck",
-]
-test = [
-    "3.9",
-    "3.10",
-    "3.11",
-    "3.12",
-    "3.13",
-]
