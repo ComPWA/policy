@@ -39,7 +39,6 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
                 "mypy-type-checker.args": [
                     f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
                 ],
-                "mypy-type-checker.importStrategy": "fromEnvironment",
             }
             do(vscode.update_settings, settings)
         else:
@@ -48,4 +47,4 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
                 "ms-python.mypy-type-checker",
                 unwanted=True,
             )
-            do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
+        do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
