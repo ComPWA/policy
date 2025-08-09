@@ -145,7 +145,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
             )
         do(readthedocs.main, package_manager, dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
-        do(vscode.main, has_notebooks, is_python_repo)
+        do(vscode.main, has_notebooks, is_python_repo, package_manager)
         do(gitpod.main, use_gitpod, dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(

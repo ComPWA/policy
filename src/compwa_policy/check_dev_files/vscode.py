@@ -2,15 +2,18 @@
 
 import os
 
+from compwa_policy.check_dev_files.conda import PackageManagerChoice
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.python import has_constraint_files
 
 
-def main(has_notebooks: bool, is_python_repo: bool) -> None:
+def main(
+    has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
+) -> None:
     with Executor() as do:
         do(_update_extensions)
-        do(_update_settings, has_notebooks, is_python_repo)
+        do(_update_settings, has_notebooks, is_python_repo, package_manager)
 
 
 def _update_extensions() -> None:
@@ -48,7 +51,9 @@ def _update_extensions() -> None:
         )
 
 
-def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
+def _update_settings(
+    has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
+) -> None:
     with Executor() as do:
         do(
             vscode.update_settings,
@@ -84,10 +89,14 @@ def _update_settings(has_notebooks: bool, is_python_repo: bool) -> None:
                 {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
             )
         if is_python_repo:
+            if package_manager == "pixi":
+                python_path = ".pixi/envs/default/bin/python"
+            else:
+                python_path = ".venv/bin/python"
             do(
                 vscode.update_settings,
                 {
-                    "python.defaultInterpreterPath": ".venv/bin/python",
+                    "python.defaultInterpreterPath": python_path,
                     "rewrap.wrappingColumn": 88,
                 },
             )
