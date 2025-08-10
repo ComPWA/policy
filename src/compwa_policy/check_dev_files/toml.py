@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import rtoml
 import tomlkit
 
 from compwa_policy.errors import PrecommitError
@@ -14,6 +15,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
@@ -116,22 +118,38 @@ def _update_taplo_config() -> None:
     else:
         del expected["exclude"]
 
+    rules = tomlkit.aot()
+    if CONFIG_PATH.pixi_toml.exists():
+        with open(CONFIG_PATH.pixi_toml) as stream:
+            pixi_config = rtoml.load(stream)
+        if has_sub_table(pixi_config, "tasks"):
+            rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, "tasks"))
     if CONFIG_PATH.pyproject.exists():
         pyproject = Pyproject.load()
-        if not pyproject.has_table("tool.poe"):
-            if "rule" not in expected:
-                return
-            del expected["rule"]
+        if pyproject.has_table("tool.pixi.tasks"):
+            rules.append(__taplo_rule(CONFIG_PATH.pyproject, "tool.pixi.tasks"))
+        if pyproject.has_table("tool.poe.tasks"):
+            rules.append(__taplo_rule(CONFIG_PATH.pyproject, "tool.poe.tasks"))
+    if rules:
+        expected["rule"] = rules
 
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
-    expected_str = tomlkit.dumps(expected, sort_keys=True)
+    expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
     existing_str = tomlkit.dumps(existing)
     if existing_str.strip() != expected_str.strip():
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
         raise PrecommitError(msg)
+
+
+def __taplo_rule(toml_path: Path | str, key: str) -> dict:
+    return dict(
+        include=[f"**/{toml_path}"],
+        keys=[key],
+        formatting=dict(reorder_arrays=False),
+    )
 
 
 def _rename_precommit_url(precommit: ModifiablePrecommit) -> None:
