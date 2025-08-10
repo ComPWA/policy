@@ -7,6 +7,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+import rtoml
 from jinja2 import Environment, FileSystemLoader
 
 from compwa_policy.errors import PrecommitError
@@ -15,6 +16,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
@@ -170,8 +172,9 @@ def _update_contributing_file(organization: str, repo_name: str) -> None:
     context = {
         "ORGANIZATION": organization,
         "REPO_NAME": repo_name,
+        "RUNNER": __get_runner_instructions().strip(),
     }
-    expected_content = template.render(context) + "\n"
+    expected_content = template.render(context).strip() + "\n"
     existing_content = ""
     if contributing_file.exists():
         existing_content = contributing_file.read_text()
@@ -179,6 +182,46 @@ def _update_contributing_file(organization: str, repo_name: str) -> None:
         contributing_file.write_text(expected_content)
         msg = f"Updated {contributing_file} to latest template"
         raise PrecommitError(msg)
+
+
+def __get_runner_instructions() -> str:
+    poe_instructions = dedent("""
+    [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. You can see which local CI checks it defines by running
+
+    ```shell
+    poe
+    ```
+
+    For instance, all style checks can be run with
+
+    ```shell
+    poe style
+    ```
+    """)
+    pixi_instructions = dedent("""
+    Pixi is used as a [task runner](https://pixi.sh/latest/workspace/advanced_tasks). You can see which local CI checks it defines by running
+
+    ```shell
+    pixi task list
+    ```
+
+    For instance, all style checks can be run with
+
+    ```shell
+    pixi run style
+    ```
+    """)
+    if CONFIG_PATH.pyproject.exists():
+        pyproject = Pyproject.load()
+        if pyproject.has_table("tool.poe.tasks"):
+            return poe_instructions
+        if pyproject.has_table("tool.pixi.tasks"):
+            return pixi_instructions
+    if CONFIG_PATH.pixi_toml.exists():
+        pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
+        if has_sub_table(pixi_config, "tasks"):
+            return pixi_instructions
+    return ""
 
 
 @cache
