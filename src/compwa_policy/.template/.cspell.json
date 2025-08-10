@@ -53,6 +53,7 @@
     "labels.toml",
     "labels/*.toml",
     "Makefile",
+    "pixi.toml",
     "pyproject.toml",
     "pyrightconfig.json",
     "pytest.ini",
