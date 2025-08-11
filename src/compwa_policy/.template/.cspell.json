@@ -53,12 +53,12 @@
     "labels.toml",
     "labels/*.toml",
     "Makefile",
+    "pixi.toml",
     "pyproject.toml",
     "pyrightconfig.json",
     "pytest.ini",
     "requirements*.txt",
     "setup.py",
-    "tox.ini",
     "typings",
     "update-www"
   ],

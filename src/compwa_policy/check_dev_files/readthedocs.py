@@ -12,7 +12,11 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.match import filter_files
-from compwa_policy.utilities.pyproject import get_constraints_file
+from compwa_policy.utilities.pyproject import (
+    Pyproject,
+    get_constraints_file,
+    has_dependency,
+)
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -196,18 +200,26 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
 
 def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     new_command = __get_pixi_install_statement() + "\n"
-    new_command += dedent(R"""
-        export UV_LINK_MODE=copy
-        export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
-        uv tool install --with tox-uv tox
-        pixi run \
-          uv run \
-            --group doc \
-            --no-dev \
-            tox -e doc
-        mkdir -p $READTHEDOCS_OUTPUT
-        mv docs/_build/html $READTHEDOCS_OUTPUT
-    """).strip()
+    pyproject = Pyproject.load()
+    if has_dependency(pyproject, "poethepoet"):
+        new_command += dedent(R"""
+            export UV_LINK_MODE=copy
+            pixi run \
+            uv run \
+                --group doc \
+                --no-dev \
+                --with poethepoet \
+                poe doc
+            mkdir -p $READTHEDOCS_OUTPUT
+            mv docs/_build/html $READTHEDOCS_OUTPUT
+        """).strip()
+    else:
+        new_command += dedent(R"""
+            export UV_LINK_MODE=copy
+            pixi run doc
+            mkdir -p $READTHEDOCS_OUTPUT
+            mv docs/_build/html $READTHEDOCS_OUTPUT
+        """).strip()
     __update_build_step(
         config,
         new_command,
@@ -218,12 +230,11 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
     new_command = dedent(R"""
     export UV_LINK_MODE=copy
-    export UV_TOOL_BIN_DIR=$READTHEDOCS_VIRTUALENV_PATH/bin
-    uv tool install --with tox-uv tox
     uv run \
       --group doc \
       --no-dev \
-      tox -e doc
+      --with poethepoet \
+      poe doc
     mkdir -p $READTHEDOCS_OUTPUT
     mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
@@ -232,6 +243,7 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
         new_command,
         search_function=lambda command: (
             "python3 -m sphinx" in command
+            or "poe" in command
             or "sphinx-build" in command
             or "tox -e" in command
         ),

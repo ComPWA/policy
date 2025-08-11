@@ -116,6 +116,7 @@
     "mypy",
     "oneline",
     "pixi",
+    "poethepoet",
     "PyPA",
     "pytest",
     "PYTHONHASHSEED",

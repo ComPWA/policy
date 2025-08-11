@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import re
-from collections import abc
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from tomlkit import inline_table, string
+from tomlkit import inline_table
 
 from compwa_policy.check_dev_files.pixi._helpers import has_pixi_config
 from compwa_policy.errors import PrecommitError
@@ -21,9 +19,9 @@ from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, MutableMapping
+    from collections.abc import MutableMapping
 
-    from tomlkit.items import InlineTable, String, Table
+    from tomlkit.items import Table
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
@@ -32,7 +30,6 @@ if TYPE_CHECKING:
 def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
-    outsource_pixi_to_tox: bool,
     package_manager: PackageManagerChoice,
 ) -> None:
     if "pixi" not in package_manager:
@@ -50,8 +47,6 @@ def update_pixi_configuration(
         do(_define_minimal_project, config)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
-        if package_manager == "pixi":
-            do(_import_tox_tasks, config)
         if package_manager == "pixi+uv":
             do(_define_combined_ci_job, config)
         else:
@@ -66,8 +61,6 @@ def update_pixi_configuration(
             vscode.update_settings,
             {"files.associations": {"**/pixi.lock": "yaml"}},
         )
-        if outsource_pixi_to_tox:
-            do(__outsource_pixi_tasks_to_tox, config)
         if has_pixi_config(config):
             do(__update_gitattributes)
             do(__update_gitignore)
@@ -176,56 +169,6 @@ def _import_conda_environment(config: ModifiablePyproject) -> None:
         config.changelog.append(msg)
 
 
-def _import_tox_tasks(config: ModifiablePyproject) -> None:
-    job_remapping = __get_tox_job_remapping(config)
-    imported_tasks = []
-    blacklisted_jobs = {"jcache"}  # cspell:ignore jcache
-    for job_name, task_name in job_remapping.items():
-        if job_name in blacklisted_jobs:
-            continue
-        pixi_table_name = f"feature.dev.tasks.{task_name}"
-        if __has_table(config, pixi_table_name):
-            continue
-        if job_name == "env_run_base":
-            tox_job = config.get_table("tool.tox.env_run_base")
-        else:
-            tox_job = config.get_table(f"tool.tox.env.{job_name}")
-        commands = tox_job.get("commands")
-        if commands is None:
-            continue
-        pixi_table = __get_table(config, pixi_table_name, create=True)
-        pixi_table["cmd"] = __to_pixi_command(commands)
-
-        job_env_variables = tox_job.get("set_env")
-        if job_env_variables is not None:
-            env = __convert_tox_environment_variables(job_env_variables)
-            if env:
-                pixi_table["env"] = env
-        imported_tasks.append(task_name)
-    if imported_tasks:
-        msg = f"Imported the following tox jobs: {', '.join(sorted(imported_tasks))}"
-        config.changelog.append(msg)
-
-
-def __get_tox_job_remapping(cfg: Pyproject) -> dict[str, str]:
-    tox_table = cfg.get_table("tool.tox")
-    env_names = sorted(tox_table.get("env", []))
-    job_remapping = {job: job for job in env_names}
-    if "env_run_base" in tox_table:
-        job_remapping["env_run_base"] = "tests"
-    return job_remapping
-
-
-def __convert_tox_environment_variables(env: list[Mapping] | Mapping) -> InlineTable:
-    environment_variables = inline_table()
-    if isinstance(env, abc.Mapping):
-        environment_variables.update(env)
-    else:
-        for item in env:
-            environment_variables.update(item)
-    return environment_variables
-
-
 def _clean_up_task_env(config: ModifiablePyproject) -> None:
     if not __has_table(config, "feature.dev.tasks"):
         return
@@ -256,38 +199,6 @@ def __load_pixi_environment_variables(config: ModifiablePyproject) -> dict[str, 
     return dict(activation_table.get("env", {}))
 
 
-def __to_pixi_command(tox_commands: list[list[str]]) -> String:
-    r"""Convert a tox command to a Pixi command.
-
-    >>> __to_pixi_command([["pytest", "{posargs}"]])
-    'pytest'
-    >>> print(__to_pixi_command([["pytest", "{posargs:benchmarks}"]]))
-    pytest benchmarks
-    >>> print(__to_pixi_command([["pytest", "{posargs src tests}"]]))
-    pytest src tests
-    >>> print(__to_pixi_command([["pytest", "{posargs:tests}"], ["mypy", "src"]]))
-    pytest tests
-    mypy src
-    >>> sphinx_commands = [["sphinx", "--builder=html", "docs", "docs/_build/html"]]
-    >>> print(__to_pixi_command(sphinx_commands))
-    sphinx \
-        --builder=html \
-        docs \
-        docs/_build/html
-    """
-    # cspell:ignore posargs
-    normalized_commands = [
-        [re.sub(r"{posargs:?\s*([^}]*)}", r"\1", c) for c in cmd]
-        for cmd in tox_commands
-    ]
-    normalized_commands = [[c for c in cmd if c.strip()] for cmd in normalized_commands]
-    pixi_command = "\n".join(
-        (" \\\n    " if len(cmd) > 2 else " ").join(cmd)  # noqa: PLR2004
-        for cmd in normalized_commands
-    )
-    return string(pixi_command, multiline="\n" in pixi_command)
-
-
 def _install_package_editable(config: ModifiablePyproject) -> None:
     editable = inline_table()
     editable.update({
@@ -299,27 +210,6 @@ def _install_package_editable(config: ModifiablePyproject) -> None:
     if dict(existing.get(package_name, {})) != dict(editable):
         existing[package_name] = editable
         msg = "Installed Python package in editable mode in Pixi"
-        config.changelog.append(msg)
-
-
-def __outsource_pixi_tasks_to_tox(config: ModifiablePyproject) -> None:
-    if not config.has_table("tool.tox"):
-        return
-    blacklisted_jobs = {"sty"}
-    updated_tasks = []
-    for tox_job, pixi_task in __get_tox_job_remapping(config).items():
-        if pixi_task in blacklisted_jobs:
-            continue
-        if not __has_table(config, f"feature.dev.tasks.{pixi_task}"):
-            continue
-        task = __get_table(config, f"feature.dev.tasks.{pixi_task}")
-        expected_cmd = f"tox -e {tox_job}"
-        if task.get("cmd") != expected_cmd:
-            task["cmd"] = expected_cmd
-            task.pop("env", None)
-            updated_tasks.append(pixi_task)
-    if updated_tasks:
-        msg = f"Outsourced Pixi tasks to tox: {', '.join(updated_tasks)}"
         config.changelog.append(msg)
 
 

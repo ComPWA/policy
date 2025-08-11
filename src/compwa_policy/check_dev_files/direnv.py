@@ -26,6 +26,9 @@ def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> No
         script = __get_pixi_direnv() + "\n"
         script += __get_uv_direnv(variables) + "\n"
         __update_envrc_content(script)
+    elif package_manager == "pixi":
+        script = __get_pixi_direnv() + "\n"
+        __update_envrc_content(script)
     else:
         statements: list[tuple[str | None, str]] = [
             (".venv", "source .venv/bin/activate"),
