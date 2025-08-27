@@ -28,7 +28,10 @@ def _update_dev_requirements(no_ruff: bool) -> None:
         supported_python_versions = pyproject.get_supported_python_versions()
         if "3.6" in supported_python_versions:
             return
-        packages = {
+        disallowed_packages = {
+            "jupyterlab-code-formatter",
+        }
+        required_packages = {
             "jupyterlab-git",
             "jupyterlab-lsp",
             "jupyterlab-myst",
@@ -39,11 +42,12 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             pyproject.remove_dependency(
                 "black", ignored_sections=["doc", "notebooks", "test"]
             )
-            pyproject.remove_dependency("isort")
-            ruff_packages = {
-                "jupyterlab-code-formatter",
+            disallowed_packages.add("isort")
+            required_packages.update({
+                "jupyter-ruff",
                 "python-lsp-ruff",
-            }
-            packages.update(ruff_packages)
-        for package in sorted(packages):
+            })
+        for package in sorted(required_packages):
             pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
+        for package in disallowed_packages:
+            pyproject.remove_dependency(package)
