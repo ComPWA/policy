@@ -28,7 +28,7 @@ dynamic = ["version"]
 license = {text = "BSD 3-Clause License"}
 maintainers = [{email = "compwa-admin@ep1.rub.de"}]
 name = "compwa-policy"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.14"
 
 [project.readme]
 content-type = "text/markdown"
