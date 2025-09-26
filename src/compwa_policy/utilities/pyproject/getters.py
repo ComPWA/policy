@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject._struct import ProjectURLs, PyprojectTOML
 
 
-PythonVersion = Literal["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+PythonVersion = Literal[
+    "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"
+]
 PYTHON_VERSIONS = set(PythonVersion.__args__)  # type:ignore[attr-defined]
 
 
@@ -139,13 +141,13 @@ def _get_allowed_versions(
     >>> _get_allowed_versions(">=3.9,<3.13")
     ['3.9', '3.10', '3.11', '3.12']
     >>> _get_allowed_versions(">=3.9", exclude={"3.9"})
-    ['3.10', '3.11', '3.12', '3.13']
+    ['3.10', '3.11', '3.12', '3.13', '3.14']
     >>> _get_allowed_versions("~=3.12")
-    ['3.12', '3.13']
+    ['3.12', '3.13', '3.14']
     >>> _get_allowed_versions("~=3.12.0")
     ['3.12']
     >>> _get_allowed_versions("")
-    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+    ['3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     """
     specifier = SpecifierSet(version_range)
     versions_to_check = [
