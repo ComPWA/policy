@@ -131,7 +131,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
                     args.repo_organization,
                 )
             do(mypy.main)
-            do(pyproject.main, excluded_python_versions, no_pypi=args.no_pypi)
+            do(pyproject.main, excluded_python_versions)
             do(pyright.main, precommit_config)
             do(pytest.main, args.pytest_single_threaded)
             do(pyupgrade.main, precommit_config, args.no_ruff)
