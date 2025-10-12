@@ -41,10 +41,10 @@ from compwa_policy.check_dev_files import (
     vscode,
 )
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import PythonVersion
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -293,7 +293,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--dev-python-version",
-        default="3.12",
+        default=DEFAULT_DEV_PYTHON_VERSION,
         help="Specify the Python version for your developer environment",
         type=str,
     )

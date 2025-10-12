@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
-    from compwa_policy.utilities.pyproject import PythonVersion
+    from compwa_policy.config import PythonVersion
 
 
 def main(

@@ -262,7 +262,7 @@ uv run \
 help = "Run all tests on a specific Python version"
 
 [[tool.poe.tasks.test-py.args]]
-default = "3.12"
+default = "3.13"
 help = "Selected Python version"
 name = "python"
 positional = true
@@ -380,6 +380,7 @@ split-on-trailing-comma = false
 ]
 "docs/conf.py" = ["D100"]
 "setup.py" = ["D100"]
+"src/compwa_policy/config.py" = ["D100"]
 "tests/*" = [
     "ANN",
     "D",

@@ -9,18 +9,13 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
+from compwa_policy.config import PYTHON_VERSIONS, PythonVersion
 from compwa_policy.errors import PrecommitError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from compwa_policy.utilities.pyproject._struct import ProjectURLs, PyprojectTOML
-
-
-PythonVersion = Literal[
-    "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"
-]
-PYTHON_VERSIONS = set(PythonVersion.__args__)  # type:ignore[attr-defined]
 
 
 @overload

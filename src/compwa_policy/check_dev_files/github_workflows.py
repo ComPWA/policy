@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import (
     COMPWA_POLICY_DIR,
@@ -220,7 +221,7 @@ def __update_doc_section(
         del config["jobs"]["doc"]
     else:
         with_section = config["jobs"]["doc"]["with"]
-        if python_version != "3.12":
+        if python_version != DEFAULT_DEV_PYTHON_VERSION:
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
@@ -232,7 +233,7 @@ def __update_doc_section(
 def __update_style_section(
     config: CommentedMap, python_version: PythonVersion, precommit: Precommit
 ) -> None:
-    if python_version != "3.12":
+    if python_version != DEFAULT_DEV_PYTHON_VERSION:
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
