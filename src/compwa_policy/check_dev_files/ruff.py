@@ -572,7 +572,7 @@ def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
 
 def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     yaml = YAML(typ="rt")
-    lint_hook = Hook(id="ruff", args=yaml.load("[--fix]"))
+    lint_hook = Hook(id="ruff-check", args=yaml.load("[--fix]"))
     format_hook = Hook(id="ruff-format")
     if has_notebooks:
         types_str = "[python, pyi, jupyter]"
