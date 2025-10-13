@@ -41,10 +41,12 @@ from compwa_policy.check_dev_files import (
     vscode,
 )
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
+from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, matches_patterns
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import PythonVersion
+from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -52,7 +54,7 @@ if TYPE_CHECKING:
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
 
-def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     parser = _create_argparse()
     args = parser.parse_args(argv)
     doc_apt_packages = _to_list(args.doc_apt_packages)
@@ -69,6 +71,15 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0915
     dev_python_version = __get_python_version(args.dev_python_version)
     excluded_python_versions = set(_to_list(args.excluded_python_versions))
     package_manager: PackageManagerChoice = args.package_manager
+    if CONFIG_PATH.pyproject.exists():
+        supported_versions = Pyproject.load().get_supported_python_versions()
+        if dev_python_version not in supported_versions:
+            print(  # noqa: T201
+                f"The specified development Python version {dev_python_version} is not "
+                "listed in the supported Python versions of pyproject.toml: "
+                f"{', '.join(sorted(supported_versions))}"
+            )
+            return 1
     with (
         Executor(raise_exception=False) as do,
         ModifiablePrecommit.load() as precommit_config,
@@ -293,7 +304,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--dev-python-version",
-        default="3.12",
+        default=DEFAULT_DEV_PYTHON_VERSION,
         help="Specify the Python version for your developer environment",
         type=str,
     )

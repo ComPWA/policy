@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from compwa_policy.check_dev_files import readthedocs
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.errors import PrecommitError
 
 if TYPE_CHECKING:
@@ -23,12 +24,16 @@ def test_update_readthedocs_extend(this_dir: Path):
     with open(this_dir / "extend" / ".readthedocs-bad.yml") as f:
         input_stream = io.StringIO(f.read())
     with pytest.raises(PrecommitError) as exception:
-        readthedocs.main("conda", python_version="3.12", source=input_stream)
+        readthedocs.main(
+            "conda",
+            python_version=DEFAULT_DEV_PYTHON_VERSION,
+            source=input_stream,
+        )
 
-    exception_msg = dedent("""
+    exception_msg = dedent(f"""
       Updated .readthedocs.yml:
         - Set build.os to ubuntu-24.04
-        - Set build.tools.python to '3.12'
+        - Set build.tools.python to {DEFAULT_DEV_PYTHON_VERSION!r}
         - Updated pip install steps
     """)
     assert str(exception.value).strip() == exception_msg.strip()
@@ -44,7 +49,11 @@ def test_update_readthedocs_extend(this_dir: Path):
 def test_update_readthedocs_good(this_dir: Path, example: str):
     with open(this_dir / example / ".readthedocs-good.yml") as f:
         input_stream = io.StringIO(f.read())
-    readthedocs.main("conda", python_version="3.12", source=input_stream)
+    readthedocs.main(
+        "conda",
+        python_version=DEFAULT_DEV_PYTHON_VERSION,
+        source=input_stream,
+    )
 
     with open(this_dir / example / ".readthedocs-good.yml") as f:
         expected_output = f.read()
@@ -73,7 +82,9 @@ def test_update_readthedocs_overwrite(
 
     with open(this_dir / "overwrite" / ".readthedocs-good.yml") as f:
         expected_output = f.read()
-    expected_output = expected_output.replace("3.12", python_version)
+    expected_output = expected_output.replace(
+        DEFAULT_DEV_PYTHON_VERSION, python_version
+    )
     input_stream.seek(0)
     result = input_stream.read()
     assert result.strip() == expected_output.strip()
