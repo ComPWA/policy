@@ -73,7 +73,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     package_manager: PackageManagerChoice = args.package_manager
     if CONFIG_PATH.pyproject.exists():
         supported_versions = Pyproject.load().get_supported_python_versions()
-        if dev_python_version not in supported_versions:
+        if supported_versions and dev_python_version not in supported_versions:
             print(  # noqa: T201
                 f"The specified development Python version {dev_python_version} is not "
                 "listed in the supported Python versions of pyproject.toml: "
