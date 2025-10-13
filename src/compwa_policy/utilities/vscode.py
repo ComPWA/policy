@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections import abc
 from collections.abc import Iterable, Sized
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
@@ -20,7 +20,7 @@ V = TypeVar("V")
 T = TypeVar("T", dict, list, Any)
 
 
-RemovedKeys = Union[Iterable[str], dict[str, "RemovedKeys"]]
+RemovedKeys = Iterable[str] | dict[str, "RemovedKeys"]
 """Type for keys to be removed from a (nested) dictionary."""
 
 

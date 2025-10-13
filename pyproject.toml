@@ -12,7 +12,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.9",
 ]
 dependencies = [
     "PyYAML",
@@ -35,7 +34,7 @@ dynamic = ["version"]
 license = {text = "BSD 3-Clause License"}
 maintainers = [{email = "compwa-admin@ep1.rub.de"}]
 name = "compwa-policy"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.readme]
 content-type = "text/markdown"

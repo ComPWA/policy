@@ -13,11 +13,12 @@ import os
 import sys
 import time
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from compwa_policy.errors import PrecommitError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import TracebackType
 
 if sys.version_info >= (3, 10):

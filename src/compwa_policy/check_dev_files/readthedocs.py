@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import IO, TYPE_CHECKING, Callable, cast
+from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
@@ -20,6 +20,8 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ruamel.yaml.comments import CommentedMap
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
