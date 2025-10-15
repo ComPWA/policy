@@ -29,10 +29,11 @@ def _update_dev_requirements(no_ruff: bool) -> None:
         if "3.6" in supported_python_versions:
             return
         packages = {
+            "jupyterlab",
             "jupyterlab-git",
             "jupyterlab-lsp",
             "jupyterlab-myst",
-            "jupyterlab",
+            "jupyterlab-quickopen",  # cspell:ignore quickopen
             "python-lsp-server[rope]",
         }
         if not no_ruff:
