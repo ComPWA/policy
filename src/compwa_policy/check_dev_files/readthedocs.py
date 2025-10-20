@@ -62,8 +62,8 @@ def _set_sphinx_configuration(config: ReadTheDocs) -> None:
     if "sphinx" not in config.document:
         config.document["sphinx"] = {}
     sphinx = config.document["sphinx"]
-    if "configuration" not in sphinx:
-        conf_path = __get_sphinx_config_path()
+    conf_path = __get_sphinx_config_path()
+    if "configuration" not in sphinx and conf_path:
         sphinx["configuration"] = str(conf_path)
         msg = f"Set sphinx.configuration to {conf_path}"
         config.changelog.append(msg)
