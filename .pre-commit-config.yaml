@@ -51,7 +51,6 @@ repos:
         args:
           - --allow-labels
           - --dependabot=update
-          - --excluded-python-versions=3.14
           - --no-pypi
           - --pytest-single-threaded
           - --repo-name=policy

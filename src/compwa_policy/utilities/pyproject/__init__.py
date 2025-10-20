@@ -101,7 +101,7 @@ class Pyproject:
         """Extract sorted, supported Python versions from package classifiers.
 
         >>> Pyproject.load().get_supported_python_versions()
-        ['3.10', '3.11', '3.12', '3.13']
+        ['3.10', '3.11', '3.12', '3.13', '3.14']
         """
         return get_supported_python_versions(self._document)
 
