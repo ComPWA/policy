@@ -20,6 +20,7 @@ from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
+    from pathlib import Path
 
     from tomlkit.items import Table
 
@@ -44,7 +45,9 @@ def update_pixi_configuration(
             add_badge,
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
-        do(_define_minimal_project, config)
+        if config_path == CONFIG_PATH.pixi_toml:
+            do(_rename_workspace_table, config)
+        do(_define_minimal_project, config, config_path)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
         if package_manager == "pixi+uv":
@@ -88,9 +91,24 @@ def _define_combined_ci_job(config: ModifiablePyproject) -> None:
         config.changelog.append(msg)
 
 
-def _define_minimal_project(config: ModifiablePyproject) -> None:
+def _rename_workspace_table(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "project"):
+        return
+    project = __get_table(config, "project")
+    workspace = __get_table(config, "workspace", create=True)
+    workspace.update(project)
+    del config._document["project"]  # type:ignore[misc] # noqa: SLF001
+    msg = 'Renamed "project" table to "workspace" in Pixi configuration'
+    config.changelog.append(msg)
+
+
+def _define_minimal_project(config: ModifiablePyproject, path: Path) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
-    settings = __get_table(config, "project", create=True)
+    if path == CONFIG_PATH.pixi_toml:
+        table_name = "workspace"
+    else:
+        table_name = "project"
+    settings = __get_table(config, table_name, create=True)
     minimal_settings: dict[str, Any] = dict(
         channels=["conda-forge"],
         platforms=["linux-64"],
