@@ -57,7 +57,6 @@ Tracker = "https://github.com/ComPWA/policy/issues"
 [dependency-groups]
 dev = [
     "labels",
-    "poethepoet",
     "ruff",
     "sphinx-autobuild",
     {include-group = "doc"},

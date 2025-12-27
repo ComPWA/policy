@@ -186,7 +186,13 @@ def _update_contributing_file(organization: str, repo_name: str) -> None:
 
 def __get_runner_instructions() -> str:
     poe_instructions = dedent("""
-    [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. You can see which local CI checks it defines by running
+    [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. Install it globally (within your home folder) with `uv`:
+
+    ```shell
+    uv tool install poethepoet --force-reinstall --python=3.13
+    ```
+
+    You can see which local CI checks it defines by running
 
     ```shell
     poe
