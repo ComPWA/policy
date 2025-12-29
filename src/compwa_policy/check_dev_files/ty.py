@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from ruamel.yaml.comments import CommentedSeq
-from sphinx import TYPE_CHECKING
 
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
