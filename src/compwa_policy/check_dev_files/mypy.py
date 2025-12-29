@@ -7,13 +7,17 @@ from ini2toml.api import Translator
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
-def main() -> None:
+def main(active: bool, precommit: ModifiablePrecommit) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_merge_mypy_into_pyproject, pyproject)
-        do(_update_vscode_settings, pyproject)
+        do(_update_vscode_settings, active)
+        if active:
+            do(_merge_mypy_into_pyproject, pyproject)
+        else:
+            do(_remove_mypy, precommit, pyproject)
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -31,9 +35,19 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(msg)
 
 
-def _update_vscode_settings(pyproject: Pyproject) -> None:
+def _remove_mypy(
+    precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
+) -> None:
+    if pyproject.has_table("tool.mypy"):
+        del pyproject._document["tool"]["mypy"]  # noqa: SLF001
+        pyproject.changelog.append("Removed mypy configuration table")
+    pyproject.remove_dependency("mypy")
+    precommit.remove_hook("mypy")
+
+
+def _update_vscode_settings(mypy: bool) -> None:
     with Executor() as do:
-        if pyproject.has_table("tool.mypy"):
+        if mypy:
             do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
             settings = {
                 "mypy-type-checker.args": [
@@ -47,4 +61,7 @@ def _update_vscode_settings(pyproject: Pyproject) -> None:
                 "ms-python.mypy-type-checker",
                 unwanted=True,
             )
-        do(vscode.remove_settings, ["mypy-type-checker.importStrategy"])
+            do(
+                vscode.remove_settings,
+                ["mypy-type-checker.args", "mypy-type-checker.importStrategy"],
+            )

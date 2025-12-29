@@ -109,7 +109,7 @@ def _update_precommit_ci_autofix_commit_msg(precommit: ModifiablePrecommit) -> N
     key = "autofix_commit_msg"
     msg = precommit_ci.get(key)
     if msg != expected_msg:
-        precommit_ci[key] = expected_msg  # type:ignore[literal-required]
+        precommit_ci[key] = expected_msg
         msg = f"Set ci.{key} to {expected_msg!r}"
         precommit.changelog.append(msg)
 
@@ -122,7 +122,7 @@ def _update_precommit_ci_autoupdate_commit_msg(precommit: ModifiablePrecommit) -
     key = "autoupdate_commit_msg"
     msg = precommit_ci.get(key)
     if msg != expected_msg:
-        precommit_ci[key] = expected_msg  # type:ignore[literal-required]
+        precommit_ci[key] = expected_msg
         msg = f"Set ci.{key} to {expected_msg!r}"
         precommit.changelog.append(msg)
 
@@ -158,6 +158,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "check-jsonschema",
         "pyright",
         "taplo",
+        "ty",
         "uv-lock",
     }
     return [

@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> None:
     if no_cd:
-        paths_to_remove = [
+        paths_to_remove: list[Path] = [
             CONFIG_PATH.release_drafter_workflow,
             CONFIG_PATH.release_drafter_config,
         ]
@@ -20,7 +23,7 @@ def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> Non
         if paths_to_remove:
             for path in paths_to_remove:
                 path.unlink()
-            msg = f"Removed {', '.join(map(str, paths_to_remove))}"
+            msg = f"Removed {', '.join(str(p) for p in paths_to_remove)}"
             raise PrecommitError(msg)
     else:
         update_file(CONFIG_PATH.release_drafter_workflow)

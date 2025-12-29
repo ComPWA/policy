@@ -24,8 +24,8 @@ class _IncreasedYamlIndent(yaml.Dumper):
 
 def create_prettier_round_trip_yaml() -> YAML:
     yaml_parser = YAML(typ="rt")
-    yaml_parser.preserve_quotes = True  # type: ignore[assignment]
-    yaml_parser.map_indent = 2  # type: ignore[assignment]
+    yaml_parser.preserve_quotes = True
+    yaml_parser.map_indent = 2
     yaml_parser.indent = 4
     yaml_parser.block_seq_indent = 2
     return yaml_parser

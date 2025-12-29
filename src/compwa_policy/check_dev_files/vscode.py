@@ -157,9 +157,7 @@ def _update_notebook_settings() -> None:
 def _update_pytest_settings() -> None:
     if not os.path.exists("tests/"):
         return
-    pytest_settings = {
-        "python.analysis.inlayHints.pytestParameters": True,
+    vscode.update_settings({
         "python.testing.pytestEnabled": True,
         "python.testing.unittestEnabled": False,
-    }
-    vscode.update_settings(pytest_settings)
+    })

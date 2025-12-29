@@ -35,8 +35,7 @@
     "docs/conf.py",
     "labels/*.toml",
     "pyproject.toml",
-    "pyrightconfig.json",
-    "typings"
+    "pyrightconfig.json"
   ],
   "ignoreWords": [
     "FURB",
@@ -113,7 +112,6 @@
     "ipykernel",
     "ipython",
     "mkdir",
-    "mypy",
     "oneline",
     "pixi",
     "poethepoet",

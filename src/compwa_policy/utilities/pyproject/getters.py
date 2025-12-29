@@ -26,7 +26,7 @@ def get_package_name(
 ) -> str | None: ...
 @overload
 def get_package_name(doc: PyprojectTOML, raise_on_missing: Literal[True]) -> str: ...
-def get_package_name(doc: PyprojectTOML, raise_on_missing: bool = False):  # type: ignore[no-untyped-def]
+def get_package_name(doc: PyprojectTOML, raise_on_missing: bool = False):
     if not has_sub_table(doc, "project"):
         if raise_on_missing:
             msg = "Please provide a name for the package under the [project] table in pyproject.toml"
@@ -114,7 +114,7 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
     identifier = "Programming Language :: Python :: 3."
     version_classifiers = [s for s in classifiers if s.startswith(identifier)]
     prefix = identifier[:-2]
-    return [s.replace(prefix, "") for s in version_classifiers]  # type: ignore[misc]
+    return [s.replace(prefix, "") for s in version_classifiers]  # ty:ignore[invalid-return-type]
 
 
 def _get_requires_python(project: Mapping[str, Any]) -> str:
@@ -151,7 +151,7 @@ def _get_allowed_versions(
     allowed_versions = [str(v) for v in versions_to_check if v in specifier]
     if exclude is not None:
         allowed_versions = [v for v in allowed_versions if v not in exclude]
-    return allowed_versions  # type:ignore[return-value]
+    return allowed_versions  # ty:ignore[invalid-return-type]
 
 
 def __sort_version(version: str) -> tuple[int, ...]:

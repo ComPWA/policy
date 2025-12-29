@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -19,12 +20,16 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(active: bool, precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
-        _merge_config_into_pyproject(pyproject)
-        _update_precommit(precommit, pyproject)
-        _remove_excludes(pyproject)
-        _update_settings(pyproject)
+        _update_vscode_settings(active)
+        if active:
+            _merge_config_into_pyproject(pyproject)
+            _update_precommit(precommit, pyproject)
+            _remove_excludes(pyproject)
+            _update_settings(pyproject)
+        else:
+            _remove_pyright(precommit, pyproject)
 
 
 def _merge_config_into_pyproject(
@@ -49,7 +54,7 @@ def _merge_config_into_pyproject(
 
 
 def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
-    if not __has_pyright(pyproject):
+    if not pyproject.has_table("tool.pyright"):
         return
     old_url = "https://github.com/ComPWA/mirrors-pyright"
     old_repo = precommit.find_repo(old_url)
@@ -66,7 +71,7 @@ def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> N
 
 
 def _remove_excludes(pyproject: ModifiablePyproject) -> None:
-    if not __has_pyright(pyproject):
+    if not pyproject.has_table("tool.pyright"):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
     if "exclude" not in pyright_settings:
@@ -77,7 +82,7 @@ def _remove_excludes(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    if not __has_pyright(pyproject):
+    if not pyproject.has_table("tool.pyright"):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
     minimal_settings = dict(
@@ -91,6 +96,30 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def __has_pyright(pyproject: Pyproject) -> bool:
-    table_key = "tool.pyright"
-    return pyproject.has_table(table_key)
+def _update_vscode_settings(active: bool) -> None:
+    if active:
+        vscode.update_settings({
+            "python.analysis.inlayHints.pytestParameters": True,
+        })
+    else:
+        vscode.remove_settings([
+            "python.analysis.autoImportCompletions",
+            "python.analysis.inlayHints.pytestParameters",
+        ])
+
+
+def _remove_pyright(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
+    pyright_config = Path("pyrightconfig.json")
+    if pyright_config.exists():
+        os.remove(pyright_config)
+        msg = f"Removed old pyright configuration file {pyright_config}"
+        pyproject.changelog.append(msg)
+    if pyproject.has_table("tool.pyright"):
+        del pyproject._document["tool"]["pyright"]  # noqa: SLF001
+        msg = "Removed pyright configuration from pyproject.toml"
+        pyproject.changelog.append(msg)
+    pyproject.remove_dependency("pyright")
+    precommit.remove_hook("pyright")

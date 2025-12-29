@@ -15,7 +15,7 @@ def main(has_notebooks: bool) -> None:
         return
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         if pyproject.has_table("tool.tox"):
-            del pyproject._document["tool"]["tox"]  # pyright: ignore[reportTypedDictNotRequiredAccess]  # noqa: SLF001
+            del pyproject._document["tool"]["tox"]  # noqa: SLF001
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         if pyproject.has_table("tool.poe"):
