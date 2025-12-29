@@ -17,10 +17,14 @@ if TYPE_CHECKING:
 TypeChecker = Literal["mypy", "pyright", "ty"]
 
 
-def main(active: bool, keep_precommit: bool, precommit: ModifiablePrecommit) -> None:
+def main(
+    type_checkers: set[TypeChecker],
+    keep_precommit: bool,
+    precommit: ModifiablePrecommit,
+) -> None:
     with ModifiablePyproject.load() as pyproject:
-        _update_vscode_settings(active)
-        if active:
+        _update_vscode_settings(type_checkers)
+        if "ty" in type_checkers:
             pyproject.add_dependency("ty", dependency_group=["style", "dev"])
             if not keep_precommit:
                 _update_precommit_config(precommit)
@@ -28,13 +32,15 @@ def main(active: bool, keep_precommit: bool, precommit: ModifiablePrecommit) -> 
             _remove_ty(precommit, pyproject)
 
 
-def _update_vscode_settings(active: bool) -> None:
+def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
     settings = {
         "ty.completions.autoImport": False,
         "ty.diagnosticMode": "workspace",
         "ty.importStrategy": "fromEnvironment",
     }
-    if active:
+    if "ty" in type_checkers:
+        if "pyright" not in type_checkers:
+            settings["python.languageServer"] = "None"
         vscode.update_settings(settings)
     else:
         vscode.remove_settings(settings)
