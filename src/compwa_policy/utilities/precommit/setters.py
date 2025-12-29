@@ -60,7 +60,7 @@ def update_single_hook_precommit_repo(
     idx_and_repo = find_repo_with_index(precommit.document, repo_url)
     hook_id = expected["hooks"][0]["id"]
     if idx_and_repo is None:
-        if not expected_yaml.get("rev"):
+        if not expected_yaml.get("rev") and repo_url != "local":
             expected_yaml.pop("rev", None)
             expected_yaml.insert(1, "rev", "PLEASE-UPDATE")
         idx = _determine_expected_repo_index(precommit.document, hook_id)
