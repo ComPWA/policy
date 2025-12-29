@@ -41,8 +41,10 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
     if "ty" in type_checkers:
         if "pyright" not in type_checkers:
             settings["python.languageServer"] = "None"
+        vscode.add_extension_recommendation("astral-sh.ty")
         vscode.update_settings(settings)
     else:
+        vscode.remove_extension_recommendation("astral-sh.ty", unwanted=True)
         vscode.remove_settings(settings)
 
 
