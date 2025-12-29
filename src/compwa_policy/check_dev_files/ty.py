@@ -5,9 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
+from ruamel.yaml.comments import CommentedSeq
 from sphinx import TYPE_CHECKING
 
 from compwa_policy.utilities import vscode
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 if TYPE_CHECKING:
@@ -16,10 +18,12 @@ if TYPE_CHECKING:
 TypeChecker = Literal["mypy", "pyright", "ty"]
 
 
-def main(active: bool, precommit: ModifiablePrecommit) -> None:
+def main(active: bool, keep_precommit: bool, precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
+        _update_vscode_settings(active)
         if active:
-            _update_vscode_settings(active)
+            if not keep_precommit:
+                _update_precommit_config(precommit)
         else:
             _remove_ty(precommit, pyproject)
 
@@ -34,6 +38,26 @@ def _update_vscode_settings(active: bool) -> None:
         vscode.update_settings(settings)
     else:
         vscode.remove_settings(settings)
+
+
+def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
+    types_or = CommentedSeq(["python", "pyi", "jupyter"])
+    types_or.fa.set_flow_style()
+    hook = Hook(
+        id="ty",
+        name="ty",
+        entry="ty",
+        args=[
+            "check",
+            "--output-format=concise",
+            "--respect-ignore-files",
+        ],
+        require_serial=True,
+        language="system",
+        types_or=types_or,  # ty:ignore[invalid-argument-type]
+    )
+    expected_repo = Repo(repo="local", hooks=[hook])
+    precommit.update_single_hook_repo(expected_repo)
 
 
 def _remove_ty(precommit: ModifiablePrecommit, pyproject: ModifiablePyproject) -> None:

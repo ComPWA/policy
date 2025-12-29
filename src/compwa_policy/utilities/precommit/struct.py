@@ -39,7 +39,7 @@ class Repo(TypedDict):
     """https://pre-commit.com/#pre-commit-configyaml---repos."""
 
     repo: str
-    rev: str
+    rev: NotRequired[str]
     hooks: list[Hook]
 
 
@@ -49,6 +49,8 @@ class Hook(TypedDict):
     id: str
     alias: NotRequired[str]
     name: NotRequired[str]
+    entry: NotRequired[str]
+    language: NotRequired[str]
     language_version: NotRequired[str]
     files: NotRequired[str]
     exclude: NotRequired[str]
@@ -59,6 +61,7 @@ class Hook(TypedDict):
     stages: NotRequired[list[str]]
     additional_dependencies: NotRequired[list[str]]
     always_run: NotRequired[bool]
+    require_serial: NotRequired[bool]
     verbose: NotRequired[bool]
     log_file: NotRequired[str]
     pass_filenames: NotRequired[bool]

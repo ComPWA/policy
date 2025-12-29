@@ -50,6 +50,7 @@ repos:
         args:
           - --allow-labels
           - --dependabot=update
+          - --keep-local-precommit
           - --no-pypi
           - --pytest-single-threaded
           - --repo-name=policy

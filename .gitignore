@@ -10,7 +10,6 @@ version.py
 *.pyc
 .coverage
 .coverage.*
-.mypy*/
 .pytest_cache/
 __pycache__/
 coverage.xml

@@ -146,7 +146,12 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
             do(pyproject.main, excluded_python_versions)
             do(mypy.main, "mypy" in type_checkers, precommit_config)
             do(pyright.main, "pyright" in type_checkers, precommit_config)
-            do(ty.main, "ty" in type_checkers, precommit_config)
+            do(
+                ty.main,
+                "ty" in type_checkers,
+                args.keep_local_precommit,
+                precommit_config,
+            )
             do(pytest.main, args.pytest_single_threaded)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
@@ -310,6 +315,12 @@ def _create_argparse() -> ArgumentParser:
         default=DEFAULT_DEV_PYTHON_VERSION,
         help="Specify the Python version for your developer environment",
         type=str,
+    )
+    parser.add_argument(
+        "--keep-local-precommit",
+        action="store_true",
+        default=False,
+        help="Do not remove local pre-commit hooks",
     )
     parser.add_argument(
         "--macos-python-version",
