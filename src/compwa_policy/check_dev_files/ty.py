@@ -21,6 +21,7 @@ def main(active: bool, keep_precommit: bool, precommit: ModifiablePrecommit) -> 
     with ModifiablePyproject.load() as pyproject:
         _update_vscode_settings(active)
         if active:
+            pyproject.add_dependency("ty", dependency_group=["style", "dev"])
             if not keep_precommit:
                 _update_precommit_config(precommit)
         else:
