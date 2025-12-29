@@ -10,6 +10,7 @@ from ruamel.yaml.comments import CommentedSeq
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.readme import add_badge
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -43,6 +44,9 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
             settings["python.languageServer"] = "None"
         vscode.add_extension_recommendation("astral-sh.ty")
         vscode.update_settings(settings)
+        add_badge(
+            "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)"
+        )
     else:
         vscode.remove_extension_recommendation("astral-sh.ty", unwanted=True)
         vscode.remove_settings(settings)

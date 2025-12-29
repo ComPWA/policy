@@ -9,6 +9,7 @@ from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.readme import remove_badge
 
 
 def main(active: bool, precommit: ModifiablePrecommit) -> None:
@@ -43,6 +44,7 @@ def _remove_mypy(
         pyproject.changelog.append("Removed mypy configuration table")
     pyproject.remove_dependency("mypy")
     precommit.remove_hook("mypy")
+    remove_badge(r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?")
 
 
 def _update_vscode_settings(mypy: bool) -> None:
