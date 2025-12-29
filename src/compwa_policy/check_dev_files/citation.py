@@ -184,6 +184,7 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
     idx_and_repo = precommit.find_repo_with_index(repo_url)
     if idx_and_repo is None:
+        repo_idx = 0
         repo = Repo(
             repo=repo_url,
             rev="",

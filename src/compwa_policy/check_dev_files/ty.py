@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from ruamel.yaml.comments import CommentedSeq
 
@@ -13,6 +13,8 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.readme import add_badge
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
+
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
@@ -26,6 +28,7 @@ def main(
     with ModifiablePyproject.load() as pyproject:
         _update_vscode_settings(type_checkers)
         if "ty" in type_checkers:
+            _update_configuration(pyproject)
             pyproject.add_dependency("ty", dependency_group=["style", "dev"])
             if not keep_precommit:
                 _update_precommit_config(precommit)
@@ -52,6 +55,25 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
         vscode.remove_settings(settings)
 
 
+def _update_configuration(pyproject: ModifiablePyproject) -> None:
+    ty_config = pyproject.get_table("tool.ty.rules", create=True)
+    _update_value(pyproject, ty_config, "division-by-zero", "warn")
+    _update_value(pyproject, ty_config, "possibly-missing-import", "warn")
+    _update_value(pyproject, ty_config, "possibly-unresolved-reference", "warn")
+    _update_value(pyproject, ty_config, "unused-ignore-comment", "warn")
+
+
+def _update_value(
+    pyproject: ModifiablePyproject,
+    table: MutableMapping[str, Any],
+    key: str,
+    value: Literal["error", "ignore", "warn"],
+) -> None:
+    if key not in table:
+        table[key] = value
+        pyproject.changelog.append(f'Set tool.ty.rules.{key} = "{value}"')
+
+
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
     types_or = CommentedSeq(["python", "pyi", "jupyter"])
     types_or.fa.set_flow_style()
@@ -66,7 +88,7 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
         ],
         require_serial=True,
         language="system",
-        types_or=types_or,  # ty:ignore[invalid-argument-type]
+        types_or=types_or,
     )
     expected_repo = Repo(repo="local", hooks=[hook])
     precommit.update_single_hook_repo(expected_repo)
