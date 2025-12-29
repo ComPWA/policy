@@ -98,6 +98,7 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
 
 def _update_vscode_settings(active: bool) -> None:
     if active:
+        vscode.add_extension_recommendation("ms-python.vscode-pylance")
         vscode.update_settings({
             "python.analysis.inlayHints.pytestParameters": True,
         })
@@ -106,6 +107,9 @@ def _update_vscode_settings(active: bool) -> None:
             "python.analysis.autoImportCompletions",
             "python.analysis.inlayHints.pytestParameters",
         ])
+        vscode.remove_extension_recommendation(
+            "ms-python.vscode-pylance", unwanted=True
+        )
 
 
 def _remove_pyright(
