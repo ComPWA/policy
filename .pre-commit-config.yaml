@@ -104,7 +104,6 @@ repos:
         args:
           - check
           - --output-format=concise
-          - --respect-ignore-files
         require_serial: true
         language: system
         types_or: [python, pyi, jupyter]
