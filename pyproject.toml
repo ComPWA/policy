@@ -150,8 +150,10 @@ module = ["ruamel.*"]
 ignore_missing_imports = true
 module = ["nbformat.*"]
 
-[tool.poe]
-executor.type = "uv"
+[tool.poe.executor]
+isolated = true
+no-group = "dev"
+type = "uv"
 
 [tool.poe.tasks.all]
 help = "Run all continuous integration tasks locally"
@@ -182,56 +184,58 @@ positional = true
 
 [tool.poe.tasks.doc]
 cmd = """
-uv run --group doc --isolated --no-dev \
-    sphinx-build \
-        --builder=html \
-        --fail-on-warning \
-        --keep-going \
-        --show-traceback \
-        docs/ \
-        docs/_build/html/
+sphinx-build \
+    --builder=html \
+    --fail-on-warning \
+    --keep-going \
+    --show-traceback \
+    docs/ \
+    docs/_build/html/
 """
+executor = {group = "doc"}
 help = "Run all unit tests"
 
 [tool.poe.tasks.doclive]
 cmd = """
-uv run --group doc --isolated --no-dev \
-    sphinx-autobuild \
-        --builder=html \
-        --open-browser \
-        --port=0 \
-        --re-ignore=/__pycache__(/.*)?$ \
-        --re-ignore=/_build(/.*)?$ \
-        --re-ignore=/\\.egg-info(/.*)?$ \
-        --re-ignore=/api(/.*)?$ \
-        --re-ignore=/docs$ \
-        --re-ignore=/version\\.py$ \
-        --re-ignore=\\.egg-info(/.*)?$ \
-        --re-ignore=\\.png$ \
-        --re-ignore=\\.svg$ \
-        --watch=src \
-        docs/ \
-        docs/_build/html/
+sphinx-autobuild \
+    --builder=html \
+    --open-browser \
+    --port=0 \
+    --re-ignore=/__pycache__(/.*)?$ \
+    --re-ignore=/_build(/.*)?$ \
+    --re-ignore=/\\.egg-info(/.*)?$ \
+    --re-ignore=/api(/.*)?$ \
+    --re-ignore=/docs$ \
+    --re-ignore=/version\\.py$ \
+    --re-ignore=\\.egg-info(/.*)?$ \
+    --re-ignore=\\.png$ \
+    --re-ignore=\\.svg$ \
+    --watch=src \
+    docs/ \
+    docs/_build/html/
 """
+executor = {group = "doc"}
 help = "Run all unit tests"
 
 [tool.poe.tasks.linkcheck]
 cmd = """
-uv run --group doc --isolated --no-dev \
-    sphinx-build \
-        --builder=linkcheck \
-        --show-traceback \
-        docs/ \
-        docs/_build/linkcheck/
+sphinx-build \
+    --builder=linkcheck \
+    --show-traceback \
+    docs/ \
+    docs/_build/linkcheck/
 """
+executor = {group = "doc"}
 help = "Check external links in the documentation (requires internet connection)"
 
 [tool.poe.tasks.style]
-cmd = "uv run --group style --isolated --no-dev pre-commit run --all-files"
+cmd = "pre-commit run --all-files"
+executor = {group = "style"}
 help = "Perform all linting, formatting, and spelling checks"
 
 [tool.poe.tasks.test]
-cmd = "uv run --group test --isolated --no-dev pytest --no-summary ${paths}"
+cmd = "pytest --no-summary ${paths}"
+executor = {group = "test"}
 help = "Run all unit tests"
 
 [[tool.poe.tasks.test.args]]
