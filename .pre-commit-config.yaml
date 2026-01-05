@@ -100,10 +100,8 @@ repos:
     hooks:
       - id: ty
         name: ty
-        entry: ty
-        args:
-          - check
-          - --output-format=concise
+        entry: ty check
+        args: [--output-format=concise]
         require_serial: true
         language: system
         types_or: [python, pyi, jupyter]

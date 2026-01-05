@@ -76,13 +76,15 @@ def _update_value(
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
+    args = CommentedSeq(["--output-format=concise"])
+    args.fa.set_flow_style()
     types_or = CommentedSeq(["python", "pyi", "jupyter"])
     types_or.fa.set_flow_style()
     hook = Hook(
         id="ty",
         name="ty",
-        entry="ty",
-        args=["check", "--output-format=concise"],
+        entry="ty check",
+        args=args,
         require_serial=True,
         language="system",
         types_or=types_or,
