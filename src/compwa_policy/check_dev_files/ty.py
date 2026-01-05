@@ -82,11 +82,7 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
         id="ty",
         name="ty",
         entry="ty",
-        args=[
-            "check",
-            "--output-format=concise",
-            "--respect-ignore-files",
-        ],
+        args=["check", "--output-format=concise"],
         require_serial=True,
         language="system",
         types_or=types_or,
