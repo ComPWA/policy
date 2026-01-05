@@ -54,7 +54,8 @@ def _get_expected_config(
     if not os.path.exists(CONFIG_PATH.readthedocs):
         lines = lines[2:]
     config[key] = (
-        "\n".join(lines)
+        "\n"
+        .join(lines)
         .replace("<<ORGANIZATION>>", organization)
         .replace("<<REPO_NAME>>", repo_name)
     )

@@ -32,7 +32,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _set_nb_display_name(filename: str) -> None:
     notebook = load_notebook(filename)
     display_name = (
-        notebook.get("metadata", {})
+        notebook
+        .get("metadata", {})
         .get("kernelspec", {})  # cspell:ignore kernelspec
         .get("display_name")
     )
