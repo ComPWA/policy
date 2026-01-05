@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
+"""The type of type checkers supported."""
 
 
 def main(
