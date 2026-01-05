@@ -350,10 +350,9 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--type-checker",
+        action="append",
         choices=ty.TypeChecker.__args__,
         help="Specify which type checker to use for the project",
-        nargs="+",
-        type=str,
     )
     parser.add_argument(
         "--update-lock-files",
