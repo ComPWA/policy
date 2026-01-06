@@ -91,7 +91,9 @@ class Executor(AbstractContextManager):
                 end_time = time.time()
                 source_file = inspect.getsourcefile(function)
                 line_number = inspect.getsourcelines(function)[1]
-                location = f"{source_file}:{line_number} ({function.__name__})"
+                location = f"{source_file}:{line_number}"
+                if function_name := getattr(function, "__name__", None):
+                    location += f" ({function_name})"
                 self.__execution_times[location] = end_time - start_time
             else:
                 result = function(*args, **kwargs)

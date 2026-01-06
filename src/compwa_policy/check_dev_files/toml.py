@@ -111,7 +111,7 @@ def _update_taplo_config() -> None:
     with open(template_path) as f:
         expected = tomlkit.load(f)
 
-    excludes = filter_patterns(expected["exclude"])  # type:ignore[arg-type]
+    excludes = filter_patterns(expected["exclude"])  # ty:ignore[invalid-argument-type]
     if excludes:
         sorted_excludes = sorted(excludes, key=str.lower)
         expected["exclude"] = to_toml_array(sorted_excludes, multiline=True)

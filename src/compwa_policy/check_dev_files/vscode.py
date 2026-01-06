@@ -1,11 +1,16 @@
 """Check configuration of VS Code."""
 
-import os
+from __future__ import annotations
 
-from compwa_policy.check_dev_files.conda import PackageManagerChoice
+import os
+from typing import TYPE_CHECKING
+
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.python import has_constraint_files
+
+if TYPE_CHECKING:
+    from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
 
 def main(
@@ -157,9 +162,7 @@ def _update_notebook_settings() -> None:
 def _update_pytest_settings() -> None:
     if not os.path.exists("tests/"):
         return
-    pytest_settings = {
-        "python.analysis.inlayHints.pytestParameters": True,
+    vscode.update_settings({
         "python.testing.pytestEnabled": True,
         "python.testing.unittestEnabled": False,
-    }
-    vscode.update_settings(pytest_settings)
+    })

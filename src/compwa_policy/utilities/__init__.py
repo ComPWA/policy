@@ -46,7 +46,7 @@ class _ConfigFilePaths(NamedTuple):
 
 
 CONFIG_PATH = _ConfigFilePaths()
-COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()
+COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()  # ty:ignore[invalid-argument-type]
 
 
 def append_safe(expected_line: str, path: Path) -> bool:

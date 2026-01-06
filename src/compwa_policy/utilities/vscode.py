@@ -52,12 +52,12 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     if not keys:
         return obj
     if isinstance(obj, list):
-        return [k for k in obj if k not in keys]
+        return [k for k in obj if k not in keys]  # ty:ignore[invalid-return-type]
     if isinstance(obj, dict):
         if isinstance(keys, dict):
             new_dict = {}
             for key, value in obj.items():
-                sub_keys_to_remove = keys.get(key, {})
+                sub_keys_to_remove = keys.get(key, {})  # ty:ignore[no-matching-overload]
                 new_value = _remove_keys(value, sub_keys_to_remove)
                 if (
                     isinstance(new_value, abc.Iterable)
@@ -66,11 +66,11 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
                     and len(new_value) == 0
                 ):
                     continue
-                new_dict[key] = _remove_keys(value, keys.get(key, {}))
-            return new_dict
+                new_dict[key] = _remove_keys(value, keys.get(key, {}))  # ty:ignore[no-matching-overload]
+            return new_dict  # ty:ignore[invalid-return-type]
         if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
             removed_keys = set(keys)
-            return {k: v for k, v in obj.items() if k not in removed_keys}
+            return {k: v for k, v in obj.items() if k not in removed_keys}  # ty:ignore[invalid-return-type]
         msg = f"Invalid type for removed keys: {type(keys)}"
         raise TypeError(msg)
     return obj
@@ -115,9 +115,9 @@ def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
 
 def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     if isinstance(old, dict) and isinstance(new, dict):
-        return _update_dict_recursively(old, new, sort)  # type: ignore[return-value]
+        return _update_dict_recursively(old, new, sort)  # ty:ignore[invalid-return-type]
     if isinstance(old, list) and isinstance(new, list):
-        return sorted({*old, *new})  # type: ignore[return-value]
+        return sorted({*old, *new})  # ty:ignore[invalid-return-type]
     return new
 
 
@@ -130,19 +130,35 @@ def _update_settings_if_changed(old: dict, new: dict) -> None:
 
 
 def add_extension_recommendation(extension_name: str) -> None:
-    __add_extension(
-        extension_name,
-        key="recommendations",
-        msg=f'Added VS Code extension recommendation "{extension_name}"',
-    )
+    with Executor() as do:
+        do(
+            __add_extension,
+            extension_name,
+            key="recommendations",
+            msg=f'Added VS Code extension recommendation "{extension_name}"',
+        )
+        do(
+            __remove_extension,
+            extension_name,
+            key="unwantedRecommendations",
+            msg=f'Removed unwanted VS Code extension "{extension_name}"',
+        )
 
 
 def add_unwanted_extension(extension_name: str) -> None:
-    __add_extension(
-        extension_name,
-        key="unwantedRecommendations",
-        msg=f'Added unwanted VS Code extension "{extension_name}"',
-    )
+    with Executor() as do:
+        do(
+            __add_extension,
+            extension_name,
+            key="unwantedRecommendations",
+            msg=f'Added unwanted VS Code extension "{extension_name}"',
+        )
+        do(
+            __remove_extension,
+            extension_name,
+            key="recommendations",
+            msg=f'Removed VS Code extension recommendation "{extension_name}"',
+        )
 
 
 def __add_extension(extension_name: str, key: str, msg: str) -> None:
@@ -157,25 +173,31 @@ def __add_extension(extension_name: str, key: str, msg: str) -> None:
         raise PrecommitError(msg)
 
 
+def __remove_extension(extension_name: str, key: str, msg: str) -> None:
+    if not CONFIG_PATH.vscode_extensions.exists():
+        return
+    with open(CONFIG_PATH.vscode_extensions) as stream:
+        config = json.load(stream)
+    recommended_extensions = __to_lower(config.get(key, []))
+    extension_name = extension_name.lower()
+    if extension_name in recommended_extensions:
+        recommended_extensions.remove(extension_name)
+        config[key] = sorted(recommended_extensions)
+        __dump_config(config, CONFIG_PATH.vscode_extensions)
+        msg = f'Removed VS Code extension recommendation "{extension_name}"'
+        raise PrecommitError(msg)
+
+
 def remove_extension_recommendation(
     extension_name: str, *, unwanted: bool = False
 ) -> None:
-    def _remove(extension_name: str) -> None:
-        if not CONFIG_PATH.vscode_extensions.exists():
-            return
-        with open(CONFIG_PATH.vscode_extensions) as stream:
-            config = json.load(stream)
-        recommended_extensions = __to_lower(config.get("recommendations", []))
-        extension_name = extension_name.lower()
-        if extension_name in recommended_extensions:
-            recommended_extensions.remove(extension_name)
-            config["recommendations"] = sorted(recommended_extensions)
-            __dump_config(config, CONFIG_PATH.vscode_extensions)
-            msg = f'Removed VS Code extension recommendation "{extension_name}"'
-            raise PrecommitError(msg)
-
     with Executor() as do:
-        do(_remove, extension_name)
+        do(
+            __remove_extension,
+            extension_name,
+            key="recommendations",
+            msg=f'Removed VS Code extension recommendation "{extension_name}"',
+        )
         if unwanted:
             do(add_unwanted_extension, extension_name)
 
@@ -186,7 +208,7 @@ def __to_lower(lst: list[str]) -> list[str]:
 
 def __dump_config(config: dict, path: Path) -> None:
     with open(path, "w") as stream:
-        json.dump(config, stream, indent=2, sort_keys=True)
+        json.dump(config, stream, ensure_ascii=False, indent=2, sort_keys=True)
         stream.write("\n")
 
 

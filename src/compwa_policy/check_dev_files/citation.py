@@ -67,7 +67,7 @@ def _convert_zenodo(zenodo: dict) -> CommentedMap:
     description = zenodo.get("description")
     if description is not None:
         converter = HTML2Text()
-        converter.body_width = None  # type: ignore[assignment]
+        converter.body_width = None
         description = converter.handle(description).strip()
         citation_cff["abstract"] = PreservedScalarString(description)
 
@@ -184,6 +184,7 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     repo_url = "https://github.com/python-jsonschema/check-jsonschema"
     idx_and_repo = precommit.find_repo_with_index(repo_url)
     if idx_and_repo is None:
+        repo_idx = 0
         repo = Repo(
             repo=repo_url,
             rev="",

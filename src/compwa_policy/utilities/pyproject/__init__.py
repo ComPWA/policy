@@ -84,8 +84,8 @@ class Pyproject:
     @overload
     def get_package_name(self, *, raise_on_missing: Literal[True]) -> str: ...
     @final
-    def get_package_name(self, *, raise_on_missing: bool = False):  # type:ignore[no-untyped-def]
-        return get_package_name(self._document, raise_on_missing)  # type:ignore[call-overload,reportCallIssue]
+    def get_package_name(self, *, raise_on_missing: bool = False):
+        return get_package_name(self._document, raise_on_missing)
 
     @final
     def get_repo_url(self) -> str:
@@ -124,16 +124,16 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         if isinstance(source, io.IOBase):
             current_position = source.tell()
             source.seek(0)
-            document = tomlkit.load(source)  # type:ignore[arg-type]
+            document = tomlkit.load(source)  # ty:ignore[invalid-argument-type]
             source.seek(current_position)
-            return cls(document, source)  # type:ignore[arg-type]
+            return cls(document, source)  # ty:ignore[invalid-argument-type]
         if isinstance(source, Path):
             with open(source) as stream:
                 document = tomlkit.load(stream)
-            return cls(document, source)  # type:ignore[arg-type]
+            return cls(document, source)
         if isinstance(source, str):
             document = tomlkit.loads(source)
-            return cls(document)  # type:ignore[arg-type]
+            return cls(document)
         msg = f"Source of type {type(source).__name__} is not supported"
         raise TypeError(msg)
 
@@ -172,7 +172,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         if isinstance(target, io.IOBase):
             current_position = target.tell()
             target.seek(0)
-            tomlkit.dump(self._document, target, sort_keys=True)
+            tomlkit.dump(self._document, target, sort_keys=True)  # ty:ignore[invalid-argument-type]
             target.seek(current_position)
         elif isinstance(target, (Path, str)):
             src = self.dumps()
@@ -189,7 +189,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         self.__assert_is_in_context()
         if create:
             create_sub_table(self._document, dotted_header)
-        return super().get_table(dotted_header)  # type:ignore[return-value]
+        return super().get_table(dotted_header)  # ty:ignore[invalid-return-type]
 
     def add_dependency(
         self,
@@ -314,13 +314,13 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
     if isinstance(source, io.IOBase):
         current_position = source.tell()
         source.seek(0)
-        document = parser.load(source)
+        document = parser.load(source)  # ty:ignore[invalid-argument-type]
         source.seek(current_position)
         return document
     if isinstance(source, Path):
         with open(source) as stream:
-            return parser.load(stream)  # type:ignore[return-value]
+            return parser.load(stream)
     if isinstance(source, str):
-        return parser.loads(source)  # type:ignore[return-value]
+        return parser.loads(source)
     msg = f"Source of type {type(source).__name__} is not supported"
     raise TypeError(msg)

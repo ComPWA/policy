@@ -36,6 +36,7 @@ from compwa_policy.check_dev_files import (
     release_drafter,
     ruff,
     toml,
+    ty,
     update_lock,
     uv,
     vscode,
@@ -71,6 +72,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     dev_python_version = __get_python_version(args.dev_python_version)
     excluded_python_versions = set(_to_list(args.excluded_python_versions))
     package_manager: PackageManagerChoice = args.package_manager
+    type_checkers: set[ty.TypeChecker] = set(args.type_checker or [])
     if CONFIG_PATH.pyproject.exists():
         supported_versions = Pyproject.load().get_supported_python_versions()
         if supported_versions and dev_python_version not in supported_versions:
@@ -141,9 +143,10 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                     repo_title,
                     args.repo_organization,
                 )
-            do(mypy.main)
             do(pyproject.main, excluded_python_versions)
-            do(pyright.main, precommit_config)
+            do(mypy.main, "mypy" in type_checkers, precommit_config)
+            do(pyright.main, "pyright" in type_checkers, precommit_config)
+            do(ty.main, type_checkers, args.keep_local_precommit, precommit_config)
             do(pytest.main, args.pytest_single_threaded)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
@@ -199,7 +202,7 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--dependabot",
-        choices=dependabot.DependabotOption.__args__,  # type: ignore[attr-defined]
+        choices=dependabot.DependabotOption.__args__,
         default=None,
         help="Leave dependabot.yml untouched ('keep') or sync with ComPWA/policy",
     )
@@ -309,8 +312,14 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     parser.add_argument(
+        "--keep-local-precommit",
+        action="store_true",
+        default=False,
+        help="Do not remove local pre-commit hooks",
+    )
+    parser.add_argument(
         "--macos-python-version",
-        choices=[*sorted(PythonVersion.__args__), "disable"],  # type:ignore[attr-defined]
+        choices=[*sorted(PythonVersion.__args__), "disable"],
         default="3.10",
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     )
@@ -334,14 +343,20 @@ def _create_argparse() -> ArgumentParser:
     )
     parser.add_argument(
         "--package-manager",
-        choices=sorted(conda.PackageManagerChoice.__args__),  # type:ignore[attr-defined]
+        choices=sorted(conda.PackageManagerChoice.__args__),
         default="uv",
         help="Specify which package manager to use for the project",
         type=str,
     )
     parser.add_argument(
+        "--type-checker",
+        action="append",
+        choices=ty.TypeChecker.__args__,
+        help="Specify which type checker to use for the project",
+    )
+    parser.add_argument(
         "--update-lock-files",
-        choices=update_lock.Frequency.__args__,  # type:ignore[attr-defined]
+        choices=update_lock.Frequency.__args__,
         default="outsource",
         help=(
             "Add a workflow to upgrade lock files, like uv.lock, .pre-commit-config.yml, "
@@ -451,7 +466,7 @@ def __get_python_version(arg: Any) -> PythonVersion:
     if not re.match(r"^3\.\d+$", arg):
         msg = f"Invalid Python version: {arg}"
         raise ValueError(msg)
-    return arg  # type: ignore[return-value]
+    return arg
 
 
 if __name__ == "__main__":

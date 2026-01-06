@@ -73,7 +73,7 @@ doc = [
     "sphinx-copybutton",
 ]
 style = [
-    "mypy",
+    "ty",
     {include-group = "types"},
 ]
 test = [
@@ -123,32 +123,6 @@ omit = [
     "tests/**/*.py",
 ]
 source = ["src"]
-
-[tool.mypy]
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-exclude = '.*/compwa_policy/__init__\.py'
-files = ["**/*.py"]
-show_error_codes = true
-warn_unused_configs = true
-
-[[tool.mypy.overrides]]
-check_untyped_defs = true
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
-module = ["tests.*"]
-
-[[tool.mypy.overrides]]
-ignore_errors = true
-module = ["typings.*"]
-
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["ruamel.*"]
-
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["nbformat.*"]
 
 [tool.poe.executor]
 isolated = true
@@ -271,35 +245,6 @@ help = "Selected Python version"
 name = "python"
 positional = true
 
-[tool.pyright]
-reportArgumentType = false
-reportGeneralTypeIssues = false
-reportIncompatibleMethodOverride = false
-reportMissingParameterType = false
-reportMissingTypeArgument = false
-reportMissingTypeStubs = false
-reportOverlappingOverload = false
-reportPrivateImportUsage = false
-reportPrivateUsage = false
-reportReturnType = false
-reportUnboundVariable = false
-reportUnknownArgumentType = false
-reportUnknownLambdaType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUnnecessaryComparison = false
-reportUnnecessaryContains = false
-reportUnnecessaryIsInstance = false
-reportUntypedFunctionDecorator = false
-reportUnusedClass = true
-reportUnusedFunction = true
-reportUnusedImport = true
-reportUnusedVariable = true
-typeCheckingMode = "strict"
-venv = ".venv"
-venvPath = "."
-
 [tool.pytest.ini_options]
 addopts = [
     "--color=yes",
@@ -320,7 +265,6 @@ testpaths = [
 ]
 
 [tool.ruff]
-extend-exclude = ["typings"]
 preview = true
 show-fixes = true
 src = [
@@ -413,3 +357,9 @@ sort_first = [
 ]
 spaces_indent_inline_array = 4
 trailing_comma_inline_array = true
+
+[tool.ty.rules]
+division-by-zero = "warn"
+possibly-missing-import = "warn"
+possibly-unresolved-reference = "warn"
+unused-ignore-comment = "warn"

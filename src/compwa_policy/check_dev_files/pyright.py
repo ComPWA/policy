@@ -1,4 +1,4 @@
-"""Check and update :code:`mypy` settings."""
+"""Check and update :code:`pyright` settings."""
 
 from __future__ import annotations
 
@@ -7,24 +7,25 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    complies_with_subset,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(active: bool, precommit: ModifiablePrecommit) -> None:
     with ModifiablePyproject.load() as pyproject:
-        _merge_config_into_pyproject(pyproject)
-        _update_precommit(precommit, pyproject)
-        _remove_excludes(pyproject)
-        _update_settings(pyproject)
+        _update_vscode_settings(active)
+        if active:
+            _merge_config_into_pyproject(pyproject)
+            _update_precommit(precommit)
+            _remove_excludes(pyproject)
+            _update_settings(pyproject)
+        else:
+            _remove_pyright(precommit, pyproject)
 
 
 def _merge_config_into_pyproject(
@@ -48,9 +49,7 @@ def _merge_config_into_pyproject(
     pyproject.changelog.append(msg)
 
 
-def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
-    if not __has_pyright(pyproject):
-        return
+def _update_precommit(precommit: ModifiablePrecommit) -> None:
     old_url = "https://github.com/ComPWA/mirrors-pyright"
     old_repo = precommit.find_repo(old_url)
     rev = ""
@@ -66,7 +65,7 @@ def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> N
 
 
 def _remove_excludes(pyproject: ModifiablePyproject) -> None:
-    if not __has_pyright(pyproject):
+    if not pyproject.has_table("tool.pyright"):
         return
     pyright_settings = pyproject.get_table("tool.pyright")
     if "exclude" not in pyright_settings:
@@ -77,9 +76,7 @@ def _remove_excludes(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    if not __has_pyright(pyproject):
-        return
-    pyright_settings = pyproject.get_table("tool.pyright")
+    pyright_settings = pyproject.get_table("tool.pyright", create=True)
     minimal_settings = dict(
         typeCheckingMode="strict",
         venv=".venv",
@@ -91,6 +88,36 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def __has_pyright(pyproject: Pyproject) -> bool:
-    table_key = "tool.pyright"
-    return pyproject.has_table(table_key)
+def _update_vscode_settings(active: bool) -> None:
+    if active:
+        vscode.add_extension_recommendation("ms-python.vscode-pylance")
+        vscode.update_settings({
+            "python.analysis.autoImportCompletions": False,
+            "python.analysis.inlayHints.pytestParameters": True,
+        })
+    else:
+        vscode.remove_settings([
+            "python.analysis.autoImportCompletions",
+            "python.analysis.inlayHints.pytestParameters",
+        ])
+        vscode.remove_extension_recommendation(
+            "ms-python.vscode-pylance", unwanted=True
+        )
+
+
+def _remove_pyright(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject,
+) -> None:
+    pyright_config = Path("pyrightconfig.json")
+    if pyright_config.exists():
+        os.remove(pyright_config)
+        msg = f"Removed old pyright configuration file {pyright_config}"
+        pyproject.changelog.append(msg)
+    if pyproject.has_table("tool.pyright"):
+        del pyproject._document["tool"]["pyright"]  # noqa: SLF001
+        msg = "Removed pyright configuration from pyproject.toml"
+        pyproject.changelog.append(msg)
+    pyproject.remove_dependency("pyright")
+    precommit.remove_hook("pyright")
+    remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json")

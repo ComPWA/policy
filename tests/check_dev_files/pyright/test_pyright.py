@@ -12,7 +12,7 @@ from compwa_policy.check_dev_files.pyright import (
 )
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
 @pytest.fixture
@@ -45,14 +45,13 @@ def test_merge_config_into_pyproject(this_dir: Path):
 
 
 def test_update_precommit(this_dir: Path):
-    pyproject = Pyproject.load(this_dir / "pyproject-bad.toml")
     with open(this_dir / ".pre-commit-config-bad.yaml") as stream:
         input_stream = io.StringIO(stream.read())
     with (
         pytest.raises(PrecommitError),
         ModifiablePrecommit.load(input_stream) as precommit,
     ):
-        _update_precommit(precommit, pyproject)
+        _update_precommit(precommit)
 
     result = input_stream.getvalue()
     with open(this_dir / ".pre-commit-config-good.yaml") as stream:

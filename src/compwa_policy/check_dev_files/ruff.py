@@ -10,7 +10,6 @@ from ruamel.yaml import YAML
 
 from compwa_policy.utilities import natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_files
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -238,14 +237,6 @@ def __update_global_settings(
     src_directories = ___get_src_directories()
     if src_directories:
         minimal_settings["src"] = src_directories
-    typings_dir = "typings"
-    if filter_files([typings_dir]):
-        key = "extend-exclude"
-        default_includes = sorted({
-            typings_dir,
-            *settings.get(key, []),
-        })
-        minimal_settings[key] = to_toml_array(default_includes)
     if not complies_with_subset(settings, minimal_settings):
         settings.update(minimal_settings)
         msg = "Updated Ruff configuration"

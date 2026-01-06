@@ -24,7 +24,7 @@ def remove_pixi_configuration() -> None:
             with ModifiablePyproject.load() as pyproject:
                 if not pyproject.has_table("tool.pixi"):
                     return
-                del pyproject._document["tool"]["pixi"]  # pyright: ignore[reportTypedDictNotRequiredAccess] # noqa: SLF001
+                del pyproject._document["tool"]["pixi"]  # noqa: SLF001
                 pyproject.changelog.append("Removed Pixi configuration table")
 
 

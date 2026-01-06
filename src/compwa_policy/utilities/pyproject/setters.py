@@ -91,7 +91,7 @@ def _add_to_optional_dependencies(
         existing_dependencies.add(package)
         existing_dependencies = set(existing_dependencies)
         optional_dependencies[optional_key] = to_toml_array(
-            _sort_taplo(existing_dependencies)  # type:ignore[arg-type]
+            _sort_taplo(existing_dependencies)
         )
         return True
     if isinstance(optional_key, abc.Sequence):
@@ -116,7 +116,7 @@ def _sort_taplo(items: Iterable[str]) -> list[str]:
 
 def create_sub_table(config: Mapping[str, Any], dotted_header: str) -> Table:
     """Create a TOML sub-table through a dotted header key."""
-    current_table: Any = config
+    current_table = cast("Any", config)
     header_hierarchy = dotted_header.split(".")
     for i, header in enumerate(header_hierarchy, 1):
         if header not in current_table:
@@ -172,16 +172,16 @@ def remove_dependency(  # noqa: C901, PLR0912
                 del project["optional-dependencies"]
     dependency_groups = pyproject.get("dependency-groups")
     if dependency_groups is not None:
-        for section, dependencies in dependency_groups.items():  # type:ignore[assignment]
+        for section, dependencies in dependency_groups.items():
             if section in ignored_sections:
                 continue
             package_names = [
                 split_dependency_definition(p)[0] if isinstance(p, str) else p
-                for p in dependencies  # type:ignore[union-attr]
+                for p in dependencies
             ]
             if package in package_names:
                 idx = package_names.index(package)
-                dependencies.pop(idx)  # type:ignore[union-attr]
+                dependencies.pop(idx)
                 updated = True
         if updated:
             empty_sections = [k for k, v in dependency_groups.items() if not v]

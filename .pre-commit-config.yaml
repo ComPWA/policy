@@ -4,9 +4,8 @@ ci:
   autoupdate_schedule: quarterly
   skip:
     - check-dev-files
-    - mypy
-    - pyright
     - self-check
+    - ty
 
 repos:
   - repo: meta
@@ -51,10 +50,12 @@ repos:
         args:
           - --allow-labels
           - --dependabot=update
+          - --keep-local-precommit
           - --no-pypi
           - --pytest-single-threaded
           - --repo-name=policy
           - --repo-title=ComPWA repository policy
+          - --type-checker=ty
 
       - id: self-check
         name: self-check
@@ -97,15 +98,10 @@ repos:
 
   - repo: local
     hooks:
-      - id: mypy
-        name: mypy
-        entry: mypy
-        language: system
+      - id: ty
+        name: ty
+        entry: ty check
+        args: [--output-format=concise]
         require_serial: true
-        types:
-          - python
-
-  - repo: https://github.com/ComPWA/pyright-pre-commit
-    rev: v1.1.407
-    hooks:
-      - id: pyright
+        language: system
+        types_or: [python, pyi, jupyter]

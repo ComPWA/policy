@@ -50,7 +50,7 @@ class TestPyprojectToml:
 
     def test_load_type_error(self):
         with pytest.raises(TypeError, match="Source of type int is not supported"):
-            _ = Pyproject.load(1)  # type: ignore[arg-type]
+            _ = Pyproject.load(1)  # ty:ignore[invalid-argument-type]
 
 
 def test_edit_and_dump():
