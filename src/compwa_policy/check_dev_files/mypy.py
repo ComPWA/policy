@@ -9,7 +9,7 @@ from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
-from compwa_policy.utilities.readme import remove_badge
+from compwa_policy.utilities.readme import add_badge, remove_badge
 
 
 def main(active: bool, precommit: ModifiablePrecommit) -> None:
@@ -17,6 +17,11 @@ def main(active: bool, precommit: ModifiablePrecommit) -> None:
         do(_update_vscode_settings, active)
         if active:
             do(_merge_mypy_into_pyproject, pyproject)
+            do(remove_badge, r"http://(www\.)?mypy\-lang\.org/")
+            do(
+                add_badge,
+                "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
+            )
         else:
             do(_remove_mypy, precommit, pyproject)
             do(remove_lines, CONFIG_PATH.gitignore, ".*mypy.*")
