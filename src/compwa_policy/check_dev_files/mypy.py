@@ -18,6 +18,7 @@ def main(active: bool, precommit: ModifiablePrecommit) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_update_vscode_settings, active)
         if active:
+            pyproject.add_dependency("mypy", dependency_group=["style", "dev"])
             do(_merge_mypy_into_pyproject, pyproject)
             do(_update_precommit_config, precommit)
             do(remove_badge, r"http://(www\.)?mypy\-lang\.org/")
