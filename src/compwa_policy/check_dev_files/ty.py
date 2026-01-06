@@ -10,7 +10,7 @@ from ruamel.yaml.comments import CommentedSeq
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
-from compwa_policy.utilities.readme import add_badge
+from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
@@ -103,3 +103,4 @@ def _remove_ty(precommit: ModifiablePrecommit, pyproject: ModifiablePyproject) -
         pyproject.changelog.append("Removed ty configuration table")
     pyproject.remove_dependency("ty")
     precommit.remove_hook("ty")
+    remove_badge(r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*")
