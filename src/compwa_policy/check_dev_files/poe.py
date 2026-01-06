@@ -19,9 +19,9 @@ def main(has_notebooks: bool) -> None:
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         if pyproject.has_table("tool.poe"):
-            pyproject.remove_dependency("poethepoet")
             _check_expected_sections(pyproject, has_notebooks)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
+        pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
 
