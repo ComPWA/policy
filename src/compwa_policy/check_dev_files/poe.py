@@ -19,7 +19,7 @@ def main(has_notebooks: bool) -> None:
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         if pyproject.has_table("tool.poe"):
-            _check_expected_sections(pyproject, has_notebooks)
+            do(_check_expected_sections, pyproject, has_notebooks)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
@@ -28,11 +28,11 @@ def main(has_notebooks: bool) -> None:
 
 def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
     # cspell:ignore doclive docnb docnblive testenv
-    table_name = "tool.poe.tasks"
+    table_name = "tool.poe"
     if not pyproject.has_table(table_name):
         return
     poe_table = pyproject.get_table(table_name)
-    tasks = set(poe_table.get("env", set()))
+    tasks = set(poe_table.get("tasks", set()))
     expected_tasks: set[str] = set()
     if Path("docs").exists():
         expected_tasks |= {
