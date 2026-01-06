@@ -53,7 +53,7 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
         )
     else:
         vscode.remove_extension_recommendation("astral-sh.ty", unwanted=True)
-        vscode.remove_settings(settings)
+        vscode.remove_settings([*settings, "python.languageServer"])
 
 
 def _update_configuration(pyproject: ModifiablePyproject) -> None:
