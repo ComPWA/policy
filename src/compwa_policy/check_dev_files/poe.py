@@ -7,11 +7,7 @@ from pathlib import Path
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    has_dependency,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 
 
 def main(has_notebooks: bool) -> None:
@@ -23,12 +19,9 @@ def main(has_notebooks: bool) -> None:
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         if pyproject.has_table("tool.poe"):
-            if not has_dependency(pyproject, "poethepoet"):
-                pyproject.add_dependency("poethepoet", dependency_group="dev")
             _check_expected_sections(pyproject, has_notebooks)
-        else:
-            pyproject.remove_dependency("poethepoet")
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
+        pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
 
