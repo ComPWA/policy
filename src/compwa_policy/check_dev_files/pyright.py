@@ -76,9 +76,7 @@ def _remove_excludes(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    if not pyproject.has_table("tool.pyright"):
-        return
-    pyright_settings = pyproject.get_table("tool.pyright")
+    pyright_settings = pyproject.get_table("tool.pyright", create=True)
     minimal_settings = dict(
         typeCheckingMode="strict",
         venv=".venv",
