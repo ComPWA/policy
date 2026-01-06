@@ -92,6 +92,7 @@ def _update_vscode_settings(active: bool) -> None:
     if active:
         vscode.add_extension_recommendation("ms-python.vscode-pylance")
         vscode.update_settings({
+            "python.analysis.autoImportCompletions": False,
             "python.analysis.inlayHints.pytestParameters": True,
         })
     else:
