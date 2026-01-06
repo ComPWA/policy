@@ -5,7 +5,6 @@ from __future__ import annotations
 import subprocess  # noqa: S404
 
 from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 
 
 def filter_files(patterns: list[str], files: list[str] | None = None) -> list[str]:
@@ -62,7 +61,7 @@ def matches_files(pattern: str, files: list[str]) -> bool:
     >>> matches_files("*/*.json", ["some/random/path/.cspell.json"])
     False
     """
-    spec = PathSpec.from_lines(GitWildMatchPattern, [pattern])
+    spec = PathSpec.from_lines("gitignore", [pattern])
     return any(spec.match_file(file) for file in files)
 
 
@@ -76,5 +75,5 @@ def matches_patterns(filename: str, patterns: list[str]) -> bool:
     >>> matches_patterns("some/random/path/.cspell.json", patterns=["*/*.json"])
     False
     """
-    spec = PathSpec.from_lines(GitWildMatchPattern, patterns)
+    spec = PathSpec.from_lines("gitignore", patterns)
     return spec.match_file(filename)
