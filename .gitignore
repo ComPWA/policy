@@ -36,4 +36,3 @@ uv.lock
 !.readthedocs.yml
 !.vscode/*.json
 !codecov.yml
-!pyrightconfig.json

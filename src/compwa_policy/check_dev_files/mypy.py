@@ -5,7 +5,7 @@ import os
 import rtoml
 from ini2toml.api import Translator
 
-from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -19,6 +19,7 @@ def main(active: bool, precommit: ModifiablePrecommit) -> None:
             do(_merge_mypy_into_pyproject, pyproject)
         else:
             do(_remove_mypy, precommit, pyproject)
+            do(remove_lines, CONFIG_PATH.gitignore, ".*mypy.*")
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -127,3 +127,4 @@ def _remove_pyright(
         pyproject.changelog.append(msg)
     pyproject.remove_dependency("pyright")
     precommit.remove_hook("pyright")
+    remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json")
