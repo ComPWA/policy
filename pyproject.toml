@@ -265,7 +265,6 @@ testpaths = [
 ]
 
 [tool.ruff]
-extend-exclude = ["typings"]
 preview = true
 show-fixes = true
 src = [
