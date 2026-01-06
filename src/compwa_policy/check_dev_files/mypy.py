@@ -4,10 +4,12 @@ import os
 
 import rtoml
 from ini2toml.api import Translator
+from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
@@ -17,6 +19,7 @@ def main(active: bool, precommit: ModifiablePrecommit) -> None:
         do(_update_vscode_settings, active)
         if active:
             do(_merge_mypy_into_pyproject, pyproject)
+            do(_update_precommit_config, precommit)
             do(remove_badge, r"http://(www\.)?mypy\-lang\.org/")
             do(
                 add_badge,
@@ -51,6 +54,21 @@ def _remove_mypy(
     pyproject.remove_dependency("mypy")
     precommit.remove_hook("mypy")
     remove_badge(r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?")
+
+
+def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
+    types = CommentedSeq(["python"])
+    types.fa.set_flow_style()
+    hook = Hook(
+        id="mypy",
+        name="mypy",
+        entry="mypy",
+        language="system",
+        require_serial=True,
+        types=types,
+    )
+    expected_repo = Repo(repo="local", hooks=[hook])
+    precommit.update_single_hook_repo(expected_repo)
 
 
 def _update_vscode_settings(mypy: bool) -> None:

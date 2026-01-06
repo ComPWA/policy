@@ -9,11 +9,7 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    complies_with_subset,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -25,7 +21,7 @@ def main(active: bool, precommit: ModifiablePrecommit) -> None:
         _update_vscode_settings(active)
         if active:
             _merge_config_into_pyproject(pyproject)
-            _update_precommit(precommit, pyproject)
+            _update_precommit(precommit)
             _remove_excludes(pyproject)
             _update_settings(pyproject)
         else:
@@ -53,9 +49,7 @@ def _merge_config_into_pyproject(
     pyproject.changelog.append(msg)
 
 
-def _update_precommit(precommit: ModifiablePrecommit, pyproject: Pyproject) -> None:
-    if not pyproject.has_table("tool.pyright"):
-        return
+def _update_precommit(precommit: ModifiablePrecommit) -> None:
     old_url = "https://github.com/ComPWA/mirrors-pyright"
     old_repo = precommit.find_repo(old_url)
     rev = ""
