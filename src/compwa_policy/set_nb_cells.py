@@ -166,7 +166,7 @@ def _insert_autolink_concat(filename: str) -> None:
         if cell["cell_type"] != "markdown":
             continue
         cell_content: str = cell["source"]
-        if cell_content == expected_cell_content:
+        if expected_cell_content in cell_content:
             return
         new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
         del new_cell["id"]  # following nbformat_minor = 4
