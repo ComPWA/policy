@@ -76,12 +76,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument(
         "--autolink-concat",
-        default="",
-        help=(
-            "Add a cell with a autolink-concat directive. See"
-            " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
-        ),
-        type=str,
+        action="store_true",
+        help="Add a cell with a autolink-concat directive. See https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat",
     )
     parser.add_argument(
         "--config-cell",
