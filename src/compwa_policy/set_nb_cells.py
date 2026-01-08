@@ -75,18 +75,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=str,
     )
     parser.add_argument(
-        "--no-autolink-concat",
+        "--autolink-concat",
         default="",
         help=(
-            "Do not add a cell with a autolink-concat directive. See"
+            "Add a cell with a autolink-concat directive. See"
             " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
         ),
         type=str,
     )
     parser.add_argument(
-        "--no-config-cell",
+        "--config-cell",
         action="store_true",
-        help="Do not add configuration cell.",
+        help="Add configuration cell.",
     )
     args = parser.parse_args(argv)
 
@@ -107,7 +107,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cell_id=cell_id,
             )
             cell_id += 1
-        if not args.no_config_cell:
+        if args.config_cell:
             config_cell_content = __CONFIG_CELL_CONTENT
             _update_cell(
                 filename,
@@ -115,7 +115,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
-        _insert_autolink_concat(filename)
+        if args.autolink_concat:
+            _insert_autolink_concat(filename)
     return 0
 
 
@@ -165,7 +166,7 @@ def _insert_autolink_concat(filename: str) -> None:
         if cell["cell_type"] != "markdown":
             continue
         cell_content: str = cell["source"]
-        if cell_content == expected_cell_content:
+        if expected_cell_content in cell_content:
             return
         new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
         del new_cell["id"]  # following nbformat_minor = 4
