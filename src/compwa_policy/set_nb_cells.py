@@ -115,7 +115,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
-        _insert_autolink_concat(filename)
+        if not args.no_autolink_concat:
+            _insert_autolink_concat(filename)
     return 0
 
 
