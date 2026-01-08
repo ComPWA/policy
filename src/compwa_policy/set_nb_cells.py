@@ -75,18 +75,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=str,
     )
     parser.add_argument(
-        "--no-autolink-concat",
+        "--autolink-concat",
         default="",
         help=(
-            "Do not add a cell with a autolink-concat directive. See"
+            "Add a cell with a autolink-concat directive. See"
             " https://sphinx-codeautolink.rtfd.io/en/latest/reference.html#directive-autolink-concat"
         ),
         type=str,
     )
     parser.add_argument(
-        "--no-config-cell",
+        "--config-cell",
         action="store_true",
-        help="Do not add configuration cell.",
+        help="Add configuration cell.",
     )
     args = parser.parse_args(argv)
 
@@ -107,7 +107,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cell_id=cell_id,
             )
             cell_id += 1
-        if not args.no_config_cell:
+        if args.config_cell:
             config_cell_content = __CONFIG_CELL_CONTENT
             _update_cell(
                 filename,
@@ -115,7 +115,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 new_metadata=__CONFIG_CELL_METADATA,
                 cell_id=cell_id,
             )
-        if not args.no_autolink_concat:
+        if args.autolink_concat:
             _insert_autolink_concat(filename)
     return 0
 
