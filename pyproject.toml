@@ -221,29 +221,38 @@ positional = true
 [tool.poe.tasks.test-all]
 help = "Run all tests on each supported Python version"
 sequence = [
-    {ref = "test-py 3.10"},
-    {ref = "test-py 3.11"},
-    {ref = "test-py 3.12"},
-    {ref = "test-py 3.13"},
-    {ref = "test-py 3.14"},
+    {ref = "test-py310 ${paths}"},
+    {ref = "test-py311 ${paths}"},
+    {ref = "test-py312 ${paths}"},
+    {ref = "test-py313 ${paths}"},
+    {ref = "test-py314 ${paths}"},
 ]
 
-[tool.poe.tasks.test-py]
-cmd = """
-uv run \
-    --group=test \
-    --isolated \
-    --no-dev \
-    --python=${python} \
-    pytest --no-summary
-"""
-help = "Run all tests on a specific Python version"
-
-[[tool.poe.tasks.test-py.args]]
-default = "3.13"
-help = "Selected Python version"
-name = "python"
+[[tool.poe.tasks.test-all.args]]
+default = ""
+multiple = true
+name = "paths"
 positional = true
+
+[tool.poe.tasks.test-py310]
+env = {UV_PYTHON = "3.10"}
+ref = "test"
+
+[tool.poe.tasks.test-py311]
+env = {UV_PYTHON = "3.11"}
+ref = "test"
+
+[tool.poe.tasks.test-py312]
+env = {UV_PYTHON = "3.12"}
+ref = "test"
+
+[tool.poe.tasks.test-py313]
+env = {UV_PYTHON = "3.13"}
+ref = "test"
+
+[tool.poe.tasks.test-py314]
+env = {UV_PYTHON = "3.14"}
+ref = "test"
 
 [tool.pytest.ini_options]
 addopts = [

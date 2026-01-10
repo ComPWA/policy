@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from tomlkit import inline_table
 
 from compwa_policy.check_dev_files.pixi._helpers import has_pixi_config
 from compwa_policy.errors import PrecommitError
@@ -16,7 +15,7 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.pyproject.setters import split_dependency_definition
 from compwa_policy.utilities.readme import add_badge
-from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
@@ -197,8 +196,9 @@ def _clean_up_task_env(config: ModifiablePyproject) -> None:
         local_env = task_table.get("env", {})
         if not local_env:
             continue
-        expected = inline_table()
-        expected.update({k: v for k, v in local_env.items() if v != global_env.get(k)})
+        expected = to_inline_table({
+            k: v for k, v in local_env.items() if v != global_env.get(k)
+        })
         if local_env != expected:
             if expected:
                 task_table["env"] = expected
@@ -218,8 +218,7 @@ def __load_pixi_environment_variables(config: ModifiablePyproject) -> dict[str, 
 
 
 def _install_package_editable(config: ModifiablePyproject) -> None:
-    editable = inline_table()
-    editable.update({
+    editable = to_inline_table({
         "path": ".",
         "editable": True,
     })
@@ -262,8 +261,9 @@ def _update_dev_environment(config: ModifiablePyproject) -> None:
     if not __has_table(config, "project.optional-dependencies"):
         return
     optional_dependencies = __get_table(config, "project.optional-dependencies")
-    expected = inline_table()
-    expected["features"] = to_toml_array(sorted(optional_dependencies))
+    expected = to_inline_table({
+        "features": to_toml_array(sorted(optional_dependencies))
+    })
     environments = __get_table(config, "environments", create=True)
     if environments.get("default") != expected:
         environments["default"] = expected
