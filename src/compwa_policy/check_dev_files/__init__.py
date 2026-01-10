@@ -110,7 +110,6 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                 python_version=dev_python_version,
                 single_threaded=args.pytest_single_threaded,
                 skip_tests=_to_list(args.ci_skipped_tests),
-                test_extras=_to_list(args.ci_test_extras),
             )
         if has_notebooks:
             if not args.no_binder:
@@ -192,12 +191,6 @@ def _create_argparse() -> ArgumentParser:
         "--ci-skipped-tests",
         default="",
         help="Avoid running CI test on the following Python versions",
-        type=str,
-    )
-    parser.add_argument(
-        "--ci-test-extras",
-        default="",
-        help="Comma-separated list of extras that are required for running tests on CI",
         type=str,
     )
     parser.add_argument(
