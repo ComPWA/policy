@@ -101,7 +101,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
     }
     if isinstance(executor := existing.get("executor"), Mapping):
         expected["executor"] = executor
-    elif "jupyter" in set(pyproject.get_table("dependencies", fallback=set())):
+    elif "jupyter" in set(pyproject.get_table("dependency-groups", fallback=set())):
         expected["executor"] = to_inline_table({"group": "jupyter"})
     if existing != expected:
         tasks["lab"] = expected
