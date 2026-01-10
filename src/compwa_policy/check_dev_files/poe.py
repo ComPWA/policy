@@ -45,6 +45,8 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
                 "docnblive",
                 "nb",
             }
+    if Path("tests").exists():
+        expected_tasks.add("test")
     missing_tasks = expected_tasks - tasks
     if missing_tasks:
         msg = (
