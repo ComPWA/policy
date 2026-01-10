@@ -5,12 +5,16 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    has_dependency,
+)
 from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
@@ -29,7 +33,10 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
             do(_check_expected_sections, pyproject, has_notebooks)
             if package_manager == "uv":
                 do(_configure_uv_executor, pyproject)
-                do(_set_test_all, pyproject)
+                if pyproject.has_table("tool.poe.tasks"):
+                    if has_dependency(pyproject, "jupyterlab"):
+                        do(_set_jupyter_lab_task, pyproject)
+                    do(_set_test_all, pyproject)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
@@ -84,11 +91,27 @@ def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
+def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
+    tasks = pyproject.get_table("tool.poe.tasks")
+    existing = cast("Mapping", tasks.get("lab", {}))
+    expected = {
+        "args": to_toml_array([{"name": "paths", "default": "", "positional": True}]),
+        "cmd": "jupyter lab ${paths}",
+        "help": "Launch Jupyter Lab",
+    }
+    if isinstance(executor := existing.get("executor"), Mapping):
+        expected["executor"] = executor
+    elif "jupyter" in set(pyproject.get_table("dependencies", fallback=set())):
+        expected["executor"] = to_inline_table({"group": "jupyter"})
+    if existing != expected:
+        tasks["lab"] = expected
+        msg = f"Set Poe the Poet jupyter task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
 def _set_test_all(pyproject: ModifiablePyproject) -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if len(supported_python_versions) <= 1:
-        return
-    if not pyproject.has_table("tool.poe.tasks"):
         return
     tasks = pyproject.get_table("tool.poe.tasks")
     if "test" not in tasks:
