@@ -1,7 +1,6 @@
 """Check the configuration for cspell.
 
-See `cSpell
-<https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell>`_.
+See `cSpell <https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell>`_.
 """
 
 from __future__ import annotations
@@ -27,13 +26,7 @@ if TYPE_CHECKING:
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
 # cspell:ignore pelling
-# fmt: off
-__BADGE = (
-    "[![Spelling"
-    " checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell)"
-)
-# fmt: on
-__BADGE_PATTERN = r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?"
+__BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)"
 __REPO_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
@@ -55,7 +48,14 @@ def main(precommit: ModifiablePrecommit, no_cspell_update: bool) -> None:
             if not no_cspell_update:
                 do(_update_config_content)
             do(_sort_config_entries)
-            do(add_badge, __BADGE)
+            do(
+                add_badge,
+                "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)",
+            )
+            do(
+                remove_badge,
+                r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*master.*cspell\)\n?",
+            )
             do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
@@ -91,7 +91,7 @@ def _remove_configuration() -> None:
             )
             raise PrecommitError(msg)
     with Executor() as do:
-        do(remove_badge, __BADGE_PATTERN)
+        do(remove_badge, r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?")
         do(vscode.remove_extension_recommendation, __VSCODE_EXTENSION_NAME)
 
 
