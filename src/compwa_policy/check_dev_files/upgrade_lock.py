@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from compwa_policy.check_dev_files.dependabot import get_dependabot_ecosystems
 from compwa_policy.check_dev_files.github_workflows import (
     remove_workflow,
     update_workflow,
@@ -68,7 +69,7 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
-        if frequency == "outsource":
+        if frequency == "outsource" or get_dependabot_ecosystems() & {"julia", "uv"}:
             del expected_data["on"]["schedule"]
         else:
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
