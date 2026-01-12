@@ -116,7 +116,7 @@ def _update_pr_linting() -> None:
     output_path.parent.mkdir(exist_ok=True)
     if not output_path.exists() or hash_file(input_path) != hash_file(output_path):
         shutil.copyfile(input_path, output_path)
-        msg = f'Updated "{output_path}" workflow'
+        msg = f"Updated {output_path} workflow"
         raise PrecommitError(msg)
 
 
@@ -297,14 +297,14 @@ def _copy_workflow_file(filename: str) -> None:
     workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{filename}"
     if not os.path.exists(workflow_path):
         write(expected_content, target=workflow_path)
-        msg = f'Created "{workflow_path}" workflow'
+        msg = f"Created {workflow_path} workflow"
         raise PrecommitError(msg)
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
         write(expected_content, target=workflow_path)
-        msg = f'Updated "{workflow_path}" workflow'
+        msg = f"Updated {workflow_path} workflow"
         raise PrecommitError(msg)
 
 
@@ -341,7 +341,7 @@ def remove_workflow(filename: str) -> None:
     path = CONFIG_PATH.github_workflow_dir / filename
     if path.exists():
         path.unlink()
-        msg = f'Removed deprecated "{filename}" workflow'
+        msg = f"Removed deprecated {filename} workflow"
         raise PrecommitError(msg)
 
 
@@ -349,5 +349,5 @@ def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
     path.parent.mkdir(exist_ok=True, parents=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
-    msg = f'{verb} "{path}" workflow'
+    msg = f"{verb} {path} workflow"
     raise PrecommitError(msg)
