@@ -310,6 +310,7 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "PLW1514",  # allow missing encoding in open()
         "PT001",  # allow pytest.fixture without parentheses
         "PTH",  # do not enforce Path
+        "RUF067",  # `__init__` module should only contain docstrings and re-exports
         "SIM108",  # allow if-else blocks
     }
     if "3.6" in pyproject.get_supported_python_versions():
