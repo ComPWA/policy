@@ -24,19 +24,15 @@ if TYPE_CHECKING:
 
 Frequency = Literal[
     "no",
-    "biweekly",
     "monthly",
-    "bimonthly",
     "quarterly",
-    "biannually",
+    "semiannually",
     "outsource",
 ]
 __CRON_SCHEDULES: dict[Frequency, str] = {
-    "biweekly": "0 2 * * 1",
     "monthly": "0 3 7 */1 *",
-    "bimonthly": "0 3 7 */2 *",
     "quarterly": "0 3 7 */3 *",
-    "biannually": "0 3 7 */6 *",
+    "semiannually": "0 3 7 */6 *",
 }
 
 

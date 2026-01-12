@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 
 
 def main(
+    precommit_config: ModifiablePrecommit,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-    precommit_config: ModifiablePrecommit,
     organization: str,
     repo_name: str,
 ) -> None:

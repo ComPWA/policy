@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.check_dev_files.upgrade_lock import Frequency
 
-def main() -> None:
+
+def main(frequency: Frequency) -> None:
     def dump_dependabot_config() -> None:
-        yaml.dump(expected_config, dependabot_path)
+        yaml.dump(expected, dependabot_path)
         msg = f"Updated {dependabot_path}"
         raise PrecommitError(msg)
 
@@ -26,8 +29,10 @@ def main() -> None:
     template_path = COMPWA_POLICY_DIR / dependabot_path
     yaml = create_prettier_round_trip_yaml()
 
-    expected_config = yaml.load(template_path)
-    package_ecosystems = cast("list[dict[str, Any]]", expected_config["updates"])
+    expected = yaml.load(template_path)
+    if frequency not in {"no", "outsource"}:
+        expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
+    package_ecosystems = cast("list[dict[str, Any]]", expected["updates"])
     github_actions_ecosystem = package_ecosystems[0]
     if not is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}"):
         package_ecosystems.pop(0)
@@ -43,6 +48,6 @@ def main() -> None:
         return
     if not dependabot_path.exists():
         dump_dependabot_config()
-    existing_config = yaml.load(dependabot_path)
-    if existing_config != expected_config:
+    existing = yaml.load(dependabot_path)
+    if existing != expected:
         dump_dependabot_config()

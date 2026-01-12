@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -13,8 +14,11 @@ from compwa_policy.utilities.pyproject.getters import (
 )
 from compwa_policy.utilities.toml import to_toml_array
 
+if TYPE_CHECKING:
+    from compwa_policy.config import PythonVersion
 
-def main(excluded_python_versions: set[str]) -> None:
+
+def main(excluded_python_versions: set[PythonVersion]) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     with ModifiablePyproject.load() as pyproject:
@@ -132,7 +136,7 @@ def _update_requires_python(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_python_version_classifiers(
-    pyproject: ModifiablePyproject, excluded_python_versions: set[str]
+    pyproject: ModifiablePyproject, excluded_python_versions: set[PythonVersion]
 ) -> None:
     if not pyproject.has_table("project"):
         return

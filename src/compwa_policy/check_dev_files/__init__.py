@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
-from argparse import ArgumentParser, Namespace
-from typing import TYPE_CHECKING, Any
+from argparse import ArgumentParser
+from typing import TYPE_CHECKING
+
+from attrs import frozen
 
 from compwa_policy.check_dev_files import (
     binder,
@@ -37,7 +38,7 @@ from compwa_policy.check_dev_files import (
     ruff,
     toml,
     ty,
-    update_lock,
+    upgrade_lock,
     uv,
     vscode,
 )
@@ -56,28 +57,18 @@ if TYPE_CHECKING:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
-    parser = _create_argparse()
-    args = parser.parse_args(argv)
+    args = _create_argparse(argv)
     doc_apt_packages = _to_list(args.doc_apt_packages)
     environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
-    macos_python_version = (
-        None if args.macos_python_version == "disable" else args.macos_python_version
-    )
-    repo_name, repo_title = _determine_repo_name_and_title(args)
     has_notebooks = is_committed("**/*.ipynb")
-    use_gitpod = args.gitpod
-    dev_python_version = __get_python_version(args.dev_python_version)
-    excluded_python_versions = set(_to_list(args.excluded_python_versions))
-    package_manager: PackageManagerChoice = args.package_manager
-    type_checkers: set[ty.TypeChecker] = set(args.type_checker or [])
     if CONFIG_PATH.pyproject.exists():
         supported_versions = Pyproject.load().get_supported_python_versions()
-        if supported_versions and dev_python_version not in supported_versions:
+        if supported_versions and args.dev_python_version not in supported_versions:
             print(  # noqa: T201
-                f"The specified development Python version {dev_python_version} is not "
-                "listed in the supported Python versions of pyproject.toml: "
-                f"{', '.join(sorted(supported_versions))}"
+                f"The specified development Python version {args.dev_python_version} is"
+                " not listed in the supported Python versions of pyproject.toml:"
+                f" {', '.join(sorted(supported_versions))}"
             )
             return 1
     with (
@@ -86,8 +77,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     ):
         do(citation.main, precommit_config)
         do(commitlint.main)
-        do(conda.main, dev_python_version, package_manager)
-        do(dependabot.main)
+        do(conda.main, args.dev_python_version, args.package_manager)
+        do(dependabot.main, args.upgrade_frequency)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
             do(github_labels.main)
@@ -100,18 +91,23 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                 environment_variables=environment_variables,
                 github_pages=args.github_pages,
                 keep_pr_linting=args.keep_pr_linting,
-                macos_python_version=macos_python_version,
+                macos_python_version=args.macos_python_version,
                 no_cd=args.no_cd,
                 no_milestones=args.no_milestones,
                 no_pypi=args.no_pypi,
                 no_version_branches=args.no_version_branches,
-                python_version=dev_python_version,
+                python_version=args.dev_python_version,
                 single_threaded=args.pytest_single_threaded,
                 skip_tests=_to_list(args.ci_skipped_tests),
             )
         if has_notebooks:
             if not args.no_binder:
-                do(binder.main, package_manager, dev_python_version, doc_apt_packages)
+                do(
+                    binder.main,
+                    args.package_manager,
+                    args.dev_python_version,
+                    doc_apt_packages,
+                )
             do(jupyter.main, args.no_ruff)
         do(
             nbstripout.main,
@@ -121,13 +117,13 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
         )
         do(
             pixi.main,
-            package_manager,
+            args.package_manager,
             is_python_repo,
-            dev_python_version,
+            args.dev_python_version,
         )
-        do(direnv.main, package_manager, environment_variables)
+        do(direnv.main, args.package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
-        do(poe.main, has_notebooks, package_manager)
+        do(poe.main, has_notebooks, args.package_manager)
         do(prettier.main, precommit_config)
         if is_python_repo:
             if args.no_ruff:
@@ -136,48 +132,54 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                 do(
                     release_drafter.main,
                     args.no_cd,
-                    repo_name,
-                    repo_title,
+                    args.repo_name,
+                    args.repo_title,
                     args.repo_organization,
                 )
-            do(pyproject.main, excluded_python_versions)
-            do(mypy.main, "mypy" in type_checkers, precommit_config)
-            do(pyright.main, "pyright" in type_checkers, precommit_config)
-            do(ty.main, type_checkers, args.keep_local_precommit, precommit_config)
+            do(pyproject.main, args.excluded_python_versions)
+            do(mypy.main, "mypy" in args.type_checker, precommit_config)
+            do(pyright.main, "pyright" in args.type_checker, precommit_config)
+            do(ty.main, args.type_checker, args.keep_local_precommit, precommit_config)
             do(pytest.main, args.pytest_single_threaded)
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
                 do(ruff.main, precommit_config, has_notebooks, args.imports_on_top)
-        if args.update_lock_files != "no":
+        if args.upgrade_frequency != "no":
             do(
-                update_lock.main,
+                upgrade_lock.main,
                 precommit_config,
-                frequency=args.update_lock_files,
+                frequency=args.upgrade_frequency,
             )
-        do(readthedocs.main, package_manager, dev_python_version)
+        do(readthedocs.main, args.package_manager, args.dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
-        do(vscode.main, has_notebooks, is_python_repo, package_manager)
-        do(gitpod.main, use_gitpod, dev_python_version)
+        do(vscode.main, has_notebooks, is_python_repo, args.package_manager)
+        do(gitpod.main, args.gitpod, args.dev_python_version)
         do(precommit.main, precommit_config, has_notebooks)
         do(
             uv.main,
-            dev_python_version,
-            package_manager,
             precommit_config,
+            args.dev_python_version,
+            args.package_manager,
             args.repo_organization,
-            repo_name,
+            args.repo_name,
         )
         do(cspell.main, precommit_config, args.no_cspell_update)
     return 1 if do.error_messages else 0
 
 
-def _create_argparse() -> ArgumentParser:
+def _create_argparse(argv: Sequence[str] | None = None) -> Arguments:
     parser = ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
         action="store_true",
         default=False,
         help="Allow deprecated CI workflows, such as ci-docs.yml.",
+    )
+    parser.add_argument(
+        "--allow-labels",
+        action="store_true",
+        default=False,
+        help="Do not perform the check on labels.toml",
     )
     parser.add_argument(
         "--allowed-cell-metadata",
@@ -190,6 +192,12 @@ def _create_argparse() -> ArgumentParser:
         default="",
         help="Avoid running CI test on the following Python versions",
         type=str,
+    )
+    parser.add_argument(
+        "--dev-python-version",
+        choices=PythonVersion.__args__,
+        default=DEFAULT_DEV_PYTHON_VERSION,
+        help="Specify the Python version for your developer environment",
     )
     parser.add_argument(
         "--doc-apt-packages",
@@ -285,18 +293,6 @@ def _create_argparse() -> ArgumentParser:
         help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
-        "--allow-labels",
-        action="store_true",
-        default=False,
-        help="Do not perform the check on labels.toml",
-    )
-    parser.add_argument(
-        "--dev-python-version",
-        default=DEFAULT_DEV_PYTHON_VERSION,
-        help="Specify the Python version for your developer environment",
-        type=str,
-    )
-    parser.add_argument(
         "--keep-local-precommit",
         action="store_true",
         default=False,
@@ -334,26 +330,25 @@ def _create_argparse() -> ArgumentParser:
         type=str,
     )
     parser.add_argument(
+        "--pytest-single-threaded",
+        action="store_true",
+        default=False,
+        help="Run pytest without the `-n` argument",
+    )
+    parser.add_argument(
         "--type-checker",
         action="append",
         choices=ty.TypeChecker.__args__,
         help="Specify which type checker to use for the project",
     )
     parser.add_argument(
-        "--update-lock-files",
-        choices=update_lock.Frequency.__args__,
-        default="outsource",
+        "--upgrade-frequency",
+        choices=upgrade_lock.Frequency.__args__,
+        default="quarterly",
         help=(
             "Add a workflow to upgrade lock files, like uv.lock, .pre-commit-config.yml, "
             "and pip .constraints/ files. The argument is the frequency of the cron job"
         ),
-        type=str,
-    )
-    parser.add_argument(
-        "--pytest-single-threaded",
-        action="store_true",
-        default=False,
-        help="Run pytest without the `-n` argument",
     )
     parser.add_argument(
         "--repo-name",
@@ -379,15 +374,50 @@ def _create_argparse() -> ArgumentParser:
         ),
         type=str,
     )
-    return parser
+    args = parser.parse_args(argv)
+    args.excluded_python_versions = set(_to_list(args.excluded_python_versions))
+    args.macos_python_version = (
+        None if args.macos_python_version == "disable" else args.macos_python_version
+    )
+    args.repo_name = args.repo_name or os.path.basename(os.getcwd())
+    args.repo_title = args.repo_title or args.repo_name
+    args.type_checker = set(args.type_checker or [])
+    return Arguments(**args.__dict__)
 
 
-def _determine_repo_name_and_title(args: Namespace) -> tuple[str, str]:
-    repo_name = args.repo_name
-    if not repo_name:
-        repo_name = os.path.basename(os.getcwd())
-    repo_title = args.repo_title or repo_name
-    return repo_name, repo_title
+@frozen
+class Arguments:
+    allow_deprecated_workflows: bool
+    allow_labels: bool
+    allowed_cell_metadata: str
+    ci_skipped_tests: str
+    dev_python_version: PythonVersion
+    doc_apt_packages: str
+    environment_variables: str
+    excluded_python_versions: set[PythonVersion]
+    github_pages: bool
+    gitpod: bool
+    imports_on_top: bool
+    keep_issue_templates: bool
+    keep_local_precommit: bool
+    keep_pr_linting: bool
+    macos_python_version: PythonVersion | None
+    no_binder: bool
+    no_cd: bool
+    no_cspell_update: bool
+    no_github_actions: bool
+    no_milestones: bool
+    no_pypi: bool
+    no_python: bool
+    no_ruff: bool
+    no_version_branches: bool
+    package_manager: PackageManagerChoice
+    pytest_single_threaded: bool
+    repo_name: str
+    repo_organization: str
+    repo_title: str
+    type_checker: set[ty.TypeChecker]
+    upgrade_frequency: upgrade_lock.Frequency
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:
@@ -441,17 +471,6 @@ def _to_list(arg: str) -> list[str]:
     if space_separated in {"", " "}:
         return []
     return sorted(space_separated.split(" "))
-
-
-def __get_python_version(arg: Any) -> PythonVersion:
-    if not isinstance(arg, str):
-        msg = f"--dev-python-version must be a string, not {type(arg).__name__}"
-        raise TypeError(msg)
-    arg = arg.strip()
-    if not re.match(r"^3\.\d+$", arg):
-        msg = f"Invalid Python version: {arg}"
-        raise ValueError(msg)
-    return arg
 
 
 if __name__ == "__main__":
