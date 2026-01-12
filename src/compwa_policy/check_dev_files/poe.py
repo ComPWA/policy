@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
@@ -36,12 +36,13 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
             if package_manager == "uv":
                 do(_configure_uv_executor, pyproject)
                 if pyproject.has_table("tool.poe.tasks"):
+                    do(_set_all_task, pyproject)
                     if has_dependency(pyproject, "jupyterlab"):
                         do(_set_jupyter_lab_task, pyproject)
                     if has_notebooks:
                         pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
                         do(_set_nb_task, pyproject)
-                    do(_set_test_all, pyproject)
+                    do(_set_test_all_task, pyproject)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
@@ -76,24 +77,40 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
 
 def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
     poe_table = pyproject.get_table("tool.poe")
-    existing = poe_table.get("executor")
-    if existing is not None and not isinstance(existing, Mapping):
+    executor_table = poe_table.get("executor")
+    if executor_table is None or isinstance(executor_table, str):
         del poe_table["executor"]
-    executor_config = dict(poe_table.get("executor", {}))
-    updated = False
-    if executor_config.get("type") != "uv":
-        executor_config["type"] = "uv"
-        updated = True
-    if executor_config.get("isolated") is not True:
-        executor_config["isolated"] = True
-        updated = True
-    if executor_config.get("no-group") != "dev":
-        executor_config["no-group"] = "dev"
-        updated = True
-    if updated:
-        poe_table["executor"] = executor_config
+        executor_table = {}
+    if any([
+        __safe_update(executor_table, "isolated", True),
+        __safe_update(executor_table, "no-group", "dev"),
+        __safe_update(executor_table, "type", "uv"),
+    ]):
+        poe_table["executor"] = executor_table
         msg = f"Set Poe the Poet executor to uv in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _set_all_task(pyproject: ModifiablePyproject) -> None:
+    task_table = pyproject.get_table("tool.poe.tasks")
+    if "all" not in task_table:
+        return
+    existing = cast("Table", task_table["all"])
+    if any([
+        __safe_update(
+            existing, "help", "Run all continuous integration (CI) tasks locally"
+        ),
+        __safe_update(existing, "ignore_fail", "return_non_zero"),
+    ]):
+        msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def __safe_update(table: MutableMapping, key: str, expected_value: Any) -> bool:
+    if table.get(key) != expected_value:
+        table[key] = expected_value
+        return True
+    return False
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
@@ -132,7 +149,7 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_test_all(pyproject: ModifiablePyproject) -> None:
+def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if len(supported_python_versions) <= 1:
         return

@@ -130,7 +130,8 @@ no-group = "dev"
 type = "uv"
 
 [tool.poe.tasks.all]
-help = "Run all continuous integration tasks locally"
+help = "Run all continuous integration (CI) tasks locally"
+ignore_fail = "return_non_zero"
 sequence = [
     "cov",
     "doc",
