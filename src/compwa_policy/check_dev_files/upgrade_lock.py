@@ -17,7 +17,7 @@ from compwa_policy.check_dev_files.github_workflows import (
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_patterns, is_committed
+from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -36,6 +36,7 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
     "quarterly": "0 3 7 */3 *",
     "semiannually": "0 3 7 */6 *",
 }
+__TRIGGER_ECOSYSTEMS = {"julia", "uv"}
 
 
 def main(precommit: ModifiablePrecommit, frequency: Frequency) -> None:
@@ -70,7 +71,10 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
-        if frequency == "outsource" or get_dependabot_ecosystems() & {"julia", "uv"}:
+        if (
+            frequency == "outsource"
+            or get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS
+        ):
             del expected_data["on"]["schedule"]
         else:
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
@@ -98,17 +102,23 @@ def _to_cron_schedule(frequency: Frequency) -> str:
 def _update_precommit_schedule(
     precommit: ModifiablePrecommit, frequency: Frequency
 ) -> None:
-    if frequency != "outsource":
-        return
     ci_section = precommit.document.get("ci")
     if ci_section is None:
         return
-    if "autoupdate_schedule" not in ci_section:
+    key = "autoupdate_schedule"
+    if key not in ci_section:
         return
-    if not is_committed("uv.lock"):
-        return
-    del ci_section["autoupdate_schedule"]
-    precommit.changelog.append(
-        "Deactivated pre-commit autoupdate schedule, because it is already"
-        f" triggered by the {CONFIG_PATH.github_workflow_dir / 'lock.yml'}."
-    )
+    if get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS:
+        del ci_section[key]
+        precommit.changelog.append(
+            "Deactivated pre-commit autoupdate schedule, because it is already"
+            f" triggered by the {CONFIG_PATH.github_workflow_dir / 'lock.yml'}."
+        )
+    else:
+        if frequency in {"outsource", "semiannually"}:
+            frequency = "quarterly"
+        if ci_section[key] != frequency:
+            ci_section[key] = frequency
+            precommit.changelog.append(
+                f"Set pre-commit autoupdate schedule to {frequency!r}"
+            )
