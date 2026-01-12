@@ -18,6 +18,8 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
+    from tomlkit.items import Table
+
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
 
@@ -36,6 +38,9 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
                 if pyproject.has_table("tool.poe.tasks"):
                     if has_dependency(pyproject, "jupyterlab"):
                         do(_set_jupyter_lab_task, pyproject)
+                    if has_notebooks:
+                        pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
+                        do(_set_nb_task, pyproject)
                     do(_set_test_all, pyproject)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
@@ -106,6 +111,24 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
     if existing != expected:
         tasks["lab"] = expected
         msg = f"Set Poe the Poet jupyter task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _set_nb_task(pyproject: ModifiablePyproject) -> None:
+    tasks = pyproject.get_table("tool.poe.tasks")
+    existing = cast("Table", tasks.get("nb", {}))
+    expected = {
+        "args": to_toml_array([
+            {"name": "paths", "default": "docs", "multiple": True, "positional": True}
+        ]),
+        "cmd": "pytest --nbmake --nbmake-timeout=0 ${paths}",
+        "help": "Run all notebooks",
+    }
+    if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
+        expected["executor"] = to_inline_table({"group": "notebooks", "with": "nbmake"})
+    if existing != expected:
+        tasks["nb"] = expected
+        msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 
 
