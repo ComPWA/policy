@@ -12,7 +12,7 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 
 def main() -> None:
-    def dump_dependabot_template() -> None:
+    def dump_dependabot_config() -> None:
         yaml.dump(expected_config, dependabot_path)
         msg = f"Updated {dependabot_path}"
         raise PrecommitError(msg)
@@ -42,7 +42,7 @@ def main() -> None:
         raise PrecommitError(msg)
         return
     if not dependabot_path.exists():
-        dump_dependabot_template()
+        dump_dependabot_config()
     existing_config = yaml.load(dependabot_path)
     if existing_config != expected_config:
-        dump_dependabot_template()
+        dump_dependabot_config()
