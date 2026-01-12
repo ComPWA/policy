@@ -25,13 +25,22 @@ def main() -> None:
     dependabot_path = CONFIG_PATH.github_workflow_dir.parent / "dependabot.yml"
     template_path = COMPWA_POLICY_DIR / dependabot_path
     yaml = create_prettier_round_trip_yaml()
+
     expected_config = yaml.load(template_path)
     package_ecosystems = cast("list[dict[str, Any]]", expected_config["updates"])
     github_actions_ecosystem = package_ecosystems[0]
+    if not is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}"):
+        package_ecosystems.pop(0)
     if is_committed("**/Manifest.toml"):
         append_ecosystem("julia")
     if is_committed("uv.lock"):
         append_ecosystem("uv")
+
+    if not package_ecosystems:
+        dependabot_path.unlink(missing_ok=True)
+        msg = f"Removed {dependabot_path}"
+        raise PrecommitError(msg)
+        return
     if not dependabot_path.exists():
         dump_dependabot_template()
     existing_config = yaml.load(dependabot_path)
