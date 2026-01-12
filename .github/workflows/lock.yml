@@ -12,8 +12,6 @@ on:
       - epic/*
     paths:
       - .pre-commit-config.yaml
-  schedule:
-    - cron: "0 3 7 */3 *"
   workflow_dispatch:
 
 jobs:

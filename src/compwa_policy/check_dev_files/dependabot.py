@@ -33,7 +33,7 @@ def main(frequency: Frequency) -> None:
     rt_yaml = create_prettier_round_trip_yaml()
 
     expected = rt_yaml.load(template_path)
-    if frequency not in {"no", "outsource"}:
+    if frequency is not None:
         expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
     package_ecosystems = cast("list[dict[str, Any]]", expected["updates"])
     github_actions_ecosystem = package_ecosystems[0]
