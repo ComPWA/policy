@@ -67,11 +67,18 @@ class Pyproject:
         src = rtoml.dumps(self._document, pretty=True)
         return f"{src.strip()}\n"
 
-    def get_table(self, dotted_header: str, create: bool = False) -> Mapping[str, Any]:
+    def get_table(
+        self, dotted_header: str, *, create: bool = False, fallback: Any = None
+    ) -> Mapping[str, Any]:
         if create:
             msg = "Cannot create sub-tables in a read-only pyproject.toml"
             raise TypeError(msg)
-        return get_sub_table(self._document, dotted_header)
+        try:
+            return get_sub_table(self._document, dotted_header)
+        except KeyError as e:
+            if fallback is not None:
+                return fallback
+            raise e from e
 
     @final
     def has_table(self, dotted_header: str) -> bool:
@@ -184,12 +191,12 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     @override
     def get_table(
-        self, dotted_header: str, create: bool = False
+        self, dotted_header: str, *, create: bool = False, fallback: Any = None
     ) -> MutableMapping[str, Any]:
         self.__assert_is_in_context()
         if create:
             create_sub_table(self._document, dotted_header)
-        return super().get_table(dotted_header)  # ty:ignore[invalid-return-type]
+        return super().get_table(dotted_header, fallback=fallback)  # ty:ignore[invalid-return-type]
 
     def add_dependency(
         self,
