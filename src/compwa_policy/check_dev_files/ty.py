@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from ruamel.yaml.comments import CommentedSeq
 
@@ -13,8 +13,6 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping
-
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
@@ -57,22 +55,21 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
 
 
 def _update_configuration(pyproject: ModifiablePyproject) -> None:
+    def _remove_rule(key: str, default: Literal["error", "ignore", "warn"]) -> None:
+        if ty_config.get(key) == default:
+            del ty_config[key]
+            pyproject.changelog.append(f"Removed tool.ty.rules.{key}")
+
+    def _update_rule(key: str, value: Literal["error", "ignore", "warn"]) -> None:
+        if key not in ty_config:
+            ty_config[key] = value
+            pyproject.changelog.append(f'Set tool.ty.rules.{key} = "{value}"')
+
     ty_config = pyproject.get_table("tool.ty.rules", create=True)
-    _update_value(pyproject, ty_config, "division-by-zero", "warn")
-    _update_value(pyproject, ty_config, "possibly-missing-import", "warn")
-    _update_value(pyproject, ty_config, "possibly-unresolved-reference", "warn")
-    _update_value(pyproject, ty_config, "unused-ignore-comment", "warn")
-
-
-def _update_value(
-    pyproject: ModifiablePyproject,
-    table: MutableMapping[str, Any],
-    key: str,
-    value: Literal["error", "ignore", "warn"],
-) -> None:
-    if key not in table:
-        table[key] = value
-        pyproject.changelog.append(f'Set tool.ty.rules.{key} = "{value}"')
+    _remove_rule("unused-ignore-comment", "warn")
+    _update_rule("division-by-zero", "warn")
+    _update_rule("possibly-missing-import", "warn")
+    _update_rule("possibly-unresolved-reference", "warn")
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
