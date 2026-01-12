@@ -73,7 +73,7 @@ def _update_configuration(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
-    args = CommentedSeq(["--output-format=concise"])
+    args = CommentedSeq(["--no-progress", "--output-format=concise"])
     args.fa.set_flow_style()
     types_or = CommentedSeq(["python", "pyi", "jupyter"])
     types_or.fa.set_flow_style()
