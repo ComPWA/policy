@@ -53,6 +53,8 @@ def _update_dependabot(dependabot_path: Path) -> None:
     expected_config = yaml.load(template_path)
     package_ecosystems = cast("list[dict[str, Any]]", expected_config["updates"])
     github_actions_ecosystem = package_ecosystems[0]
+    if is_committed("**/Manifest.toml"):
+        append_ecosystem("julia")
     if is_committed("uv.lock"):
         append_ecosystem("uv")
     if not dependabot_path.exists():
