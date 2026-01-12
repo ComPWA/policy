@@ -87,7 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
         do(citation.main, precommit_config)
         do(commitlint.main)
         do(conda.main, dev_python_version, package_manager)
-        do(dependabot.main, args.dependabot)
+        do(dependabot.main)
         do(editorconfig.main, precommit_config)
         if not args.allow_labels:
             do(github_labels.main)
@@ -190,12 +190,6 @@ def _create_argparse() -> ArgumentParser:
         default="",
         help="Avoid running CI test on the following Python versions",
         type=str,
-    )
-    parser.add_argument(
-        "--dependabot",
-        choices=dependabot.DependabotOption.__args__,
-        default=None,
-        help="Leave dependabot.yml untouched ('keep') or sync with ComPWA/policy",
     )
     parser.add_argument(
         "--doc-apt-packages",

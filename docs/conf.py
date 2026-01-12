@@ -13,10 +13,6 @@ api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
     "ConfigParser": "configparser.ConfigParser",
-    "DependabotOption": (
-        "obj",
-        "compwa_policy.check_dev_files.dependabot.DependabotOption",
-    ),
     "Frequency": "typing.Literal",
     "InlineTable": "tomlkit.items.InlineTable",
     "IO": "typing.IO",

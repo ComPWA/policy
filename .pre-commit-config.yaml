@@ -49,7 +49,6 @@ repos:
         pass_filenames: false
         args:
           - --allow-labels
-          - --dependabot=update
           - --keep-local-precommit
           - --no-pypi
           - --pytest-single-threaded
