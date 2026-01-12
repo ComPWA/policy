@@ -16,12 +16,11 @@ from compwa_policy.check_dev_files.github_workflows import (
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_patterns
+from compwa_policy.utilities.match import filter_patterns, is_committed
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit import Precommit
-
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 Frequency = Literal[
     "no",
@@ -41,10 +40,9 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
 }
 
 
-def main(precommit: Precommit, frequency: Frequency) -> None:
+def main(precommit: ModifiablePrecommit, frequency: Frequency) -> None:
     with Executor() as do:
-        if frequency == "outsource":
-            do(_check_precommit_schedule, precommit)
+        do(_update_precommit_schedule, precommit, frequency)
         do(_remove_script, "pin_requirements.py")
         do(_remove_script, "upgrade.sh")
         do(_update_requirement_workflow, frequency)
@@ -99,12 +97,20 @@ def _to_cron_schedule(frequency: Frequency) -> str:
     return __CRON_SCHEDULES[frequency]
 
 
-def _check_precommit_schedule(precommit: Precommit) -> None:
-    schedule = precommit.document.get("ci", {}).get("autoupdate_schedule")
-    if schedule is None:
-        msg = (
-            "Cannot outsource pip constraints updates, because autoupdate_schedule has"
-            f" not been set under the ci key in {CONFIG_PATH.precommit}. See"
-            " https://pre-commit.ci/#configuration-autoupdate_schedule."
-        )
-        raise PrecommitError(msg)
+def _update_precommit_schedule(
+    precommit: ModifiablePrecommit, frequency: Frequency
+) -> None:
+    if frequency != "outsource":
+        return
+    ci_section = precommit.document.get("ci")
+    if ci_section is None:
+        return
+    if "autoupdate_schedule" not in ci_section:
+        return
+    if not is_committed("uv.lock"):
+        return
+    del ci_section["autoupdate_schedule"]
+    precommit.changelog.append(
+        "Deactivated pre-commit autoupdate schedule, because it is already"
+        f" triggered by the {CONFIG_PATH.github_workflow_dir / 'lock.yml'}."
+    )
