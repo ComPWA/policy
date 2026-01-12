@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import cache
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -13,7 +12,7 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import git_ls_files, matches_patterns
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
@@ -68,7 +67,7 @@ def main(
 
 
 def _hide_uv_lock_from_vscode_search() -> None:
-    if __has_uv_lock_file():
+    if is_committed("uv.lock"):
         vscode.update_settings({"search.exclude": {"**/uv.lock": True}})
 
 
@@ -110,7 +109,7 @@ def _remove_uv_lock() -> None:
 def _update_editor_config() -> None:
     if not CONFIG_PATH.editorconfig.exists():
         return
-    if not __has_uv_lock_file():
+    if not is_committed("uv.lock"):
         return
     expected_content = dedent("""
     [uv.lock]
@@ -148,7 +147,7 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> None:
 
 
 def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
-    if __has_uv_lock_file():
+    if is_committed("uv.lock"):
         repo = Repo(
             repo="https://github.com/astral-sh/uv-pre-commit",
             rev="0.4.20",
@@ -228,9 +227,3 @@ def __get_runner_instructions() -> str:
         if has_sub_table(pixi_config, "tasks"):
             return pixi_instructions
     return ""
-
-
-@cache
-def __has_uv_lock_file() -> bool:
-    files = git_ls_files(untracked=True)
-    return any(matches_patterns(file, ["uv.lock"]) for file in files)

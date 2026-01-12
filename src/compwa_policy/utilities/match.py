@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess  # noqa: S404
+from functools import cache
 
 from pathspec import PathSpec
 
@@ -49,6 +50,12 @@ def git_ls_files(untracked: bool = False) -> list[str]:
         ]).decode("utf-8")
         return tracked_files + output.splitlines()
     return tracked_files
+
+
+@cache
+def is_committed(path: str) -> bool:
+    files = git_ls_files(untracked=True)
+    return any(matches_patterns(file, [path]) for file in files)
 
 
 def matches_files(pattern: str, files: list[str]) -> bool:

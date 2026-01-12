@@ -45,7 +45,7 @@ from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import git_ls_files, matches_patterns
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import Pyproject
 
@@ -65,9 +65,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
         None if args.macos_python_version == "disable" else args.macos_python_version
     )
     repo_name, repo_title = _determine_repo_name_and_title(args)
-    has_notebooks = any(
-        matches_patterns(file, ["**/*.ipynb"]) for file in git_ls_files(untracked=True)
-    )
+    has_notebooks = is_committed("**/*.ipynb")
     use_gitpod = args.gitpod
     dev_python_version = __get_python_version(args.dev_python_version)
     excluded_python_versions = set(_to_list(args.excluded_python_versions))

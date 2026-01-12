@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
+from compwa_policy.utilities.match import is_committed
+from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
+
 
 DependabotOption = Literal["keep", "update"]
 """Allowed options for the :code:`--dependabot` argument."""
@@ -34,19 +38,25 @@ def _remove_dependabot(dependabot_path: Path) -> None:
 
 
 def _update_dependabot(dependabot_path: Path) -> None:
+    def dump_dependabot_template() -> None:
+        yaml.dump(expected_config, dependabot_path)
+        msg = f"Updated {dependabot_path}"
+        raise PrecommitError(msg)
+
+    def append_ecosystem(ecosystem_name: str) -> None:
+        new_ecosystem = deepcopy(github_actions_ecosystem)  # avoid YAML anchors
+        new_ecosystem["package-ecosystem"] = ecosystem_name
+        package_ecosystems.append(new_ecosystem)
+
+    yaml = create_prettier_round_trip_yaml()
     template_path = COMPWA_POLICY_DIR / dependabot_path
-    with open(template_path) as f:
-        template = f.read()
+    expected_config = yaml.load(template_path)
+    package_ecosystems = cast("list[dict[str, Any]]", expected_config["updates"])
+    github_actions_ecosystem = package_ecosystems[0]
+    if is_committed("uv.lock"):
+        append_ecosystem("uv")
     if not dependabot_path.exists():
-        __dump_dependabot_template(template, dependabot_path)
-    with open(dependabot_path) as f:
-        dependabot = f.read()
-    if dependabot != template:
-        __dump_dependabot_template(template, dependabot_path)
-
-
-def __dump_dependabot_template(content: str, path: Path) -> None:
-    with open(path, "w") as f:
-        f.write(content)
-    msg = f"Updated {path}"
-    raise PrecommitError(msg)
+        dump_dependabot_template()
+    existing_config = yaml.load(dependabot_path)
+    if existing_config != expected_config:
+        dump_dependabot_template()
