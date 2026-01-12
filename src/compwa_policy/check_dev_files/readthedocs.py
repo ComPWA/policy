@@ -206,12 +206,7 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     if has_dependency(pyproject, "poethepoet"):
         new_command += dedent(R"""
             export UV_LINK_MODE=copy
-            pixi run \
-            uv run \
-                --group doc \
-                --no-dev \
-                --with poethepoet \
-                poe doc
+            pixi run poe doc
             mkdir -p $READTHEDOCS_OUTPUT
             mv docs/_build/html $READTHEDOCS_OUTPUT
         """).strip()
@@ -232,11 +227,7 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
     new_command = dedent(R"""
     export UV_LINK_MODE=copy
-    uv run \
-      --group doc \
-      --no-dev \
-      --with poethepoet \
-      poe doc
+    uvx --from poethepoet poe doc
     mkdir -p $READTHEDOCS_OUTPUT
     mv docs/_build/html $READTHEDOCS_OUTPUT
     """).strip()
