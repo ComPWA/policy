@@ -129,7 +129,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
         )
         do(direnv.main, package_manager, environment_variables)
         do(toml.main, precommit_config)  # has to run before pre-commit
-        do(poe.main, has_notebooks)
+        do(poe.main, has_notebooks, package_manager)
         do(prettier.main, precommit_config)
         if is_python_repo:
             if args.no_ruff:
