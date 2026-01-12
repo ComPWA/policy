@@ -30,6 +30,7 @@ Frequency = Literal[
     "semiannually",
     "outsource",
 ]
+"""The frequency of updating lock files."""
 __CRON_SCHEDULES: dict[Frequency, str] = {
     "monthly": "0 3 7 */1 *",
     "quarterly": "0 3 7 */3 *",

@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
-    args = _create_argparse(argv)
+    args = _parse_arguments(argv)
     doc_apt_packages = _to_list(args.doc_apt_packages)
     environment_variables = _get_environment_variables(args.environment_variables)
     is_python_repo = not args.no_python
@@ -167,7 +167,20 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     return 1 if do.error_messages else 0
 
 
-def _create_argparse(argv: Sequence[str] | None = None) -> Arguments:
+def _parse_arguments(argv: Sequence[str] | None = None) -> Arguments:
+    parser = _create_argparse()
+    args = parser.parse_args(argv)
+    args.excluded_python_versions = set(_to_list(args.excluded_python_versions))
+    args.macos_python_version = (
+        None if args.macos_python_version == "disable" else args.macos_python_version
+    )
+    args.repo_name = args.repo_name or os.path.basename(os.getcwd())
+    args.repo_title = args.repo_title or args.repo_name
+    args.type_checker = set(args.type_checker or [])
+    return Arguments(**args.__dict__)
+
+
+def _create_argparse() -> ArgumentParser:
     parser = ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
@@ -374,15 +387,7 @@ def _create_argparse(argv: Sequence[str] | None = None) -> Arguments:
         ),
         type=str,
     )
-    args = parser.parse_args(argv)
-    args.excluded_python_versions = set(_to_list(args.excluded_python_versions))
-    args.macos_python_version = (
-        None if args.macos_python_version == "disable" else args.macos_python_version
-    )
-    args.repo_name = args.repo_name or os.path.basename(os.getcwd())
-    args.repo_title = args.repo_title or args.repo_name
-    args.type_checker = set(args.type_checker or [])
-    return Arguments(**args.__dict__)
+    return parser
 
 
 @frozen
