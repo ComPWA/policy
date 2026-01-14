@@ -75,7 +75,7 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(msg)
 
 
-def _deny_ini_options(pyproject: Pyproject) -> None:
+def _deny_ini_options(pyproject: ModifiablePyproject) -> None:
     if pyproject.has_table("tool.pytest.ini_options"):
         msg = (
             "pytest.ini_options found in pyproject.toml. Have a look at"
@@ -83,6 +83,13 @@ def _deny_ini_options(pyproject: Pyproject) -> None:
             " to migrate to a native TOML configuration."
         )
         raise PrecommitError(msg)
+    pytest_config = pyproject.get_table("tool.pytest", fallback=None)
+    if pytest_config is None:
+        return
+    if "minversion" in pytest_config:  # cspell:ignore minversion
+        return
+    pytest_config["minversion"] = "9.0"
+    pyproject.changelog.append("Set minimum pytest version to 9.0")
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
