@@ -58,7 +58,6 @@ Tracker = "https://github.com/ComPWA/policy/issues"
 dev = [
     "labels",
     "ruff",
-    "sphinx-autobuild",
     {include-group = "doc"},
     {include-group = "style"},
     {include-group = "test"},
@@ -189,8 +188,8 @@ sphinx-autobuild \
     docs/ \
     docs/_build/html/
 """
-executor = {group = "doc"}
-help = "Run all unit tests"
+executor = {group = "doc", with = "sphinx-autobuild"}
+help = "Set up a server to directly preview changes to the HTML pages"
 
 [tool.poe.tasks.linkcheck]
 cmd = """

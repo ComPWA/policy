@@ -18,7 +18,7 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
-    from tomlkit.items import Table
+    from tomlkit.items import Array, Table
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
@@ -43,6 +43,7 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
                         pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
                         do(_set_nb_task, pyproject)
                     do(_set_test_all_task, pyproject)
+                    do(_update_doclive, pyproject)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
@@ -95,22 +96,15 @@ def _set_all_task(pyproject: ModifiablePyproject) -> None:
     task_table = pyproject.get_table("tool.poe.tasks")
     if "all" not in task_table:
         return
-    existing = cast("Table", task_table["all"])
+    all_task = cast("Table", task_table["all"])
     if any([
         __safe_update(
-            existing, "help", "Run all continuous integration (CI) tasks locally"
+            all_task, "help", "Run all continuous integration (CI) tasks locally"
         ),
-        __safe_update(existing, "ignore_fail", "return_non_zero"),
+        __safe_update(all_task, "ignore_fail", "return_non_zero"),
     ]):
         msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
-
-
-def __safe_update(table: MutableMapping, key: str, expected_value: Any) -> bool:
-    if table.get(key) != expected_value:
-        table[key] = expected_value
-        return True
-    return False
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
@@ -196,3 +190,40 @@ def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
             tasks[name] = task
         msg = f"Updated Poe the Poet test-all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _update_doclive(pyproject: ModifiablePyproject) -> None:
+    def combine(key: str, value: str) -> str | Array:
+        existing_value = executor.get(key)
+        if existing_value is None or existing_value == value:
+            return value
+        if isinstance(existing_value, str):
+            existing_value = [existing_value]
+        return to_toml_array(sorted({*existing_value, value}), multiline=False)
+
+    tasks = pyproject.get_table("tool.poe.tasks")
+    if "doclive" not in tasks:
+        return
+    doclive_task = cast("Table", tasks["doclive"])
+    executor = cast("dict[str, Any]", doclive_task.get("executor", {}))
+    executor["group"] = combine("group", "doc")
+    if "sphinx-autobuild" in doclive_task.get("cmd", ""):
+        executor["with"] = combine("with", "sphinx-autobuild")
+        pyproject.remove_dependency("sphinx-autobuild")  # cspell:ignore autobuild
+    if any([
+        __safe_update(doclive_task, "executor", to_inline_table(executor)),
+        __safe_update(
+            doclive_task,
+            "help",
+            "Set up a server to directly preview changes to the HTML pages",
+        ),
+    ]):
+        msg = f"Updated Poe the Poet doclive task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def __safe_update(table: MutableMapping, key: str, expected_value: Any) -> bool:
+    if table.get(key) != expected_value:
+        table[key] = expected_value
+        return True
+    return False
