@@ -94,6 +94,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                 macos_python_version=args.macos_python_version,
                 no_cd=args.no_cd,
                 no_milestones=args.no_milestones,
+                no_project_board=args.no_project_board,
                 no_pypi=args.no_pypi,
                 no_version_branches=args.no_version_branches,
                 python_version=args.dev_python_version,
@@ -312,6 +313,12 @@ def _create_argparse() -> ArgumentParser:
         help="This repository does not use milestones and therefore no close workflow.",
     )
     parser.add_argument(
+        "--no-project-board",
+        action="store_true",
+        default=False,
+        help="Do not add issues to the project board upon creation.",
+    )
+    parser.add_argument(
         "--no-pypi",
         action="store_true",
         default=False,
@@ -412,6 +419,7 @@ class Arguments:
     no_cspell_update: bool
     no_github_actions: bool
     no_milestones: bool
+    no_project_board: bool
     no_pypi: bool
     no_python: bool
     no_ruff: bool
