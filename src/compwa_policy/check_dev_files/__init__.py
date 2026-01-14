@@ -243,10 +243,22 @@ def _create_argparse() -> ArgumentParser:
         help="Create a GitPod config file",
     )
     parser.add_argument(
+        "--imports-on-top",
+        action="store_true",
+        default=False,
+        help="Sort notebook imports on the top",
+    )
+    parser.add_argument(
         "--keep-issue-templates",
         help="Do not remove the .github/ISSUE_TEMPLATE directory",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--keep-local-precommit",
+        action="store_true",
+        default=False,
+        help="Do not remove local pre-commit hooks",
     )
     parser.add_argument(
         "--keep-pr-linting",
@@ -255,10 +267,10 @@ def _create_argparse() -> ArgumentParser:
         default=False,
     )
     parser.add_argument(
-        "--imports-on-top",
-        action="store_true",
-        default=False,
-        help="Sort notebook imports on the top",
+        "--macos-python-version",
+        choices=[*sorted(PythonVersion.__args__), "disable"],
+        default="3.10",
+        help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     )
     parser.add_argument(
         "--no-binder",
@@ -300,28 +312,16 @@ def _create_argparse() -> ArgumentParser:
         help="This repository does not use milestones and therefore no close workflow.",
     )
     parser.add_argument(
-        "--no-python",
-        action="store_true",
-        default=False,
-        help="Skip check that concern config files for Python projects.",
-    )
-    parser.add_argument(
-        "--keep-local-precommit",
-        action="store_true",
-        default=False,
-        help="Do not remove local pre-commit hooks",
-    )
-    parser.add_argument(
-        "--macos-python-version",
-        choices=[*sorted(PythonVersion.__args__), "disable"],
-        default="3.10",
-        help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
-    )
-    parser.add_argument(
         "--no-pypi",
         action="store_true",
         default=False,
         help="Do not publish package to PyPI",
+    )
+    parser.add_argument(
+        "--no-python",
+        action="store_true",
+        default=False,
+        help="Skip check that concern config files for Python projects.",
     )
     parser.add_argument(
         "--no-ruff",
@@ -349,21 +349,6 @@ def _create_argparse() -> ArgumentParser:
         help="Run pytest without the `-n` argument",
     )
     parser.add_argument(
-        "--type-checker",
-        action="append",
-        choices=ty.TypeChecker.__args__,
-        help="Specify which type checker to use for the project",
-    )
-    parser.add_argument(
-        "--upgrade-frequency",
-        choices=upgrade_lock.Frequency.__args__,
-        default="quarterly",
-        help=(
-            "Add a workflow to upgrade lock files, like uv.lock, .pre-commit-config.yml, "
-            "and pip .constraints/ files. The argument is the frequency of the cron job"
-        ),
-    )
-    parser.add_argument(
         "--repo-name",
         default="",
         help=(
@@ -386,6 +371,21 @@ def _create_argparse() -> ArgumentParser:
             " the repo-name."
         ),
         type=str,
+    )
+    parser.add_argument(
+        "--type-checker",
+        action="append",
+        choices=ty.TypeChecker.__args__,
+        help="Specify which type checker to use for the project",
+    )
+    parser.add_argument(
+        "--upgrade-frequency",
+        choices=upgrade_lock.Frequency.__args__,
+        default="quarterly",
+        help=(
+            "Add a workflow to upgrade lock files, like uv.lock, .pre-commit-config.yml, "
+            "and pip .constraints/ files. The argument is the frequency of the cron job"
+        ),
     )
     return parser
 
