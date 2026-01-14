@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import rtoml
 from ini2toml.api import Translator
 
+from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
@@ -30,6 +31,7 @@ def main(single_threaded: bool) -> None:
             return
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
+        do(_deny_ini_options, pyproject)
         do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
         do(_update_vscode_settings, pyproject, single_threaded)
@@ -71,6 +73,16 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     CONFIG_PATH.pytest_ini.unlink()
     msg = f"Imported pytest configuration from {CONFIG_PATH.pytest_ini}"
     pyproject.changelog.append(msg)
+
+
+def _deny_ini_options(pyproject: Pyproject) -> None:
+    if pyproject.has_table("tool.pytest.ini_options"):
+        msg = (
+            "pytest.ini_options found in pyproject.toml. Have a look at"
+            " https://docs.pytest.org/en/stable/reference/customize.html#pyproject-toml"
+            " to migrate to a native TOML configuration."
+        )
+        raise PrecommitError(msg)
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:

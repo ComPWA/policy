@@ -254,7 +254,7 @@ ref = "test"
 env = {UV_PYTHON = "3.14"}
 ref = "test"
 
-[tool.pytest.ini_options]
+[tool.pytest]
 addopts = [
     "--color=yes",
     "--doctest-continue-on-failure",
