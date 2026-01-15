@@ -63,7 +63,7 @@ repos:
         files: ^\.pre\-commit\-(config|hooks)\.yaml$
 
   - repo: https://github.com/ComPWA/prettier-pre-commit
-    rev: v3.4.2
+    rev: v3.8.0
     hooks:
       - id: prettier
 
