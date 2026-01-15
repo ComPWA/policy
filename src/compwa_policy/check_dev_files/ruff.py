@@ -7,6 +7,7 @@ from collections import abc
 from typing import TYPE_CHECKING, Any
 
 from ruamel.yaml import YAML
+from setuptools import find_packages
 
 from compwa_policy.utilities import natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
@@ -510,10 +511,15 @@ def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> N
 
 
 def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
+    packages_names = find_packages("src")
+    packages_names = [name for name in packages_names if "." not in name]
     ___update_ruff_lint_table(
         pyproject,
         table_name="isort",
-        minimal_settings={"split-on-trailing-comma": False},
+        minimal_settings={
+            "known-first-party": packages_names,
+            "split-on-trailing-comma": False,
+        },
     )
 
 

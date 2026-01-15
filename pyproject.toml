@@ -26,6 +26,7 @@ dependencies = [
     "pip-tools",
     "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
+    "setuptools",
     "tomlkit", # preserve original TOML formatting
     'more-itertools; python_version <"3.10.0"', # pairwise
     'typing-extensions; python_version <"3.12.0"', # override
