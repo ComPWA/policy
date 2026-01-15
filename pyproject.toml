@@ -141,13 +141,13 @@ sequence = [
 
 [tool.poe.tasks.cov]
 cmd = """
-uv run --group test --isolated --no-dev \
-    pytest \
-        --cov-fail-under=32 \
-        --cov-report=html \
-        --cov-report=xml \
-        ${paths}
+pytest \
+    --cov-fail-under=32 \
+    --cov-report=html \
+    --cov-report=xml \
+    ${paths}
 """
+executor = {group = "test"}
 help = "Compute how much of the source code is covered by tests"
 
 [[tool.poe.tasks.cov.args]]

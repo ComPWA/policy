@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -36,6 +36,7 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
             if package_manager == "uv":
                 do(_configure_uv_executor, pyproject)
                 if pyproject.has_table("tool.poe.tasks"):
+                    do(_check_no_uv_run, pyproject)
                     do(_set_all_task, pyproject)
                     if has_dependency(pyproject, "jupyterlab"):
                         do(_set_jupyter_lab_task, pyproject)
@@ -90,6 +91,30 @@ def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
         poe_table["executor"] = executor_table
         msg = f"Set Poe the Poet executor to uv in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _check_no_uv_run(pyproject: Pyproject) -> None:
+    tasks = pyproject.get_table("tool.poe.tasks")
+    offending_tasks = []
+    for name, task in tasks.items():
+        if __has_uv_run(task.get("cmd", "")) and task.get("executor") != "simple":
+            offending_tasks.append(name)
+            continue
+    if offending_tasks:
+        msg = (
+            "Poe the Poet tasks should not use 'uv run' when the executor is set to"
+            " 'uv'. Offending tasks: "
+            f"{', '.join(sorted(offending_tasks))}"
+        )
+        raise PrecommitError(msg)
+
+
+def __has_uv_run(cmd: str | Sequence) -> bool:
+    if isinstance(cmd, str):
+        return "uv run" in cmd
+    if isinstance(cmd, Sequence):
+        return any(__has_uv_run(part) for part in cmd)
+    return False
 
 
 def _set_all_task(pyproject: ModifiablePyproject) -> None:
