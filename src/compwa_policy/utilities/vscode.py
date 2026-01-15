@@ -117,7 +117,7 @@ def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     if isinstance(old, dict) and isinstance(new, dict):
         return _update_dict_recursively(old, new, sort)  # ty:ignore[invalid-return-type]
     if isinstance(old, list) and isinstance(new, list):
-        return sorted({*old, *new})  # ty:ignore[invalid-return-type]
+        return sorted({*old, *new})  # ty:ignore[invalid-argument-type]
     return new
 
 
