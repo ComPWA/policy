@@ -515,7 +515,7 @@ def __update_isort_settings(
 ) -> None:
     packages_names = [mod for mod in find_packages("src") if "." not in mod]
     minimal_settings: dict[str, Any] = {}
-    if has_notebooks:
+    if has_notebooks and packages_names:
         minimal_settings["known-first-party"] = packages_names
     minimal_settings["split-on-trailing-comma"] = False
     ___update_ruff_lint_table(pyproject, "isort", minimal_settings)
