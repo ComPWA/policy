@@ -43,7 +43,7 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
     }
     if "ty" in type_checkers:
         if "pyright" not in type_checkers:
-            settings["python.languageServer"] = "None"
+            vscode.remove_settings(["python.languageServer"])
         vscode.add_extension_recommendation("astral-sh.ty")
         vscode.update_settings(settings)
         add_badge(

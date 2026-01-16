@@ -41,10 +41,10 @@ def _update_dev_requirements(no_ruff: bool) -> None:
                 "black", ignored_sections=["doc", "notebooks", "test"]
             )
             pyproject.remove_dependency("isort")
-            ruff_packages = {
-                "jupyterlab-code-formatter",
+            pyproject.remove_dependency("jupyterlab-code-formatter")
+            packages.update({
+                "jupyter-ruff",
                 "python-lsp-ruff",
-            }
-            packages.update(ruff_packages)
+            })
         for package in sorted(packages):
             pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])

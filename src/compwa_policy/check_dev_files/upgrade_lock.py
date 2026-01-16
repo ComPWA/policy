@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from compwa_policy.check_dev_files.dependabot import get_dependabot_ecosystems
 from compwa_policy.check_dev_files.github_workflows import (
     remove_workflow,
     update_workflow,
@@ -20,34 +21,28 @@ from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit import Precommit
-
+    from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
 
 Frequency = Literal[
-    "no",
-    "biweekly",
     "monthly",
-    "bimonthly",
     "quarterly",
-    "biannually",
-    "outsource",
+    "semiannually",
 ]
+"""The frequency of updating lock files."""
 __CRON_SCHEDULES: dict[Frequency, str] = {
-    "biweekly": "0 2 * * 1",
     "monthly": "0 3 7 */1 *",
-    "bimonthly": "0 3 7 */2 *",
     "quarterly": "0 3 7 */3 *",
-    "biannually": "0 3 7 */6 *",
+    "semiannually": "0 3 7 */6 *",
 }
+__TRIGGER_ECOSYSTEMS = {"julia", "uv"}
 
 
-def main(precommit: Precommit, frequency: Frequency) -> None:
+def main(precommit: ModifiablePrecommit, frequency: Frequency) -> None:
     with Executor() as do:
-        if frequency == "outsource":
-            do(_check_precommit_schedule, precommit)
+        do(_update_precommit_schedule, precommit, frequency)
         do(_remove_script, "pin_requirements.py")
         do(_remove_script, "upgrade.sh")
-        do(_update_requirement_workflow, frequency)
+        do(_update_requirement_workflow, precommit, frequency)
 
 
 def _remove_script(script_name: str) -> None:
@@ -58,7 +53,7 @@ def _remove_script(script_name: str) -> None:
         raise PrecommitError(msg)
 
 
-def _update_requirement_workflow(frequency: Frequency) -> None:
+def _update_requirement_workflow(precommit: Precommit, frequency: Frequency) -> None:
     def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
@@ -74,7 +69,10 @@ def _update_requirement_workflow(frequency: Frequency) -> None:
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
-        if frequency == "outsource":
+        if (
+            get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS
+            or "autoupdate_schedule" in precommit.document.get("ci", {})
+        ):
             del expected_data["on"]["schedule"]
         else:
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
@@ -99,12 +97,26 @@ def _to_cron_schedule(frequency: Frequency) -> str:
     return __CRON_SCHEDULES[frequency]
 
 
-def _check_precommit_schedule(precommit: Precommit) -> None:
-    schedule = precommit.document.get("ci", {}).get("autoupdate_schedule")
-    if schedule is None:
-        msg = (
-            "Cannot outsource pip constraints updates, because autoupdate_schedule has"
-            f" not been set under the ci key in {CONFIG_PATH.precommit}. See"
-            " https://pre-commit.ci/#configuration-autoupdate_schedule."
+def _update_precommit_schedule(
+    precommit: ModifiablePrecommit, frequency: Frequency
+) -> None:
+    ci_section = precommit.document.get("ci")
+    if ci_section is None:
+        return
+    key = "autoupdate_schedule"
+    if key not in ci_section:
+        return
+    if get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS:
+        del ci_section[key]
+        precommit.changelog.append(
+            "Deactivated pre-commit autoupdate schedule, because it is already"
+            f" triggered by the {CONFIG_PATH.github_workflow_dir / 'lock.yml'}."
         )
-        raise PrecommitError(msg)
+    else:
+        if frequency == "semiannually":
+            frequency = "quarterly"
+        if ci_section[key] != frequency:
+            ci_section[key] = frequency
+            precommit.changelog.append(
+                f"Set pre-commit autoupdate schedule to {frequency!r}"
+            )
