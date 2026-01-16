@@ -41,7 +41,6 @@ def main(
     macos_python_version: PythonVersion | None,
     no_cd: bool,
     no_milestones: bool,
-    no_project_board: bool,
     no_pypi: bool,
     no_version_branches: bool,
     python_version: PythonVersion,
@@ -65,8 +64,6 @@ def main(
             single_threaded,
             skip_tests,
         )
-        if not no_project_board:
-            do(_copy_workflow_file, "add-issue-to-project.yml")
         if not keep_pr_linting:
             do(_update_pr_linting)
         do(_recommend_vscode_extension)
