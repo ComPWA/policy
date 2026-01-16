@@ -207,7 +207,7 @@ def _update_ruff_config(
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
             do(__update_flake8_comprehensions_builtins, pyproject)
-        do(__update_isort_settings, pyproject)
+        do(__update_isort_settings, pyproject, has_notebooks)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
 
@@ -510,17 +510,15 @@ def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> N
     )
 
 
-def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
-    packages_names = find_packages("src")
-    packages_names = [name for name in packages_names if "." not in name]
-    ___update_ruff_lint_table(
-        pyproject,
-        table_name="isort",
-        minimal_settings={
-            "known-first-party": packages_names,
-            "split-on-trailing-comma": False,
-        },
-    )
+def __update_isort_settings(
+    pyproject: ModifiablePyproject, has_notebooks: bool
+) -> None:
+    packages_names = [mod for mod in find_packages("src") if "." not in mod]
+    minimal_settings: dict[str, Any] = {}
+    if has_notebooks:
+        minimal_settings["known-first-party"] = packages_names
+    minimal_settings["split-on-trailing-comma"] = False
+    ___update_ruff_lint_table(pyproject, "isort", minimal_settings)
 
 
 def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:
