@@ -38,7 +38,7 @@ def _update_dev_requirements(no_ruff: bool) -> None:
         if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
             packages.add("jupyterlab-myst")
         if "quarto.quarto" in recommended_vscode_extensions:
-            packages.add("quarto-jupyter")
+            packages.add("jupyterlab-quarto")
         pyproject.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
             pyproject.remove_dependency(
