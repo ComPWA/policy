@@ -62,11 +62,9 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
             "doclive",
         }
         if has_notebooks:
-            expected_tasks |= {
-                "docnb",
-                "docnblive",
-                "nb",
-            }
+            expected_tasks.add("nb")
+        if has_dependency(pyproject, "myst-nb"):
+            expected_tasks.update({"docnb", "docnblive"})
     if Path("tests").exists():
         expected_tasks.add("test")
     missing_tasks = expected_tasks - tasks
