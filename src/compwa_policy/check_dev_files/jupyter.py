@@ -34,8 +34,9 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             "jupyterlab-lsp",
             "jupyterlab-myst",
             "jupyterlab-quickopen",  # cspell:ignore quickopen
-            "python-lsp-server[rope]",
+            "python-lsp-server",
         }
+        pyproject.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
             pyproject.remove_dependency(
                 "black", ignored_sections=["doc", "notebooks", "test"]
