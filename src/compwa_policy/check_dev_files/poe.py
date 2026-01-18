@@ -235,12 +235,15 @@ def _update_doclive(pyproject: ModifiablePyproject) -> None:
         return
     doclive_task = cast("Table", tasks["doclive"])
     executor = cast("dict[str, Any]", doclive_task.get("executor", {}))
-    executor["group"] = combine("group", "doc")
+    if "doc" in pyproject.get_table("dependency-groups", fallback=set()):
+        executor["group"] = combine("group", "doc")
     if "sphinx-autobuild" in doclive_task.get("cmd", ""):
         executor["with"] = combine("with", "sphinx-autobuild")
         pyproject.remove_dependency("sphinx-autobuild")  # cspell:ignore autobuild
     if any([
-        __safe_update(doclive_task, "executor", to_inline_table(executor)),
+        __safe_update(doclive_task, "executor", to_inline_table(executor))
+        if executor
+        else False,
         __safe_update(
             doclive_task,
             "help",
