@@ -162,8 +162,11 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
         "cmd": "pytest --nbmake --nbmake-timeout=0 ${paths}",
         "help": "Run all notebooks",
     }
+    executor = {}
     if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
-        expected["executor"] = to_inline_table({"group": "notebooks", "with": "nbmake"})
+        executor["group"] = "notebooks"
+    executor["with"] = "nbmake"
+    expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected
         msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"
