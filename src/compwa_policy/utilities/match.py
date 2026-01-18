@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import subprocess  # noqa: S404
 from functools import cache
+from typing import TYPE_CHECKING
 
 from pathspec import PathSpec
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def filter_files(patterns: list[str], files: list[str] | None = None) -> list[str]:
@@ -53,9 +57,9 @@ def git_ls_files(untracked: bool = False) -> list[str]:
 
 
 @cache
-def is_committed(path: str) -> bool:
+def is_committed(*path: str) -> bool:
     files = git_ls_files(untracked=True)
-    return any(matches_patterns(file, [path]) for file in files)
+    return any(matches_patterns(file, path) for file in files)
 
 
 def matches_files(pattern: str, files: list[str]) -> bool:
@@ -72,7 +76,7 @@ def matches_files(pattern: str, files: list[str]) -> bool:
     return any(spec.match_file(file) for file in files)
 
 
-def matches_patterns(filename: str, patterns: list[str]) -> bool:
+def matches_patterns(filename: str, patterns: Iterable[str]) -> bool:
     """Use git wild-match patterns to match a filename.
 
     >>> matches_patterns(".cspell.json", patterns=["**/*.json"])

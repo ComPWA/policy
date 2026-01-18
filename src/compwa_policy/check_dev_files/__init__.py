@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
-from argparse import ArgumentParser
 from typing import TYPE_CHECKING
 
 from attrs import frozen
@@ -42,6 +42,7 @@ from compwa_policy.check_dev_files import (
     uv,
     vscode,
 )
+from compwa_policy.check_dev_files._characterization import has_python_code
 from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
 from compwa_policy.utilities import CONFIG_PATH
@@ -60,7 +61,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
     args = _parse_arguments(argv)
     doc_apt_packages = _to_list(args.doc_apt_packages)
     environment_variables = _get_environment_variables(args.environment_variables)
-    is_python_repo = not args.no_python
+    is_python_repo = has_python_code() if args.python is None else args.python
     has_notebooks = is_committed("**/*.ipynb")
     if CONFIG_PATH.pyproject.exists():
         supported_versions = Pyproject.load().get_supported_python_versions()
@@ -180,8 +181,8 @@ def _parse_arguments(argv: Sequence[str] | None = None) -> Arguments:
     return Arguments(**args.__dict__)
 
 
-def _create_argparse() -> ArgumentParser:
-    parser = ArgumentParser(__doc__)
+def _create_argparse() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(__doc__)
     parser.add_argument(
         "--allow-deprecated-workflows",
         action="store_true",
@@ -318,10 +319,10 @@ def _create_argparse() -> ArgumentParser:
         help="Do not publish package to PyPI",
     )
     parser.add_argument(
-        "--no-python",
-        action="store_true",
-        default=False,
-        help="Skip check that concern config files for Python projects.",
+        "--python",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Specify whether this repository contains Python code (default: automatic detection)",
     )
     parser.add_argument(
         "--no-ruff",
@@ -413,11 +414,11 @@ class Arguments:
     no_github_actions: bool
     no_milestones: bool
     no_pypi: bool
-    no_python: bool
     no_ruff: bool
     no_version_branches: bool
     package_manager: PackageManagerChoice
     pytest_single_threaded: bool
+    python: bool | None
     repo_name: str
     repo_organization: str
     repo_title: str
