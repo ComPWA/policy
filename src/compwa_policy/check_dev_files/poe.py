@@ -80,7 +80,8 @@ def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
     poe_table = pyproject.get_table("tool.poe")
     executor_table = poe_table.get("executor")
     if executor_table is None or isinstance(executor_table, str):
-        del poe_table["executor"]
+        if "executor" in poe_table:
+            del poe_table["executor"]
         executor_table = {}
     has_dev = "dev" in pyproject.get_table("dependency-groups", fallback=set())
     if any([
