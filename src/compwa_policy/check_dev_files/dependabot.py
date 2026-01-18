@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 def main(frequency: Frequency) -> None:
     def dump_dependabot_config() -> None:
+        dependabot_path.parent.mkdir(exist_ok=True)
         rt_yaml.dump(expected, dependabot_path)
         msg = f"Updated {dependabot_path}"
         raise PrecommitError(msg)
