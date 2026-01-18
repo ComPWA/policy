@@ -7,6 +7,7 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.executor import Executor
@@ -55,7 +56,7 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
     poe_table = pyproject.get_table("tool.poe")
     tasks = set(poe_table.get("tasks", set()))
     expected_tasks: set[str] = set()
-    if Path("docs").exists():
+    if has_documentation():
         expected_tasks |= {
             "doc",
             "doclive",

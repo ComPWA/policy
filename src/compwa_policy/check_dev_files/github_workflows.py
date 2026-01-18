@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import (
@@ -205,9 +206,7 @@ def __update_doc_section(
     python_version: PythonVersion,
     github_pages: bool,
 ) -> None:
-    if not os.path.exists("docs/"):
-        del config["jobs"]["doc"]
-    else:
+    if has_documentation():
         with_section = {}
         if python_version != DEFAULT_DEV_PYTHON_VERSION:
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
@@ -218,6 +217,8 @@ def __update_doc_section(
         if with_section:
             config["jobs"]["doc"]["with"] = with_section
         __update_with_section(config, job_name="doc")
+    else:
+        del config["jobs"]["doc"]
 
 
 def __update_style_section(
@@ -270,11 +271,11 @@ def __update_pytest_section(
 
 
 def __update_with_section(config: dict, job_name: str) -> None:
-    with_section = config["jobs"][job_name]["with"]
+    with_section = config["jobs"][job_name].get("with")
     if with_section:
         sorted_section = {k: with_section[k] for k in sorted(with_section)}
         config["jobs"][job_name]["with"] = sorted_section
-    else:
+    elif with_section is not None:
         del with_section
 
 
