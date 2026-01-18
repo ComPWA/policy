@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from ruamel.yaml.scalarstring import FoldedScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
         name="editorconfig",
         alias="ec",
     )
-    if filter_files(["**/*.py"]):
+    if git_ls_files("**/*.py"):
         msg = R"""
         (?x)^(
           .*\.py

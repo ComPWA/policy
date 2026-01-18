@@ -11,7 +11,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     get_constraints_file,
@@ -75,7 +75,7 @@ def __get_sphinx_config_path() -> Path | None:
     conf_path = Path("docs/conf.py")
     if conf_path.exists():
         return conf_path
-    candidate_paths = filter_files(["**/conf.py"])
+    candidate_paths = git_ls_files("**/conf.py")
     if not candidate_paths:
         return None
     return Path(candidate_paths[0])

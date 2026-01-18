@@ -7,11 +7,11 @@ https://github.com/ComPWA/policy.
 from __future__ import annotations
 
 import os
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
@@ -50,13 +50,12 @@ def _check_has_labels_requirement(path: Path) -> bool:
     return False
 
 
-@lru_cache(maxsize=1)
+@cache
 def _get_requirement_files() -> list[Path]:
-    patterns = [
+    filenames = git_ls_files(
         "**/requirements*.in",
         "**/requirements*.txt",
-    ]
-    filenames = filter_files(patterns)
+    )
     return [Path(file) for file in filenames]
 
 
