@@ -36,6 +36,12 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             "jupyterlab-quickopen",  # cspell:ignore quickopen
             "python-lsp-server",
         }
+        # cspell:ignore executablebookproject
+        recommended_vscode_extensions = vscode.get_recommended_extensions()
+        if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
+            packages.add("jupyterlab-myst")
+        if "quarto.quarto" in recommended_vscode_extensions:
+            packages.add("quarto-jupyter")
         pyproject.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
             pyproject.remove_dependency(
@@ -43,9 +49,6 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             )
             pyproject.remove_dependency("isort")
             pyproject.remove_dependency("jupyterlab-code-formatter")
-            packages.update({
-                "jupyter-ruff",
-                "python-lsp-ruff",
-            })
+            packages.add("jupyter-ruff")
         for package in sorted(packages):
             pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])

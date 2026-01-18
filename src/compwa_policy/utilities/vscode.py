@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections import abc
 from collections.abc import Iterable, Sized
+from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from compwa_policy.errors import PrecommitError
@@ -24,10 +25,19 @@ RemovedKeys = Iterable[str] | dict[str, "RemovedKeys"]
 """Type for keys to be removed from a (nested) dictionary."""
 
 
+def get_recommended_extensions() -> set[str]:
+    return _get_extension_recommendations("recommendations")
+
+
 def get_unwanted_extensions() -> set[str]:
+    return _get_extension_recommendations("unwantedRecommendations")
+
+
+@cache
+def _get_extension_recommendations(key: str) -> set[str]:
     config = __load_config(CONFIG_PATH.vscode_extensions)
-    unwanted_extensions = config.get("unwantedRecommendations", set())
-    return {ext.lower() for ext in unwanted_extensions}
+    extensions = config.get(key, set())
+    return {ext.lower() for ext in extensions}
 
 
 def remove_settings(keys: RemovedKeys) -> None:
