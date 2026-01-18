@@ -23,9 +23,10 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
-def main(
+def main(  # noqa: PLR0917
     precommit_config: ModifiablePrecommit,
     dev_python_version: PythonVersion,
+    keep_contributing_md: bool,
     package_manager: PackageManagerChoice,
     organization: str,
     repo_name: str,
@@ -40,7 +41,8 @@ def main(
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
-            do(_update_contributing_file, organization, repo_name)
+            if not keep_contributing_md:
+                do(_update_contributing_file, organization, repo_name)
             do(_remove_pip_constraint_files)
             do(
                 vscode.remove_settings,

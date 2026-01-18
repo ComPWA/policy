@@ -160,6 +160,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
             uv.main,
             precommit_config,
             args.dev_python_version,
+            args.keep_contributing_md,
             args.package_manager,
             args.repo_organization,
             args.repo_name,
@@ -260,6 +261,12 @@ def _create_argparse() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Do not remove local pre-commit hooks",
+    )
+    parser.add_argument(
+        "--keep-contributing-md",
+        action="store_true",
+        default=False,
+        help="Do not update or remove the CONTRIBUTING.md file",
     )
     parser.add_argument(
         "--keep-pr-linting",
@@ -404,6 +411,7 @@ class Arguments:
     github_pages: bool
     gitpod: bool
     imports_on_top: bool
+    keep_contributing_md: bool
     keep_issue_templates: bool
     keep_local_precommit: bool
     keep_pr_linting: bool
