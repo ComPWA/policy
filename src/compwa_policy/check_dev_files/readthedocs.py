@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+from functools import cache
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import IO, TYPE_CHECKING, cast
@@ -205,19 +207,20 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
 def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     new_command = __get_pixi_install_statement() + "\n"
     pyproject = Pyproject.load()
+    docs_dir = _determine_docs_dir()
     if has_dependency(pyproject, "poethepoet"):
-        new_command += dedent(R"""
+        new_command += dedent(Rf"""
             export UV_LINK_MODE=copy
             pixi run poe doc
             mkdir -p $READTHEDOCS_OUTPUT
-            mv docs/_build/html $READTHEDOCS_OUTPUT
+            mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
         """).strip()
     else:
-        new_command += dedent(R"""
+        new_command += dedent(Rf"""
             export UV_LINK_MODE=copy
             pixi run doc
             mkdir -p $READTHEDOCS_OUTPUT
-            mv docs/_build/html $READTHEDOCS_OUTPUT
+            mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
         """).strip()
     __update_build_step(
         config,
@@ -227,11 +230,12 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 
 
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
-    new_command = dedent(R"""
+    docs_dir = _determine_docs_dir()
+    new_command = dedent(Rf"""
     export UV_LINK_MODE=copy
     uvx --from poethepoet poe doc
     mkdir -p $READTHEDOCS_OUTPUT
-    mv docs/_build/html $READTHEDOCS_OUTPUT
+    mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
     """).strip()
     __update_build_step(
         config,
@@ -243,6 +247,21 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
             or "tox -e" in command
         ),
     )
+
+
+@cache
+def _determine_docs_dir() -> str:
+    for path in git_ls_files(
+        "conf.py",
+        "**/conf.py",
+        "_quarto.yml",
+        "**/_quarto.yml",
+        untracked=True,
+    ):
+        if os.path.isfile(path):
+            parent = os.path.dirname(path)
+            return parent or "."
+    return "docs"
 
 
 def __update_build_step(
