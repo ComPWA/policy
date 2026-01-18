@@ -1,11 +1,8 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    has_pyproject_package_name,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
 def main(no_ruff: bool) -> None:
@@ -22,7 +19,7 @@ def main(no_ruff: bool) -> None:
 
 
 def _update_dev_requirements(no_ruff: bool) -> None:
-    if not has_pyproject_package_name():
+    if not CONFIG_PATH.pyproject.exists():
         return
     with ModifiablePyproject.load() as pyproject:
         supported_python_versions = pyproject.get_supported_python_versions()
