@@ -29,7 +29,6 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             "jupyterlab",
             "jupyterlab-git",
             "jupyterlab-lsp",
-            "jupyterlab-myst",
             "jupyterlab-quickopen",  # cspell:ignore quickopen
             "python-lsp-server",
         }
@@ -37,8 +36,12 @@ def _update_dev_requirements(no_ruff: bool) -> None:
         recommended_vscode_extensions = vscode.get_recommended_extensions()
         if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
             packages.add("jupyterlab-myst")
+        else:
+            pyproject.remove_dependency("jupyterlab-myst")
         if "quarto.quarto" in recommended_vscode_extensions:
             packages.add("jupyterlab-quarto")
+        else:
+            pyproject.remove_dependency("jupyterlab-quarto")
         pyproject.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
             pyproject.remove_dependency(
