@@ -59,12 +59,14 @@ def main(
 
 
 def _set_sphinx_configuration(config: ReadTheDocs) -> None:
-    if "sphinx" not in config.document:
-        config.document["sphinx"] = {}
-    sphinx = config.document["sphinx"]
     conf_path = __get_sphinx_config_path()
-    if "configuration" not in sphinx and conf_path:
-        sphinx["configuration"] = str(conf_path)
+    if conf_path is None:
+        return
+    conf_path = str(conf_path)
+    if config.document.get("sphinx", {}).get("configuration", "") != conf_path:
+        if "sphinx" not in config.document:
+            config.document["sphinx"] = {}
+        config.document["sphinx"]["configuration"] = conf_path
         msg = f"Set sphinx.configuration to {conf_path}"
         config.changelog.append(msg)
 
@@ -73,7 +75,7 @@ def __get_sphinx_config_path() -> Path | None:
     conf_path = Path("docs/conf.py")
     if conf_path.exists():
         return conf_path
-    candidate_paths = list(filter_files(["**/conf.py"]))
+    candidate_paths = filter_files(["**/conf.py"])
     if not candidate_paths:
         return None
     return Path(candidate_paths[0])
