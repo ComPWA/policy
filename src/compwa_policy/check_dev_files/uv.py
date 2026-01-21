@@ -125,6 +125,8 @@ def _update_editor_config() -> None:
 
 
 def _update_python_version_file(dev_python_version: PythonVersion) -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
     pyproject = Pyproject.load()
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
