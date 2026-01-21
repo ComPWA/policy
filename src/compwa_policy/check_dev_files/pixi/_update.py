@@ -19,7 +19,6 @@ from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
-    from pathlib import Path
 
     from tomlkit.items import Table
 
@@ -45,7 +44,7 @@ def update_pixi_configuration(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
         do(_rename_workspace_table, config)
-        do(_define_minimal_project, config, config_path)
+        do(_define_minimal_project, config)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
         if package_manager == "pixi+uv":
@@ -103,12 +102,9 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     config.changelog.append(msg)
 
 
-def _define_minimal_project(config: ModifiablePyproject, path: Path) -> None:
+def _define_minimal_project(config: ModifiablePyproject) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
-    if path == CONFIG_PATH.pixi_toml:
-        table_name = "workspace"
-    else:
-        table_name = "project"
+    table_name = "workspace"
     settings = __get_table(config, table_name, create=True)
     minimal_settings: dict[str, Any] = dict(
         channels=["conda-forge"],
