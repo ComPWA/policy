@@ -9,9 +9,9 @@ from compwa_policy.utilities.match import is_committed
 def has_documentation() -> bool:
     if is_committed("docs/**"):
         return True
-    if is_committed("**/_quarto.yml"):
+    if is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests"):
         return True
-    return is_committed("**/conf.py")
+    return is_committed("conf.py", "**/conf.py", ":!:tests")
 
 
 @cache

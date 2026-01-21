@@ -27,17 +27,21 @@ def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list
 
 def git_ls_files(*glob: str, untracked: bool = False) -> list[str]:
     """Get the tracked and untracked files, but excluding files in .gitignore."""
-    cmd = ["git", "ls-files", *glob]
-    if untracked:
-        cmd.extend(["--cached", "--exclude-standard", "--others"])
-    output = subprocess.check_output(cmd).decode("utf-8")  # noqa: S603
+    output = _git_ls_files_cmd(*glob, untracked=untracked)
     return output.splitlines()
 
 
+def is_committed(*glob: str, untracked: bool = False) -> bool:
+    """Check if any files matching the given git wild-match patterns are committed."""
+    return bool(_git_ls_files_cmd(*glob, untracked=untracked))
+
+
 @cache
-def is_committed(*path: str) -> bool:
-    files = git_ls_files(untracked=True)
-    return any(matches_patterns(file, path) for file in files)
+def _git_ls_files_cmd(*glob: str, untracked: bool = False) -> str:
+    cmd = ["git", "ls-files", *glob]
+    if untracked:
+        cmd.extend(["--cached", "--exclude-standard", "--others"])
+    return subprocess.check_output(cmd).decode("utf-8")  # noqa: S603
 
 
 def matches_files(pattern: str, files: list[str]) -> bool:
