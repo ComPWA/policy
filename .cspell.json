@@ -40,7 +40,6 @@
   ],
   "ignoreWords": [
     "FURB",
-    "MAINT",
     "PyPI",
     "addopts",
     "argparse",

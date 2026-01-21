@@ -64,7 +64,6 @@
     "update-www"
   ],
   "ignoreWords": [
-    "MAINT",
     "PyPI",
     "argparse",
     "autonumbering",
