@@ -44,8 +44,7 @@ def update_pixi_configuration(
             add_badge,
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
-        if config_path == CONFIG_PATH.pixi_toml:
-            do(_rename_workspace_table, config)
+        do(_rename_workspace_table, config)
         do(_define_minimal_project, config, config_path)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
@@ -96,7 +95,10 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     project = __get_table(config, "project")
     workspace = __get_table(config, "workspace", create=True)
     workspace.update(project)
-    del config._document["project"]  # noqa: SLF001
+    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+        del config._document["tool"]["pixi"]["project"]  # noqa: SLF001
+    else:
+        del config._document["project"]  # noqa: SLF001
     msg = 'Renamed "project" table to "workspace" in Pixi configuration'
     config.changelog.append(msg)
 
