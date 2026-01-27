@@ -7,7 +7,7 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-from attrs import frozen
+from attrs import field, frozen
 
 from compwa_policy.check_dev_files import (
     binder,
@@ -150,6 +150,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
                 upgrade_lock.main,
                 precommit_config,
                 frequency=args.upgrade_frequency,
+                keep_workflow=args.keep_workflow,
             )
         do(readthedocs.main, args.package_manager, args.dev_python_version)
         do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
@@ -273,6 +274,12 @@ def _create_argparse() -> argparse.ArgumentParser:
         help="Do not overwrite the PR linting workflow",
         action="store_true",
         default=False,
+    )
+    parser.add_argument(
+        "--keep-workflow",
+        action="append",
+        default=[],
+        help="Names of the GitHub Actions workflows that should not be updated or removed, including the .yml extension",
     )
     parser.add_argument(
         "--macos-python-version",
@@ -415,6 +422,7 @@ class Arguments:
     keep_issue_templates: bool
     keep_local_precommit: bool
     keep_pr_linting: bool
+    keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
     no_binder: bool
     no_cd: bool
