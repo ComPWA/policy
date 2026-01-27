@@ -143,6 +143,7 @@ sequence = [
 [tool.poe.tasks.cov]
 cmd = """
 pytest \
+    --cov=compwa_policy \
     --cov-fail-under=32 \
     --cov-report=html \
     --cov-report=xml \
