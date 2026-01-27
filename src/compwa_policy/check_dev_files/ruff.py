@@ -411,7 +411,6 @@ def __update_per_file_ignores(
                 "D",  # no need for pydocstyle
                 "FBT001",  # don't force booleans as keyword arguments
                 "INP001",  # allow implicit-namespace-package
-                "PGH001",  # allow eval
                 "PLC2701",  # private module imports
                 "PLR2004",  # magic-value-comparison
                 "PLR6301",  # allow non-static method
