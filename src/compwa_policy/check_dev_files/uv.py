@@ -37,7 +37,6 @@ def main(  # noqa: PLR0917
                 readme.add_badge,
                 "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
             )
-            do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
@@ -66,11 +65,6 @@ def main(  # noqa: PLR0917
                 r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
             )
             do(vscode.remove_settings, {"search.exclude": ["uv.lock", "**/uv.lock"]})
-
-
-def _hide_uv_lock_from_vscode_search() -> None:
-    if is_committed("uv.lock"):
-        vscode.update_settings({"search.exclude": {"**/uv.lock": True}})
 
 
 def _remove_pip_constraint_files() -> None:

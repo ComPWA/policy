@@ -51,7 +51,6 @@
   "ruff.importStrategy": "fromEnvironment",
   "ruff.organizeImports": true,
   "search.exclude": {
-    "**/uv.lock": true,
     ".taplo.toml": true,
     "src/compwa_policy/.github/workflows/clean-caches.yml": true,
     "src/compwa_policy/.github/workflows/pr-linting.yml": true,
