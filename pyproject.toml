@@ -264,6 +264,7 @@ addopts = [
     "--durations-min=0",
     "--durations=3",
     "--ignore=docs/conf.py",
+    "--import-mode=importlib",
 ]
 filterwarnings = [
     "error",

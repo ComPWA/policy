@@ -93,7 +93,7 @@ def _deny_ini_options(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    table_key = "tool.pytest.ini_options"
+    table_key = "tool.pytest"
     if not pyproject.has_table(table_key):
         return
     config = pyproject.get_table(table_key)
@@ -111,7 +111,7 @@ def __get_expected_addopts(existing: str | Iterable) -> Array:
     else:
         options = set(existing)
     options = {opt for opt in options if opt and not opt.startswith("--color=")}
-    options.add("--color=yes")
+    options.update(["--color=yes", "--import-mode=importlib"])
     return to_toml_array(sorted(options))
 
 
