@@ -26,6 +26,7 @@ dependencies = [
     "pip-tools",
     "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
+    "setuptools",
     "tomlkit", # preserve original TOML formatting
     'more-itertools; python_version <"3.10.0"', # pairwise
     'typing-extensions; python_version <"3.12.0"', # override
@@ -58,7 +59,6 @@ Tracker = "https://github.com/ComPWA/policy/issues"
 dev = [
     "labels",
     "ruff",
-    "sphinx-autobuild",
     {include-group = "doc"},
     {include-group = "style"},
     {include-group = "test"},
@@ -130,7 +130,8 @@ no-group = "dev"
 type = "uv"
 
 [tool.poe.tasks.all]
-help = "Run all continuous integration tasks locally"
+help = "Run all continuous integration (CI) tasks locally"
+ignore_fail = "return_non_zero"
 sequence = [
     "cov",
     "doc",
@@ -141,13 +142,14 @@ sequence = [
 
 [tool.poe.tasks.cov]
 cmd = """
-uv run --group test --isolated --no-dev \
-    pytest \
-        --cov-fail-under=32 \
-        --cov-report=html \
-        --cov-report=xml \
-        ${paths}
+pytest \
+    --cov=compwa_policy \
+    --cov-fail-under=32 \
+    --cov-report=html \
+    --cov-report=xml \
+    ${paths}
 """
+executor = {group = "test"}
 help = "Compute how much of the source code is covered by tests"
 
 [[tool.poe.tasks.cov.args]]
@@ -188,8 +190,8 @@ sphinx-autobuild \
     docs/ \
     docs/_build/html/
 """
-executor = {group = "doc"}
-help = "Run all unit tests"
+executor = {group = "doc", with = "sphinx-autobuild"}
+help = "Set up a server to directly preview changes to the HTML pages"
 
 [tool.poe.tasks.linkcheck]
 cmd = """
@@ -221,31 +223,40 @@ positional = true
 [tool.poe.tasks.test-all]
 help = "Run all tests on each supported Python version"
 sequence = [
-    {ref = "test-py 3.10"},
-    {ref = "test-py 3.11"},
-    {ref = "test-py 3.12"},
-    {ref = "test-py 3.13"},
-    {ref = "test-py 3.14"},
+    {ref = "test-py310 ${paths}"},
+    {ref = "test-py311 ${paths}"},
+    {ref = "test-py312 ${paths}"},
+    {ref = "test-py313 ${paths}"},
+    {ref = "test-py314 ${paths}"},
 ]
 
-[tool.poe.tasks.test-py]
-cmd = """
-uv run \
-    --group=test \
-    --isolated \
-    --no-dev \
-    --python=${python} \
-    pytest --no-summary
-"""
-help = "Run all tests on a specific Python version"
-
-[[tool.poe.tasks.test-py.args]]
-default = "3.13"
-help = "Selected Python version"
-name = "python"
+[[tool.poe.tasks.test-all.args]]
+default = ""
+multiple = true
+name = "paths"
 positional = true
 
-[tool.pytest.ini_options]
+[tool.poe.tasks.test-py310]
+env = {UV_PYTHON = "3.10"}
+ref = "test"
+
+[tool.poe.tasks.test-py311]
+env = {UV_PYTHON = "3.11"}
+ref = "test"
+
+[tool.poe.tasks.test-py312]
+env = {UV_PYTHON = "3.12"}
+ref = "test"
+
+[tool.poe.tasks.test-py313]
+env = {UV_PYTHON = "3.13"}
+ref = "test"
+
+[tool.poe.tasks.test-py314]
+env = {UV_PYTHON = "3.14"}
+ref = "test"
+
+[tool.pytest]
 addopts = [
     "--color=yes",
     "--doctest-continue-on-failure",
@@ -253,12 +264,14 @@ addopts = [
     "--durations-min=0",
     "--durations=3",
     "--ignore=docs/conf.py",
+    "--import-mode=importlib",
 ]
 filterwarnings = [
     "error",
     "ignore: Importing ErrorTree directly from the jsonschema package is deprecated.*",
     "ignore: The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025.:DeprecationWarning",
 ]
+minversion = "9.0"
 testpaths = [
     "src",
     "tests",
@@ -316,7 +329,6 @@ task-tags = ["cspell"]
 ban-relative-imports = "all"
 
 [tool.ruff.lint.isort]
-known-first-party = ["compwa_policy"]
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
@@ -334,7 +346,6 @@ split-on-trailing-comma = false
     "ANN",
     "D",
     "INP001",
-    "PGH001",
     "PLC2701",
     "PLR2004",
     "PLR6301",

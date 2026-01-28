@@ -3,21 +3,13 @@
 from __future__ import annotations
 
 import subprocess  # noqa: S404
+from functools import cache
+from typing import TYPE_CHECKING
 
 from pathspec import PathSpec
 
-
-def filter_files(patterns: list[str], files: list[str] | None = None) -> list[str]:
-    """Filter filenames that match certain patterns.
-
-    If :code:`files` is not supplied, get the files with :func:`git_ls_files`.
-
-    >>> filter_files(["**/*.json", "**/*.txt"], ["a/b/file.json", "file.yaml"])
-    ['a/b/file.json']
-    """
-    if files is None:
-        files = git_ls_files(untracked=True)
-    return [file for file in files if matches_patterns(file, patterns)]
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list[str]:
@@ -33,22 +25,23 @@ def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list
     return [pattern for pattern in patterns if matches_files(pattern, files)]
 
 
-def git_ls_files(untracked: bool = False) -> list[str]:
+def git_ls_files(*glob: str, untracked: bool = False) -> list[str]:
     """Get the tracked and untracked files, but excluding files in .gitignore."""
-    output = subprocess.check_output([  # noqa: S607
-        "git",
-        "ls-files",
-    ]).decode("utf-8")
-    tracked_files = output.splitlines()
+    output = _git_ls_files_cmd(*glob, untracked=untracked)
+    return output.splitlines()
+
+
+def is_committed(*glob: str, untracked: bool = False) -> bool:
+    """Check if any files matching the given git wild-match patterns are committed."""
+    return bool(_git_ls_files_cmd(*glob, untracked=untracked))
+
+
+@cache
+def _git_ls_files_cmd(*glob: str, untracked: bool = False) -> str:
+    cmd = ["git", "ls-files", *glob]
     if untracked:
-        output = subprocess.check_output([  # noqa: S607
-            "git",
-            "ls-files",
-            "--others",
-            "--exclude-standard",
-        ]).decode("utf-8")
-        return tracked_files + output.splitlines()
-    return tracked_files
+        cmd.extend(["--cached", "--exclude-standard", "--others"])
+    return subprocess.check_output(cmd).decode("utf-8")  # noqa: S603
 
 
 def matches_files(pattern: str, files: list[str]) -> bool:
@@ -65,7 +58,7 @@ def matches_files(pattern: str, files: list[str]) -> bool:
     return any(spec.match_file(file) for file in files)
 
 
-def matches_patterns(filename: str, patterns: list[str]) -> bool:
+def matches_patterns(filename: str, patterns: Iterable[str]) -> bool:
     """Use git wild-match patterns to match a filename.
 
     >>> matches_patterns(".cspell.json", patterns=["**/*.json"])

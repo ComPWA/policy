@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import rtoml
 from ini2toml.api import Translator
 
+from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.executor import Executor
@@ -30,6 +31,7 @@ def main(single_threaded: bool) -> None:
             return
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
+        do(_deny_ini_options, pyproject)
         do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
         do(_update_vscode_settings, pyproject, single_threaded)
@@ -73,8 +75,25 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(msg)
 
 
+def _deny_ini_options(pyproject: ModifiablePyproject) -> None:
+    if pyproject.has_table("tool.pytest.ini_options"):
+        msg = (
+            "pytest.ini_options found in pyproject.toml. Have a look at"
+            " https://docs.pytest.org/en/stable/reference/customize.html#pyproject-toml"
+            " to migrate to a native TOML configuration."
+        )
+        raise PrecommitError(msg)
+    pytest_config = pyproject.get_table("tool.pytest", fallback=None)
+    if pytest_config is None:
+        return
+    if "minversion" in pytest_config:  # cspell:ignore minversion
+        return
+    pytest_config["minversion"] = "9.0"
+    pyproject.changelog.append("Set minimum pytest version to 9.0")
+
+
 def _update_settings(pyproject: ModifiablePyproject) -> None:
-    table_key = "tool.pytest.ini_options"
+    table_key = "tool.pytest"
     if not pyproject.has_table(table_key):
         return
     config = pyproject.get_table(table_key)
@@ -92,7 +111,7 @@ def __get_expected_addopts(existing: str | Iterable) -> Array:
     else:
         options = set(existing)
     options = {opt for opt in options if opt and not opt.startswith("--color=")}
-    options.add("--color=yes")
+    options.update(["--color=yes", "--import-mode=importlib"])
     return to_toml_array(sorted(options))
 
 

@@ -2,51 +2,66 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from copy import deepcopy
+from functools import cache
+from typing import TYPE_CHECKING, Any, cast
+
+import yaml
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
+from compwa_policy.utilities.match import is_committed
+from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
-DependabotOption = Literal["keep", "update"]
-"""Allowed options for the :code:`--dependabot` argument."""
+    from compwa_policy.check_dev_files.upgrade_lock import Frequency
 
 
-def main(allow_dependabot: DependabotOption | None) -> None:
+def main(frequency: Frequency) -> None:
+    def dump_dependabot_config() -> None:
+        dependabot_path.parent.mkdir(exist_ok=True)
+        rt_yaml.dump(expected, dependabot_path)
+        msg = f"Updated {dependabot_path}"
+        raise PrecommitError(msg)
+
+    def append_ecosystem(ecosystem_name: str) -> None:
+        new_ecosystem = deepcopy(github_actions_ecosystem)  # avoid YAML anchors
+        new_ecosystem["package-ecosystem"] = ecosystem_name
+        package_ecosystems.append(new_ecosystem)
+
     dependabot_path = CONFIG_PATH.github_workflow_dir.parent / "dependabot.yml"
-    if allow_dependabot is None:
-        _remove_dependabot(dependabot_path)
-    elif allow_dependabot == "update":
-        _update_dependabot(dependabot_path)
-
-
-def _remove_dependabot(dependabot_path: Path) -> None:
-    if not dependabot_path.exists():
-        return
-    dependabot_path.unlink()
-    msg = (
-        f"Removed {dependabot_path}, because it is GitHub workflows have been"
-        " outsourced to https://github.com/ComPWA/actions"
-    )
-    raise PrecommitError(msg)
-
-
-def _update_dependabot(dependabot_path: Path) -> None:
     template_path = COMPWA_POLICY_DIR / dependabot_path
-    with open(template_path) as f:
-        template = f.read()
+    rt_yaml = create_prettier_round_trip_yaml()
+
+    expected = rt_yaml.load(template_path)
+    if frequency is not None:
+        expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
+    package_ecosystems = cast("list[dict[str, Any]]", expected["updates"])
+    github_actions_ecosystem = package_ecosystems[0]
+    if not is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}"):
+        package_ecosystems.pop(0)
+    if is_committed("**/Manifest.toml"):
+        append_ecosystem("julia")
+    if is_committed("uv.lock"):
+        append_ecosystem("uv")
+
+    if not package_ecosystems:
+        dependabot_path.unlink(missing_ok=True)
+        msg = f"Removed {dependabot_path}"
+        raise PrecommitError(msg)
+        return
     if not dependabot_path.exists():
-        __dump_dependabot_template(template, dependabot_path)
-    with open(dependabot_path) as f:
-        dependabot = f.read()
-    if dependabot != template:
-        __dump_dependabot_template(template, dependabot_path)
+        dump_dependabot_config()
+    existing = rt_yaml.load(dependabot_path)
+    if existing != expected:
+        dump_dependabot_config()
 
 
-def __dump_dependabot_template(content: str, path: Path) -> None:
-    with open(path, "w") as f:
-        f.write(content)
-    msg = f"Updated {path}"
-    raise PrecommitError(msg)
+@cache
+def get_dependabot_ecosystems() -> set[str]:
+    dependabot_path = CONFIG_PATH.github_workflow_dir.parent / "dependabot.yml"
+    if not dependabot_path.exists():
+        return set()
+    with dependabot_path.open("r") as stream:
+        config = yaml.load(stream, Loader=yaml.SafeLoader)
+    return {entry["package-ecosystem"] for entry in config["updates"]}

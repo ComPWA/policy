@@ -14,7 +14,7 @@ repos:
       - id: check-useless-excludes
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.11
+    rev: v0.14.13
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -49,7 +49,6 @@ repos:
         pass_filenames: false
         args:
           - --allow-labels
-          - --dependabot=update
           - --keep-local-precommit
           - --no-pypi
           - --pytest-single-threaded
@@ -64,7 +63,7 @@ repos:
         files: ^\.pre\-commit\-(config|hooks)\.yaml$
 
   - repo: https://github.com/ComPWA/prettier-pre-commit
-    rev: v3.4.2
+    rev: v3.8.0
     hooks:
       - id: prettier
 

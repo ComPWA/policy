@@ -129,7 +129,7 @@ def _get_requires_python(project: Mapping[str, Any]) -> str:
 
 
 def _get_allowed_versions(
-    version_range: str, exclude: set[str] | None = None
+    version_range: str, exclude: set[PythonVersion] | None = None
 ) -> list[PythonVersion]:
     """Get a list of allowed versions from a version range specifier.
 

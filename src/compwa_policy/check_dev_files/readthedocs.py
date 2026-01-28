@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+from functools import cache
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import IO, TYPE_CHECKING, cast
@@ -11,7 +13,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     get_constraints_file,
@@ -59,12 +61,14 @@ def main(
 
 
 def _set_sphinx_configuration(config: ReadTheDocs) -> None:
-    if "sphinx" not in config.document:
-        config.document["sphinx"] = {}
-    sphinx = config.document["sphinx"]
     conf_path = __get_sphinx_config_path()
-    if "configuration" not in sphinx and conf_path:
-        sphinx["configuration"] = str(conf_path)
+    if conf_path is None:
+        return
+    conf_path = str(conf_path)
+    if config.document.get("sphinx", {}).get("configuration", "") != conf_path:
+        if "sphinx" not in config.document:
+            config.document["sphinx"] = {}
+        config.document["sphinx"]["configuration"] = conf_path
         msg = f"Set sphinx.configuration to {conf_path}"
         config.changelog.append(msg)
 
@@ -73,7 +77,7 @@ def __get_sphinx_config_path() -> Path | None:
     conf_path = Path("docs/conf.py")
     if conf_path.exists():
         return conf_path
-    candidate_paths = list(filter_files(["**/conf.py"]))
+    candidate_paths = git_ls_files("**/conf.py")
     if not candidate_paths:
         return None
     return Path(candidate_paths[0])
@@ -203,24 +207,20 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
 def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
     new_command = __get_pixi_install_statement() + "\n"
     pyproject = Pyproject.load()
+    docs_dir = _determine_docs_dir()
     if has_dependency(pyproject, "poethepoet"):
-        new_command += dedent(R"""
+        new_command += dedent(Rf"""
             export UV_LINK_MODE=copy
-            pixi run \
-            uv run \
-                --group doc \
-                --no-dev \
-                --with poethepoet \
-                poe doc
+            pixi run poe doc
             mkdir -p $READTHEDOCS_OUTPUT
-            mv docs/_build/html $READTHEDOCS_OUTPUT
+            mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
         """).strip()
     else:
-        new_command += dedent(R"""
+        new_command += dedent(Rf"""
             export UV_LINK_MODE=copy
             pixi run doc
             mkdir -p $READTHEDOCS_OUTPUT
-            mv docs/_build/html $READTHEDOCS_OUTPUT
+            mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
         """).strip()
     __update_build_step(
         config,
@@ -230,15 +230,12 @@ def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
 
 
 def _update_build_step_for_uv(config: ReadTheDocs) -> None:
-    new_command = dedent(R"""
+    docs_dir = _determine_docs_dir()
+    new_command = dedent(Rf"""
     export UV_LINK_MODE=copy
-    uv run \
-      --group doc \
-      --no-dev \
-      --with poethepoet \
-      poe doc
+    uvx --from poethepoet poe doc
     mkdir -p $READTHEDOCS_OUTPUT
-    mv docs/_build/html $READTHEDOCS_OUTPUT
+    mv {docs_dir}/_build/html $READTHEDOCS_OUTPUT
     """).strip()
     __update_build_step(
         config,
@@ -250,6 +247,21 @@ def _update_build_step_for_uv(config: ReadTheDocs) -> None:
             or "tox -e" in command
         ),
     )
+
+
+@cache
+def _determine_docs_dir() -> str:
+    for path in git_ls_files(
+        "conf.py",
+        "**/conf.py",
+        "_quarto.yml",
+        "**/_quarto.yml",
+        untracked=True,
+    ):
+        if os.path.isfile(path):
+            parent = os.path.dirname(path)
+            return parent or "."
+    return "docs"
 
 
 def __update_build_step(

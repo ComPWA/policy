@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import yaml
-from tomlkit import inline_table
 
 from compwa_policy.check_dev_files.pixi._helpers import has_pixi_config
 from compwa_policy.errors import PrecommitError
@@ -16,11 +15,10 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.pyproject.setters import split_dependency_definition
 from compwa_policy.utilities.readme import add_badge
-from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
-    from pathlib import Path
 
     from tomlkit.items import Table
 
@@ -45,9 +43,8 @@ def update_pixi_configuration(
             add_badge,
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
-        if config_path == CONFIG_PATH.pixi_toml:
-            do(_rename_workspace_table, config)
-        do(_define_minimal_project, config, config_path)
+        do(_rename_workspace_table, config)
+        do(_define_minimal_project, config)
         do(_import_conda_dependencies, config)
         do(_import_conda_environment, config)
         if package_manager == "pixi+uv":
@@ -97,17 +94,17 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     project = __get_table(config, "project")
     workspace = __get_table(config, "workspace", create=True)
     workspace.update(project)
-    del config._document["project"]  # noqa: SLF001
+    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+        del config._document["tool"]["pixi"]["project"]  # noqa: SLF001
+    else:
+        del config._document["project"]  # noqa: SLF001
     msg = 'Renamed "project" table to "workspace" in Pixi configuration'
     config.changelog.append(msg)
 
 
-def _define_minimal_project(config: ModifiablePyproject, path: Path) -> None:
+def _define_minimal_project(config: ModifiablePyproject) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
-    if path == CONFIG_PATH.pixi_toml:
-        table_name = "workspace"
-    else:
-        table_name = "project"
+    table_name = "workspace"
     settings = __get_table(config, table_name, create=True)
     minimal_settings: dict[str, Any] = dict(
         channels=["conda-forge"],
@@ -197,8 +194,9 @@ def _clean_up_task_env(config: ModifiablePyproject) -> None:
         local_env = task_table.get("env", {})
         if not local_env:
             continue
-        expected = inline_table()
-        expected.update({k: v for k, v in local_env.items() if v != global_env.get(k)})
+        expected = to_inline_table({
+            k: v for k, v in local_env.items() if v != global_env.get(k)
+        })
         if local_env != expected:
             if expected:
                 task_table["env"] = expected
@@ -218,8 +216,7 @@ def __load_pixi_environment_variables(config: ModifiablePyproject) -> dict[str, 
 
 
 def _install_package_editable(config: ModifiablePyproject) -> None:
-    editable = inline_table()
-    editable.update({
+    editable = to_inline_table({
         "path": ".",
         "editable": True,
     })
@@ -262,8 +259,9 @@ def _update_dev_environment(config: ModifiablePyproject) -> None:
     if not __has_table(config, "project.optional-dependencies"):
         return
     optional_dependencies = __get_table(config, "project.optional-dependencies")
-    expected = inline_table()
-    expected["features"] = to_toml_array(sorted(optional_dependencies))
+    expected = to_inline_table({
+        "features": to_toml_array(sorted(optional_dependencies))
+    })
     environments = __get_table(config, "environments", create=True)
     if environments.get("default") != expected:
         environments["default"] = expected

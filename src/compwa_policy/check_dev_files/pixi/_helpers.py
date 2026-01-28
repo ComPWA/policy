@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import Pyproject
 
 
 def has_pixi_config(pyproject: Pyproject | None = None) -> bool:
-    if filter_files(["pixi.lock", "pixi.toml"]):
+    if git_ls_files("pixi.lock", "pixi.toml"):
         return True
     if pyproject is not None:
         return pyproject.has_table("tool.pixi")

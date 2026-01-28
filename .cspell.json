@@ -24,6 +24,7 @@
     "*.ico",
     ".editorconfig",
     ".envrc",
+    ".github/dependabot.yml",
     ".gitignore",
     ".gitpod.*",
     ".pre-commit-config.yaml",

@@ -7,6 +7,7 @@ from collections import abc
 from typing import TYPE_CHECKING, Any
 
 from ruamel.yaml import YAML
+from setuptools import find_packages
 
 from compwa_policy.utilities import natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
@@ -206,7 +207,7 @@ def _update_ruff_config(
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
             do(__update_flake8_comprehensions_builtins, pyproject)
-        do(__update_isort_settings, pyproject)
+        do(__update_isort_settings, pyproject, has_notebooks)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
 
@@ -410,7 +411,6 @@ def __update_per_file_ignores(
                 "D",  # no need for pydocstyle
                 "FBT001",  # don't force booleans as keyword arguments
                 "INP001",  # allow implicit-namespace-package
-                "PGH001",  # allow eval
                 "PLC2701",  # private module imports
                 "PLR2004",  # magic-value-comparison
                 "PLR6301",  # allow non-static method
@@ -509,12 +509,15 @@ def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> N
     )
 
 
-def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
-    ___update_ruff_lint_table(
-        pyproject,
-        table_name="isort",
-        minimal_settings={"split-on-trailing-comma": False},
-    )
+def __update_isort_settings(
+    pyproject: ModifiablePyproject, has_notebooks: bool
+) -> None:
+    packages_names = [mod for mod in find_packages("src") if "." not in mod]
+    minimal_settings: dict[str, Any] = {}
+    if has_notebooks and packages_names:
+        minimal_settings["known-first-party"] = packages_names
+    minimal_settings["split-on-trailing-comma"] = False
+    ___update_ruff_lint_table(pyproject, "isort", minimal_settings)
 
 
 def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:
