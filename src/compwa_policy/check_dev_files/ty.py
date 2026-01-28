@@ -82,6 +82,7 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
         name="ty",
         entry="ty check",
         args=args,
+        pass_filenames=False,
         require_serial=True,
         language="system",
         types_or=types_or,
