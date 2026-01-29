@@ -42,7 +42,6 @@
   },
   "notebook.formatOnSave.enabled": true,
   "python.defaultInterpreterPath": ".venv/bin/python",
-  "python.languageServer": "None",
   "python.terminal.activateEnvironment": false,
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
@@ -52,8 +51,6 @@
   "ruff.importStrategy": "fromEnvironment",
   "ruff.organizeImports": true,
   "search.exclude": {
-    "**/tests/**/__init__.py": true,
-    "**/uv.lock": true,
     ".taplo.toml": true,
     "src/compwa_policy/.github/workflows/clean-caches.yml": true,
     "src/compwa_policy/.github/workflows/pr-linting.yml": true,

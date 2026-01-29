@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import cache
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -13,7 +12,7 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import git_ls_files, matches_patterns
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
@@ -24,10 +23,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
-def main(
-    dev_python_version: PythonVersion,
-    package_manager: PackageManagerChoice,
+def main(  # noqa: PLR0917
     precommit_config: ModifiablePrecommit,
+    dev_python_version: PythonVersion,
+    keep_contributing_md: bool,
+    package_manager: PackageManagerChoice,
     organization: str,
     repo_name: str,
 ) -> None:
@@ -37,11 +37,11 @@ def main(
                 readme.add_badge,
                 "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
             )
-            do(_hide_uv_lock_from_vscode_search)
             do(_update_editor_config)
             do(_update_python_version_file, dev_python_version)
             do(_update_uv_lock_hook, precommit_config)
-            do(_update_contributing_file, organization, repo_name)
+            if not keep_contributing_md:
+                do(_update_contributing_file, organization, repo_name)
             do(_remove_pip_constraint_files)
             do(
                 vscode.remove_settings,
@@ -65,11 +65,6 @@ def main(
                 r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
             )
             do(vscode.remove_settings, {"search.exclude": ["uv.lock", "**/uv.lock"]})
-
-
-def _hide_uv_lock_from_vscode_search() -> None:
-    if __has_uv_lock_file():
-        vscode.update_settings({"search.exclude": {"**/uv.lock": True}})
 
 
 def _remove_pip_constraint_files() -> None:
@@ -110,7 +105,7 @@ def _remove_uv_lock() -> None:
 def _update_editor_config() -> None:
     if not CONFIG_PATH.editorconfig.exists():
         return
-    if not __has_uv_lock_file():
+    if not is_committed("uv.lock"):
         return
     expected_content = dedent("""
     [uv.lock]
@@ -124,6 +119,8 @@ def _update_editor_config() -> None:
 
 
 def _update_python_version_file(dev_python_version: PythonVersion) -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
     pyproject = Pyproject.load()
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
@@ -148,7 +145,7 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> None:
 
 
 def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
-    if __has_uv_lock_file():
+    if is_committed("uv.lock"):
         repo = Repo(
             repo="https://github.com/astral-sh/uv-pre-commit",
             rev="0.4.20",
@@ -228,9 +225,3 @@ def __get_runner_instructions() -> str:
         if has_sub_table(pixi_config, "tasks"):
             return pixi_instructions
     return ""
-
-
-@cache
-def __has_uv_lock_file() -> bool:
-    files = git_ls_files(untracked=True)
-    return any(matches_patterns(file, ["uv.lock"]) for file in files)

@@ -209,8 +209,10 @@ def split_dependency_definition(definition: str) -> tuple[str, str, str]:
     ('my_package', '~=', '1.2')
     >>> split_dependency_definition("any_version_package==*")
     ('any_version_package', '==', '*')
+    >>> split_dependency_definition("python-lsp-server[rope]")
+    ('python-lsp-server[rope]', '', '')
     """
-    matches = re.match(r"^([a-zA-Z0-9_-]+)([\!<=>~\s]*)([^ ^#]*)", definition)
+    matches = re.match(r"^([a-zA-Z0-9_\[\]-]+)([\!<=>~\s]*)([^ ^#]*)", definition)
     if not matches:
         msg = f"Could not extract package name and version from {definition}"
         raise ValueError(msg)

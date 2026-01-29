@@ -1,11 +1,8 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    has_pyproject_package_name,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
 def main(no_ruff: bool) -> None:
@@ -22,7 +19,7 @@ def main(no_ruff: bool) -> None:
 
 
 def _update_dev_requirements(no_ruff: bool) -> None:
-    if not has_pyproject_package_name():
+    if not CONFIG_PATH.pyproject.exists():
         return
     with ModifiablePyproject.load() as pyproject:
         supported_python_versions = pyproject.get_supported_python_versions()
@@ -32,19 +29,26 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             "jupyterlab",
             "jupyterlab-git",
             "jupyterlab-lsp",
-            "jupyterlab-myst",
             "jupyterlab-quickopen",  # cspell:ignore quickopen
-            "python-lsp-server[rope]",
+            "python-lsp-server",
         }
+        # cspell:ignore executablebookproject
+        recommended_vscode_extensions = vscode.get_recommended_extensions()
+        if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
+            packages.add("jupyterlab-myst")
+        else:
+            pyproject.remove_dependency("jupyterlab-myst")
+        if "quarto.quarto" in recommended_vscode_extensions:
+            packages.add("jupyterlab-quarto")
+        else:
+            pyproject.remove_dependency("jupyterlab-quarto")
+        pyproject.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
             pyproject.remove_dependency(
                 "black", ignored_sections=["doc", "notebooks", "test"]
             )
             pyproject.remove_dependency("isort")
-            ruff_packages = {
-                "jupyterlab-code-formatter",
-                "python-lsp-ruff",
-            }
-            packages.update(ruff_packages)
+            pyproject.remove_dependency("jupyterlab-code-formatter")
+            packages.add("jupyter-ruff")
         for package in sorted(packages):
             pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])

@@ -5,10 +5,12 @@ from __future__ import annotations
 import os
 import re
 import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import (
@@ -19,16 +21,10 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import (
-    Pyproject,
-    PythonVersion,
-    has_pyproject_package_name,
-)
+from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.main import YAML
 
@@ -51,7 +47,6 @@ def main(
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-    test_extras: list[str],
 ) -> None:
     with Executor() as do:
         if no_cd:
@@ -69,7 +64,6 @@ def main(
             python_version,
             single_threaded,
             skip_tests,
-            test_extras,
         )
         if not keep_pr_linting:
             do(_update_pr_linting)
@@ -123,7 +117,7 @@ def _update_pr_linting() -> None:
     output_path.parent.mkdir(exist_ok=True)
     if not output_path.exists() or hash_file(input_path) != hash_file(output_path):
         shutil.copyfile(input_path, output_path)
-        msg = f'Updated "{output_path}" workflow'
+        msg = f"Updated {output_path} workflow"
         raise PrecommitError(msg)
 
 
@@ -137,7 +131,6 @@ def _update_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-    test_extras: list[str],
 ) -> None:
     def update() -> None:
         yaml, expected_data = _get_ci_workflow(
@@ -150,7 +143,6 @@ def _update_ci_workflow(  # noqa: PLR0917
             python_version,
             single_threaded,
             skip_tests,
-            test_extras,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not expected_data.get("jobs"):
@@ -186,15 +178,12 @@ def _get_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-    test_extras: list[str],
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
-    __update_pytest_section(
-        config, macos_python_version, single_threaded, skip_tests, test_extras
-    )
+    __update_pytest_section(config, macos_python_version, single_threaded, skip_tests)
     __update_style_section(config, python_version, precommit)
     return yaml, config
 
@@ -217,17 +206,19 @@ def __update_doc_section(
     python_version: PythonVersion,
     github_pages: bool,
 ) -> None:
-    if not os.path.exists("docs/"):
-        del config["jobs"]["doc"]
-    else:
-        with_section = config["jobs"]["doc"]["with"]
+    if has_documentation():
+        with_section = {}
         if python_version != DEFAULT_DEV_PYTHON_VERSION:
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
         if not CONFIG_PATH.readthedocs.exists() or github_pages:
             with_section["gh-pages"] = True
+        if with_section:
+            config["jobs"]["doc"]["with"] = with_section
         __update_with_section(config, job_name="doc")
+    else:
+        del config["jobs"]["doc"]
 
 
 def __update_style_section(
@@ -251,21 +242,18 @@ def __update_pytest_section(
     macos_python_version: PythonVersion | None,
     single_threaded: bool,
     skip_tests: list[str],
-    test_extras: list[str],
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):
-        del config["jobs"]["pytest"]
+        del config["jobs"]["test"]
     else:
-        with_section = config["jobs"]["pytest"]["with"]
-        if test_extras:
-            with_section["additional-extras"] = " ".join(test_extras)
+        with_section = {}
         if CONFIG_PATH.codecov.exists():
-            with_section["coverage-target"] = __get_package_name()
+            with_section["coverage-python-version"] = __get_coverage_python_version()
             secrets = {
                 "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}",
             }
-            config["jobs"]["pytest"]["secrets"] = secrets
+            config["jobs"]["test"]["secrets"] = secrets
         if macos_python_version is not None:
             with_section["macos-python-version"] = DoubleQuotedScalarString(
                 macos_python_version
@@ -277,33 +265,25 @@ def __update_pytest_section(
         output_path = f"{test_dir}/output/"
         if os.path.exists(output_path):
             with_section["test-output-path"] = output_path
-        __update_with_section(config, job_name="pytest")
+        if with_section:
+            config["jobs"]["test"]["with"] = with_section
+        __update_with_section(config, job_name="test")
 
 
 def __update_with_section(config: dict, job_name: str) -> None:
-    with_section = config["jobs"][job_name]["with"]
+    with_section = config["jobs"][job_name].get("with")
     if with_section:
         sorted_section = {k: with_section[k] for k in sorted(with_section)}
         config["jobs"][job_name]["with"] = sorted_section
-    else:
+    elif with_section is not None:
         del with_section
 
 
-def __get_package_name() -> str:
-    pypi_name = Pyproject.load().get_package_name(raise_on_missing=True)
-    package_name = pypi_name.replace("-", "_").lower()
-    if os.path.exists(f"src/{package_name}/"):
-        return package_name
-    src_dirs = os.listdir("src/")
-    candidate_dirs = [
-        s
-        for s in src_dirs
-        if s.startswith(pypi_name[0].lower())
-        if not s.endswith(".egg-info")
-    ]
-    if candidate_dirs:
-        return min(candidate_dirs)
-    return min(src_dirs)
+def __get_coverage_python_version() -> PythonVersion:
+    python_version_file = Path(".python-version")
+    if python_version_file.exists():
+        return python_version_file.read_text().strip()  # ty:ignore[invalid-return-type]
+    return DEFAULT_DEV_PYTHON_VERSION
 
 
 def _copy_workflow_file(filename: str) -> None:
@@ -318,14 +298,14 @@ def _copy_workflow_file(filename: str) -> None:
     workflow_path = f"{CONFIG_PATH.github_workflow_dir}/{filename}"
     if not os.path.exists(workflow_path):
         write(expected_content, target=workflow_path)
-        msg = f'Created "{workflow_path}" workflow'
+        msg = f"Created {workflow_path} workflow"
         raise PrecommitError(msg)
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
         write(expected_content, target=workflow_path)
-        msg = f'Updated "{workflow_path}" workflow'
+        msg = f"Updated {workflow_path} workflow"
         raise PrecommitError(msg)
 
 
@@ -362,7 +342,7 @@ def remove_workflow(filename: str) -> None:
     path = CONFIG_PATH.github_workflow_dir / filename
     if path.exists():
         path.unlink()
-        msg = f'Removed deprecated "{filename}" workflow'
+        msg = f"Removed deprecated {filename} workflow"
         raise PrecommitError(msg)
 
 
@@ -370,5 +350,5 @@ def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
     path.parent.mkdir(exist_ok=True, parents=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
-    msg = f'{verb} "{path}" workflow'
+    msg = f"{verb} {path} workflow"
     raise PrecommitError(msg)

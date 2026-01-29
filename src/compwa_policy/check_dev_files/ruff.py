@@ -7,6 +7,7 @@ from collections import abc
 from typing import TYPE_CHECKING, Any
 
 from ruamel.yaml import YAML
+from setuptools import find_packages
 
 from compwa_policy.utilities import natural_sorting, remove_configs, vscode
 from compwa_policy.utilities.executor import Executor
@@ -15,6 +16,7 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     complies_with_subset,
+    has_dependency,
     has_pyproject_package_name,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
@@ -50,7 +52,8 @@ def main(
             do(_sort_imports_on_top, precommit, pyproject)
         do(_update_ruff_config, precommit, pyproject, has_notebooks)
         do(_update_precommit_hook, precommit, has_notebooks)
-        do(_update_lint_dependencies, pyproject)
+        if not has_dependency(pyproject, "ruff"):
+            do(_update_lint_dependencies, pyproject)
         do(_update_vscode_settings)
 
 
@@ -203,10 +206,11 @@ def _update_ruff_config(
         do(__update_ruff_format_settings, pyproject)
         do(__update_ruff_lint_settings, pyproject)
         do(__update_per_file_ignores, pyproject, has_notebooks)
+        do(__remove_deprecated_rules, pyproject)
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
             do(__update_flake8_comprehensions_builtins, pyproject)
-        do(__update_isort_settings, pyproject)
+        do(__update_isort_settings, pyproject, has_notebooks)
         do(__update_pydocstyle_settings, pyproject)
         do(__remove_nbqa, precommit, pyproject)
 
@@ -410,7 +414,6 @@ def __update_per_file_ignores(
                 "D",  # no need for pydocstyle
                 "FBT001",  # don't force booleans as keyword arguments
                 "INP001",  # allow implicit-namespace-package
-                "PGH001",  # allow eval
                 "PLC2701",  # private module imports
                 "PLR2004",  # magic-value-comparison
                 "PLR6301",  # allow non-static method
@@ -426,6 +429,53 @@ def __update_per_file_ignores(
     if not complies_with_subset(per_file_ignores, minimal_settings):
         per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
+        pyproject.changelog.append(msg)
+
+
+def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
+    # https://docs.astral.sh/ruff/rules
+    deprecated_rules = {
+        "ANN101",
+        "ANN102",
+        "E999",
+        "PD901",
+        "PGH001",
+        "PGH002",
+        "PLR1701",
+        "PLR1706",
+        "PT004",
+        "PT005",
+        "RUF011",
+        "RUF035",
+        "S320",
+        "S410",
+        "TRY200",
+        "UP027",
+    }
+    per_file_ignores = "tool.ruff.lint.per-file-ignores"
+    keys_to_check = [("tool.ruff.lint", "ignore")]
+    keys_to_check.extend(
+        (per_file_ignores, key)
+        for key in pyproject.get_table(per_file_ignores, fallback=[])
+    )
+    updated_tables = False
+    for table_name, key in keys_to_check:
+        if not pyproject.has_table(table_name):
+            continue
+        table = pyproject.get_table(table_name)
+        if key not in table:
+            continue
+        rules: set[str] = set(table[key])
+        if not rules & deprecated_rules:
+            continue
+        rules -= deprecated_rules
+        if rules:
+            table[key] = to_toml_array(sorted(rules))
+        else:
+            del table[key]
+        updated_tables = True
+    if updated_tables:
+        msg = "Removed deprecated Ruff rules"
         pyproject.changelog.append(msg)
 
 
@@ -509,12 +559,15 @@ def __update_flake8_comprehensions_builtins(pyproject: ModifiablePyproject) -> N
     )
 
 
-def __update_isort_settings(pyproject: ModifiablePyproject) -> None:
-    ___update_ruff_lint_table(
-        pyproject,
-        table_name="isort",
-        minimal_settings={"split-on-trailing-comma": False},
-    )
+def __update_isort_settings(
+    pyproject: ModifiablePyproject, has_notebooks: bool
+) -> None:
+    packages_names = [mod for mod in find_packages("src") if "." not in mod]
+    minimal_settings: dict[str, Any] = {}
+    if has_notebooks and packages_names:
+        minimal_settings["known-first-party"] = packages_names
+    minimal_settings["split-on-trailing-comma"] = False
+    ___update_ruff_lint_table(pyproject, "isort", minimal_settings)
 
 
 def __update_pydocstyle_settings(pyproject: ModifiablePyproject) -> None:

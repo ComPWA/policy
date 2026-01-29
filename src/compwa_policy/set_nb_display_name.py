@@ -10,7 +10,7 @@ import nbformat
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import filter_files
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.notebook import load_notebook
 from compwa_policy.utilities.pyproject import Pyproject, has_dependency
 
@@ -38,7 +38,7 @@ def _set_nb_display_name(filename: str) -> None:
         .get("display_name")
     )
     expected_display_name = "Python 3 (ipykernel)"
-    if filter_files(["pyproject.toml"]):
+    if git_ls_files("**/pyproject.toml"):
         pyproject = Pyproject.load()
         if has_dependency(pyproject, "pyproject-local-kernel"):
             expected_display_name = "Pyproject Local"
