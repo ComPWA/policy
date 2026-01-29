@@ -91,6 +91,7 @@ def __insert_expected_paths() -> None:
     existing = __get_existing_lines()
     obligatory = [
         "LICENSE",
+        "pixi.lock",
     ]
     obligatory = [p for p in obligatory if os.path.exists(p)]
     expected = [*sorted(set(existing + obligatory) - {""}), ""]
