@@ -204,6 +204,7 @@ def _update_ruff_config(
         do(__update_ruff_format_settings, pyproject)
         do(__update_ruff_lint_settings, pyproject)
         do(__update_per_file_ignores, pyproject, has_notebooks)
+        do(__remove_deprecated_rules, pyproject)
         if has_notebooks:
             do(__update_flake8_builtins, pyproject)
             do(__update_flake8_comprehensions_builtins, pyproject)
@@ -426,6 +427,53 @@ def __update_per_file_ignores(
     if not complies_with_subset(per_file_ignores, minimal_settings):
         per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
+        pyproject.changelog.append(msg)
+
+
+def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
+    # https://docs.astral.sh/ruff/rules
+    deprecated_rules = {
+        "ANN101",
+        "ANN102",
+        "E999",
+        "PD901",
+        "PGH001",
+        "PGH002",
+        "PLR1701",
+        "PLR1706",
+        "PT004",
+        "PT005",
+        "RUF011",
+        "RUF035",
+        "S320",
+        "S410",
+        "TRY200",
+        "UP027",
+    }
+    per_file_ignores = "tool.ruff.lint.per-file-ignores"
+    keys_to_check = [("tool.ruff.lint", "ignore")]
+    keys_to_check.extend(
+        (per_file_ignores, key)
+        for key in pyproject.get_table(per_file_ignores, fallback=[])
+    )
+    updated_tables = False
+    for table_name, key in keys_to_check:
+        if not pyproject.has_table(table_name):
+            continue
+        table = pyproject.get_table(table_name)
+        if key not in table:
+            continue
+        rules: set[str] = set(table[key])
+        if not rules & deprecated_rules:
+            continue
+        rules -= deprecated_rules
+        if rules:
+            table[key] = to_toml_array(sorted(rules))
+        else:
+            del table[key]
+        updated_tables = True
+    if updated_tables:
+        msg = "Removed deprecated Ruff rules"
         pyproject.changelog.append(msg)
 
 
