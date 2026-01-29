@@ -16,6 +16,7 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     complies_with_subset,
+    has_dependency,
     has_pyproject_package_name,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
@@ -51,7 +52,8 @@ def main(
             do(_sort_imports_on_top, precommit, pyproject)
         do(_update_ruff_config, precommit, pyproject, has_notebooks)
         do(_update_precommit_hook, precommit, has_notebooks)
-        do(_update_lint_dependencies, pyproject)
+        if not has_dependency(pyproject, "ruff"):
+            do(_update_lint_dependencies, pyproject)
         do(_update_vscode_settings)
 
 
