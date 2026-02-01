@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
@@ -11,6 +12,7 @@ from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -156,7 +158,12 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
     existing = cast("Table", tasks.get("nb", {}))
     expected = {
         "args": to_toml_array([
-            {"name": "paths", "default": "docs", "multiple": True, "positional": True}
+            {
+                "name": "paths",
+                "default": __get_notebook_path(),
+                "multiple": True,
+                "positional": True,
+            }
         ]),
         "cmd": "pytest --nbmake --nbmake-timeout=0 ${paths}",
         "help": "Run all notebooks",
@@ -170,6 +177,13 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
         tasks["nb"] = expected
         msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def __get_notebook_path() -> str:
+    notebooks = git_ls_files("**/*.ipynb")
+    if not notebooks:
+        return ""
+    return os.path.commonpath(os.path.dirname(p) for p in notebooks)
 
 
 def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
