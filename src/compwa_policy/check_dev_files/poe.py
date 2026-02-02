@@ -171,7 +171,18 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
     executor = {}
     if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
         executor["group"] = "notebooks"
-    executor["with"] = "nbmake"
+    existing_executor_with = existing.get("executor", {}).get("with")
+    if existing_executor_with is not None and existing_executor_with not in (
+        "nbmake",
+        ["nbmake"],
+    ):
+        if isinstance(existing_executor_with, str):
+            existing_executor_with = [existing_executor_with]
+        if "nbmake" not in existing_executor_with:
+            existing_executor_with.append("nbmake")
+        executor["with"] = existing_executor_with
+    else:
+        executor["with"] = "nbmake"
     expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected
