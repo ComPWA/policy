@@ -50,6 +50,7 @@ remove-empty-tags = "compwa_policy.remove_empty_tags:main"
 self-check = "compwa_policy.self_check:main"
 set-nb-cells = "compwa_policy.set_nb_cells:main"
 set-nb-display-name = "compwa_policy.set_nb_display_name:main"
+strip-nb-whitespace = "compwa_policy.strip_nb_whitespace:main"
 
 [project.urls]
 Source = "https://github.com/ComPWA/policy"

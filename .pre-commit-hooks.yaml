@@ -47,3 +47,10 @@
   language: python
   types:
     - jupyter
+
+- id: strip-nb-whitespace
+  name: Remove trailing whitespace from notebook cells
+  entry: strip-nb-whitespace
+  language: python
+  types:
+    - jupyter
