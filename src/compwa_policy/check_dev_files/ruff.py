@@ -451,6 +451,7 @@ def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
         "S410",
         "TRY200",
         "UP027",
+        "UP038",
     }
     per_file_ignores = "tool.ruff.lint.per-file-ignores"
     keys_to_check = [("tool.ruff.lint", "ignore")]
