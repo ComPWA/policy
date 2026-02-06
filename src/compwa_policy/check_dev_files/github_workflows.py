@@ -21,6 +21,7 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.executor import Executor
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -234,7 +235,9 @@ def __update_style_section(
 
 def __is_remove_style_job(precommit: Precommit) -> bool:
     precommit_ci = precommit.document.get("ci")
-    return precommit_ci is not None and "skip" not in precommit_ci
+    outsource_to_precommit = precommit_ci is not None and "skip" not in precommit_ci
+    has_notebooks = is_committed("**/*.ipynb")
+    return outsource_to_precommit and not has_notebooks
 
 
 def __update_pytest_section(
