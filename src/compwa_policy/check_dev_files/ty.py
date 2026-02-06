@@ -56,20 +56,25 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
 
 def _update_configuration(pyproject: ModifiablePyproject) -> None:
     def _remove_rule(key: str, default: Literal["error", "ignore", "warn"]) -> None:
-        if ty_config.get(key) == default:
-            del ty_config[key]
+        if ty_rules.get(key) == default:
+            del ty_rules[key]
             pyproject.changelog.append(f"Removed tool.ty.rules.{key}")
 
     def _update_rule(key: str, value: Literal["error", "ignore", "warn"]) -> None:
-        if key not in ty_config:
-            ty_config[key] = value
+        if key not in ty_rules:
+            ty_rules[key] = value
             pyproject.changelog.append(f'Set tool.ty.rules.{key} = "{value}"')
 
-    ty_config = pyproject.get_table("tool.ty.rules", create=True)
+    ty_rules = pyproject.get_table("tool.ty.rules", create=True)
     _remove_rule("unused-ignore-comment", "warn")
     _update_rule("division-by-zero", "warn")
     _update_rule("possibly-missing-import", "warn")
     _update_rule("possibly-unresolved-reference", "warn")
+
+    ty_terminal = pyproject.get_table("tool.ty.terminal", create=True)
+    if ty_terminal.get("error-on-warning") is not True:
+        ty_terminal["error-on-warning"] = True
+        pyproject.changelog.append("Set tool.ty.terminal.error-on-warning = true")
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
