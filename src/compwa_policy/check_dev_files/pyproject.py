@@ -22,10 +22,44 @@ def main(excluded_python_versions: set[PythonVersion]) -> None:
     if not CONFIG_PATH.pyproject.exists():
         return
     with ModifiablePyproject.load() as pyproject:
+        _update_pypi_link_names(pyproject)
         _convert_to_dependency_groups(pyproject)
         _rename_sty_to_style(pyproject)
         _update_requires_python(pyproject)
         _update_python_version_classifiers(pyproject, excluded_python_versions)
+
+
+def _update_pypi_link_names(pyproject: ModifiablePyproject) -> None:
+    project_urls = pyproject.get_table("project.urls", fallback={})
+    if not project_urls:
+        return
+    if any(name[0].islower() for name in project_urls):
+        pyproject.get_table("project")["urls"] = {
+            k.capitalize(): v for k, v in project_urls.items()
+        }
+        pyproject.changelog.append("Capitalized PyPI link names")
+    renames = {
+        # https://packaging.python.org/specifications/well-known-project-urls/#well-known-labels
+        "Changes": "Changelog",
+        "History": "Changelog",
+        "Whatsnew": "Changelog",  # cspell:ignore Whatsnew
+        "Docs": "Documentation",
+        "Donate": "Funding",
+        "Donation": "Funding",
+        "Sponsor": "Funding",
+        "Bugs": "Issues",
+        "Bugtracker": "Issues",  # cspell:ignore Bugtracker
+        "Issue": "Issues",
+        "Issuetracker": "Issues",  # cspell:ignore Issuetracker
+        "Tracker": "Issues",
+        "Github": "Source",
+        "Repository": "Source",
+        "Sourcecode": "Source",
+    }
+    for old_name, new_name in renames.items():
+        if old_name in project_urls:
+            project_urls[new_name] = project_urls.pop(old_name)
+            pyproject.changelog.append(f'Renamed "{old_name}" link to "{new_name}"')
 
 
 def _convert_to_dependency_groups(pyproject: ModifiablePyproject) -> None:
