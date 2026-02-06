@@ -53,8 +53,10 @@ set-nb-display-name = "compwa_policy.set_nb_display_name:main"
 strip-nb-whitespace = "compwa_policy.strip_nb_whitespace:main"
 
 [project.urls]
+Changelog = "https://github.com/ComPWA/policy/releases"
+Documentation = "https://compwa.github.io/policy"
+Issues = "https://github.com/ComPWA/policy/issues"
 Source = "https://github.com/ComPWA/policy"
-Tracker = "https://github.com/ComPWA/policy/issues"
 
 [dependency-groups]
 dev = [
