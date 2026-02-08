@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 import nbformat
 
+from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.notebook import load_notebook
 from compwa_policy.utilities.pyproject import Pyproject
 
@@ -113,6 +114,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if args.autolink_concat:
             _insert_autolink_concat(filename)
+            _test_multiple_autolink_concat(filename)
     return 0
 
 
@@ -170,6 +172,26 @@ def _insert_autolink_concat(filename: str) -> None:
         nbformat.validate(notebook)
         nbformat.write(notebook, filename)
         return
+
+
+def _test_multiple_autolink_concat(filename: str) -> None:
+    if _skip_notebook(filename, ignore_statement="<!-- no autolink-concat -->"):
+        return
+    notebook = load_notebook(filename)
+    search_terms = [
+        "```{autolink-concat}",
+        ":::{autolink-concat}",
+    ]
+    count = 0
+    for cell in notebook["cells"]:
+        if cell["cell_type"] != "markdown":
+            continue
+        cell_content: str = cell["source"]
+        if any(term in cell_content for term in search_terms):
+            count += 1
+    if count > 1:
+        msg = f"Multiple cells with autolink-concat found in {filename}"
+        raise PrecommitError(msg)
 
 
 def _skip_notebook(
