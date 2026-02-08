@@ -29,7 +29,6 @@ from typing import TYPE_CHECKING
 import nbformat
 from nbformat import NotebookNode
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.notebook import load_notebook
 from compwa_policy.utilities.pyproject import Pyproject
 
@@ -88,6 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    failed = False
     for filename in args.filenames:
         cell_id = 0
         updated = False
@@ -119,10 +119,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             notebook, ignore_comment="<!-- no autolink-concat -->"
         ):
             updated |= _insert_autolink_concat(notebook)
-            _test_multiple_autolink_concat(notebook, filename)
+            if n_autolink := _count_autolink_concat(notebook):
+                failed |= True
+                print(  # noqa: T201
+                    f"Found {n_autolink} autolink-concat cells in {filename}, should be"
+                    " only one. Please remove duplicates.",
+                    file=sys.stderr,
+                )
         if updated:
             nbformat.validate(notebook)
             nbformat.write(notebook, filename)
+            failed |= True
+    if failed:
+        return 1
     return 0
 
 
@@ -176,7 +185,7 @@ def _insert_autolink_concat(notebook: NotebookNode) -> bool:
     return False
 
 
-def _test_multiple_autolink_concat(notebook: NotebookNode, filename: str) -> None:
+def _count_autolink_concat(notebook: NotebookNode) -> int:
     search_terms = [
         "```{autolink-concat}",
         ":::{autolink-concat}",
@@ -188,9 +197,7 @@ def _test_multiple_autolink_concat(notebook: NotebookNode, filename: str) -> Non
         cell_content: str = cell["source"]
         if any(term in cell_content for term in search_terms):
             count += 1
-    if count > 1:
-        msg = f"Multiple cells with autolink-concat found in {filename}"
-        raise PrecommitError(msg)
+    return count
 
 
 def _skip_notebook(notebook: NotebookNode, ignore_comment: str) -> bool:
