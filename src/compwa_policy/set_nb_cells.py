@@ -133,6 +133,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     file=sys.stderr,
                 )
         if updated:
+            print(f"Updated {filename}", file=sys.stderr)  # noqa: T201
             nbformat.validate(notebook)
             nbformat.write(notebook, filename)
             failed |= True
