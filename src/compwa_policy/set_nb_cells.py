@@ -1,12 +1,12 @@
 """Add or update standard cells in a Jupyter notebook.
 
 Notebook servers like Google Colaboratory and Deepnote do not install a package
-automatically, so this has to be done through a code cell. At the same time,
-this cell needs to be hidden from the documentation pages, when viewing through
-Jupyter Lab (Binder), and when viewing as Jupyter slides.
+automatically, so this has to be done through a code cell. At the same time, this cell
+needs to be hidden from the documentation pages, when viewing through Jupyter Lab
+(Binder), and when viewing as Jupyter slides.
 
-This scripts sets the IPython InlineBackend.figure_formats option to SVG. This
-is because the Sphinx configuration can't set this externally.
+This scripts sets the IPython InlineBackend.figure_formats option to SVG. This is
+because the Sphinx configuration can't set this externally.
 
 Notebooks can be ignored by making the first cell a `Markdown cell
 <https://jupyter-notebook.readthedocs.io/en/latest/examples/Notebook/Working%20With%20Markdown%20Cells.html>`_
@@ -24,7 +24,7 @@ import argparse
 import sys
 from functools import lru_cache
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import nbformat
 from nbformat import NotebookNode
@@ -53,6 +53,11 @@ __INSTALL_CELL_METADATA: dict = {
     "tags": ["remove-cell", "skip-execution"],
     # https://github.com/executablebooks/jupyter-book/issues/833
 }
+__AUTOLINK_CONCAT = dedent("""
+```{autolink-concat}
+
+```
+""").strip()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -118,6 +123,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.autolink_concat and not _skip_notebook(
             notebook, ignore_comment="<!-- no autolink-concat -->"
         ):
+            updated |= _format_autolink_concat(notebook)
             updated |= _insert_autolink_concat(notebook)
             if (n_autolink := _count_autolink_concat(notebook)) > 1:
                 failed |= True
@@ -164,6 +170,29 @@ def _update_cell(
     else:
         notebook["cells"].insert(cell_id, new_cell)
     return True
+
+
+def _format_autolink_concat(notebook: NotebookNode) -> bool:
+    candidates = [
+        dedent("""
+        ```{autolink-concat}
+        ```
+        """).strip(),
+        dedent("""
+        :::{autolink-concat}
+        :::
+        """).strip(),
+    ]
+    updated = False
+    for cell in notebook["cells"]:
+        if cell["cell_type"] != "markdown":
+            continue
+        for pattern in candidates:
+            source = cast("str", cell["source"])
+            if pattern in source:
+                cell["source"] = source.replace(pattern, __AUTOLINK_CONCAT)
+                updated |= True
+    return updated
 
 
 def _insert_autolink_concat(notebook: NotebookNode) -> bool:
