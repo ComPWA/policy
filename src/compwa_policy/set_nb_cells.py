@@ -53,11 +53,11 @@ __INSTALL_CELL_METADATA: dict = {
     "tags": ["remove-cell", "skip-execution"],
     # https://github.com/executablebooks/jupyter-book/issues/833
 }
-__AUTOLINK_CONCAT = dedent("""
+__AUTOLINK_CONCAT = """
 ```{autolink-concat}
 
 ```
-""").strip()
+""".strip()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
