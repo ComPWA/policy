@@ -119,7 +119,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             notebook, ignore_comment="<!-- no autolink-concat -->"
         ):
             updated |= _insert_autolink_concat(notebook)
-            if n_autolink := _count_autolink_concat(notebook):
+            if (n_autolink := _count_autolink_concat(notebook)) > 1:
                 failed |= True
                 print(  # noqa: T201
                     f"Found {n_autolink} autolink-concat cells in {filename}, should be"
