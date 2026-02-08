@@ -172,12 +172,15 @@ def _insert_autolink_concat(notebook: NotebookNode) -> bool:
 
     ```
     """).strip()
+    if any(
+        expected_cell_content in cell["source"]
+        for cell in notebook["cells"]
+        if cell["cell_type"] == "markdown"
+    ):
+        return False
     for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "markdown":
             continue
-        cell_content: str = cell["source"]
-        if expected_cell_content in cell_content:
-            return False
         new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
         del new_cell["id"]  # following nbformat_minor = 4
         notebook["cells"].insert(cell_id, new_cell)
