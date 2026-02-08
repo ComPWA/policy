@@ -153,11 +153,11 @@ def _insert_autolink_concat(filename: str) -> None:
     if _skip_notebook(filename, ignore_statement="<!-- no autolink-concat -->"):
         return
     notebook = load_notebook(filename)
-    expected_cell_content = """
+    expected_cell_content = dedent("""
     ```{autolink-concat}
+
     ```
-    """
-    expected_cell_content = dedent(expected_cell_content).strip()
+    """).strip()
     for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "markdown":
             continue
