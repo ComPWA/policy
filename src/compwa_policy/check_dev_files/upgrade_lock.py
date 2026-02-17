@@ -113,13 +113,14 @@ def _update_precommit_schedule(
     if ci_section is None:
         return
     key = "autoupdate_schedule"
-    if key not in ci_section:
-        return
     if get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS:
-        del ci_section[key]
+        frequency = "quarterly"
+        if ci_section.get(key) == frequency:
+            return
+        ci_section[key] = "quarterly"
         precommit.changelog.append(
-            "Deactivated pre-commit autoupdate schedule, because it is already"
-            f" triggered by the {CONFIG_PATH.github_workflow_dir / 'lock.yml'}."
+            "Set pre-commit autoupdate schedule to quarterly (maximum), because the"
+            " schedule is now determined by Dependabot"
         )
     else:
         if frequency == "semiannually":
