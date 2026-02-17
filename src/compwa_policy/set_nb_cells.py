@@ -54,9 +54,8 @@ __INSTALL_CELL_METADATA: dict = {
     # https://github.com/executablebooks/jupyter-book/issues/833
 }
 __AUTOLINK_CONCAT = """
-```{autolink-concat}
-
-```
+:::{autolink-concat}
+:::
 """.strip()
 
 
@@ -175,14 +174,9 @@ def _update_cell(
 
 def _format_autolink_concat(notebook: NotebookNode) -> bool:
     candidates = [
-        dedent("""
-        ```{autolink-concat}
-        ```
-        """).strip(),
-        dedent("""
-        :::{autolink-concat}
-        :::
-        """).strip(),
+        ":::{autolink-concat}\n\n:::",
+        "```{autolink-concat}\n\n```",
+        "```{autolink-concat}\n```",
     ]
     updated = False
     for cell in notebook["cells"]:
@@ -197,13 +191,8 @@ def _format_autolink_concat(notebook: NotebookNode) -> bool:
 
 
 def _insert_autolink_concat(notebook: NotebookNode) -> bool:
-    expected_cell_content = dedent("""
-    ```{autolink-concat}
-
-    ```
-    """).strip()
     if any(
-        expected_cell_content in cell["source"]
+        __AUTOLINK_CONCAT in cell["source"]
         for cell in notebook["cells"]
         if cell["cell_type"] == "markdown"
     ):
@@ -211,7 +200,7 @@ def _insert_autolink_concat(notebook: NotebookNode) -> bool:
     for cell_id, cell in enumerate(notebook["cells"]):
         if cell["cell_type"] != "markdown":
             continue
-        new_cell = nbformat.v4.new_markdown_cell(expected_cell_content)
+        new_cell = nbformat.v4.new_markdown_cell(__AUTOLINK_CONCAT)
         del new_cell["id"]  # following nbformat_minor = 4
         notebook["cells"].insert(cell_id, new_cell)
         return True
