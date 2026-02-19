@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import vscode
+from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.readme import add_badge, remove_badge
@@ -91,6 +92,11 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
         language="system",
         types_or=types_or,
     )
+    existing_hook = find_hook(precommit.document, r"^ty$")
+    if existing_hook:
+        exclude = existing_hook.get("exclude")
+        if exclude:
+            hook["exclude"] = exclude
     expected_repo = Repo(repo="local", hooks=[hook])
     precommit.update_single_hook_repo(expected_repo)
 

@@ -5,7 +5,18 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit.struct import PrecommitConfig, Repo
+    from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
+
+
+def find_hook(config: PrecommitConfig, search_pattern: str) -> Hook | None:
+    """Find pre-commit hook definition in pre-commit config."""
+    repos = config.get("repos", [])
+    for repo in repos:
+        hooks = repo.get("hooks", [])
+        for hook in hooks:
+            if re.search(search_pattern, hook.get("id", "")):
+                return hook
+    return None
 
 
 def find_repo(config: PrecommitConfig, search_pattern: str) -> Repo | None:
