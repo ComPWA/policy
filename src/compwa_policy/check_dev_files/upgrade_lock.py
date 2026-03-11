@@ -34,7 +34,7 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
     "quarterly": "0 3 7 */3 *",
     "semiannually": "0 3 7 */6 *",
 }
-__TRIGGER_ECOSYSTEMS = {"julia", "uv"}
+__TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 
 def main(
