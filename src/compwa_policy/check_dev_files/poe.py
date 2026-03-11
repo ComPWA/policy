@@ -146,7 +146,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
     if isinstance(executor := existing.get("executor"), Mapping):
         expected["executor"] = executor
     elif "jupyter" in set(pyproject.get_table("dependency-groups", fallback=set())):
-        expected["executor"] = to_inline_table({"group": "jupyter"})
+        expected["executor"] = to_inline_table({"group": "jupyter"})  # ty:ignore[invalid-assignment]
     if existing != expected:
         tasks["lab"] = expected
         msg = f"Set Poe the Poet jupyter task in {CONFIG_PATH.pyproject}"
@@ -183,7 +183,7 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
         executor["with"] = existing_executor_with
     else:
         executor["with"] = "nbmake"
-    expected["executor"] = to_inline_table(executor)
+    expected["executor"] = to_inline_table(executor)  # ty:ignore[invalid-assignment]
     if existing != expected:
         tasks["nb"] = expected
         msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"
