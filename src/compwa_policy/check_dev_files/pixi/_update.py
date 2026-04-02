@@ -97,7 +97,7 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
         del config._document["tool"]["pixi"]["project"]  # noqa: SLF001
     else:
-        del config._document["project"]  # noqa: SLF001
+        del config._document["project"]  # noqa: SLF001  # ty:ignore[invalid-argument-type]
     msg = 'Renamed "project" table to "workspace" in Pixi configuration'
     config.changelog.append(msg)
 

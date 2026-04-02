@@ -137,10 +137,10 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         if isinstance(source, Path):
             with open(source) as stream:
                 document = tomlkit.load(stream)
-            return cls(document, source)
+            return cls(document, source)  # ty:ignore[invalid-argument-type]
         if isinstance(source, str):
             document = tomlkit.loads(source)
-            return cls(document)
+            return cls(document)  # ty:ignore[invalid-argument-type]
         msg = f"Source of type {type(source).__name__} is not supported"
         raise TypeError(msg)
 
@@ -323,11 +323,11 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
         source.seek(0)
         document = parser.load(source)  # ty:ignore[invalid-argument-type]
         source.seek(current_position)
-        return document
+        return document  # ty:ignore[invalid-return-type]
     if isinstance(source, Path):
         with open(source) as stream:
-            return parser.load(stream)
+            return parser.load(stream)  # ty:ignore[invalid-return-type]
     if isinstance(source, str):
-        return parser.loads(source)
+        return parser.loads(source)  # ty:ignore[invalid-return-type]
     msg = f"Source of type {type(source).__name__} is not supported"
     raise TypeError(msg)
