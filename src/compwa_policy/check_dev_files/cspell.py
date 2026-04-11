@@ -99,7 +99,7 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     expected_hook = Repo(
         repo=__REPO_URL,
         rev="",
-        hooks=[Hook(id="cspell")],
+        hooks=[Hook(id="cspell", language_version="25.9.0")],
     )
     precommit.update_single_hook_repo(expected_hook)
 
