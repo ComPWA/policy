@@ -62,6 +62,7 @@ class Arguments:
     repo_name: str
     repo_organization: str
     repo_title: str
+    toml_formatter: str
     type_checker: set[ty.TypeChecker]
     upgrade_frequency: upgrade_lock.Frequency
 

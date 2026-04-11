@@ -86,7 +86,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "upgrade_frequency",
     }),
     "nb": frozenset({"allowed_cell_metadata", "no_binder"}),
-    "format": frozenset({"no_cspell_update"}),
+    "format": frozenset({"no_cspell_update", "toml_formatter"}),
     "repo": frozenset({"gitpod", "keep_issue_templates"}),
     "setup": frozenset({"keep_contributing_md"}),
 }
@@ -206,6 +206,7 @@ class Settings(BaseSettings):
     no_binder: bool = False
     allowed_cell_metadata: str = ""
     no_cspell_update: bool = False
+    toml_formatter: str = "taplo"
     gitpod: bool = False
     keep_contributing_md: bool = False
     keep_issue_templates: bool = False
@@ -259,6 +260,18 @@ class Settings(BaseSettings):
         '3.6, 3.7'
         """
         return _join(value)
+
+    @field_validator("toml_formatter", mode="before")
+    @classmethod
+    def _normalize_enum(cls, value: Any) -> str:
+        """Accept the ``TomlFormatter`` CLI enum or a plain string.
+
+        >>> Settings(toml_formatter="tombi").toml_formatter
+        'tombi'
+        """
+        if isinstance(value, Enum):
+            return value.value
+        return value
 
     @field_validator("type_checker", "keep_workflow", mode="before")
     @classmethod

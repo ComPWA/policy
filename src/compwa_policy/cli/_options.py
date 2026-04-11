@@ -36,6 +36,13 @@ class TypeChecker(str, Enum):
     ty = "ty"
 
 
+class TomlFormatter(str, Enum):
+    """TOML formatters that can be selected with ``--toml-formatter``."""
+
+    taplo = "taplo"
+    tombi = "tombi"
+
+
 # Cross-cutting options -------------------------------------------------------
 DevPythonVersion = Annotated[
     PythonVersion | None,
@@ -254,6 +261,14 @@ AllowedCellMetadata = Annotated[
 ]
 
 # Format group ----------------------------------------------------------------
+TomlFormatterOption = Annotated[
+    TomlFormatter | None,
+    typer.Option(
+        "--toml-formatter",
+        show_default="taplo",
+        help="Choose the TOML formatter: taplo or tombi (mutually exclusive).",
+    ),
+]
 NoCspellUpdate = Annotated[
     bool | None,
     typer.Option(
