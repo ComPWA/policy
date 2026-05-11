@@ -12,7 +12,7 @@ from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.match import git_ls_files
+from compwa_policy.utilities.match import git_ls_files, is_committed
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -47,6 +47,7 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
                         pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
                         do(_set_nb_task, pyproject)
                     do(_set_test_all_task, pyproject)
+                    do(_set_upgrade_task, pyproject)
                     do(_update_doclive, pyproject)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
@@ -243,6 +244,32 @@ def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
         for name, task in expected.items():
             tasks[name] = task
         msg = f"Updated Poe the Poet test-all task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _set_upgrade_task(pyproject: ModifiablePyproject) -> None:
+    tasks = pyproject.get_table("tool.poe.tasks")
+    parallel_cmds = []
+    if is_committed(".pre-commit-config.yaml"):
+        parallel_cmds.append({"cmd": "pre-commit autoupdate -j8"})
+    if is_committed("uv.lock"):
+        parallel_cmds.append({"cmd": "uv lock --upgrade"})
+    if is_committed("pixi.lock"):
+        parallel_cmds.append({"cmd": "pixi upgrade"})
+    if not parallel_cmds:
+        if "upgrade" in tasks:
+            del tasks["upgrade"]
+            msg = f"Removed Poe the Poet upgrade task from {CONFIG_PATH.pyproject}"
+            pyproject.changelog.append(msg)
+        return
+    existing = cast("Mapping", tasks.get("upgrade", {}))
+    expected = {
+        "executor": to_inline_table({"type": "simple"}),
+        "parallel": to_toml_array(parallel_cmds),
+    }
+    if existing != expected:
+        tasks["upgrade"] = expected
+        msg = f"Set Poe the Poet upgrade task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 
 

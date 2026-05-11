@@ -259,6 +259,12 @@ ref = "test"
 env = {UV_PYTHON = "3.14"}
 ref = "test"
 
+[tool.poe.tasks.upgrade]
+executor = {type = "simple"}
+parallel = [
+    {cmd = "pre-commit autoupdate -j8"},
+]
+
 [tool.pytest]
 addopts = [
     "--color=yes",
