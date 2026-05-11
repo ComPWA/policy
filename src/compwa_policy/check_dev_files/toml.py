@@ -136,7 +136,7 @@ def _update_taplo_config() -> None:
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
     expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
-    existing_str = tomlkit.dumps(existing)
+    existing_str = tomlkit.dumps(existing, sort_keys=True)
     if existing_str.strip() != expected_str.strip():
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
