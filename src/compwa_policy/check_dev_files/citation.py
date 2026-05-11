@@ -67,7 +67,7 @@ def _convert_zenodo(zenodo: dict) -> CommentedMap:
     description = zenodo.get("description")
     if description is not None:
         converter = HTML2Text()
-        converter.body_width = None
+        converter.body_width = None  # ty:ignore[invalid-assignment]
         description = converter.handle(description).strip()
         citation_cff["abstract"] = PreservedScalarString(description)
 
