@@ -47,8 +47,9 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
                         pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
                         do(_set_nb_task, pyproject)
                     do(_set_test_all_task, pyproject)
-                    do(_set_upgrade_task, pyproject)
                     do(_update_doclive, pyproject)
+            if pyproject.has_table("tool.poe.tasks"):
+                do(_set_upgrade_task, pyproject, package_manager)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
@@ -247,14 +248,16 @@ def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_upgrade_task(pyproject: ModifiablePyproject) -> None:
+def _set_upgrade_task(
+    pyproject: ModifiablePyproject, package_manager: PackageManagerChoice
+) -> None:
     tasks = pyproject.get_table("tool.poe.tasks")
     parallel_cmds = []
     if is_committed(".pre-commit-config.yaml"):
         parallel_cmds.append({"cmd": "pre-commit autoupdate -j8"})
-    if is_committed("uv.lock"):
+    if "uv" in package_manager:
         parallel_cmds.append({"cmd": "uv lock --upgrade"})
-    if is_committed("pixi.lock"):
+    if "pixi" in package_manager:
         parallel_cmds.append({"cmd": "pixi upgrade"})
     if not parallel_cmds:
         if "upgrade" in tasks:

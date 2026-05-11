@@ -263,6 +263,7 @@ ref = "test"
 executor = {type = "simple"}
 parallel = [
     {cmd = "pre-commit autoupdate -j8"},
+    {cmd = "uv lock --upgrade"},
 ]
 
 [tool.pytest]
