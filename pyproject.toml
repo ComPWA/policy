@@ -267,6 +267,7 @@ help = "Perform all linting, formatting, and spelling checks"
 
 [tool.poe.tasks.upgrade]
 executor = {type = "simple"}
+help = "Upgrade lock files"
 parallel = [
     {cmd = "pre-commit autoupdate -j8"},
     {cmd = "uv lock --upgrade"},

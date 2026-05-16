@@ -364,6 +364,7 @@ def _set_upgrade_task(
     existing = cast("Mapping", tasks.get("upgrade", {}))
     expected = {
         "executor": to_inline_table({"type": "simple"}),
+        "help": "Upgrade lock files",
         "parallel": to_toml_array(parallel_cmds),
     }
     if existing != expected:
