@@ -8,6 +8,8 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+import tomlkit
+
 from compwa_policy.check_dev_files._characterization import has_documentation
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
@@ -25,6 +27,11 @@ if TYPE_CHECKING:
 
     from compwa_policy.check_dev_files.conda import PackageManagerChoice
 
+_DOC_TASKS = frozenset({"doc", "doclive", "docnb", "docnblive", "linkcheck"})
+_NOTEBOOK_TASKS = frozenset({"lab", "nb"})
+_TEST_TASKS = frozenset({"cov", "test", "test-all"})
+_TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
+
 
 def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
     if not CONFIG_PATH.pyproject.is_file():
@@ -38,16 +45,20 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
             do(_check_expected_sections, pyproject, has_notebooks)
             if package_manager == "uv":
                 do(_configure_uv_executor, pyproject)
+                do(_migrate_tasks_to_groups, pyproject)
+                do(_set_doc_group, pyproject)
+                do(_set_test_group, pyproject)
+                do(_set_notebook_group, pyproject, has_notebooks)
+                do(_check_no_uv_run, pyproject)
                 if pyproject.has_table("tool.poe.tasks"):
-                    do(_check_no_uv_run, pyproject)
                     do(_set_all_task, pyproject)
-                    if has_dependency(pyproject, "jupyterlab"):
-                        do(_set_jupyter_lab_task, pyproject)
-                    if has_notebooks:
-                        pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
-                        do(_set_nb_task, pyproject)
-                    do(_set_test_all_task, pyproject)
-                    do(_update_doclive, pyproject)
+                if has_dependency(pyproject, "jupyterlab"):
+                    do(_set_jupyter_lab_task, pyproject)
+                if has_notebooks:
+                    pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
+                    do(_set_nb_task, pyproject)
+                do(_set_test_all_task, pyproject)
+                do(_update_doclive, pyproject)
             if pyproject.has_table("tool.poe.tasks"):
                 do(_set_upgrade_task, pyproject, package_manager)
         do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
@@ -56,9 +67,16 @@ def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
         pyproject.remove_dependency("tox-uv")
 
 
+def _get_all_poe_tasks(poe_table: Mapping) -> set[str]:
+    tasks: set[str] = set(poe_table.get("tasks", {}))
+    for group_config in poe_table.get("groups", {}).values():
+        tasks |= set(group_config.get("tasks", {}))
+    return tasks
+
+
 def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
     poe_table = pyproject.get_table("tool.poe")
-    tasks = set(poe_table.get("tasks", set()))
+    tasks = _get_all_poe_tasks(poe_table)
     expected_tasks: set[str] = set()
     if has_documentation():
         expected_tasks |= {
@@ -98,13 +116,89 @@ def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _check_no_uv_run(pyproject: Pyproject) -> None:
+def _get_or_create_group_tasks(
+    pyproject: ModifiablePyproject, group_name: str
+) -> MutableMapping[str, Any]:
+    """Get or create the tasks table for a Poe group as a super-table.
+
+    Using ``create=True`` on ``get_table`` creates the last element as a regular
+    table, which causes tomlkit to emit an explicit empty ``[...tasks]`` header.
+    Creating it manually as a super-table avoids that spurious header.
+    """
+    group = pyproject.get_table(f"tool.poe.groups.{group_name}", create=True)
+    if "tasks" not in group:
+        group["tasks"] = tomlkit.table(is_super_table=True)
+    return group["tasks"]
+
+
+def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
+    """Move any doc/test tasks from tool.poe.tasks into their group sub-tables."""
+    if not pyproject.has_table("tool.poe.tasks"):
+        return
     tasks = pyproject.get_table("tool.poe.tasks")
+    migrated: list[str] = []
+    for task_name in list(tasks.keys()):
+        target_group = None
+        if task_name in _DOC_TASKS:
+            target_group = "doc"
+        elif task_name in _TEST_TASKS or _TEST_PY_PATTERN.match(task_name):
+            target_group = "test"
+        elif task_name in _NOTEBOOK_TASKS:
+            target_group = "notebook"
+        if target_group is not None:
+            group_tasks = _get_or_create_group_tasks(pyproject, target_group)
+            group_tasks[task_name] = tasks[task_name]
+            del tasks[task_name]
+            migrated.append(task_name)
+    if migrated:
+        msg = (
+            f"Moved Poe the Poet tasks to groups in {CONFIG_PATH.pyproject}:"
+            f" {', '.join(sorted(migrated))}"
+        )
+        pyproject.changelog.append(msg)
+
+
+def _set_doc_group(pyproject: ModifiablePyproject) -> None:
+    if not has_documentation():
+        return
+    doc_group = pyproject.get_table("tool.poe.groups.doc", create=True)
+    if __safe_update(doc_group, "heading", "Documentation"):
+        msg = f"Set Poe the Poet doc group heading in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _set_test_group(pyproject: ModifiablePyproject) -> None:
+    if not Path("tests").exists():
+        return
+    test_group = pyproject.get_table("tool.poe.groups.test", create=True)
+    if __safe_update(test_group, "heading", "Testing"):
+        msg = f"Set Poe the Poet test group heading in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _set_notebook_group(pyproject: ModifiablePyproject, has_notebooks: bool) -> None:
+    if not has_notebooks and not has_dependency(pyproject, "jupyterlab"):
+        return
+    notebook_group = pyproject.get_table("tool.poe.groups.notebook", create=True)
+    if __safe_update(notebook_group, "heading", "Notebooks"):
+        msg = f"Set Poe the Poet notebook group heading in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _check_no_uv_run(pyproject: Pyproject) -> None:
+    poe_table = pyproject.get_table("tool.poe")
+    all_task_tables: list[Mapping] = [
+        poe_table.get("tasks", {}),
+        *(
+            group_config.get("tasks", {})
+            for group_config in poe_table.get("groups", {}).values()
+        ),
+    ]
     offending_tasks = []
-    for name, task in tasks.items():
-        if __has_uv_run(task.get("cmd", "")) and task.get("executor") != "simple":
-            offending_tasks.append(name)
-            continue
+    for task_table in all_task_tables:
+        for name, task in task_table.items():
+            if __has_uv_run(task.get("cmd", "")) and task.get("executor") != "simple":
+                offending_tasks.append(name)
     if offending_tasks:
         msg = (
             "Poe the Poet tasks should not use 'uv run' when the executor is set to"
@@ -138,7 +232,7 @@ def _set_all_task(pyproject: ModifiablePyproject) -> None:
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
-    tasks = pyproject.get_table("tool.poe.tasks")
+    tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Mapping", tasks.get("lab", {}))
     expected = {
         "args": to_toml_array([{"name": "paths", "default": "", "positional": True}]),
@@ -156,7 +250,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
 
 
 def _set_nb_task(pyproject: ModifiablePyproject) -> None:
-    tasks = pyproject.get_table("tool.poe.tasks")
+    tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Table", tasks.get("nb", {}))
     expected = {
         "args": to_toml_array([
@@ -203,7 +297,9 @@ def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if len(supported_python_versions) <= 1:
         return
-    tasks = pyproject.get_table("tool.poe.tasks")
+    if not pyproject.has_table("tool.poe.groups.test.tasks"):
+        return
+    tasks = pyproject.get_table("tool.poe.groups.test.tasks")
     if "test" not in tasks:
         return
     if "test-py" in tasks:
@@ -285,7 +381,9 @@ def _update_doclive(pyproject: ModifiablePyproject) -> None:
             existing_value = [existing_value]
         return to_toml_array(sorted({*existing_value, value}), multiline=False)
 
-    tasks = pyproject.get_table("tool.poe.tasks")
+    if not pyproject.has_table("tool.poe.groups.doc.tasks"):
+        return
+    tasks = pyproject.get_table("tool.poe.groups.doc.tasks")
     if "doclive" not in tasks:
         return
     doclive_task = cast("Table", tasks["doclive"])
