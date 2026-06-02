@@ -123,13 +123,16 @@ def _update_taplo_config() -> None:
         with open(CONFIG_PATH.pixi_toml) as stream:
             pixi_config = rtoml.load(stream)
         if has_sub_table(pixi_config, "tasks"):
-            rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, "tasks"))
+            rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, ["tasks"]))
     if CONFIG_PATH.pyproject.exists():
         pyproject = Pyproject.load()
-        if pyproject.has_table("tool.pixi.tasks"):
-            rules.append(__taplo_rule(CONFIG_PATH.pyproject, "tool.pixi.tasks"))
-        if pyproject.has_table("tool.poe.tasks"):
-            rules.append(__taplo_rule(CONFIG_PATH.pyproject, "tool.poe.tasks"))
+        keys = [
+            key
+            for key in ["tool.pixi.tasks", "tool.poe.groups", "tool.poe.tasks"]
+            if pyproject.has_table(key)
+        ]
+        if keys:
+            rules.append(__taplo_rule(CONFIG_PATH.pyproject, keys))
     if rules:
         expected["rule"] = rules
 
@@ -144,10 +147,10 @@ def _update_taplo_config() -> None:
         raise PrecommitError(msg)
 
 
-def __taplo_rule(toml_path: Path | str, key: str) -> dict:
+def __taplo_rule(toml_path: Path | str, keys: list[str]) -> dict:
     return dict(
         include=[f"**/{toml_path}"],
-        keys=[key],
+        keys=to_toml_array(keys, multiline=len(keys) > 1),
         formatting=dict(reorder_arrays=False),
     )
 
