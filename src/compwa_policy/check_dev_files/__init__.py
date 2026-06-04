@@ -141,7 +141,11 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901, PLR0915
             do(mypy.main, "mypy" in args.type_checker, precommit_config)
             do(pyright.main, "pyright" in args.type_checker, precommit_config)
             do(ty.main, args.type_checker, args.keep_local_precommit, precommit_config)
-            do(pytest.main, args.pytest_single_threaded)
+            do(
+                pytest.main,
+                args.allow_vscode_coverage_gutters,
+                args.pytest_single_threaded,
+            )
             do(pyupgrade.main, precommit_config, args.no_ruff)
             if not args.no_ruff:
                 do(ruff.main, precommit_config, has_notebooks, args.imports_on_top)
@@ -196,6 +200,15 @@ def _create_argparse() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Do not perform the check on labels.toml",
+    )
+    parser.add_argument(
+        "--allow-vscode-coverage-gutters",
+        action="store_true",
+        default=False,
+        help=(  # cspell:ignore ryanluker
+            "Recommend the ryanluker.vscode-coverage-gutters extension and keep its"
+            " settings, instead of marking it as an unwanted VS Code extension."
+        ),
     )
     parser.add_argument(
         "--allowed-cell-metadata",
@@ -409,6 +422,7 @@ def _create_argparse() -> argparse.ArgumentParser:
 class Arguments:
     allow_deprecated_workflows: bool
     allow_labels: bool
+    allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
     ci_skipped_tests: str
     dev_python_version: PythonVersion

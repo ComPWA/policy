@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array
 
 
-def main(single_threaded: bool) -> None:
+def main(coverage_gutters: bool, single_threaded: bool) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         if not has_dependency(pyproject, "pytest"):
             return
@@ -34,7 +34,7 @@ def main(single_threaded: bool) -> None:
         do(_deny_ini_options, pyproject)
         do(_update_codecov_settings, pyproject)
         do(_update_settings, pyproject)
-        do(_update_vscode_settings, pyproject, single_threaded)
+        do(_update_vscode_settings, pyproject, coverage_gutters, single_threaded)
         if single_threaded:
             do(pyproject.remove_dependency, "pytest-xdist")
         else:
@@ -162,14 +162,22 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
     return dict(config) != original_config
 
 
-def _update_vscode_settings(pyproject: Pyproject, single_threaded: bool) -> None:
+def _update_vscode_settings(
+    pyproject: Pyproject, coverage_gutters: bool, single_threaded: bool
+) -> None:
     with Executor() as do:
-        do(
-            # cspell:ignore ryanluker
-            vscode.remove_extension_recommendation,
-            extension_name="ryanluker.vscode-coverage-gutters",
-            unwanted=True,
-        )
+        # cspell:ignore ryanluker
+        if coverage_gutters:
+            do(
+                vscode.add_extension_recommendation,
+                "ryanluker.vscode-coverage-gutters",
+            )
+        else:
+            do(
+                vscode.remove_extension_recommendation,
+                extension_name="ryanluker.vscode-coverage-gutters",
+                unwanted=True,
+            )
         do(
             vscode.update_settings,
             {
@@ -215,12 +223,13 @@ def _update_vscode_settings(pyproject: Pyproject, single_threaded: bool) -> None
                     ]
                 },
             )
-        do(
-            vscode.remove_settings,
-            [
-                "coverage-gutters.coverageFileNames",
-                "coverage-gutters.coverageReportFileName",
-                "coverage-gutters.showGutterCoverage",
-                "coverage-gutters.showLineCoverage",
-            ],
-        )
+        if not coverage_gutters:
+            do(
+                vscode.remove_settings,
+                [
+                    "coverage-gutters.coverageFileNames",
+                    "coverage-gutters.coverageReportFileName",
+                    "coverage-gutters.showGutterCoverage",
+                    "coverage-gutters.showLineCoverage",
+                ],
+            )
