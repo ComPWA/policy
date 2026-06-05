@@ -66,6 +66,7 @@
     "linkcheck",
     "maxdepth",
     "maxsplit",
+    "mypy",
     "nargs",
     "nbcell",
     "nbformat",
@@ -123,6 +124,7 @@
     "rtoml",
     "sympy",
     "toctree",
+    "Typer",
     "Zenodo"
   ]
 }

@@ -12,6 +12,7 @@ add_module_names = False
 api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
+    "Command": "click.Command",
     "ConfigParser": "configparser.ConfigParser",
     "Frequency": "typing.Literal",
     "InlineTable": "tomlkit.items.InlineTable",
@@ -64,7 +65,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
-    "sphinxarg.ext",
+    "sphinxcontrib.typer",
 ]
 generate_apidoc_package_path = f"../src/{PACKAGE_NAME}"
 html_copy_source = True  # needed for download notebook button
@@ -108,9 +109,11 @@ html_theme_options = {
 html_title = REPO_TITLE
 intersphinx_mapping = {
     "attrs": ("https://www.attrs.org/en/stable", None),
+    "click": ("https://click.palletsprojects.com/en/stable", None),
     "nbformat": ("https://nbformat.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
     "tomlkit": ("https://tomlkit.readthedocs.io/en/stable", None),
+    "typer": ("https://typer.tiangolo.com", None),
 }
 myst_enable_extensions = [
     "colon_fence",
@@ -122,6 +125,7 @@ nitpick_ignore = [
 nitpick_ignore_regex = [
     ("py:class", r"^.*.[A-Z]$"),
     (r"py:.*", r"ruamel\.yaml\..*"),
+    ("py:obj", r"typing\.Annotated\[.*"),  # Typer option aliases in the cli package
 ]
 nitpicky = True
 primary_domain = "py"
