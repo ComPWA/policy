@@ -23,12 +23,22 @@ pre-commit run check-dev-files -a
 
 For more implementation details of this hook, check the {mod}`.check_dev_files` module.
 
+## Command-line interface
+
+The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, which is exactly what the `check-dev-files` pre-commit hook does. The subcommands group the checks by domain, so you can run just a subset. To see which subcommands are available, run:
+
+```shell
+policy --help
+```
+
+When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
+
 ## Hook arguments
 
-The `check-dev-files` hook can be configured with by adding any of the following flags to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file.
+The `check-dev-files` hook (and the `policy` command without a subcommand) can be configured by adding any of the following flags to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file.
 
-```{argparse}
-:module: compwa_policy.check_dev_files
-:func: _create_argparse
-:prog: check-dev-files
+```{typer} compwa_policy.check_dev_files.cli:app
+:prog: policy
+:width: 80
+:show-nested:
 ```
