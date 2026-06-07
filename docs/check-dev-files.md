@@ -80,3 +80,12 @@ gitpod = true
 ```
 
 Both the native TOML form (arrays, tables, booleans) and the legacy command-line string form (`"mypy,pyright"`, `"A=1,B=2"`) are accepted, so an existing `args:` list can be moved into `pyproject.toml` verbatim.
+
+### Migrating an existing `args:` list
+
+The `policy migrate` subcommand does this conversion automatically. It reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook:
+
+```shell
+policy migrate            # convert .pre-commit-config.yaml in the current directory
+policy migrate --dry-run  # preview the resulting table without changing any files
+```

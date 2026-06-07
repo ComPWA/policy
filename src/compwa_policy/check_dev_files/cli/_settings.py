@@ -58,9 +58,61 @@ POLICY_TABLE = "tool.compwa.policy"
 #: dedicated ``setup.env`` table instead of an awkward inline table.
 _SUBCOMMAND_TABLES = ("python", "github", "nb", "format", "repo", "setup")
 
+#: Options that belong to a single subcommand and therefore live in its sub-table. Every
+#: option not listed here is shared by several subcommands and lives in the top-level
+#: ``[tool.compwa.policy]`` table; ``environment_variables`` is the exception that becomes
+#: a nested ``setup.env`` table (see :func:`policy_sub_table`).
+_SCOPED_OPTIONS: dict[str, frozenset[str]] = {
+    "python": frozenset({
+        "allow_vscode_coverage_gutters",
+        "excluded_python_versions",
+        "imports_on_top",
+        "keep_local_precommit",
+        "type_checker",
+    }),
+    "github": frozenset({
+        "allow_deprecated_workflows",
+        "allow_labels",
+        "ci_skipped_tests",
+        "github_pages",
+        "keep_pr_linting",
+        "keep_workflow",
+        "macos_python_version",
+        "no_cd",
+        "no_github_actions",
+        "no_milestones",
+        "no_pypi",
+        "no_version_branches",
+        "upgrade_frequency",
+    }),
+    "nb": frozenset({"allowed_cell_metadata", "no_binder"}),
+    "format": frozenset({"no_cspell_update"}),
+    "repo": frozenset({"gitpod", "keep_issue_templates"}),
+    "setup": frozenset({"keep_contributing_md"}),
+}
+
 
 def _normalize_key(key: str) -> str:
     return key.replace("-", "_")
+
+
+def policy_sub_table(field_name: str) -> str | None:
+    """Return the ``[tool.compwa.policy.*]`` sub-table that owns *field_name*.
+
+    Returns `None` for options that are shared by several subcommands and therefore live
+    in the top-level ``[tool.compwa.policy]`` table.
+
+    >>> policy_sub_table("type_checker")
+    'python'
+    >>> policy_sub_table("keep_contributing_md")
+    'setup'
+    >>> policy_sub_table("dev_python_version") is None
+    True
+    """
+    for sub_table, fields in _SCOPED_OPTIONS.items():
+        if field_name in fields:
+            return sub_table
+    return None
 
 
 def _read_policy_config() -> dict[str, Any]:

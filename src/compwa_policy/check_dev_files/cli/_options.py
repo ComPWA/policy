@@ -289,9 +289,9 @@ KeepIssueTemplates = Annotated[
 def build_arguments(**overrides: Any) -> Arguments:
     """Create an :class:`.Arguments` object from the CLI and :code:`pyproject.toml`.
 
-    Subcommands only expose the options relevant to them; every other field falls back to
-    the ``[tool.compwa.policy]`` table (if present) and then to the same default that the
-    ``check-dev-files`` hook uses. See :mod:`._settings` for the resolution order.
+    Subcommands only expose the options relevant to them; every other field falls back
+    to the ``[tool.compwa.policy]`` table (if present) and then to the same default that
+    the ``check-dev-files`` hook uses. See the ``_settings`` for the resolution order.
     """
     settings = load_settings(**overrides).model_dump()
     settings["excluded_python_versions"] = set(

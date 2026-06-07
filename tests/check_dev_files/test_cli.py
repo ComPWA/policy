@@ -12,10 +12,16 @@ from compwa_policy.check_dev_files.cli._settings import (
     _read_policy_config,
     load_settings,
 )
-from compwa_policy.check_dev_files.cli.migrate import _flag_group, _normalize
+from compwa_policy.check_dev_files.cli.migrate import _build_policy, _render
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+@pytest.fixture(autouse=True)
+def _isolate_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run every test in an empty directory, away from the repo's own pyproject.toml."""
+    monkeypatch.chdir(tmp_path)
 
 
 def test_build_arguments_defaults() -> None:
@@ -146,25 +152,54 @@ class TestPyprojectConfig:
             load_settings()
 
 
-def test_normalize_is_idempotent() -> None:
-    args = ["--no-pypi", "--allow-labels", "--keep-workflow=a"]
-    normalized = _normalize(args)
-    assert normalized == ["--allow-labels", "--keep-workflow=a", "--no-pypi"]
-    assert _normalize(normalized) == normalized
+class TestBuildPolicy:
+    def test_groups_into_sub_tables(self) -> None:
+        policy = _build_policy([
+            "--allow-labels",
+            "--keep-local-precommit",
+            "--no-pypi",
+            "--pytest-single-threaded",
+            "--repo-name=policy",
+            "--repo-title=ComPWA repository policy",
+            "--type-checker=ty",
+        ])
+        assert policy == {
+            "github": {"allow-labels": True, "no-pypi": True},
+            "python": {"keep-local-precommit": True, "type-checker": ["ty"]},
+            "pytest-single-threaded": True,
+            "repo-name": "policy",
+            "repo-title": "ComPWA repository policy",
+        }
 
+    def test_repeated_list_option(self) -> None:
+        policy = _build_policy(["--type-checker=mypy", "--type-checker=pyright"])
+        assert policy == {"python": {"type-checker": ["mypy", "pyright"]}}
 
-@pytest.mark.parametrize(
-    ("flag", "group"),
-    [
-        ("--no-ruff", "python"),
-        ("--no-pypi", "github"),
-        ("--package-manager", "env"),
-        ("--no-binder", "nb"),
-        ("--no-cspell-update", "format"),
-        ("--gitpod", "repo"),
-        ("--repo-name", "shared"),
-        ("--does-not-exist", "unknown"),
-    ],
-)
-def test_flag_group(flag: str, group: str) -> None:
-    assert _flag_group(flag) == group
+    def test_environment_variables_become_setup_env(self) -> None:
+        policy = _build_policy([
+            "--environment-variables=PYTHONHASHSEED=0,MPLBACKEND=agg"
+        ])
+        assert policy == {
+            "setup": {"env": {"PYTHONHASHSEED": "0", "MPLBACKEND": "agg"}}
+        }
+
+    def test_no_python_flag(self) -> None:
+        assert _build_policy(["--no-python"]) == {"python": False}
+        assert _build_policy(["--python"]) == {"python": True}
+
+    def test_round_trips_through_settings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        args = [
+            "--allow-labels",
+            "--no-pypi",
+            "--repo-name=policy",
+            "--type-checker=ty",
+        ]
+        policy = _build_policy(args)
+        _write_policy(tmp_path, monkeypatch, _render(policy))
+        settings = load_settings()
+        assert settings.repo_name == "policy"
+        assert settings.allow_labels is True
+        assert settings.no_pypi is True
+        assert settings.type_checker == ["ty"]
