@@ -17,12 +17,12 @@ from compwa_policy.check_dev_files.cli._options import (
 
 def env(  # noqa: PLR0917
     python: Python = None,
-    dev_python_version: DevPythonVersion = "3.13",
-    package_manager: PackageManager = "uv",
-    environment_variables: EnvironmentVariables = "",
-    keep_contributing_md: KeepContributingMd = False,
-    repo_name: RepoName = "",
-    repo_organization: RepoOrganization = "ComPWA",
+    dev_python_version: DevPythonVersion = None,
+    package_manager: PackageManager = None,
+    environment_variables: EnvironmentVariables = None,
+    keep_contributing_md: KeepContributingMd = None,
+    repo_name: RepoName = None,
+    repo_organization: RepoOrganization = None,
 ) -> None:
     """Standardize the developer environment: uv, Conda, Pixi, direnv."""
     args = build_arguments(

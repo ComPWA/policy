@@ -15,12 +15,12 @@ from compwa_policy.check_dev_files.cli._options import (
 
 
 def nb(  # noqa: PLR0917
-    package_manager: PackageManager = "uv",
-    dev_python_version: DevPythonVersion = "3.13",
-    no_binder: NoBinder = False,
-    no_ruff: NoRuff = False,
-    allowed_cell_metadata: AllowedCellMetadata = "",
-    doc_apt_packages: DocAptPackages = "",
+    package_manager: PackageManager = None,
+    dev_python_version: DevPythonVersion = None,
+    no_binder: NoBinder = None,
+    no_ruff: NoRuff = None,
+    allowed_cell_metadata: AllowedCellMetadata = None,
+    doc_apt_packages: DocAptPackages = None,
 ) -> None:
     """Standardize Jupyter notebook config: Jupyter, nbstripout, Binder."""
     args = build_arguments(

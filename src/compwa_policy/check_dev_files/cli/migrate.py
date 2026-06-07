@@ -1,22 +1,32 @@
-"""``policy migrate`` — rewrite a repo's ``check-dev-files`` hook args into the new structure.
+"""``policy migrate`` — move a repo's ``check-dev-files`` hook args into ``pyproject.toml``.
 
-The flag interface itself is unchanged, but the flags are now *owned* by a subcommand
-group (see :mod:`compwa_policy.check_dev_files.cli`). This command validates the args of
-the ``check-dev-files`` hook in a ``.pre-commit-config.yaml`` against the current parser,
-reports which group each flag now belongs to, and rewrites the ``args`` list into a
-canonical, sorted form.
+The flags that used to be repeated under ``args:`` in ``.pre-commit-config.yaml`` can be
+declared once in a ``[tool.compwa.policy]`` table instead (see the ``_settings``
+module). This command reads the args of the ``check-dev-files`` hook, validates them
+against the current parser, writes them into the hierarchical ``[tool.compwa.policy]``
+table of ``pyproject.toml``, and removes the now-redundant ``args`` from the hook.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any, get_origin
 
 import rich
+import rtoml
 import typer
+from rich.syntax import Syntax
 
+from compwa_policy.check_dev_files import _get_environment_variables
+from compwa_policy.check_dev_files.cli._settings import (
+    POLICY_TABLE,
+    Settings,
+    policy_sub_table,
+)
+from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit.struct import Hook
@@ -30,7 +40,7 @@ ConfigFileArgument = Annotated[
 DryRunOption = Annotated[
     bool,
     typer.Option(
-        "--dry-run", help="Only report the migration; do not modify the file."
+        "--dry-run", help="Only report the migration; do not modify any files."
     ),
 ]
 
@@ -91,45 +101,38 @@ _KNOWN_FLAGS = {flag for flags in GROUP_FLAGS.values() for flag in flags} | set(
 )
 
 
-def _flag_group(flag: str) -> str:
-    for group, flags in GROUP_FLAGS.items():
-        if flag in flags:
-            return group
-    if flag in _SHARED_FLAGS:
-        return "shared"
-    return "unknown"
-
-
 def migrate(
     config_file: ConfigFileArgument = CONFIG_PATH.precommit,
     dry_run: DryRunOption = False,
 ) -> None:
-    """Rewrite the check-dev-files hook args into the new grouped structure."""
+    """Move the check-dev-files hook args into a pyproject.toml policy table."""
     if not config_file.exists():
         rich.print(f"[red]No such file:[/red] {config_file}")
+        raise typer.Exit(code=1)
+    if not CONFIG_PATH.pyproject.exists():
+        rich.print(f"[red]No such file:[/red] {CONFIG_PATH.pyproject}")
         raise typer.Exit(code=1)
     precommit = ModifiablePrecommit.load(config_file)
     hook = _find_hook(precommit)
     if hook is None:
         rich.print(f"[yellow]No '{_HOOK_ID}' hook found in {config_file}[/yellow]")
         raise typer.Exit(code=0)
-    old_args = list(hook.get("args", []))
-    _validate(old_args)
-    _report(old_args)
-    new_args = _normalize(old_args)
-    if new_args == old_args:
-        rich.print("[green]Already up to date.[/green]")
+    args = list(hook.get("args", []))
+    if not args:
+        rich.print(f"[green]The '{_HOOK_ID}' hook has no args to migrate.[/green]")
         raise typer.Exit(code=0)
+    _validate(args)
+    policy = _build_policy(args)
+    rich.print("[bold]Adding to pyproject.toml:[/bold]")
+    rich.print(Syntax(_render(policy), "toml", background_color="default"))
     if dry_run:
-        rich.print("[cyan]Would rewrite args to:[/cyan]")
-        for arg in new_args:
-            rich.print(f"  {arg}")
+        rich.print("[cyan](dry run: no files changed)[/cyan]")
         raise typer.Exit(code=0)
-    with precommit:
-        hook["args"] = new_args
-        precommit.changelog.append(
-            f"sorted and validated args of the '{_HOOK_ID}' hook"
-        )
+    _write_pyproject(policy)
+    _strip_hook_args(precommit, hook)
+    rich.print(
+        f"[green]Moved the args of '{_HOOK_ID}' into {CONFIG_PATH.pyproject}.[/green]"
+    )
 
 
 def _find_hook(precommit: ModifiablePrecommit) -> Hook | None:
@@ -150,20 +153,84 @@ def _validate(args: list[str]) -> None:
         raise typer.Exit(code=1)
 
 
-def _report(args: list[str]) -> None:
-    grouped: dict[str, list[str]] = {}
-    for arg in args:
-        flag = arg.split("=", 1)[0]
-        grouped.setdefault(_flag_group(flag), []).append(arg)
-    rich.print("[bold]Flags by subcommand group:[/bold]")
-    for group in sorted(grouped):
-        rich.print(f"  [bold]{group}[/bold]: {', '.join(sorted(grouped[group]))}")
+def _flag_to_field(flag: str) -> str:
+    return flag.lstrip("-").replace("-", "_")
 
 
-def _normalize(args: list[str]) -> list[str]:
-    """Return the args sorted by their flag name (``append`` order is preserved).
+def _is_list_field(field_name: str) -> bool:
+    return get_origin(Settings.model_fields[field_name].annotation) is list
 
-    >>> _normalize(["--no-pypi", "--allow-labels", "--keep-workflow=a"])
-    ['--allow-labels', '--keep-workflow=a', '--no-pypi']
+
+def _build_policy(args: list[str]) -> dict[str, Any]:
+    """Group ``check-dev-files`` args into the nested ``[tool.compwa.policy]`` structure.
+
+    >>> _build_policy(["--no-pypi", "--repo-name=demo", "--type-checker=ty"])
+    {'github': {'no-pypi': True}, 'repo-name': 'demo', 'python': {'type-checker': ['ty']}}
+    >>> _build_policy(["--no-python", "--environment-variables=A=1,B=2"])
+    {'python': False, 'setup': {'env': {'A': '1', 'B': '2'}}}
     """
-    return sorted(args, key=lambda arg: arg.split("=", 1)[0])
+    policy: dict[str, Any] = {}
+    environment_variables: dict[str, str] = {}
+    for arg in args:
+        flag, separator, raw_value = arg.partition("=")
+        if flag in {"--python", "--no-python"}:
+            policy["python"] = flag == "--python"
+            continue
+        field = _flag_to_field(flag)
+        if field == "environment_variables":
+            environment_variables.update(_get_environment_variables(raw_value))
+            continue
+        sub_table = policy_sub_table(field)
+        target = policy if sub_table is None else policy.setdefault(sub_table, {})
+        key = field.replace("_", "-")
+        if not separator:
+            target[key] = True
+        elif _is_list_field(field):
+            target.setdefault(key, []).append(raw_value)
+        else:
+            target[key] = raw_value
+    if environment_variables:
+        policy.setdefault("setup", {})["env"] = environment_variables
+    return policy
+
+
+def _render(policy: dict[str, Any]) -> str:
+    document = {"tool": {"compwa": {"policy": policy}}}
+    return rtoml.dumps(document, pretty=True).strip()
+
+
+def _write_pyproject(policy: dict[str, Any]) -> None:
+    pyproject = ModifiablePyproject.load()
+    try:
+        with pyproject:
+            _apply(pyproject, policy)
+            pyproject.changelog.append(f"imported args of the '{_HOOK_ID}' hook")
+    except PrecommitError:
+        pass
+
+
+def _apply(pyproject: ModifiablePyproject, policy: dict[str, Any]) -> None:
+    root = pyproject.get_table(POLICY_TABLE, create=True)
+    for key, value in policy.items():
+        if not isinstance(value, dict):
+            root[key] = value
+            continue
+        header = f"{POLICY_TABLE}.{key}"
+        sub_table = pyproject.get_table(header, create=True)
+        for sub_key, sub_value in value.items():
+            if isinstance(sub_value, dict):
+                nested = pyproject.get_table(f"{header}.{sub_key}", create=True)
+                nested.update(sub_value)
+            else:
+                sub_table[sub_key] = sub_value
+
+
+def _strip_hook_args(precommit: ModifiablePrecommit, hook: Hook) -> None:
+    try:
+        with precommit:
+            del hook["args"]
+            precommit.changelog.append(
+                f"moved args of the '{_HOOK_ID}' hook into {CONFIG_PATH.pyproject}"
+            )
+    except PrecommitError:
+        pass

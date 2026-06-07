@@ -24,6 +24,8 @@ dependencies = [
     "packaging",
     "pathspec",
     "pip-tools",
+    "pydantic >=2",
+    "pydantic-settings >=2",
     "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
     "setuptools",
@@ -118,6 +120,19 @@ where = ["src"]
 
 [tool.setuptools_scm]
 write_to = "src/compwa_policy/version.py"
+
+[tool.compwa.policy]
+pytest-single-threaded = true
+repo-name = "policy"
+repo-title = "ComPWA repository policy"
+
+[tool.compwa.policy.github]
+allow-labels = true
+no-pypi = true
+
+[tool.compwa.policy.python]
+keep-local-precommit = true
+type-checker = ["ty"]
 
 [tool.coverage.report]
 exclude_also = [

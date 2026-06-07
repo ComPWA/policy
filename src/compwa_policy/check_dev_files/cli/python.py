@@ -19,14 +19,14 @@ from compwa_policy.check_dev_files.cli._options import (
 
 def python(  # noqa: PLR0917
     python: Python = None,
-    dev_python_version: DevPythonVersion = "3.13",
-    excluded_python_versions: ExcludedPythonVersions = "",
+    dev_python_version: DevPythonVersion = None,
+    excluded_python_versions: ExcludedPythonVersions = None,
     type_checker: TypeCheckerOption = None,
-    no_ruff: NoRuff = False,
-    imports_on_top: ImportsOnTop = False,
-    keep_local_precommit: KeepLocalPrecommit = False,
-    pytest_single_threaded: PytestSingleThreaded = False,
-    allow_vscode_coverage_gutters: AllowVscodeCoverageGutters = False,
+    no_ruff: NoRuff = None,
+    imports_on_top: ImportsOnTop = None,
+    keep_local_precommit: KeepLocalPrecommit = None,
+    pytest_single_threaded: PytestSingleThreaded = None,
+    allow_vscode_coverage_gutters: AllowVscodeCoverageGutters = None,
 ) -> None:
     """Standardize Python tooling: pyproject, Ruff, Black, mypy, pyright, ty, pytest, pyupgrade."""
     args = build_arguments(

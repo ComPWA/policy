@@ -47,15 +47,6 @@ repos:
         language: python
         always_run: true
         pass_filenames: false
-        args:
-          - --allow-labels
-          - --keep-local-precommit
-          - --no-pypi
-          - --pytest-single-threaded
-          - --repo-name=policy
-          - --repo-title=ComPWA repository policy
-          - --type-checker=ty
-
       - id: self-check
         name: self-check
         entry: self-check
