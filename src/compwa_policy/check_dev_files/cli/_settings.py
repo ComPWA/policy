@@ -200,7 +200,7 @@ class Settings(BaseSettings):
     keep_issue_templates: bool = False
 
     @classmethod
-    def settings_customise_sources(
+    def settings_customize_sources(
         cls,
         settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
