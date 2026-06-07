@@ -24,6 +24,8 @@ dependencies = [
     "packaging",
     "pathspec",
     "pip-tools",
+    "pydantic >=2",
+    "pydantic-settings >=2",
     "rtoml", # fast, read-only parsing
     "ruamel.yaml", # better YAML dumping
     "setuptools",

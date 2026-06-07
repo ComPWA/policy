@@ -7,7 +7,7 @@ from compwa_policy.check_dev_files.cli._options import NoCspellUpdate, build_arg
 
 
 def format_(
-    no_cspell_update: NoCspellUpdate = False,
+    no_cspell_update: NoCspellUpdate = None,
 ) -> None:
     """Standardize formatters and linters: Prettier, TOML, cSpell, EditorConfig, pre-commit."""
     args = build_arguments(no_cspell_update=no_cspell_update)

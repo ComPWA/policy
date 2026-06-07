@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 
 from compwa_policy.check_dev_files import Arguments, _to_list
+from compwa_policy.check_dev_files.cli._settings import load_settings
 from compwa_policy.check_dev_files.conda import PackageManagerChoice
 from compwa_policy.check_dev_files.upgrade_lock import Frequency
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
@@ -37,16 +38,18 @@ class TypeChecker(str, Enum):
 
 # Cross-cutting options -------------------------------------------------------
 DevPythonVersion = Annotated[
-    PythonVersion,
+    PythonVersion | None,
     typer.Option(
         "--dev-python-version",
+        show_default=DEFAULT_DEV_PYTHON_VERSION,
         help="Specify the Python version for your developer environment.",
     ),
 ]
 PackageManager = Annotated[
-    PackageManagerChoice,
+    PackageManagerChoice | None,
     typer.Option(
         "--package-manager",
+        show_default="uv",
         help="Specify which package manager to use for the project.",
     ),
 ]
@@ -58,7 +61,7 @@ Python = Annotated[
     ),
 ]
 RepoName = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--repo-name",
         help=(
@@ -68,14 +71,15 @@ RepoName = Annotated[
     ),
 ]
 RepoOrganization = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--repo-organization",
+        show_default="ComPWA",
         help="Name of the organization under which the repository lives.",
     ),
 ]
 RepoTitle = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--repo-title",
         help=(
@@ -85,7 +89,7 @@ RepoTitle = Annotated[
     ),
 ]
 EnvironmentVariables = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--environment-variables",
         help="Comma- or space-separated list of environment variables, e.g. PYTHONHASHSEED=0,SKIP=pyright.",
@@ -94,18 +98,18 @@ EnvironmentVariables = Annotated[
 
 # Python group ----------------------------------------------------------------
 ExcludedPythonVersions = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--excluded-python-versions",
         help="Comma- or space-separated list of Python versions you do NOT want to support.",
     ),
 ]
 NoRuff = Annotated[
-    bool,
+    bool | None,
     typer.Option("--no-ruff", help="Do not enforce Ruff as a linter."),
 ]
 ImportsOnTop = Annotated[
-    bool,
+    bool | None,
     typer.Option("--imports-on-top", help="Sort notebook imports on the top."),
 ]
 TypeCheckerOption = Annotated[
@@ -115,19 +119,19 @@ TypeCheckerOption = Annotated[
     ),
 ]
 KeepLocalPrecommit = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--keep-local-precommit", help="Do not remove local pre-commit hooks."
     ),
 ]
 PytestSingleThreaded = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--pytest-single-threaded", help="Run pytest without the `-n` argument."
     ),
 ]
 AllowVscodeCoverageGutters = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--allow-vscode-coverage-gutters",
         help=(  # cspell:ignore ryanluker
@@ -139,18 +143,18 @@ AllowVscodeCoverageGutters = Annotated[
 
 # GitHub group ----------------------------------------------------------------
 AllowLabels = Annotated[
-    bool,
+    bool | None,
     typer.Option("--allow-labels", help="Do not perform the check on labels.toml."),
 ]
 AllowDeprecatedWorkflows = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--allow-deprecated-workflows",
         help="Allow deprecated CI workflows, such as ci-docs.yml.",
     ),
 ]
 NoGithubActions = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--no-github-actions",
         help=(
@@ -162,53 +166,54 @@ NoGithubActions = Annotated[
     ),
 ]
 GithubPages = Annotated[
-    bool,
+    bool | None,
     typer.Option("--github-pages", help="Host documentation on GitHub Pages."),
 ]
 KeepPrLinting = Annotated[
-    bool,
+    bool | None,
     typer.Option("--keep-pr-linting", help="Do not overwrite the PR linting workflow."),
 ]
 MacosPythonVersion = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--macos-python-version",
+        show_default="3.10",
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     ),
 ]
 NoCd = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--no-cd", help="Do not add any GitHub workflows for continuous deployment."
     ),
 ]
 NoMilestones = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--no-milestones",
         help="This repository does not use milestones and therefore no close workflow.",
     ),
 ]
 NoPypi = Annotated[
-    bool,
+    bool | None,
     typer.Option("--no-pypi", help="Do not publish package to PyPI."),
 ]
 NoVersionBranches = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--no-version-branches",
         help="Do not push to matching major/minor version branches upon tagging.",
     ),
 ]
 CiSkippedTests = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--ci-skipped-tests",
         help="Avoid running CI test on the following Python versions.",
     ),
 ]
 DocAptPackages = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--doc-apt-packages",
         help="Comma- or space-separated list of APT packages that are required to build documentation.",
@@ -222,9 +227,10 @@ KeepWorkflow = Annotated[
     ),
 ]
 UpgradeFrequency = Annotated[
-    Frequency,
+    Frequency | None,
     typer.Option(
         "--upgrade-frequency",
+        show_default="quarterly",
         help=(
             "Add a workflow to upgrade lock files, like uv.lock,"
             " .pre-commit-config.yml, and pip .constraints/ files. The argument is the"
@@ -235,11 +241,11 @@ UpgradeFrequency = Annotated[
 
 # Notebook group --------------------------------------------------------------
 NoBinder = Annotated[
-    bool,
+    bool | None,
     typer.Option("--no-binder", help="Do not update the Binder configuration."),
 ]
 AllowedCellMetadata = Annotated[
-    str,
+    str | None,
     typer.Option(
         "--allowed-cell-metadata",
         help="Comma-separated list of allowed metadata in Jupyter notebook cells, e.g. editable,slideshow.",
@@ -248,7 +254,7 @@ AllowedCellMetadata = Annotated[
 
 # Format group ----------------------------------------------------------------
 NoCspellUpdate = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--no-cspell-update",
         help=(
@@ -261,69 +267,33 @@ NoCspellUpdate = Annotated[
 
 # Repo group ------------------------------------------------------------------
 Gitpod = Annotated[
-    bool,
+    bool | None,
     typer.Option("--gitpod", help="Create a GitPod config file."),
 ]
 KeepContributingMd = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--keep-contributing-md",
         help="Do not update or remove the CONTRIBUTING.md file.",
     ),
 ]
 KeepIssueTemplates = Annotated[
-    bool,
+    bool | None,
     typer.Option(
         "--keep-issue-templates",
         help="Do not remove the .github/ISSUE_TEMPLATE directory.",
     ),
 ]
 
-_DEFAULTS: dict[str, Any] = {
-    "allow_deprecated_workflows": False,
-    "allow_labels": False,
-    "allow_vscode_coverage_gutters": False,
-    "allowed_cell_metadata": "",
-    "ci_skipped_tests": "",
-    "dev_python_version": DEFAULT_DEV_PYTHON_VERSION,
-    "doc_apt_packages": "",
-    "environment_variables": "",
-    "excluded_python_versions": "",
-    "github_pages": False,
-    "gitpod": False,
-    "imports_on_top": False,
-    "keep_contributing_md": False,
-    "keep_issue_templates": False,
-    "keep_local_precommit": False,
-    "keep_pr_linting": False,
-    "keep_workflow": [],
-    "macos_python_version": "3.10",
-    "no_binder": False,
-    "no_cd": False,
-    "no_cspell_update": False,
-    "no_github_actions": False,
-    "no_milestones": False,
-    "no_pypi": False,
-    "no_ruff": False,
-    "no_version_branches": False,
-    "package_manager": "uv",
-    "pytest_single_threaded": False,
-    "python": None,
-    "repo_name": "",
-    "repo_organization": "ComPWA",
-    "repo_title": "",
-    "type_checker": [],
-    "upgrade_frequency": "quarterly",
-}
-
 
 def build_arguments(**overrides: Any) -> Arguments:
-    """Create an :class:`.Arguments` object, applying the same post-processing as argparse.
+    """Create an :class:`.Arguments` object from the CLI and :code:`pyproject.toml`.
 
-    Subcommands only expose the options relevant to them; every other field falls back
-    to the same default that the ``check-dev-files`` hook uses.
+    Subcommands only expose the options relevant to them; every other field falls back to
+    the ``[tool.compwa.policy]`` table (if present) and then to the same default that the
+    ``check-dev-files`` hook uses. See :mod:`._settings` for the resolution order.
     """
-    settings = {**_DEFAULTS, **{k: v for k, v in overrides.items() if v is not None}}
+    settings = load_settings(**overrides).model_dump()
     settings["excluded_python_versions"] = set(
         _to_list(settings["excluded_python_versions"])
     )
@@ -331,8 +301,5 @@ def build_arguments(**overrides: Any) -> Arguments:
         settings["macos_python_version"] = None
     settings["repo_name"] = settings["repo_name"] or os.path.basename(os.getcwd())
     settings["repo_title"] = settings["repo_title"] or settings["repo_name"]
-    settings["type_checker"] = {
-        checker.value if isinstance(checker, TypeChecker) else checker
-        for checker in settings["type_checker"] or []
-    }
+    settings["type_checker"] = set(settings["type_checker"])
     return Arguments(**settings)
