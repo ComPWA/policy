@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True)  # noqa: RUF076
 def _isolate_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Run every test in an empty directory, away from the repo's own pyproject.toml."""
     monkeypatch.chdir(tmp_path)
