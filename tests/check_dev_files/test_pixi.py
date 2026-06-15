@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.check_dev_files.pixi._update import _update_docnb_and_doclive
+from compwa_policy.check_dev_files.env.pixi._update import _update_docnb_and_doclive
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 

@@ -25,7 +25,7 @@ from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
 
 _DOC_TASKS = frozenset({"doc", "doclive", "docnb", "docnblive", "linkcheck"})
 _NOTEBOOK_TASKS = frozenset({"lab", "nb"})

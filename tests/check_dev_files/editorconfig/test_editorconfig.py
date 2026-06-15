@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from compwa_policy.check_dev_files.editorconfig import _update_precommit_config
+from compwa_policy.check_dev_files.format.editorconfig import _update_precommit_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 

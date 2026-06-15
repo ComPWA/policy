@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from compwa_policy.check_dev_files.pixi._helpers import has_pixi_config
+from compwa_policy.check_dev_files.env.pixi._helpers import has_pixi_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.executor import Executor
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Table
 
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 

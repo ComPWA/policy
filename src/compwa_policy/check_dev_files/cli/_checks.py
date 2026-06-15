@@ -18,40 +18,43 @@ from compwa_policy.check_dev_files import (
     Arguments,
     _get_environment_variables,
     _to_list,
-    binder,
-    black,
-    citation,
-    commitlint,
-    conda,
+)
+from compwa_policy.check_dev_files._characterization import has_python_code
+from compwa_policy.check_dev_files.env import conda, direnv, pixi, uv
+from compwa_policy.check_dev_files.format import (
     cspell,
-    dependabot,
-    direnv,
     editorconfig,
-    github_labels,
-    github_workflows,
-    gitpod,
-    jupyter,
-    mypy,
-    nbstripout,
-    pixi,
-    poe,
     precommit,
     prettier,
+    toml,
+)
+from compwa_policy.check_dev_files.github import (
+    dependabot,
+    labels,
+    release_drafter,
+    upgrade_lock,
+    workflows,
+)
+from compwa_policy.check_dev_files.nb import binder, jupyter, nbstripout
+from compwa_policy.check_dev_files.python import (
+    black,
+    mypy,
     pyproject,
     pyright,
     pytest,
     pyupgrade,
-    readthedocs,
-    release_drafter,
     ruff,
-    toml,
     ty,
-    upgrade_lock,
-    uv,
+)
+from compwa_policy.check_dev_files.repo import (
+    citation,
+    commitlint,
+    gitpod,
+    poe,
+    readthedocs,
     vscode,
 )
-from compwa_policy.check_dev_files._characterization import has_python_code
-from compwa_policy.check_dev_files.deprecated import remove_deprecated_tools
+from compwa_policy.check_dev_files.repo.deprecated import remove_deprecated_tools
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import is_committed
@@ -147,10 +150,10 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
     if "format" in groups:
         do(editorconfig.main, precommit_config)
     if "github" in groups and not args.allow_labels:
-        do(github_labels.main)
+        do(labels.main)
     if "github" in groups and not args.no_github_actions:
         do(
-            github_workflows.main,
+            workflows.main,
             precommit_config,
             allow_deprecated=args.allow_deprecated_workflows,
             doc_apt_packages=ctx.doc_apt_packages,

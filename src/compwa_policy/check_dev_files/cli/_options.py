@@ -16,8 +16,8 @@ import typer
 
 from compwa_policy.check_dev_files import Arguments, _to_list
 from compwa_policy.check_dev_files.cli._settings import load_settings
-from compwa_policy.check_dev_files.conda import PackageManagerChoice
-from compwa_policy.check_dev_files.upgrade_lock import Frequency
+from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
+from compwa_policy.check_dev_files.github.upgrade_lock import Frequency
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
 
 if TYPE_CHECKING:

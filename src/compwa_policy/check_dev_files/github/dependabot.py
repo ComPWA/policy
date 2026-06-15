@@ -14,7 +14,7 @@ from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.check_dev_files.upgrade_lock import Frequency
+    from compwa_policy.check_dev_files.github.upgrade_lock import Frequency
 
 
 def main(frequency: Frequency) -> None:  # noqa: C901

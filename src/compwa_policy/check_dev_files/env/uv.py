@@ -18,7 +18,7 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
