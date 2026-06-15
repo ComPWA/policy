@@ -42,3 +42,50 @@ The `check-dev-files` hook (and the `policy` command without a subcommand) can b
 :width: 80
 :show-nested:
 ```
+
+## Configuration in `pyproject.toml`
+
+Instead of repeating the same flags under `args:` in every `.pre-commit-config.yaml`, a repository can declare its options once in a `[tool.compwa.policy]` table in its `pyproject.toml`. Each option is resolved with the following precedence (first match wins):
+
+1. the option explicitly passed on the command line (e.g. under `args:`);
+2. the `[tool.compwa.policy]` table in `pyproject.toml`;
+3. the built-in default.
+
+The table is organized hierarchically, mirroring the subcommand tree: options shared by several checks live in the top-level table, while options that belong to a single subcommand live in a sub-table named after it. The `env` subcommand maps to a `setup` table, and environment variables are a plain nested table under `[tool.compwa.policy.setup.env]`:
+
+```toml
+[tool.compwa.policy]
+# options shared by several checks
+dev-python-version = "3.13"
+package-manager = "pixi"
+
+[tool.compwa.policy.python]
+imports-on-top = true
+type-checker = ["mypy", "pyright"]
+
+[tool.compwa.policy.nb]
+no-binder = true
+allowed-cell-metadata = ["scrolled"]
+
+# options of the `env` subcommand (uv, conda, pixi, direnv)
+[tool.compwa.policy.setup]
+keep-contributing-md = true
+
+# environment variables, as a plain TOML table
+[tool.compwa.policy.setup.env]
+PYTHONHASHSEED = "0"
+
+[tool.compwa.policy.repo]
+gitpod = true
+```
+
+Both the native TOML form (arrays, tables, booleans) and the legacy command-line string form (`"mypy,pyright"`, `"A=1,B=2"`) are accepted, so an existing `args:` list can be moved into `pyproject.toml` verbatim.
+
+### Migrating an existing `args:` list
+
+The `policy migrate` subcommand does this conversion automatically. It reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook:
+
+```shell
+policy migrate            # convert .pre-commit-config.yaml in the current directory
+policy migrate --dry-run  # preview the resulting table without changing any files
+```

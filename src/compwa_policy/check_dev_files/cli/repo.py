@@ -15,10 +15,10 @@ from compwa_policy.check_dev_files.cli._options import (
 
 def repo(
     python: Python = None,
-    package_manager: PackageManager = "uv",
-    dev_python_version: DevPythonVersion = "3.13",
-    gitpod: Gitpod = False,
-    keep_issue_templates: KeepIssueTemplates = False,
+    package_manager: PackageManager = None,
+    dev_python_version: DevPythonVersion = None,
+    gitpod: Gitpod = None,
+    keep_issue_templates: KeepIssueTemplates = None,
 ) -> None:
     """Standardize miscellaneous repo files: citation, commitlint, VS Code, GitPod, Poe, Read the Docs."""
     args = build_arguments(

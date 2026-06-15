@@ -23,7 +23,9 @@ pyvenv*/
 uv.lock
 
 # Settings
+.claude/
 .idea/
+CLAUDE.md
 **.code-workspace
 
 # Exceptions
