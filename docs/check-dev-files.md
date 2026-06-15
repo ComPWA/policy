@@ -35,7 +35,7 @@ When the `pwa` command is installed alongside this package, the same command is 
 
 ## Hook arguments
 
-The `check-dev-files` hook (and the `policy` command without a subcommand) can be configured by adding any of the following flags to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file.
+The `check-dev-files` hook (and the `policy` command without a subcommand) only accepts the options that are shared across the whole repository, such as `--repo-name`. These can be added to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file. Options scoped to a single area (e.g. `--no-pypi`) are exposed on the matching subcommand instead and are configured through its `[tool.compwa.policy.<group>]` table (see [below](#configuration)). The full command tree and its options are:
 
 ```{typer} compwa_policy.check_dev_files.cli:app
 :prog: policy
@@ -43,7 +43,10 @@ The `check-dev-files` hook (and the `policy` command without a subcommand) can b
 :show-nested:
 ```
 
+<!-- prettier-ignore-start -->
+(configuration)=
 ## Configuration in `pyproject.toml`
+<!-- prettier-ignore-end -->
 
 Instead of repeating the same flags under `args:` in every `.pre-commit-config.yaml`, a repository can declare its options once in a `[tool.compwa.policy]` table in its `pyproject.toml`. Each option is resolved with the following precedence (first match wins):
 
