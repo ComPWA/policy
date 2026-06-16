@@ -17,9 +17,6 @@ repos:
       - id: check-dev-files
         args:
           - --repo-name="short name for your repository"
-      - id: colab-toc-visible
-      - id: fix-nbformat-version
-      - id: set-nb-cells
 ```
 
 and install and activate [`pre-commit`](https://pre-commit.com/#install) as follows:
@@ -30,12 +27,7 @@ pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 pre-commit install
 ```
 
-The **ComPWA/policy** repository provides the following hooks:
-
-- [`check-dev-files`](./check-dev-files.md)
-- {mod}`colab-toc-visible <.colab_toc_visible>`
-- {mod}`fix-nbformat-version <.fix_nbformat_version>`
-- {mod}`set-nb-cells <.set_nb_cells>`
+The **ComPWA/policy** repository provides the [`check-dev-files`](./check-dev-files.md) hook. The notebook formatting hooks that used to be served from here now live in [ComPWA/nbhooks](https://github.com/ComPWA/nbhooks).
 
 ```{toctree}
 :hidden:

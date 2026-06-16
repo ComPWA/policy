@@ -21,8 +21,6 @@ repos:
     rev: ""
     hooks:
       - id: check-dev-files
-      - id: fix-nbformat-version
-      - id: set-nb-cells
 ```
 
 then run
@@ -31,4 +29,4 @@ then run
 pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 ```
 
-This example lists [all available hooks](./.pre-commit-hooks.yaml) (listed here as `id`s) ― you can remove some of them.
+The notebook formatting hooks that used to live here have moved to [ComPWA/nbhooks](https://github.com/ComPWA/nbhooks). When a repository contains notebooks, `check-dev-files` automatically migrates them over and keeps them up to date.

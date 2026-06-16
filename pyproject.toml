@@ -45,22 +45,16 @@ requires-python = ">=3.10"
 # discovers this entry point and mounts the returned Click command as a subcommand, so
 # `pwa policy ...` works without either package depending on the other.
 [project.entry-points."pwa.commands"]
-policy = "compwa_policy.check_dev_files.cli:get_click_command"
+policy = "compwa_policy.cli:get_click_command"
 
 [project.readme]
 content-type = "text/markdown"
 file = "README.md"
 
 [project.scripts]
-check-dev-files = "compwa_policy.check_dev_files.cli:main"
-colab-toc-visible = "compwa_policy.colab_toc_visible:main"
-fix-nbformat-version = "compwa_policy.fix_nbformat_version:main"
-policy = "compwa_policy.check_dev_files.cli:main"
-remove-empty-tags = "compwa_policy.remove_empty_tags:main"
+check-dev-files = "compwa_policy.cli:main"
+policy = "compwa_policy.cli:main"
 self-check = "compwa_policy.self_check:main"
-set-nb-cells = "compwa_policy.set_nb_cells:main"
-set-nb-display-name = "compwa_policy.set_nb_display_name:main"
-strip-nb-whitespace = "compwa_policy.strip_nb_whitespace:main"
 
 [project.urls]
 Changelog = "https://github.com/ComPWA/policy/releases"

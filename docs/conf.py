@@ -26,7 +26,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "P": "typing.ParamSpec",
     "PackageManagerChoice": (
         "obj",
-        "compwa_policy.check_dev_files.env.conda.PackageManagerChoice",
+        "compwa_policy.env.conda.PackageManagerChoice",
     ),
     "Path": "pathlib.Path",
     "ProjectURLs": "list",
@@ -37,12 +37,12 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "T": "typing.TypeVar",
     "Table": "tomlkit.items.Table",
     "TOMLDocument": "tomlkit.TOMLDocument",
-    "ty.TypeChecker": ("obj", "compwa_policy.check_dev_files.python.ty.TypeChecker"),
-    "TypeChecker": ("obj", "compwa_policy.check_dev_files.python.ty.TypeChecker"),
+    "ty.TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
+    "TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
     "upgrade_lock.Frequency": (
         "obj",
-        "compwa_policy.check_dev_files.github.upgrade_lock.Frequency",
+        "compwa_policy.github.upgrade_lock.Frequency",
     ),
     "V": "typing.TypeVar",
 }

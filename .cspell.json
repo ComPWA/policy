@@ -70,6 +70,7 @@
     "nargs",
     "nbcell",
     "nbformat",
+    "nbhooks",
     "nbqa",
     "nbstripout",
     "noqa",

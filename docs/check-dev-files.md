@@ -21,7 +21,7 @@ pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 pre-commit run check-dev-files -a
 ```
 
-For more implementation details of this hook, check the {mod}`.check_dev_files` module.
+For more implementation details of this hook, check the {mod}`compwa_policy.cli` module.
 
 ## Command-line interface
 
@@ -37,7 +37,7 @@ When the `pwa` command is installed alongside this package, the same command is 
 
 The `check-dev-files` hook (and the `policy` command without a subcommand) only accepts the options that are shared across the whole repository, such as `--repo-name`. These can be added to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file. Options scoped to a single area (e.g. `--no-pypi`) are exposed on the matching subcommand instead and are configured through its `[tool.compwa.policy.<group>]` table (see [below](#configuration)). The full command tree and its options are:
 
-```{typer} compwa_policy.check_dev_files.cli:app
+```{typer} compwa_policy.cli:app
 :prog: policy
 :width: 80
 :show-nested:
