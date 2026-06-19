@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from ruamel.yaml.comments import CommentedMap
 
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 

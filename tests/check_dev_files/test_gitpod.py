@@ -1,4 +1,4 @@
-from compwa_policy.check_dev_files.gitpod import (
+from compwa_policy.check_dev_files.repo.gitpod import (
     _extract_extensions,
     _generate_gitpod_config,
 )

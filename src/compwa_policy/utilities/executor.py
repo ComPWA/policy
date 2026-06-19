@@ -84,7 +84,7 @@ class Executor(AbstractContextManager):
         if not self.__is_in_context:
             msg = "The __call__ method can only be used within a context manager."
             raise RuntimeError(msg)
-        try:
+        try:  # noqa: PLW0717
             if os.getenv("COMPWA_POLICY_DEBUG") != "0":
                 start_time = time.time()
                 result = function(*args, **kwargs)

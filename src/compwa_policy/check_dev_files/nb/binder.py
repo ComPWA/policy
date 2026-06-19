@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
     from compwa_policy.config import PythonVersion
 
 

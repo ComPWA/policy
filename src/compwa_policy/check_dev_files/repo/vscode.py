@@ -10,7 +10,7 @@ from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
 
 
 def main(

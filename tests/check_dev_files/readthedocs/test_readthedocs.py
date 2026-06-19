@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from compwa_policy.check_dev_files import readthedocs
+from compwa_policy.check_dev_files.repo import readthedocs
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.errors import PrecommitError
 

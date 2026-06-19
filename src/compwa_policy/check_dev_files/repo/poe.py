@@ -25,9 +25,16 @@ from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
 
-_DOC_TASKS = frozenset({"doc", "doclive", "docnb", "docnblive", "linkcheck"})
+_DOC_TASKS = frozenset({
+    "doc",
+    "doclive",
+    "docnb",
+    "docnb-force",
+    "docnblive",
+    "linkcheck",
+})
 _NOTEBOOK_TASKS = frozenset({"lab", "nb"})
 _TEST_TASKS = frozenset({"cov", "test", "test-all"})
 _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
@@ -242,7 +249,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
     if isinstance(executor := existing.get("executor"), Mapping):
         expected["executor"] = executor
     elif "jupyter" in set(pyproject.get_table("dependency-groups", fallback=set())):
-        expected["executor"] = to_inline_table({"group": "jupyter"})  # ty:ignore[invalid-assignment]
+        expected["executor"] = to_inline_table({"group": "jupyter"})
     if existing != expected:
         tasks["lab"] = expected
         msg = f"Set Poe the Poet jupyter task in {CONFIG_PATH.pyproject}"
@@ -279,7 +286,7 @@ def _set_nb_task(pyproject: ModifiablePyproject) -> None:
         executor["with"] = existing_executor_with
     else:
         executor["with"] = "nbmake"
-    expected["executor"] = to_inline_table(executor)  # ty:ignore[invalid-assignment]
+    expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected
         msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"

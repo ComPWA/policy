@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.check_dev_files.pyright import (
+from compwa_policy.check_dev_files.python.pyright import (
     _merge_config_into_pyproject,
     _update_precommit,
     _update_settings,

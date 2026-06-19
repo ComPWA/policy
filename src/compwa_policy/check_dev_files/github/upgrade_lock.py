@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from compwa_policy.check_dev_files.dependabot import get_dependabot_ecosystems
-from compwa_policy.check_dev_files.github_workflows import (
+from compwa_policy.check_dev_files.github.dependabot import get_dependabot_ecosystems
+from compwa_policy.check_dev_files.github.workflows import (
     remove_workflow,
     update_workflow,
 )

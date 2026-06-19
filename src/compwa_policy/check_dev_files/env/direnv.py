@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING
 
 import rtoml
 
-from compwa_policy.check_dev_files.pixi import has_pixi_config
+from compwa_policy.check_dev_files.env.pixi import has_pixi_config
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
-    from compwa_policy.check_dev_files.conda import PackageManagerChoice
+    from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
 
 
 def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> None:
