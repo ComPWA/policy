@@ -27,7 +27,14 @@ if TYPE_CHECKING:
 
     from compwa_policy.check_dev_files.env.conda import PackageManagerChoice
 
-_DOC_TASKS = frozenset({"doc", "doclive", "docnb", "docnblive", "linkcheck"})
+_DOC_TASKS = frozenset({
+    "doc",
+    "doclive",
+    "docnb",
+    "docnb-force",
+    "docnblive",
+    "linkcheck",
+})
 _NOTEBOOK_TASKS = frozenset({"lab", "nb"})
 _TEST_TASKS = frozenset({"cov", "test", "test-all"})
 _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
