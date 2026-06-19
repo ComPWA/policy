@@ -3,8 +3,7 @@
 :func:`run_checks` lists every check exactly once, in the order the original
 ``check-dev-files`` hook ran them, with each line guarded by the subcommand *group* it
 belongs to. :func:`run_all` runs every group; a subcommand runs only its own. The
-individual checks themselves live in the ``compwa_policy.*`` modules and
-are unchanged.
+individual checks themselves live under the `compwa_policy` modules and are unchanged.
 """
 
 from __future__ import annotations

@@ -231,6 +231,7 @@ class TestMigrateNotebookHooks:
         }
         assert policy_hooks == {"check-dev-files"}
         nbhooks = repos["https://github.com/ComPWA/nbhooks"]
+        assert nbhooks["rev"] == "PLEASE-UPDATE"
         assert {h["id"] for h in nbhooks["hooks"]} == {"set-nb-cells"}
         set_nb_cells = next(h for h in nbhooks["hooks"] if h["id"] == "set-nb-cells")
         assert set_nb_cells["args"] == ["--add-install-cell"], "args must be preserved"

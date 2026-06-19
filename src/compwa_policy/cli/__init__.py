@@ -8,9 +8,9 @@ running
 
     policy --help
 
-The per-check modules in :mod:`compwa_policy` are unchanged; only the
-dispatch and option parsing live here. Running :program:`policy` without a subcommand
-runs every check, exactly like the :doc:`/check-dev-files` pre-commit hook.
+The per-check modules in :mod:`compwa_policy` are unchanged; only the dispatch and
+option parsing live here. Running :program:`policy` without a subcommand runs every
+check, exactly like the :doc:`/check-dev-files` pre-commit hook.
 """
 
 from __future__ import annotations

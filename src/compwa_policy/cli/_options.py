@@ -1,9 +1,9 @@
 """Reusable Typer option definitions shared by the :program:`policy` subcommands.
 
 Each option is defined exactly once as an :class:`~typing.Annotated` alias and reused
-across the grouped subcommands and the run-all callback. The actual checks live in the
-``compwa_policy.*`` modules and are unaffected by this layer; only the
-option parsing and dispatch are organized here.
+across the grouped subcommands and the run-all callback. The actual checks live under
+the sub-modules of `compwa_policy` and are unaffected by this layer; only the option
+parsing and dispatch are organized here.
 """
 
 from __future__ import annotations

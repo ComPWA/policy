@@ -5,7 +5,7 @@ import io
 import yaml
 
 from compwa_policy.errors import PrecommitError
-from compwa_policy.format.precommit import _update_notebook_hooks
+from compwa_policy.format import precommit
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 _CONFIG_WITH_NOTEBOOK_HOOK = """\
@@ -23,12 +23,16 @@ _NBHOOKS_URL = "https://github.com/ComPWA/nbhooks"
 
 
 def _run(config: str, *, has_notebooks: bool) -> tuple[bool, str]:
-    """Run the migration and report whether it changed anything and the result."""
+    """Run the migration and report whether it changed anything and the result.
+
+    Tags cannot be fetched (the ``_offline_git_ls_remote`` fixture), so the new
+    ComPWA/nbhooks repo entry is pinned to the fallback revision ``PLEASE-UPDATE``.
+    """
     stream = io.StringIO(config)
     changed = False
     try:
-        with ModifiablePrecommit.load(stream) as precommit:
-            _update_notebook_hooks(precommit, has_notebooks=has_notebooks)
+        with ModifiablePrecommit.load(stream) as pc:
+            precommit._update_notebook_hooks(pc, has_notebooks=has_notebooks)
     except PrecommitError:
         changed = True
     return changed, stream.getvalue()
@@ -43,6 +47,7 @@ def test_migrates_notebook_hooks_to_nbhooks():
     assert policy_hook_ids == {"check-dev-files"}
 
     nbhooks = repos[_NBHOOKS_URL]
+    assert nbhooks["rev"] == "PLEASE-UPDATE"
     nbhooks_ids = {hook["id"] for hook in nbhooks["hooks"]}
     assert nbhooks_ids == {
         "remove-empty-tags",

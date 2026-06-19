@@ -7,7 +7,10 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.precommit.getters import find_repo_with_index
+from compwa_policy.utilities.precommit.getters import (
+    find_repo_with_index,
+    get_latest_rev,
+)
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -62,7 +65,7 @@ def update_single_hook_precommit_repo(
     if idx_and_repo is None:
         if not expected_yaml.get("rev") and repo_url != "local":
             expected_yaml.pop("rev", None)
-            expected_yaml.insert(1, "rev", "PLEASE-UPDATE")
+            expected_yaml.insert(1, "rev", get_latest_rev(repo_url))
         idx = _determine_expected_repo_index(precommit.document, hook_id)
         repos_yaml = cast("CommentedSeq", repos)
         repos_yaml.insert(idx, expected_yaml)

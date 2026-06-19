@@ -111,16 +111,19 @@ def migrate_notebook_hooks_to_nbhooks(
     :code:`add_default_hooks` is set, the default notebook hooks are added as well (this
     is what the ``check-dev-files`` hook does for repositories that contain notebooks).
     """
-    hooks_by_id = _pop_policy_notebook_hooks(precommit)
-    hooks_by_id = {**_get_nbhooks_hooks(precommit), **hooks_by_id}
+    migrated = _pop_policy_notebook_hooks(precommit)
+    existing = _get_nbhooks_hooks(precommit)
+    hooks_by_id = {**existing, **migrated}
     if add_default_hooks:
         for hook_id in __DEFAULT_NOTEBOOK_HOOK_IDS:
             hooks_by_id.setdefault(hook_id, Hook(id=hook_id))
     if not hooks_by_id:
         return
     hooks = [hooks_by_id[hook_id] for hook_id in sorted(hooks_by_id)]
+    # An empty rev makes update_single_hook_precommit_repo pin the latest tag when the
+    # repo entry is created and keep the existing rev when it already exists.
     precommit.update_single_hook_repo(
-        Repo(repo=__NBHOOKS_REPO_URL, rev="PLEASE-UPDATE", hooks=hooks)
+        Repo(repo=__NBHOOKS_REPO_URL, rev="", hooks=hooks)
     )
 
 

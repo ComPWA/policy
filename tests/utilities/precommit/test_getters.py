@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from compwa_policy.utilities.precommit import Precommit
+from compwa_policy.utilities.precommit import Precommit, getters
 from compwa_policy.utilities.precommit.getters import find_repo, find_repo_with_index
 
 
@@ -12,6 +12,11 @@ def example_yaml() -> str:
     config_path = Path(__file__).parent / ".pre-commit-config.yaml"
     with open(config_path) as stream:
         return stream.read()
+
+
+@pytest.fixture(autouse=True)  # noqa: RUF076
+def _offline_git_ls_remote() -> None:
+    """Override the global offline patch so the real implementation is exercised."""
 
 
 @pytest.mark.parametrize("use_stream", [True, False])
@@ -59,3 +64,32 @@ def test_find_repo_with_index(example_yaml: str):
     assert repo["repo"] == "https://github.com/ComPWA/policy"
 
     assert find_repo_with_index(config, "non-existent") is None
+
+
+class TestGetLatestRev:
+    def test_returns_the_highest_tag(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        ls_remote = (
+            "sha1\trefs/tags/0.0.1\nsha2\trefs/tags/0.0.10\nsha3\trefs/tags/0.0.2\n"
+        )
+        monkeypatch.setattr(getters, "_git_ls_remote_tags", lambda _url: ls_remote)
+        assert getters.get_latest_rev("https://example.test/repo") == "0.0.10"
+
+    def test_ignores_non_version_tags(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        ls_remote = "sha1\trefs/tags/nightly\nsha2\trefs/tags/1.2.3\n"
+        monkeypatch.setattr(getters, "_git_ls_remote_tags", lambda _url: ls_remote)
+        assert getters.get_latest_rev("https://example.test/repo") == "1.2.3"
+
+    def test_falls_back_without_tags(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(getters, "_git_ls_remote_tags", lambda _url: "")
+        assert getters.get_latest_rev("https://example.test/repo") == "PLEASE-UPDATE"
+        assert getters.get_latest_rev("https://x", fallback="1.0.0") == "1.0.0"
+
+    def test_git_ls_remote_tags_returns_empty_when_offline(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def _raise(*_a: object, **_k: object) -> str:
+            msg = "no network"
+            raise OSError(msg)
+
+        monkeypatch.setattr(getters.subprocess, "check_output", _raise)
+        assert not getters._git_ls_remote_tags("https://example.test/repo")
