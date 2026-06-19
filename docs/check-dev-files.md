@@ -92,3 +92,5 @@ The `policy migrate` subcommand does this conversion automatically. It reads the
 policy migrate            # convert .pre-commit-config.yaml in the current directory
 policy migrate --dry-run  # preview the resulting table without changing any files
 ```
+
+The same command also relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).

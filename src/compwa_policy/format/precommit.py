@@ -89,7 +89,6 @@ NOTEBOOK_HOOK_IDS = (
 """Hook IDs that were extracted from ComPWA/policy into ComPWA/nbhooks."""
 __NBHOOKS_REPO_URL = "https://github.com/ComPWA/nbhooks"
 
-
 __DEFAULT_NOTEBOOK_HOOK_IDS = (
     "remove-empty-tags",
     "set-nb-display-name",
@@ -98,16 +97,23 @@ __DEFAULT_NOTEBOOK_HOOK_IDS = (
 
 
 def _update_notebook_hooks(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    """Migrate notebook hooks to ComPWA/nbhooks and add the default ones.
+    migrate_notebook_hooks_to_nbhooks(precommit, add_default_hooks=has_notebooks)
+
+
+def migrate_notebook_hooks_to_nbhooks(
+    precommit: ModifiablePrecommit, *, add_default_hooks: bool = False
+) -> None:
+    """Move notebook hooks from the ComPWA/policy repo entry to ComPWA/nbhooks.
 
     The notebook hooks used to be served from ComPWA/policy itself, but they now live in
-    `ComPWA/nbhooks <https://github.com/ComPWA/nbhooks>`_. Any notebook hook still listed
-    under the ComPWA/policy repo is moved to a ComPWA/nbhooks repo entry, and the default
-    notebook hooks are added when the repository contains notebooks.
+    `ComPWA/nbhooks <https://github.com/ComPWA/nbhooks>`_. Any notebook hook still
+    listed under the ComPWA/policy repo is moved to a ComPWA/nbhooks repo entry. When
+    :code:`add_default_hooks` is set, the default notebook hooks are added as well (this
+    is what the ``check-dev-files`` hook does for repositories that contain notebooks).
     """
     hooks_by_id = _pop_policy_notebook_hooks(precommit)
     hooks_by_id = {**_get_nbhooks_hooks(precommit), **hooks_by_id}
-    if has_notebooks:
+    if add_default_hooks:
         for hook_id in __DEFAULT_NOTEBOOK_HOOK_IDS:
             hooks_by_id.setdefault(hook_id, Hook(id=hook_id))
     if not hooks_by_id:

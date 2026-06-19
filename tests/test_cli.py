@@ -6,10 +6,12 @@ from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import pytest
+import typer
+import yaml
 
 from compwa_policy.cli._options import TypeChecker, build_arguments
 from compwa_policy.cli._settings import _read_policy_config, load_settings
-from compwa_policy.cli.migrate import _build_policy, _render
+from compwa_policy.cli.migrate import _build_policy, _render, migrate
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -200,3 +202,43 @@ class TestBuildPolicy:
         assert settings.allow_labels is True
         assert settings.no_pypi is True
         assert settings.type_checker == ["ty"]
+
+
+_CONFIG_WITH_NOTEBOOK_HOOK = """\
+repos:
+  - repo: https://github.com/ComPWA/policy
+    rev: 0.1.0
+    hooks:
+      - id: check-dev-files
+      - id: set-nb-cells
+        args: [--add-install-cell]
+"""
+
+
+class TestMigrateNotebookHooks:
+    def test_relocates_notebook_hooks_to_nbhooks(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
+
+        migrate(config_file=config, dry_run=False)
+
+        repos = {
+            repo["repo"]: repo for repo in yaml.safe_load(config.read_text())["repos"]
+        }
+        policy_hooks = {
+            h["id"] for h in repos["https://github.com/ComPWA/policy"]["hooks"]
+        }
+        assert policy_hooks == {"check-dev-files"}
+        nbhooks = repos["https://github.com/ComPWA/nbhooks"]
+        assert {h["id"] for h in nbhooks["hooks"]} == {"set-nb-cells"}
+        set_nb_cells = next(h for h in nbhooks["hooks"] if h["id"] == "set-nb-cells")
+        assert set_nb_cells["args"] == ["--add-install-cell"], "args must be preserved"
+
+    def test_dry_run_does_not_modify(self, tmp_path: Path) -> None:
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
+        with pytest.raises(typer.Exit):
+            migrate(config_file=config, dry_run=True)
+        assert config.read_text() == _CONFIG_WITH_NOTEBOOK_HOOK
