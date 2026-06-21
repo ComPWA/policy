@@ -25,32 +25,17 @@ For more implementation details of this hook, check the {mod}`compwa_policy.cli`
 
 ## Command-line interface
 
-The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, which is exactly what the `check-dev-files` pre-commit hook does. The subcommands group the checks by domain, so you can run just a subset. To see which subcommands are available, run:
+The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, which is exactly what the `check-dev-files` pre-commit hook does. The subcommands group the checks by domain, so you can run just a subset.
 
-```shell
-policy --help
-```
-
-You do not need to install the package to use this command. With [`uv`](https://docs.astral.sh/uv), you can fetch and run it on the fly:
+You do not need to install anything: with [`uv`](https://docs.astral.sh/uv), `uvx` fetches and runs the command on the fly. For example, to see which subcommands are available:
 
 ```shell
 uvx --from git+https://github.com/ComPWA/policy policy --help
 ```
 
-To install it as a persistent tool instead, use [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`):
+`uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
 
-```shell
-uv tool install git+https://github.com/ComPWA/policy
-policy --help
-```
-
-Both commands install from the default branch, but `uv` caches the Git checkout and reuses it on later runs. To update an already-installed copy to the latest commit, add `--reinstall` (which implies `--refresh`):
-
-```shell
-uv tool upgrade --reinstall compwa-policy
-```
-
-When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
+If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
 ## Hook arguments
 
