@@ -145,6 +145,17 @@ def _read_policy_config() -> dict[str, Any]:
 
 
 def _join(values: Any) -> str:
+    """Render a value as the legacy comma-separated command-line string.
+
+    >>> _join("3.6, 3.7")
+    '3.6, 3.7'
+    >>> _join(["3.6", "3.7"])
+    '3.6,3.7'
+    >>> _join({"A": "1", "B": "2"})
+    'A=1,B=2'
+    >>> _join(3)
+    '3'
+    """
     if isinstance(values, str):
         return values
     if isinstance(values, Mapping):
@@ -200,7 +211,7 @@ class Settings(BaseSettings):
     keep_issue_templates: bool = False
 
     @classmethod
-    def settings_customize_sources(
+    def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,

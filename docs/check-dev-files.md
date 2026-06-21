@@ -25,13 +25,19 @@ For more implementation details of this hook, check the {mod}`compwa_policy.cli`
 
 ## Command-line interface
 
-The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, which is exactly what the `check-dev-files` pre-commit hook does. The subcommands group the checks by domain, so you can run just a subset. To see which subcommands are available, run:
+The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, which is exactly what the `check-dev-files` pre-commit hook does. The subcommands group the checks by domain, so you can run just a subset.
+
+You do not need to install anything: with [`uv`](https://docs.astral.sh/uv), `uvx` fetches and runs the command on the fly. For example, to see which subcommands are available:
 
 ```shell
-policy --help
+uvx --from git+https://github.com/ComPWA/policy policy --help
 ```
 
-When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
+:::{tip}
+`uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
+:::
+
+If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
 ## Hook arguments
 
@@ -84,13 +90,23 @@ gitpod = true
 
 Both the native TOML form (arrays, tables, booleans) and the legacy command-line string form (`"mypy,pyright"`, `"A=1,B=2"`) are accepted, so an existing `args:` list can be moved into `pyproject.toml` verbatim.
 
-### Migrating an existing `args:` list
+## Migrating after breaking changes
 
-The `policy migrate` subcommand does this conversion automatically. It reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook:
+Some policy updates introduce breaking changes to a repository's configuration. The `check-dev-files` pre-commit hook cannot rewrite your files to apply such a change itself — it can only detect it and fail. The `policy migrate` command applies these migrations for you, but because it modifies configuration files it has to be run **outside of `pre-commit`**, as a one-off command.
+
+:::{important}
+If the `check-dev-files` hook starts failing after an upgrade, run `policy migrate` to bring your configuration up to date. You do **not** need to install anything first:
 
 ```shell
-policy migrate            # convert .pre-commit-config.yaml in the current directory
-policy migrate --dry-run  # preview the resulting table without changing any files
+uvx --from git+https://github.com/ComPWA/policy --refresh policy migrate
 ```
 
-The same command also relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).
+:::
+
+To preview the changes without writing any files, add `--dry-run`:
+
+```shell
+uvx --from git+https://github.com/ComPWA/policy --refresh policy migrate --dry-run
+```
+
+If you already installed the `policy` command, you can drop the `uvx --from git+https://github.com/ComPWA/policy` prefix and simply run `policy migrate`.
