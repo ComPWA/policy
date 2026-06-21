@@ -1,5 +1,0 @@
-repos:
-  - repo: https://github.com/ComPWA/mirrors-cspell
-    rev: v5.10.1
-    hooks:
-      - id: cspell
