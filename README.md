@@ -31,6 +31,13 @@ pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 
 The notebook formatting hooks that used to live here have moved to [ComPWA/nbhooks](https://github.com/ComPWA/nbhooks). When a repository contains notebooks, `check-dev-files` automatically migrates them over and keeps them up to date.
 
+> [!IMPORTANT]
+> After upgrading, the `check-dev-files` hook fails if your `.pre-commit-config.yaml` still passes area-scoped flags (such as `--no-pypi`) under `args:`. These options now live in a `[tool.compwa.policy]` table in your `pyproject.toml`. Run the following one-off command to migrate automatically; you do not need to install anything first.
+>
+> ```shell
+> uvx --from git+https://github.com/ComPWA/policy policy migrate
+> ```
+
 ## Command-line interface
 
 The same checks are exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command, so you can run them on the fly without setting up `pre-commit` first:

@@ -105,11 +105,21 @@ Both the native TOML form (arrays, tables, booleans) and the legacy command-line
 
 ### Migrating an existing `args:` list
 
-The `policy migrate` subcommand does this conversion automatically. It reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook:
+:::{important}
+After upgrading, the `check-dev-files` pre-commit hook **fails** if your `.pre-commit-config.yaml` still passes area-scoped flags (such as `--no-pypi` or `--no-binder`) under `args:`, because the hook now only accepts repository-wide options. Run the one-off `policy migrate` command below to fix this; you do **not** need to install anything first:
 
 ```shell
-policy migrate            # convert .pre-commit-config.yaml in the current directory
-policy migrate --dry-run  # preview the resulting table without changing any files
+uvx --from git+https://github.com/ComPWA/policy policy migrate
 ```
+
+:::
+
+The `policy migrate` subcommand does this conversion automatically: it reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook. To preview the resulting table without changing any files, add `--dry-run`:
+
+```shell
+uvx --from git+https://github.com/ComPWA/policy policy migrate --dry-run
+```
+
+If you already installed the `policy` command, you can drop the `uvx --from git+https://github.com/ComPWA/policy` prefix and simply run `policy migrate`.
 
 The same command also relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).
