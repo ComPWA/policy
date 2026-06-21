@@ -79,25 +79,21 @@ def _update_configuration(pyproject: ModifiablePyproject) -> None:
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
+    existing_hook = find_hook(precommit.document, r"^ty$")
+    exclude = existing_hook.get("exclude") if existing_hook else None
+    precommit.remove_hook("ty", repo_url="local")
     args = CommentedSeq(["--no-progress", "--output-format=concise"])
     args.fa.set_flow_style()
     types_or = CommentedSeq(["python", "pyi", "jupyter"])
     types_or.fa.set_flow_style()
-    hook = Hook(
-        id="ty",
-        name="ty",
-        entry="ty check",
-        args=args,
-        require_serial=True,
-        language="system",
-        types_or=types_or,
+    hook = Hook(id="ty", args=args, types_or=types_or)
+    if exclude:
+        hook["exclude"] = exclude
+    expected_repo = Repo(
+        repo="https://github.com/astral-sh/ty-pre-commit",
+        rev="",
+        hooks=[hook],
     )
-    existing_hook = find_hook(precommit.document, r"^ty$")
-    if existing_hook:
-        exclude = existing_hook.get("exclude")
-        if exclude:
-            hook["exclude"] = exclude
-    expected_repo = Repo(repo="local", hooks=[hook])
     precommit.update_single_hook_repo(expected_repo)
 
 

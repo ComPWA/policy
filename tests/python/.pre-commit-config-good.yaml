@@ -1,0 +1,11 @@
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: PLEASE-UPDATE
+    hooks:
+      - id: ty
+        args: [--no-progress, --output-format=concise]
+        types_or: [python, pyi, jupyter]
