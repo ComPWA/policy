@@ -44,6 +44,12 @@ uv tool install git+https://github.com/ComPWA/policy
 policy --help
 ```
 
+Both commands install from the default branch, but `uv` caches the Git checkout and reuses it on later runs. To update an already-installed copy to the latest commit, add `--reinstall` (which implies `--refresh`):
+
+```shell
+uv tool upgrade --reinstall compwa-policy
+```
+
 When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
 ## Hook arguments
