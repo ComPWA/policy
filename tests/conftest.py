@@ -2,12 +2,23 @@ from pathlib import Path
 
 import pytest
 
+from compwa_policy.utilities import match
 from compwa_policy.utilities.precommit import getters
 
 
 @pytest.fixture(scope="session")
 def test_dir() -> Path:
     return Path(__file__).parent
+
+
+@pytest.fixture(autouse=True)  # noqa: RUF076
+def _clear_git_ls_files_cache() -> None:
+    """Reset the ``git ls-files`` cache, which does not account for the cwd.
+
+    Tests that build a repository in a ``tmp_path`` would otherwise see a stale file
+    listing cached by an earlier test running in a different working directory.
+    """
+    match._git_ls_files_cmd.cache_clear()
 
 
 @pytest.fixture(autouse=True)  # noqa: RUF076

@@ -253,3 +253,131 @@ class TestMigrateNotebookHooks:
         with pytest.raises(typer.Exit):
             migrate(config_file=config, dry_run=True)
         assert config.read_text() == _CONFIG_WITH_NOTEBOOK_HOOK
+
+
+class TestMigrate:
+    def _write(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, config: str
+    ) -> Path:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        config_file = tmp_path / ".pre-commit-config.yaml"
+        config_file.write_text(dedent(config).lstrip())
+        return config_file
+
+    def test_missing_config_file_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        with pytest.raises(typer.Exit) as exc:
+            migrate(config_file=tmp_path / "does-not-exist.yaml")
+        assert exc.value.exit_code == 1
+
+    def test_missing_pyproject_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text("repos: []\n")
+        with pytest.raises(typer.Exit) as exc:
+            migrate(config_file=config)
+        assert exc.value.exit_code == 1
+
+    def test_no_hook_found_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = self._write(
+            tmp_path,
+            monkeypatch,
+            """
+            repos:
+              - repo: meta
+                hooks:
+                  - id: check-hooks-apply
+            """,
+        )
+        with pytest.raises(typer.Exit) as exc:
+            migrate(config_file=config)
+        assert exc.value.exit_code == 0
+
+    def test_nothing_to_migrate_exits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = self._write(
+            tmp_path,
+            monkeypatch,
+            """
+            repos:
+              - repo: local
+                hooks:
+                  - id: check-dev-files
+            """,
+        )
+        with pytest.raises(typer.Exit) as exc:
+            migrate(config_file=config)
+        assert exc.value.exit_code == 0
+
+    def test_unknown_args_exit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = self._write(
+            tmp_path,
+            monkeypatch,
+            """
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: 0.1.0
+                hooks:
+                  - id: check-dev-files
+                    args: [--does-not-exist]
+            """,
+        )
+        with pytest.raises(typer.Exit) as exc:
+            migrate(config_file=config)
+        assert exc.value.exit_code == 1
+
+    def test_migrates_args_into_pyproject(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = self._write(
+            tmp_path,
+            monkeypatch,
+            """
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: 0.1.0
+                hooks:
+                  - id: check-dev-files
+                    args: [--no-pypi, --repo-name=demo, --type-checker=ty]
+            """,
+        )
+        migrate(config_file=config, dry_run=False)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert "no-pypi = true" in pyproject
+        assert 'repo-name = "demo"' in pyproject
+        hooks = yaml.safe_load(config.read_text())["repos"][0]["hooks"]
+        assert "args" not in hooks[0], "args must be stripped after migration"
+
+    def test_migrates_environment_variables_into_nested_table(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        config = self._write(
+            tmp_path,
+            monkeypatch,
+            """
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: 0.1.0
+                hooks:
+                  - id: check-dev-files
+                    args: ["--environment-variables=A=1,B=2"]
+            """,
+        )
+        migrate(config_file=config, dry_run=False)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert "[tool.compwa.policy.setup.env]" in pyproject
+        assert 'A = "1"' in pyproject
+        assert 'B = "2"' in pyproject

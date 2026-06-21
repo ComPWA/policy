@@ -102,6 +102,7 @@
     "tomlkit",
     "tomlsort",
     "unittests",
+    "usefixtures",
     "venv"
   ],
   "language": "en-US",
