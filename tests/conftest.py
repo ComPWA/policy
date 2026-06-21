@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from compwa_policy import _characterization
 from compwa_policy.utilities import match
 from compwa_policy.utilities.precommit import getters
 
@@ -13,12 +14,15 @@ def test_dir() -> Path:
 
 @pytest.fixture(autouse=True)  # noqa: RUF076
 def _clear_git_ls_files_cache() -> None:
-    """Reset the ``git ls-files`` cache, which does not account for the cwd.
+    """Reset caches that depend on the working directory but do not key on it.
 
-    Tests that build a repository in a ``tmp_path`` would otherwise see a stale file
-    listing cached by an earlier test running in a different working directory.
+    ``git ls-files`` and the repository characterization helpers are cached, so a test
+    that builds a repository in a ``tmp_path`` would otherwise see a stale result cached
+    by an earlier test running in a different working directory.
     """
     match._git_ls_files_cmd.cache_clear()
+    _characterization.has_documentation.cache_clear()
+    _characterization.has_python_code.cache_clear()
 
 
 @pytest.fixture(autouse=True)  # noqa: RUF076

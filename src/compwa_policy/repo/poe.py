@@ -216,6 +216,15 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
 
 
 def __has_uv_run(cmd: str | Sequence) -> bool:
+    """Check whether a Poe task command shells out to :code:`uv run`.
+
+    >>> __has_uv_run("uv run pytest")
+    True
+    >>> __has_uv_run(["python", "-m", "pytest"])
+    False
+    >>> __has_uv_run(["uv run pytest", "coverage report"])
+    True
+    """
     if isinstance(cmd, str):
         return "uv run" in cmd
     if isinstance(cmd, Sequence):
