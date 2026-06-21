@@ -94,6 +94,7 @@
     "ruamel",
     "scalarstring",
     "sdist",
+    "settings_customise_sources",
     "setuptools",
     "showcode",
     "showtags",

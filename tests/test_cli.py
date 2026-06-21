@@ -150,6 +150,16 @@ class TestPyprojectConfig:
         with pytest.raises(ValueError, match="does_not_exist"):
             load_settings()
 
+    def test_environment_variables_do_not_leak(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _write_policy(tmp_path, monkeypatch, '[project]\nname = "x"\n')
+        monkeypatch.setenv("NO_PYPI", "true")
+        monkeypatch.setenv("PACKAGE_MANAGER", "pixi")
+        settings = load_settings()
+        assert settings.no_pypi is False
+        assert settings.package_manager == "uv"
+
 
 class TestBuildPolicy:
     def test_groups_into_sub_tables(self) -> None:
