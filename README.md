@@ -30,3 +30,13 @@ pre-commit autoupdate --repo=https://github.com/ComPWA/policy
 ```
 
 The notebook formatting hooks that used to live here have moved to [ComPWA/nbhooks](https://github.com/ComPWA/nbhooks). When a repository contains notebooks, `check-dev-files` automatically migrates them over and keeps them up to date.
+
+## Command-line interface
+
+The same checks are exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command, so you can run them on the fly without setting up `pre-commit` first:
+
+```shell
+uvx --from git+https://github.com/ComPWA/policy policy --help
+```
+
+Running `policy` without a subcommand runs every check at once, exactly like the `check-dev-files` hook. Subcommands group the checks by domain, so you can run just a subset (e.g. `policy python` or `policy nb`). Options that apply to the whole repository can be declared once in a `[tool.compwa.policy]` table in your `pyproject.toml` instead of repeating them under `args:`. See the [`check-dev-files` documentation](https://compwa.github.io/policy/check-dev-files) for the full command tree and configuration options.

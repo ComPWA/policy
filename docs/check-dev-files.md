@@ -31,6 +31,19 @@ The checks are also exposed through a short [Typer](https://typer.tiangolo.com)-
 policy --help
 ```
 
+You do not need to install the package to use this command. With [`uv`](https://docs.astral.sh/uv), you can fetch and run it on the fly:
+
+```shell
+uvx --from git+https://github.com/ComPWA/policy policy --help
+```
+
+To install it as a persistent tool instead, use [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`):
+
+```shell
+uv tool install git+https://github.com/ComPWA/policy
+policy --help
+```
+
 When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
 ## Hook arguments

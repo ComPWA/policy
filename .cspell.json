@@ -119,6 +119,7 @@
     "mkdir",
     "MPLBACKEND",
     "oneline",
+    "pipx",
     "pixi",
     "poethepoet",
     "PyPA",
