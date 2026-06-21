@@ -33,7 +33,9 @@ You do not need to install anything: with [`uv`](https://docs.astral.sh/uv), `uv
 uvx --from git+https://github.com/ComPWA/policy policy --help
 ```
 
+:::{tip}
 `uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
+:::
 
 If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
@@ -96,7 +98,7 @@ Some policy updates introduce breaking changes to a repository's configuration. 
 If the `check-dev-files` hook starts failing after an upgrade, run `policy migrate` to bring your configuration up to date. You do **not** need to install anything first:
 
 ```shell
-uvx --from git+https://github.com/ComPWA/policy policy migrate
+uvx --from git+https://github.com/ComPWA/policy --refresh policy migrate
 ```
 
 :::
@@ -104,12 +106,7 @@ uvx --from git+https://github.com/ComPWA/policy policy migrate
 To preview the changes without writing any files, add `--dry-run`:
 
 ```shell
-uvx --from git+https://github.com/ComPWA/policy policy migrate --dry-run
+uvx --from git+https://github.com/ComPWA/policy --refresh policy migrate --dry-run
 ```
 
 If you already installed the `policy` command, you can drop the `uvx --from git+https://github.com/ComPWA/policy` prefix and simply run `policy migrate`.
-
-At the moment, `policy migrate` applies two migrations:
-
-- It moves area-scoped flags (such as `--no-pypi`) out of the `args:` of the `check-dev-files` hook in `.pre-commit-config.yaml` into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml` (see [above](#configuration)), removing the now-redundant `args:`.
-- It relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).

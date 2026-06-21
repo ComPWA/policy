@@ -35,7 +35,7 @@ The notebook formatting hooks that used to live here have moved to [ComPWA/nbhoo
 > After upgrading, the `check-dev-files` hook fails if your `.pre-commit-config.yaml` still passes area-scoped flags (such as `--no-pypi`) under `args:`. These options now live in a `[tool.compwa.policy]` table in your `pyproject.toml`. Run the following one-off command to migrate automatically; you do not need to install anything first.
 >
 > ```shell
-> uvx --from git+https://github.com/ComPWA/policy policy migrate
+> uvx --from git+https://github.com/ComPWA/policy --refresh policy migrate
 > ```
 
 ## Command-line interface
