@@ -205,7 +205,7 @@ heading = "Testing"
 cmd = """
 pytest \
     --cov=compwa_policy \
-    --cov-fail-under=46 \
+    --cov-fail-under=52 \
     --cov-report=html \
     --cov-report=xml \
     ${paths}
