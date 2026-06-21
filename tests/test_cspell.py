@@ -1,37 +1,26 @@
 import io
-from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.format.cspell import _update_cspell_repo_url
-from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def test_update_cspell_repo_url(bad_yaml: io.StringIO, good_yaml: io.StringIO):
+def test_update_cspell_repo_url():
+    bad_config = dedent("""
+        repos:
+          - repo: https://github.com/ComPWA/mirrors-cspell
+            rev: v5.10.1
+            hooks:
+              - id: cspell
+    """).lstrip()
     with (
         pytest.raises(PrecommitError, match=r"Updated cSpell pre-commit repo URL"),
-        ModifiablePrecommit.load(bad_yaml) as bad,
+        ModifiablePrecommit.load(io.StringIO(bad_config)) as precommit,
     ):
-        _update_cspell_repo_url(bad)
+        _update_cspell_repo_url(precommit)
 
-    good = Precommit.load(good_yaml)
-    imported = good.document["repos"][0]["repo"]
-    expected = bad.document["repos"][0]["repo"]
-    assert imported == expected
-
-
-@pytest.fixture(scope="module")
-def bad_yaml() -> io.StringIO:
-    return load_config(".pre-commit-config-bad.yaml")
-
-
-@pytest.fixture(scope="module")
-def good_yaml() -> io.StringIO:
-    return load_config(".pre-commit-config-good.yaml")
-
-
-def load_config(filename: str) -> io.StringIO:
-    path = Path(__file__).parent / "cspell" / filename
-    with path.open() as file:
-        return io.StringIO(file.read())
+    repo_url = precommit.document["repos"][0]["repo"]
+    assert repo_url == "https://github.com/streetsidesoftware/cspell-cli"

@@ -1,9 +1,0 @@
-repos:
-  - repo: meta
-    hooks:
-      - id: check-hooks-apply
-
-  - repo: https://github.com/ComPWA/pyright-pre-commit
-    rev: PLEASE-UPDATE
-    hooks:
-      - id: pyright

@@ -1,5 +1,5 @@
-import io
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -8,44 +8,56 @@ from compwa_policy.python.ty import _update_precommit_config
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-@pytest.fixture
-def this_dir() -> Path:
-    return Path(__file__).parent
-
-
-def test_update_precommit_config(this_dir: Path):
-    with open(this_dir / ".pre-commit-config-bad.yaml") as stream:
-        input_stream = io.StringIO(stream.read())
-    with (
-        pytest.raises(PrecommitError),
-        ModifiablePrecommit.load(input_stream) as precommit,
-    ):
+def _run_update(config: Path) -> None:
+    with pytest.raises(PrecommitError), ModifiablePrecommit.load(config) as precommit:
         _update_precommit_config(precommit)
 
-    result = input_stream.getvalue()
-    with open(this_dir / ".pre-commit-config-good.yaml") as stream:
-        expected_result = stream.read()
-    assert result.strip() == expected_result.strip()
+
+def test_update_precommit_config(tmp_path: Path):
+    config = tmp_path / ".pre-commit-config.yaml"
+    config.write_text(
+        dedent("""
+        repos:
+          - repo: meta
+            hooks:
+              - id: check-hooks-apply
+        """).lstrip()
+    )
+    _run_update(config)
+    expected = dedent("""
+        repos:
+          - repo: meta
+            hooks:
+              - id: check-hooks-apply
+
+          - repo: https://github.com/astral-sh/ty-pre-commit
+            rev: PLEASE-UPDATE
+            hooks:
+              - id: ty
+                args: [--no-progress, --output-format=concise]
+                types_or: [python, pyi, jupyter]
+        """).lstrip()
+    assert config.read_text() == expected
 
 
 def test_update_precommit_config_migrates_local_hook(tmp_path: Path):
     config = tmp_path / ".pre-commit-config.yaml"
     config.write_text(
-        "repos:\n"
-        "  - repo: local\n"
-        "    hooks:\n"
-        "      - id: ty\n"
-        "        name: ty\n"
-        "        entry: ty check\n"
-        "        args: [--no-progress, --output-format=concise]\n"
-        "        language: system\n"
-        "        require_serial: true\n"
-        "        types_or: [python, pyi, jupyter]\n"
-        "        exclude: docs/.*\n"
+        dedent("""
+        repos:
+          - repo: local
+            hooks:
+              - id: ty
+                name: ty
+                entry: ty check
+                args: [--no-progress, --output-format=concise]
+                language: system
+                require_serial: true
+                types_or: [python, pyi, jupyter]
+                exclude: docs/.*
+        """).lstrip()
     )
-    with pytest.raises(PrecommitError), ModifiablePrecommit.load(config) as precommit:
-        _update_precommit_config(precommit)
-
+    _run_update(config)
     result = config.read_text()
     assert "repo: local" not in result
     assert "https://github.com/astral-sh/ty-pre-commit" in result
