@@ -88,10 +88,12 @@ gitpod = true
 
 Both the native TOML form (arrays, tables, booleans) and the legacy command-line string form (`"mypy,pyright"`, `"A=1,B=2"`) are accepted, so an existing `args:` list can be moved into `pyproject.toml` verbatim.
 
-### Migrating an existing `args:` list
+## Migrating after breaking changes
+
+Some policy updates introduce breaking changes to a repository's configuration. The `check-dev-files` pre-commit hook cannot rewrite your files to apply such a change itself — it can only detect it and fail. The `policy migrate` command applies these migrations for you, but because it modifies configuration files it has to be run **outside of `pre-commit`**, as a one-off command.
 
 :::{important}
-After upgrading, the `check-dev-files` pre-commit hook **fails** if your `.pre-commit-config.yaml` still passes area-scoped flags (such as `--no-pypi` or `--no-binder`) under `args:`, because the hook now only accepts repository-wide options. Run the one-off `policy migrate` command below to fix this; you do **not** need to install anything first:
+If the `check-dev-files` hook starts failing after an upgrade, run `policy migrate` to bring your configuration up to date. You do **not** need to install anything first:
 
 ```shell
 uvx --from git+https://github.com/ComPWA/policy policy migrate
@@ -99,7 +101,7 @@ uvx --from git+https://github.com/ComPWA/policy policy migrate
 
 :::
 
-The `policy migrate` subcommand does this conversion automatically: it reads the `args:` of the `check-dev-files` hook in your `.pre-commit-config.yaml`, writes them into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml`, and removes the now-redundant `args:` from the hook. To preview the resulting table without changing any files, add `--dry-run`:
+To preview the changes without writing any files, add `--dry-run`:
 
 ```shell
 uvx --from git+https://github.com/ComPWA/policy policy migrate --dry-run
@@ -107,4 +109,7 @@ uvx --from git+https://github.com/ComPWA/policy policy migrate --dry-run
 
 If you already installed the `policy` command, you can drop the `uvx --from git+https://github.com/ComPWA/policy` prefix and simply run `policy migrate`.
 
-The same command also relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).
+At the moment, `policy migrate` applies two migrations:
+
+- It moves area-scoped flags (such as `--no-pypi`) out of the `args:` of the `check-dev-files` hook in `.pre-commit-config.yaml` into the hierarchical `[tool.compwa.policy]` table of `pyproject.toml` (see [above](#configuration)), removing the now-redundant `args:`.
+- It relocates any notebook formatting hooks (such as `set-nb-cells` or `fix-nbformat-version`) that are still listed under the `ComPWA/policy` repo to a separate [`ComPWA/nbhooks`](https://github.com/ComPWA/nbhooks) repo entry, since those hooks were [extracted into their own repository](https://github.com/ComPWA/policy/issues/612).
