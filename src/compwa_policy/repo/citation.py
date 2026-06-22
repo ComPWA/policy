@@ -24,11 +24,11 @@ if TYPE_CHECKING:
 def main(precommit: ModifiablePrecommit) -> None:
     with Executor() as do:
         if CONFIG_PATH.zenodo.exists():
-            do(convert_zenodo_json)
-            do(remove_zenodo_json)
-        if CONFIG_PATH.citation.exists():
-            if CONFIG_PATH.zenodo.exists():
+            if CONFIG_PATH.citation.exists():
                 do(remove_zenodo_json)
+            else:
+                do(convert_zenodo_json)
+        if CONFIG_PATH.citation.exists():
             do(check_citation_keys)
             do(add_json_schema_precommit, precommit)
             do(vscode.add_extension_recommendation, "redhat.vscode-yaml")
