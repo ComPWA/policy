@@ -52,6 +52,13 @@ def describe_load():
         with pytest.raises(TypeError, match="Source of type int is not supported"):
             _ = Pyproject.load(1)  # ty:ignore[invalid-argument-type]
 
+    def get_table_accepts_none_as_fallback():
+        pyproject = Pyproject.load("""
+            [project]
+            name = "my-package"
+        """)
+        assert pyproject.get_table("tool.pytest", fallback=None) is None
+
 
 def describe_edit_and_dump():
     def creates_and_modifies_tables():

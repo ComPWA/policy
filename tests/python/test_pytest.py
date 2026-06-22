@@ -52,6 +52,15 @@ def describe_deny_ini_options():
         with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _deny_ini_options(pyproject)  # minversion present -> no-op
 
+    def ignores_missing_pytest_table():
+        config = dedent("""
+            [project]
+            name = "my-package"
+        """).lstrip()
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
+            _deny_ini_options(pyproject)
+            assert pyproject.changelog == []
+
 
 def describe_update_settings():
     def updates_from_string():
