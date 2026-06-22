@@ -52,6 +52,13 @@ class TestPyprojectToml:
         with pytest.raises(TypeError, match="Source of type int is not supported"):
             _ = Pyproject.load(1)  # ty:ignore[invalid-argument-type]
 
+    def test_get_table_accepts_none_as_fallback(self):
+        pyproject = Pyproject.load("""
+            [project]
+            name = "my-package"
+        """)
+        assert pyproject.get_table("tool.pytest", fallback=None) is None
+
 
 def test_edit_and_dump():
     src = dedent("""

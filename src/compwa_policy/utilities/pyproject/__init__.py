@@ -8,7 +8,7 @@ from collections import abc
 from contextlib import AbstractContextManager
 from pathlib import Path
 from textwrap import indent
-from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, final, overload
+from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
 
 import rtoml
 import tomlkit
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
 
 T = TypeVar("T", bound="Pyproject")
+_NO_FALLBACK: Final = object()
 
 
 @frozen
@@ -68,7 +69,7 @@ class Pyproject:
         return f"{src.strip()}\n"
 
     def get_table(
-        self, dotted_header: str, *, create: bool = False, fallback: Any = None
+        self, dotted_header: str, *, create: bool = False, fallback: Any = _NO_FALLBACK
     ) -> Mapping[str, Any]:
         if create:
             msg = "Cannot create sub-tables in a read-only pyproject.toml"
@@ -76,7 +77,7 @@ class Pyproject:
         try:
             return get_sub_table(self._document, dotted_header)
         except KeyError as e:
-            if fallback is not None:
+            if fallback is not _NO_FALLBACK:
                 return fallback
             raise e from e
 
@@ -191,7 +192,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     @override
     def get_table(
-        self, dotted_header: str, *, create: bool = False, fallback: Any = None
+        self, dotted_header: str, *, create: bool = False, fallback: Any = _NO_FALLBACK
     ) -> MutableMapping[str, Any]:
         self.__assert_is_in_context()
         if create:
