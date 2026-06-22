@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from compwa_policy import _characterization
+from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
 from compwa_policy.utilities.precommit import getters
 
@@ -23,6 +24,7 @@ def _clear_git_ls_files_cache() -> None:
     match._git_ls_files_cmd.cache_clear()
     _characterization.has_documentation.cache_clear()
     _characterization.has_python_code.cache_clear()
+    readthedocs._determine_docs_dir.cache_clear()
 
 
 @pytest.fixture(autouse=True)  # noqa: RUF076
