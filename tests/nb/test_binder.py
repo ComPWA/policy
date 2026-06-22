@@ -7,7 +7,7 @@ import pytest
 from compwa_policy.errors import PrecommitError
 from compwa_policy.nb import binder
 
-# cspell:ignore apt astral nenv pyproject
+# cspell:ignore nenv
 
 
 def describe_main():

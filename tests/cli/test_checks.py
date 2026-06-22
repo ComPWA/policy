@@ -14,8 +14,6 @@ from compwa_policy.cli._checks import (
 )
 from compwa_policy.cli._options import build_arguments
 
-# cspell:ignore capsys classifiers pyproject
-
 _PYPROJECT = dedent("""
     [project]
     name = "my-package"

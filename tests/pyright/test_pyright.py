@@ -19,8 +19,6 @@ from compwa_policy.python.pyright import (
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
-# cspell:ignore pylance pyproject pyrightconfig
-
 
 @pytest.fixture
 def this_dir() -> Path:
@@ -194,10 +192,39 @@ def describe_remove_pyright():
 
 
 def describe_main():
-    def configures_vscode_when_active(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def configures_everything_when_active(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
+        ):
             main(active=True, precommit=precommit)
+        # All steps are applied in a single pass (no per-step short-circuit).
+        pyproject_text = (tmp_path / "pyproject.toml").read_text()
+        assert "typeCheckingMode" in pyproject_text  # _update_settings ran
+        assert "id: pyright" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
+
+    def removes_pyright_when_inactive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\n\n[tool.pyright]\ntypeCheckingMode = "strict"\n'
+        )
+        precommit_yaml = dedent("""
+            repos:
+              - repo: https://github.com/ComPWA/pyright-pre-commit
+                rev: v1.1.0
+                hooks:
+                  - id: pyright
+        """).lstrip()
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
+        ):
+            main(active=False, precommit=precommit)
+        assert "tool.pyright" not in (tmp_path / "pyproject.toml").read_text()
+        assert "id: pyright" not in precommit.dumps()

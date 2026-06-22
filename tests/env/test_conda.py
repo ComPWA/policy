@@ -6,8 +6,6 @@ import pytest
 from compwa_policy.env import conda
 from compwa_policy.errors import PrecommitError
 
-# cspell:ignore condaenv pyproject
-
 _ENVIRONMENT = dedent("""
     name: my-package
     channels:

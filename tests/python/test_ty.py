@@ -16,8 +16,6 @@ from compwa_policy.python.ty import (
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
-# cspell:ignore pyproject
-
 
 def describe_update_configuration():
     def sets_rules_and_terminal():
@@ -147,12 +145,41 @@ def describe_remove_ty():
 
 
 def describe_main():
-    def configures_vscode_when_selected(
+    def configures_everything_when_selected(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
+        ):
             main({"ty"}, keep_precommit=False, precommit=precommit)
+        # All steps are applied in a single pass (no per-step short-circuit).
+        pyproject_text = (tmp_path / "pyproject.toml").read_text()
+        assert "[tool.ty.rules]" in pyproject_text
+        assert "id: ty" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
+
+    def removes_ty_when_not_selected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\n\n[tool.ty.rules]\ndivision-by-zero = "warn"\n'
+        )
+        precommit_yaml = dedent("""
+            repos:
+              - repo: local
+                hooks:
+                  - id: ty
+                    name: ty
+                    entry: ty check
+                    language: system
+        """).lstrip()
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
+        ):
+            main(set(), keep_precommit=False, precommit=precommit)
+        assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()
+        assert "id: ty" not in precommit.dumps()

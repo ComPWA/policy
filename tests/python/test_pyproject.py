@@ -15,8 +15,6 @@ from compwa_policy.python.pyproject import (
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
-# cspell:ignore pyproject
-
 
 def describe_update_pypi_link_names():
     def renames_known_labels():

@@ -15,7 +15,6 @@ from compwa_policy.repo.poe import (
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 
-# cspell:ignore nbmake
 _PYPROJECT = dedent("""
     [project]
     name = "my-package"

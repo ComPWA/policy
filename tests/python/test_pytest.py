@@ -17,7 +17,7 @@ from compwa_policy.python.pytest import (
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 
-# cspell:ignore addopts importmode minversion numprocesses ryanluker xdist
+# cspell:ignore minversion ryanluker xdist
 
 
 def describe_deny_ini_options():

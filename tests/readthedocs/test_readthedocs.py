@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
-# cspell:ignore apt poethepoet pyproject
 
 BAD_OVERWRITE_WITH_JOBS = dedent("""
     version: 2
