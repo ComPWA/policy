@@ -81,14 +81,23 @@ def test_update_config_content_fixes_value(
 ):
     _git_init(tmp_path)
     monkeypatch.chdir(tmp_path)
-    # Start from the full template so every expected section already exists, then break
-    # one value. (Starting from `{}` hits a KeyError bug in _update_config_content; see
-    # the follow-up issue.)
     template = json.loads(
         (COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell).read_text()
     )
     template["language"] = "xx-XX"
     (tmp_path / ".cspell.json").write_text(json.dumps(template))
+    with pytest.raises(PrecommitError, match=r"has been updated"):
+        _update_config_content()
+    config = json.loads((tmp_path / ".cspell.json").read_text())
+    assert config["language"] == "en-US"
+
+
+def test_update_config_content_from_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    _git_init(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".cspell.json").write_text("{}")
     with pytest.raises(PrecommitError, match=r"has been updated"):
         _update_config_content()
     config = json.loads((tmp_path / ".cspell.json").read_text())
