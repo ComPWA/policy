@@ -63,89 +63,82 @@ def _run_main(
     )
 
 
-def test_main_creates_workflows(workflows_repo: Path):
-    with pytest.raises(PrecommitError):
-        _run_main()
+def describe_main():
+    def creates_workflows(workflows_repo: Path):
+        with pytest.raises(PrecommitError):
+            _run_main()
 
-    assert (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
-    assert (workflows_repo / _WORKFLOW_DIR / "ci.yml").exists()
-    assert (workflows_repo / _WORKFLOW_DIR / "pr-linting.yml").exists()
-    assert (workflows_repo / _WORKFLOW_DIR / "clean-caches.yml").exists()
+        assert (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
+        assert (workflows_repo / _WORKFLOW_DIR / "ci.yml").exists()
+        assert (workflows_repo / _WORKFLOW_DIR / "pr-linting.yml").exists()
+        assert (workflows_repo / _WORKFLOW_DIR / "clean-caches.yml").exists()
 
+    def applies_options(workflows_repo: Path):
+        with pytest.raises(PrecommitError):
+            _run_main(
+                doc_apt_packages=["graphviz"],
+                environment_variables={"PYTHONHASHSEED": "0"},
+                github_pages=True,
+                macos_python_version="3.12",
+                python_version="3.12",
+                single_threaded=True,
+                skip_tests=["3.10"],
+            )
 
-def test_main_with_options(workflows_repo: Path):
-    with pytest.raises(PrecommitError):
-        _run_main(
-            doc_apt_packages=["graphviz"],
-            environment_variables={"PYTHONHASHSEED": "0"},
-            github_pages=True,
-            macos_python_version="3.12",
-            python_version="3.12",
-            single_threaded=True,
-            skip_tests=["3.10"],
-        )
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "graphviz" in ci
+        assert "PYTHONHASHSEED" in ci
 
-    ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
-    assert "graphviz" in ci
-    assert "PYTHONHASHSEED" in ci
+    def skips_cd_workflow(workflows_repo: Path):
+        with pytest.raises(PrecommitError):
+            _run_main(no_cd=True)
+        assert not (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
 
+    def bans_cd_jobs(workflows_repo: Path):
+        with pytest.raises(PrecommitError):
+            _run_main(no_pypi=True, no_milestones=True, no_version_branches=True)
+        cd_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
+        if cd_path.exists():
+            assert "pypi" not in cd_path.read_text()
 
-def test_main_no_cd(workflows_repo: Path):
-    with pytest.raises(PrecommitError):
-        _run_main(no_cd=True)
-    assert not (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
+    def configures_codecov(workflows_repo: Path):
+        (workflows_repo / "codecov.yml").touch()
+        (workflows_repo / ".python-version").write_text("3.11\n")
+        with pytest.raises(PrecommitError):
+            _run_main()
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "CODECOV_TOKEN" in ci
+        assert "3.11" in ci  # coverage python version from .python-version
 
+    def removes_style_job_when_outsourced(workflows_repo: Path):
+        precommit = "ci:\n  autofix_prs: true\nrepos: []\n"
+        with pytest.raises(PrecommitError):
+            _run_main(precommit_content=precommit)
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "style:" not in ci  # style job outsourced to pre-commit.ci
 
-def test_main_bans_cd_jobs(workflows_repo: Path):
-    with pytest.raises(PrecommitError):
-        _run_main(no_pypi=True, no_milestones=True, no_version_branches=True)
-    cd_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
-    if cd_path.exists():
-        assert "pypi" not in cd_path.read_text()
-
-
-def test_main_with_codecov(workflows_repo: Path):
-    (workflows_repo / "codecov.yml").touch()
-    (workflows_repo / ".python-version").write_text("3.11\n")
-    with pytest.raises(PrecommitError):
-        _run_main()
-    ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
-    assert "CODECOV_TOKEN" in ci
-    assert "3.11" in ci  # coverage python version from .python-version
-
-
-def test_main_removes_style_job_when_outsourced(workflows_repo: Path):
-    precommit = "ci:\n  autofix_prs: true\nrepos: []\n"
-    with pytest.raises(PrecommitError):
-        _run_main(precommit_content=precommit)
-    ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
-    assert "style:" not in ci  # style job outsourced to pre-commit.ci
-
-
-def test_main_removes_doc_and_test_jobs(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
-    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(PrecommitError):
-        _run_main()
-    ci = (tmp_path / _WORKFLOW_DIR / "ci.yml").read_text()
-    assert "doc:" not in ci  # no documentation -> doc job removed
-    assert "test:" not in ci  # no tests directory -> test job removed
+    def removes_doc_and_test_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(PrecommitError):
+            _run_main()
+        ci = (tmp_path / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "doc:" not in ci  # no documentation -> doc job removed
+        assert "test:" not in ci  # no tests directory -> test job removed
 
 
-def test_remove_workflow_absent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(tmp_path)
-    remove_workflow("ci-tests.yml")  # nothing to remove
+def describe_remove_workflow():
+    def is_noop_when_absent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        remove_workflow("ci-tests.yml")  # nothing to remove
 
-
-def test_remove_workflow_present(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.chdir(tmp_path)
-    workflow = tmp_path / _WORKFLOW_DIR / "ci-tests.yml"
-    workflow.parent.mkdir(parents=True)
-    workflow.touch()
-    with pytest.raises(PrecommitError, match=r"Removed deprecated ci-tests.yml"):
-        remove_workflow("ci-tests.yml")
-    assert not workflow.exists()
+    def removes_present_workflow(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        workflow = tmp_path / _WORKFLOW_DIR / "ci-tests.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.touch()
+        with pytest.raises(PrecommitError, match=r"Removed deprecated ci-tests.yml"):
+            remove_workflow("ci-tests.yml")
+        assert not workflow.exists()

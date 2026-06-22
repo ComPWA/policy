@@ -86,6 +86,7 @@ style = [
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-describe",
 ]
 types = [
     "pytest",
@@ -378,9 +379,11 @@ split-on-trailing-comma = false
 "src/compwa_policy/config.py" = ["D100"]
 "tests/*" = [
     "ANN",
+    "C901",
     "D",
     "INP001",
     "PLC2701",
+    "PLR0915",
     "PLR2004",
     "PLR6301",
     "RUF069",

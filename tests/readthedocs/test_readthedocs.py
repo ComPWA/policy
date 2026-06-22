@@ -84,65 +84,66 @@ def _expected_message(python_version: str) -> str:
     """).strip()
 
 
-def test_update_readthedocs_extend():
-    bad_config = dedent("""
-        version: 2
-        build:
-          os: ubuntu-20.04
-          tools:
-            python: "3.10"
-          jobs:
-            post_install:
-              - pip install -e .[doc]
-              - |
-                wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.2-linux-x86_64.tar.gz
-              - tar xzf julia-1.9.2-linux-x86_64.tar.gz
-              - mkdir bin
-              - ln -s $PWD/julia-1.9.2/bin/julia bin/julia
-              - ./bin/julia docs/InstallIJulia.jl
-        sphinx:
-          configuration: docs/conf.py
-    """).lstrip()
-    input_stream = io.StringIO(bad_config)
-    with pytest.raises(PrecommitError) as exception:
+def describe_main():
+    def updates_extend_style_config():
+        bad_config = dedent("""
+            version: 2
+            build:
+              os: ubuntu-20.04
+              tools:
+                python: "3.10"
+              jobs:
+                post_install:
+                  - pip install -e .[doc]
+                  - |
+                    wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.2-linux-x86_64.tar.gz
+                  - tar xzf julia-1.9.2-linux-x86_64.tar.gz
+                  - mkdir bin
+                  - ln -s $PWD/julia-1.9.2/bin/julia bin/julia
+                  - ./bin/julia docs/InstallIJulia.jl
+            sphinx:
+              configuration: docs/conf.py
+        """).lstrip()
+        input_stream = io.StringIO(bad_config)
+        with pytest.raises(PrecommitError) as exception:
+            readthedocs.main(
+                "conda",
+                python_version=DEFAULT_DEV_PYTHON_VERSION,
+                source=input_stream,
+            )
+        assert str(exception.value).strip() == _expected_message(
+            DEFAULT_DEV_PYTHON_VERSION
+        )
+
+        input_stream.seek(0)
+        assert input_stream.read().strip() == _good_extend().strip()
+
+    @pytest.mark.parametrize(
+        "good_config",
+        [_good_extend(), _good_overwrite(DEFAULT_DEV_PYTHON_VERSION)],
+        ids=["extend", "overwrite"],
+    )
+    def leaves_good_config_unchanged(good_config: str):
+        input_stream = io.StringIO(good_config)
         readthedocs.main(
             "conda",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=input_stream,
         )
-    assert str(exception.value).strip() == _expected_message(DEFAULT_DEV_PYTHON_VERSION)
+        input_stream.seek(0)
+        assert input_stream.read().strip() == good_config.strip()
 
-    input_stream.seek(0)
-    assert input_stream.read().strip() == _good_extend().strip()
-
-
-@pytest.mark.parametrize(
-    "good_config",
-    [_good_extend(), _good_overwrite(DEFAULT_DEV_PYTHON_VERSION)],
-    ids=["extend", "overwrite"],
-)
-def test_update_readthedocs_good(good_config: str):
-    input_stream = io.StringIO(good_config)
-    readthedocs.main(
-        "conda",
-        python_version=DEFAULT_DEV_PYTHON_VERSION,
-        source=input_stream,
+    @pytest.mark.parametrize(
+        "bad_config",
+        [BAD_OVERWRITE_WITH_JOBS, BAD_OVERWRITE_WITHOUT_JOBS],
+        ids=["with-jobs", "without-jobs"],
     )
-    input_stream.seek(0)
-    assert input_stream.read().strip() == good_config.strip()
+    @pytest.mark.parametrize("python_version", ["3.9", "3.10"])
+    def overwrites_bad_config(python_version: PythonVersion, bad_config: str):
+        input_stream = io.StringIO(bad_config)
+        with pytest.raises(PrecommitError) as exception:
+            readthedocs.main("conda", python_version, source=input_stream)
+        assert str(exception.value).strip() == _expected_message(python_version)
 
-
-@pytest.mark.parametrize(
-    "bad_config",
-    [BAD_OVERWRITE_WITH_JOBS, BAD_OVERWRITE_WITHOUT_JOBS],
-    ids=["with-jobs", "without-jobs"],
-)
-@pytest.mark.parametrize("python_version", ["3.9", "3.10"])
-def test_update_readthedocs_overwrite(python_version: PythonVersion, bad_config: str):
-    input_stream = io.StringIO(bad_config)
-    with pytest.raises(PrecommitError) as exception:
-        readthedocs.main("conda", python_version, source=input_stream)
-    assert str(exception.value).strip() == _expected_message(python_version)
-
-    input_stream.seek(0)
-    assert input_stream.read().strip() == _good_overwrite(python_version).strip()
+        input_stream.seek(0)
+        assert input_stream.read().strip() == _good_overwrite(python_version).strip()

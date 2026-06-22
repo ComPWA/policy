@@ -23,47 +23,66 @@ def _isolate_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
 
 
-def test_build_arguments_defaults() -> None:
-    args = build_arguments()
-    assert args.dev_python_version == "3.13"
-    assert args.package_manager == "uv"
-    assert args.repo_organization == "ComPWA"
-    assert args.type_checker == set()
-    assert args.excluded_python_versions == set()
-    assert args.keep_workflow == set()
-    assert args.python is None
-
-
-def test_build_arguments_post_processing() -> None:
-    # cspell:ignore myproj
-    args = build_arguments(
-        type_checker=[TypeChecker.mypy, TypeChecker.ty],
-        excluded_python_versions="3.6, 3.7",
-        macos_python_version="disable",
-        repo_name="myproj",
-    )
-    assert args.type_checker == {"mypy", "ty"}
-    assert args.excluded_python_versions == {"3.6", "3.7"}
-    assert args.macos_python_version is None
-    assert args.repo_name == "myproj"
-    assert args.repo_title == "myproj"  # falls back to repo_name
-
-
 def _write_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, table: str) -> None:
     (tmp_path / "pyproject.toml").write_text(dedent(table))
     monkeypatch.chdir(tmp_path)
 
 
-class TestPyprojectConfig:
-    def test_no_table_is_empty(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def _write_precommit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, config: str
+) -> Path:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    config_file = tmp_path / ".pre-commit-config.yaml"
+    config_file.write_text(dedent(config).lstrip())
+    return config_file
+
+
+_CONFIG_WITH_NOTEBOOK_HOOK = """\
+repos:
+  - repo: https://github.com/ComPWA/policy
+    rev: 0.1.0
+    hooks:
+      - id: check-dev-files
+      - id: set-nb-cells
+        args: [--add-install-cell]
+"""
+
+
+def describe_build_arguments():
+    def applies_defaults() -> None:
+        args = build_arguments()
+        assert args.dev_python_version == "3.13"
+        assert args.package_manager == "uv"
+        assert args.repo_organization == "ComPWA"
+        assert args.type_checker == set()
+        assert args.excluded_python_versions == set()
+        assert args.keep_workflow == set()
+        assert args.python is None
+
+    def post_processes_options() -> None:
+        # cspell:ignore myproj
+        args = build_arguments(
+            type_checker=[TypeChecker.mypy, TypeChecker.ty],
+            excluded_python_versions="3.6, 3.7",
+            macos_python_version="disable",
+            repo_name="myproj",
+        )
+        assert args.type_checker == {"mypy", "ty"}
+        assert args.excluded_python_versions == {"3.6", "3.7"}
+        assert args.macos_python_version is None
+        assert args.repo_name == "myproj"
+        assert args.repo_title == "myproj"  # falls back to repo_name
+
+
+def describe_pyproject_config():
+    def treats_absent_table_as_empty(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _write_policy(tmp_path, monkeypatch, '[project]\nname = "x"\n')
         assert _read_policy_config() == {}
 
-    def test_flatten_nested_tables(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def flattens_nested_tables(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
             tmp_path,
             monkeypatch,
@@ -100,9 +119,7 @@ class TestPyprojectConfig:
             },
         }
 
-    def test_pyproject_overrides_defaults(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def overrides_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
             tmp_path,
             monkeypatch,
@@ -122,9 +139,7 @@ class TestPyprojectConfig:
         assert args.type_checker == {"mypy", "pyright"}
         assert args.environment_variables == "PYTHONHASHSEED=0"
 
-    def test_cli_overrides_pyproject(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def yields_to_cli_options(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
             tmp_path,
             monkeypatch,
@@ -136,9 +151,7 @@ class TestPyprojectConfig:
         assert load_settings(dev_python_version="3.11").dev_python_version == "3.11"
         assert load_settings(dev_python_version=None).dev_python_version == "3.12"
 
-    def test_unknown_option_is_rejected(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def rejects_unknown_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
             tmp_path,
             monkeypatch,
@@ -150,8 +163,8 @@ class TestPyprojectConfig:
         with pytest.raises(ValueError, match="does_not_exist"):
             load_settings()
 
-    def test_environment_variables_do_not_leak(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def ignores_environment_variables(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _write_policy(tmp_path, monkeypatch, '[project]\nname = "x"\n')
         monkeypatch.setenv("NO_PYPI", "true")
@@ -161,8 +174,8 @@ class TestPyprojectConfig:
         assert settings.package_manager == "uv"
 
 
-class TestBuildPolicy:
-    def test_groups_into_sub_tables(self) -> None:
+def describe_build_policy():
+    def groups_into_sub_tables() -> None:
         policy = _build_policy([
             "--allow-labels",
             "--keep-local-precommit",
@@ -180,11 +193,11 @@ class TestBuildPolicy:
             "repo-title": "ComPWA repository policy",
         }
 
-    def test_repeated_list_option(self) -> None:
+    def collects_repeated_list_option() -> None:
         policy = _build_policy(["--type-checker=mypy", "--type-checker=pyright"])
         assert policy == {"python": {"type-checker": ["mypy", "pyright"]}}
 
-    def test_environment_variables_become_setup_env(self) -> None:
+    def maps_environment_variables_to_setup_env() -> None:
         policy = _build_policy([
             "--environment-variables=PYTHONHASHSEED=0,MPLBACKEND=agg"
         ])
@@ -192,12 +205,12 @@ class TestBuildPolicy:
             "setup": {"env": {"PYTHONHASHSEED": "0", "MPLBACKEND": "agg"}}
         }
 
-    def test_no_python_flag(self) -> None:
+    def handles_no_python_flag() -> None:
         assert _build_policy(["--no-python"]) == {"python": False}
         assert _build_policy(["--python"]) == {"python": True}
 
-    def test_round_trips_through_settings(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def round_trips_through_settings(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         args = [
             "--allow-labels",
@@ -214,59 +227,43 @@ class TestBuildPolicy:
         assert settings.type_checker == ["ty"]
 
 
-_CONFIG_WITH_NOTEBOOK_HOOK = """\
-repos:
-  - repo: https://github.com/ComPWA/policy
-    rev: 0.1.0
-    hooks:
-      - id: check-dev-files
-      - id: set-nb-cells
-        args: [--add-install-cell]
-"""
+def describe_migrate():
+    def describe_notebook_hooks():
+        def relocates_to_nbhooks(tmp_path: Path) -> None:
+            (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+            config = tmp_path / ".pre-commit-config.yaml"
+            config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
 
+            migrate(config_file=config, dry_run=False)
 
-class TestMigrateNotebookHooks:
-    def test_relocates_notebook_hooks_to_nbhooks(self, tmp_path: Path) -> None:
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        config = tmp_path / ".pre-commit-config.yaml"
-        config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
+            repos = {
+                repo["repo"]: repo
+                for repo in yaml.safe_load(config.read_text())["repos"]
+            }
+            policy_hooks = {
+                h["id"] for h in repos["https://github.com/ComPWA/policy"]["hooks"]
+            }
+            assert policy_hooks == {"check-dev-files"}
+            nbhooks = repos["https://github.com/ComPWA/nbhooks"]
+            assert nbhooks["rev"] == "PLEASE-UPDATE"
+            assert {h["id"] for h in nbhooks["hooks"]} == {"set-nb-cells"}
+            set_nb_cells = next(
+                h for h in nbhooks["hooks"] if h["id"] == "set-nb-cells"
+            )
+            assert set_nb_cells["args"] == ["--add-install-cell"], (
+                "args must be preserved"
+            )
 
-        migrate(config_file=config, dry_run=False)
+        def dry_run_does_not_modify(tmp_path: Path) -> None:
+            (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+            config = tmp_path / ".pre-commit-config.yaml"
+            config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
+            with pytest.raises(typer.Exit):
+                migrate(config_file=config, dry_run=True)
+            assert config.read_text() == _CONFIG_WITH_NOTEBOOK_HOOK
 
-        repos = {
-            repo["repo"]: repo for repo in yaml.safe_load(config.read_text())["repos"]
-        }
-        policy_hooks = {
-            h["id"] for h in repos["https://github.com/ComPWA/policy"]["hooks"]
-        }
-        assert policy_hooks == {"check-dev-files"}
-        nbhooks = repos["https://github.com/ComPWA/nbhooks"]
-        assert nbhooks["rev"] == "PLEASE-UPDATE"
-        assert {h["id"] for h in nbhooks["hooks"]} == {"set-nb-cells"}
-        set_nb_cells = next(h for h in nbhooks["hooks"] if h["id"] == "set-nb-cells")
-        assert set_nb_cells["args"] == ["--add-install-cell"], "args must be preserved"
-
-    def test_dry_run_does_not_modify(self, tmp_path: Path) -> None:
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        config = tmp_path / ".pre-commit-config.yaml"
-        config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
-        with pytest.raises(typer.Exit):
-            migrate(config_file=config, dry_run=True)
-        assert config.read_text() == _CONFIG_WITH_NOTEBOOK_HOOK
-
-
-class TestMigrate:
-    def _write(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, config: str
-    ) -> Path:
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        config_file = tmp_path / ".pre-commit-config.yaml"
-        config_file.write_text(dedent(config).lstrip())
-        return config_file
-
-    def test_missing_config_file_exits(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def exits_on_missing_config_file(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
@@ -274,8 +271,8 @@ class TestMigrate:
             migrate(config_file=tmp_path / "does-not-exist.yaml")
         assert exc.value.exit_code == 1
 
-    def test_missing_pyproject_exits(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def exits_on_missing_pyproject(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
         config = tmp_path / ".pre-commit-config.yaml"
@@ -284,10 +281,10 @@ class TestMigrate:
             migrate(config_file=config)
         assert exc.value.exit_code == 1
 
-    def test_no_hook_found_exits(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def exits_when_no_hook_found(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        config = self._write(
+        config = _write_precommit(
             tmp_path,
             monkeypatch,
             """
@@ -301,10 +298,10 @@ class TestMigrate:
             migrate(config_file=config)
         assert exc.value.exit_code == 0
 
-    def test_nothing_to_migrate_exits(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def exits_when_nothing_to_migrate(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        config = self._write(
+        config = _write_precommit(
             tmp_path,
             monkeypatch,
             """
@@ -318,10 +315,8 @@ class TestMigrate:
             migrate(config_file=config)
         assert exc.value.exit_code == 0
 
-    def test_unknown_args_exit(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        config = self._write(
+    def exits_on_unknown_args(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        config = _write_precommit(
             tmp_path,
             monkeypatch,
             """
@@ -337,10 +332,10 @@ class TestMigrate:
             migrate(config_file=config)
         assert exc.value.exit_code == 1
 
-    def test_migrates_args_into_pyproject(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def migrates_args_into_pyproject(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        config = self._write(
+        config = _write_precommit(
             tmp_path,
             monkeypatch,
             """
@@ -360,10 +355,10 @@ class TestMigrate:
         hooks = yaml.safe_load(config.read_text())["repos"][0]["hooks"]
         assert "args" not in hooks[0], "args must be stripped after migration"
 
-    def test_migrates_environment_variables_into_nested_table(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    def migrates_environment_variables_into_nested_table(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        config = self._write(
+        config = _write_precommit(
             tmp_path,
             monkeypatch,
             """
