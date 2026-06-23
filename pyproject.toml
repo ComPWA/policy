@@ -135,6 +135,7 @@ exclude_also = [
 ]
 
 [tool.coverage.run]
+branch = true
 omit = [
     "benchmarks/**/*.py",
     "docs/**/*.ipynb",
