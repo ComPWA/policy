@@ -161,6 +161,22 @@ def describe_update_codecov_settings():
         assert coverage["branch"] is True
         assert coverage["source"] == ["src"]
 
+    def can_disable_branch_coverage():
+        config = dedent("""
+            [project]
+            name = "x"
+
+            [dependency-groups]
+            test = ["pytest-cov"]
+        """).lstrip()
+        with (
+            pytest.raises(PrecommitError, match=r"Updated pytest coverage settings"),
+            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+        ):
+            _update_codecov_settings(pyproject, branch_coverage=False)
+        coverage = pyproject.get_table("tool.coverage.run")
+        assert coverage["branch"] is False
+
     def is_noop_without_coverage():
         with ModifiablePyproject.load(
             io.StringIO("[project]\nname = 'x'\n")

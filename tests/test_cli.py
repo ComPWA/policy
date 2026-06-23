@@ -58,6 +58,7 @@ def describe_build_arguments():
         assert args.type_checker == set()
         assert args.excluded_python_versions == set()
         assert args.keep_workflow == set()
+        assert args.branch_coverage is True
         assert args.python is None
 
     def post_processes_options() -> None:
@@ -92,6 +93,7 @@ def describe_pyproject_config():
             package-manager = "pixi"
 
             [tool.compwa.policy.python]
+            branch-coverage = false
             imports-on-top = true
             type-checker = ["mypy", "pyright"]
 
@@ -109,6 +111,7 @@ def describe_pyproject_config():
         assert _read_policy_config() == {
             "dev_python_version": "3.12",
             "package_manager": "pixi",
+            "branch_coverage": False,
             "imports_on_top": True,
             "type_checker": ["mypy", "pyright"],
             "no_binder": True,
@@ -128,6 +131,7 @@ def describe_pyproject_config():
             dev-python-version = "3.12"
 
             [tool.compwa.policy.python]
+            branch-coverage = false
             type-checker = ["mypy", "pyright"]
 
             [tool.compwa.policy.setup.env]
@@ -136,6 +140,7 @@ def describe_pyproject_config():
         )
         args = build_arguments()
         assert args.dev_python_version == "3.12"
+        assert args.branch_coverage is False
         assert args.type_checker == {"mypy", "pyright"}
         assert args.environment_variables == "PYTHONHASHSEED=0"
 
@@ -150,6 +155,19 @@ def describe_pyproject_config():
         )
         assert load_settings(dev_python_version="3.11").dev_python_version == "3.11"
         assert load_settings(dev_python_version=None).dev_python_version == "3.12"
+
+    def cli_branch_coverage_overrides_pyproject(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _write_policy(
+            tmp_path,
+            monkeypatch,
+            """
+            [tool.compwa.policy.python]
+            branch-coverage = false
+            """,
+        )
+        assert load_settings(branch_coverage=True).branch_coverage is True
 
     def rejects_unknown_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
@@ -178,6 +196,7 @@ def describe_build_policy():
     def groups_into_sub_tables() -> None:
         policy = _build_policy([
             "--allow-labels",
+            "--no-branch-coverage",
             "--keep-local-precommit",
             "--no-pypi",
             "--pytest-single-threaded",
@@ -187,7 +206,11 @@ def describe_build_policy():
         ])
         assert policy == {
             "github": {"allow-labels": True, "no-pypi": True},
-            "python": {"keep-local-precommit": True, "type-checker": ["ty"]},
+            "python": {
+                "branch-coverage": False,
+                "keep-local-precommit": True,
+                "type-checker": ["ty"],
+            },
             "pytest-single-threaded": True,
             "repo-name": "policy",
             "repo-title": "ComPWA repository policy",
