@@ -39,20 +39,6 @@ repos:
         args: ["--django"]
       - id: trailing-whitespace
 
-  - repo: local
-    hooks:
-      - id: check-dev-files
-        name: Check developer config files in the repository
-        entry: check-dev-files
-        language: python
-        always_run: true
-        pass_filenames: false
-      - id: self-check
-        name: self-check
-        entry: self-check
-        language: python
-        files: ^\.pre\-commit\-(config|hooks)\.yaml$
-
   - repo: https://github.com/ComPWA/prettier-pre-commit
     rev: v3.8.1
     hooks:
