@@ -112,6 +112,13 @@ ImportsOnTop = Annotated[
     bool | None,
     typer.Option("--imports-on-top", help="Sort notebook imports on the top."),
 ]
+BranchCoverage = Annotated[
+    bool | None,
+    typer.Option(
+        "--branch-coverage/--no-branch-coverage",
+        help="Enable branch coverage in the Coverage.py pytest configuration.",
+    ),
+]
 TypeCheckerOption = Annotated[
     list[TypeChecker] | None,
     typer.Option(

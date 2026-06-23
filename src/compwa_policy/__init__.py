@@ -34,6 +34,7 @@ class Arguments:
     allow_labels: bool
     allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
+    branch_coverage: bool
     ci_skipped_tests: str
     dev_python_version: PythonVersion
     doc_apt_packages: str

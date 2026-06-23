@@ -25,14 +25,16 @@ if TYPE_CHECKING:
     from tomlkit.items import Array
 
 
-def main(coverage_gutters: bool, single_threaded: bool) -> None:
+def main(
+    coverage_gutters: bool, single_threaded: bool, branch_coverage: bool = True
+) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         if not has_dependency(pyproject, "pytest"):
             return
         do(_merge_coverage_into_pyproject, pyproject)
         do(_merge_pytest_into_pyproject, pyproject)
         do(_deny_ini_options, pyproject)
-        do(_update_codecov_settings, pyproject)
+        do(_update_codecov_settings, pyproject, branch_coverage)
         do(_update_settings, pyproject)
         do(_update_vscode_settings, pyproject, coverage_gutters, single_threaded)
         if single_threaded:
@@ -131,12 +133,14 @@ def __split_options(arg: str) -> list[str]:
     return options
 
 
-def _update_codecov_settings(pyproject: ModifiablePyproject) -> None:
+def _update_codecov_settings(
+    pyproject: ModifiablePyproject, branch_coverage: bool = True
+) -> None:
     if not has_dependency(pyproject, ("coverage", "pytest-cov")):
         return
     updated = __update_settings(
         config=pyproject.get_table("tool.coverage.run", create=True),
-        branch=True,
+        branch=branch_coverage,
         omit=[
             # https://github.com/microsoft/vscode-python/issues/24973#issuecomment-2886889888
             "benchmarks/**/*.py",
