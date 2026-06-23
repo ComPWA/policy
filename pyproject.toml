@@ -126,6 +126,7 @@ allow-labels = true
 no-pypi = true
 
 [tool.compwa.policy.python]
+branch-coverage = false
 keep-local-precommit = true
 type-checker = ["ty"]
 
@@ -135,7 +136,7 @@ exclude_also = [
 ]
 
 [tool.coverage.run]
-branch = true
+branch = false
 omit = [
     "benchmarks/**/*.py",
     "docs/**/*.ipynb",
