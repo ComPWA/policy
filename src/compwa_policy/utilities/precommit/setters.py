@@ -60,8 +60,11 @@ def update_single_hook_precommit_repo(
     expected_yaml = CommentedMap(expected)
     repos = precommit.document.get("repos", [])
     repo_url = expected["repo"]
-    idx_and_repo = find_repo_with_index(precommit.document, repo_url)
     hook_id = expected["hooks"][0]["id"]
+    if repo_url == "local":
+        idx_and_repo = __find_local_repo_and_hook_idx(precommit.document, hook_id)
+    else:
+        idx_and_repo = find_repo_with_index(precommit.document, repo_url)
     if idx_and_repo is None:
         if not expected_yaml.get("rev") and repo_url != "local":
             expected_yaml.pop("rev", None)
@@ -78,9 +81,11 @@ def update_single_hook_precommit_repo(
         precommit.changelog.append(msg)
     if idx_and_repo is None:
         return
-    idx, existing_hook = idx_and_repo
-    if not _is_equivalent_repo(existing_hook, expected):
-        existing_rev = existing_hook.get("rev")
+    idx, existing_repo = idx_and_repo
+    if repo_url == "local":
+        __update_local_hook(precommit, existing_repo, expected["hooks"][0])
+    elif not _is_equivalent_repo(existing_repo, expected):
+        existing_rev = existing_repo.get("rev")
         if existing_rev is not None:
             expected_yaml.insert(1, "rev", PlainScalarString(existing_rev))
         repos[idx] = expected_yaml  # ty:ignore[invalid-assignment]
@@ -88,6 +93,32 @@ def update_single_hook_precommit_repo(
         repos_map.yaml_set_comment_before_after_key(idx + 1, before="\n")
         msg = f"Updated {hook_id} hook"
         precommit.changelog.append(msg)
+
+
+def __find_local_repo_and_hook_idx(
+    config: PrecommitConfig, hook_id: str
+) -> tuple[int, Repo] | None:
+    repos = config.get("repos", [])
+    for idx, repo in enumerate(repos):
+        if repo.get("repo") != "local":
+            continue
+        if __find_hook_idx(repo.get("hooks", []), hook_id) is not None:
+            return idx, repo
+    return None
+
+
+def __update_local_hook(
+    precommit: ModifiablePrecommit, existing_repo: Repo, expected_hook: Hook
+) -> None:
+    hooks = existing_repo["hooks"]
+    hook_idx = __find_hook_idx(hooks, expected_hook["id"])
+    if hook_idx is None:
+        return
+    if hooks[hook_idx] == expected_hook:
+        return
+    hooks[hook_idx] = expected_hook
+    msg = f"Updated {expected_hook['id']} hook"
+    precommit.changelog.append(msg)
 
 
 def _determine_expected_repo_index(config: PrecommitConfig, hook_id: str) -> int:

@@ -45,7 +45,6 @@ class Arguments:
     imports_on_top: bool
     keep_contributing_md: bool
     keep_issue_templates: bool
-    keep_local_precommit: bool
     keep_pr_linting: bool
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None

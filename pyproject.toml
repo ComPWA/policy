@@ -127,7 +127,6 @@ no-pypi = true
 
 [tool.compwa.policy.python]
 branch-coverage = false
-keep-local-precommit = true
 type-checker = ["ty"]
 
 [tool.coverage.report]

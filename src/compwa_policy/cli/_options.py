@@ -125,12 +125,6 @@ TypeCheckerOption = Annotated[
         "--type-checker", help="Specify which type checker to use for the project."
     ),
 ]
-KeepLocalPrecommit = Annotated[
-    bool | None,
-    typer.Option(
-        "--keep-local-precommit", help="Do not remove local pre-commit hooks."
-    ),
-]
 PytestSingleThreaded = Annotated[
     bool | None,
     typer.Option(

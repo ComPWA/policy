@@ -197,7 +197,6 @@ def describe_build_policy():
         policy = _build_policy([
             "--allow-labels",
             "--no-branch-coverage",
-            "--keep-local-precommit",
             "--no-pypi",
             "--pytest-single-threaded",
             "--repo-name=policy",
@@ -208,7 +207,6 @@ def describe_build_policy():
             "github": {"allow-labels": True, "no-pypi": True},
             "python": {
                 "branch-coverage": False,
-                "keep-local-precommit": True,
                 "type-checker": ["ty"],
             },
             "pytest-single-threaded": True,

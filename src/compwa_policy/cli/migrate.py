@@ -57,7 +57,6 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--branch-coverage",
         "--excluded-python-versions",
         "--imports-on-top",
-        "--keep-local-precommit",
         "--no-branch-coverage",
         "--no-ruff",
         "--pytest-single-threaded",

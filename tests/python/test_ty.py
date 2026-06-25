@@ -154,7 +154,7 @@ def describe_main():
             pytest.raises(PrecommitError),
             ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
         ):
-            main({"ty"}, keep_precommit=False, precommit=precommit)
+            main({"ty"}, precommit=precommit)
         # All steps are applied in a single pass (no per-step short-circuit).
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
@@ -180,6 +180,6 @@ def describe_main():
             pytest.raises(PrecommitError),
             ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
         ):
-            main(set(), keep_precommit=False, precommit=precommit)
+            main(precommit=precommit, type_checkers=set())
         assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: ty" not in precommit.dumps()
