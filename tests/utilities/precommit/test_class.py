@@ -18,8 +18,8 @@ def example_config(this_dir: Path) -> str:
         return file.read()
 
 
-class TestModifiablePrecommit:
-    def test_no_context_manager(self, example_config: str):
+def describe_modifiable_precommit():
+    def rejects_changes_outside_context_manager(example_config: str):
         precommit = ModifiablePrecommit.load(example_config)
         precommit.document["fail_fast"] = True
         with pytest.raises(
@@ -28,7 +28,7 @@ class TestModifiablePrecommit:
         ):
             precommit.changelog.append("Fake modification")
 
-    def test_context_manager_path(self, example_config: str):
+    def restores_path_source_on_change(example_config: str):
         input_stream = io.StringIO(example_config)
         with (
             pytest.raises(PrecommitError, match=r"Fake modification$"),
@@ -38,7 +38,7 @@ class TestModifiablePrecommit:
         yaml = precommit.dumps()
         assert yaml == example_config
 
-    def test_context_manager_string_stream(self, example_config: str):
+    def writes_back_to_string_stream(example_config: str):
         stream = io.StringIO(example_config)
         with (
             pytest.raises(PrecommitError, match=r"Fake modification$"),
@@ -50,8 +50,8 @@ class TestModifiablePrecommit:
         assert yaml == example_config
 
 
-class TestPrecommit:
-    def test_dumps(self, this_dir: Path, example_config: str):
+def describe_precommit():
+    def dumps_round_trips_config(this_dir: Path, example_config: str):
         precommit = Precommit.load(this_dir / ".pre-commit-config.yaml")
         yaml = precommit.dumps()
         assert yaml == example_config

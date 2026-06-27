@@ -129,7 +129,7 @@ def _update_config_content() -> None:
         fixed_sections = sorted(
             section_name
             for section_name, section in config.items()
-            if section != original_config[section_name]
+            if section != original_config.get(section_name)
         )
         error_message = __express_list_of_sections(fixed_sections)
         error_message += f" in {CONFIG_PATH.cspell} has been updated."

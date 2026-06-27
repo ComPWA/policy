@@ -24,7 +24,9 @@ uv.lock
 
 # Settings
 .claude/
+.codex/
 .idea/
+AGENTS.md
 CLAUDE.md
 **.code-workspace
 

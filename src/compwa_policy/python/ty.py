@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import vscode
+from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -25,15 +26,15 @@ def main(
     keep_precommit: bool,
     precommit: ModifiablePrecommit,
 ) -> None:
-    with ModifiablePyproject.load() as pyproject:
-        _update_vscode_settings(type_checkers)
+    with Executor() as do, ModifiablePyproject.load() as pyproject:
+        do(_update_vscode_settings, type_checkers)
         if "ty" in type_checkers:
-            _update_configuration(pyproject)
-            pyproject.add_dependency("ty", dependency_group=["style", "dev"])
+            do(_update_configuration, pyproject)
+            do(pyproject.add_dependency, "ty", dependency_group=["style", "dev"])
             if not keep_precommit:
-                _update_precommit_config(precommit)
+                do(_update_precommit_config, precommit)
         else:
-            _remove_ty(precommit, pyproject)
+            do(_remove_ty, precommit, pyproject)
 
 
 def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
@@ -42,17 +43,19 @@ def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
         "ty.diagnosticMode": "workspace",
         "ty.importStrategy": "fromEnvironment",
     }
-    if "ty" in type_checkers:
-        if "pyright" not in type_checkers:
-            vscode.remove_settings(["python.languageServer"])
-        vscode.add_extension_recommendation("astral-sh.ty")
-        vscode.update_settings(settings)
-        add_badge(
-            "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)"
-        )
-    else:
-        vscode.remove_extension_recommendation("astral-sh.ty", unwanted=True)
-        vscode.remove_settings([*settings, "python.languageServer"])
+    with Executor() as do:
+        if "ty" in type_checkers:
+            if "pyright" not in type_checkers:
+                do(vscode.remove_settings, ["python.languageServer"])
+            do(vscode.add_extension_recommendation, "astral-sh.ty")
+            do(vscode.update_settings, settings)
+            do(
+                add_badge,
+                "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
+            )
+        else:
+            do(vscode.remove_extension_recommendation, "astral-sh.ty", unwanted=True)
+            do(vscode.remove_settings, [*settings, "python.languageServer"])
 
 
 def _update_configuration(pyproject: ModifiablePyproject) -> None:
