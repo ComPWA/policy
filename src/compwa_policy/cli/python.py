@@ -5,10 +5,10 @@ from __future__ import annotations
 from compwa_policy.cli import _checks
 from compwa_policy.cli._options import (
     AllowVscodeCoverageGutters,
+    BranchCoverage,
     DevPythonVersion,
     ExcludedPythonVersions,
     ImportsOnTop,
-    KeepLocalPrecommit,
     NoRuff,
     PytestSingleThreaded,
     Python,
@@ -24,7 +24,7 @@ def python(  # noqa: PLR0917
     type_checker: TypeCheckerOption = None,
     no_ruff: NoRuff = None,
     imports_on_top: ImportsOnTop = None,
-    keep_local_precommit: KeepLocalPrecommit = None,
+    branch_coverage: BranchCoverage = None,
     pytest_single_threaded: PytestSingleThreaded = None,
     allow_vscode_coverage_gutters: AllowVscodeCoverageGutters = None,
 ) -> None:
@@ -36,7 +36,7 @@ def python(  # noqa: PLR0917
         type_checker=type_checker,
         no_ruff=no_ruff,
         imports_on_top=imports_on_top,
-        keep_local_precommit=keep_local_precommit,
+        branch_coverage=branch_coverage,
         pytest_single_threaded=pytest_single_threaded,
         allow_vscode_coverage_gutters=allow_vscode_coverage_gutters,
     )

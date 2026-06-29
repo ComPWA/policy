@@ -86,6 +86,7 @@ style = [
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-describe",
 ]
 types = [
     "pytest",
@@ -125,7 +126,7 @@ allow-labels = true
 no-pypi = true
 
 [tool.compwa.policy.python]
-keep-local-precommit = true
+branch-coverage = false
 type-checker = ["ty"]
 
 [tool.coverage.report]
@@ -134,7 +135,7 @@ exclude_also = [
 ]
 
 [tool.coverage.run]
-branch = true
+branch = false
 omit = [
     "benchmarks/**/*.py",
     "docs/**/*.ipynb",
@@ -205,7 +206,7 @@ heading = "Testing"
 cmd = """
 pytest \
     --cov=compwa_policy \
-    --cov-fail-under=35 \
+    --cov-fail-under=85 \
     --cov-report=html \
     --cov-report=xml \
     ${paths}
@@ -378,9 +379,11 @@ split-on-trailing-comma = false
 "src/compwa_policy/config.py" = ["D100"]
 "tests/*" = [
     "ANN",
+    "C901",
     "D",
     "INP001",
     "PLC2701",
+    "PLR0915",
     "PLR2004",
     "PLR6301",
     "RUF069",

@@ -34,6 +34,7 @@ class Arguments:
     allow_labels: bool
     allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
+    branch_coverage: bool
     ci_skipped_tests: str
     dev_python_version: PythonVersion
     doc_apt_packages: str
@@ -44,7 +45,6 @@ class Arguments:
     imports_on_top: bool
     keep_contributing_md: bool
     keep_issue_templates: bool
-    keep_local_precommit: bool
     keep_pr_linting: bool
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None

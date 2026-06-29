@@ -4,8 +4,8 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.executor import Executor
 
 
-class TestExecutor:
-    def test_error_messages(self):
+def describe_executor():
+    def collects_and_merges_error_messages():
         def do_without_args() -> None:
             msg = "Function did not have arguments"
             raise PrecommitError(msg)

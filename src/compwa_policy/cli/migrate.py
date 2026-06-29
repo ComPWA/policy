@@ -54,9 +54,10 @@ DryRunOption = Annotated[
 GROUP_FLAGS: dict[str, tuple[str, ...]] = {
     "python": (
         "--allow-vscode-coverage-gutters",
+        "--branch-coverage",
         "--excluded-python-versions",
         "--imports-on-top",
-        "--keep-local-precommit",
+        "--no-branch-coverage",
         "--no-ruff",
         "--pytest-single-threaded",
         "--type-checker",
@@ -212,6 +213,11 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
         flag, separator, raw_value = arg.partition("=")
         if flag in {"--python", "--no-python"}:
             policy["python"] = flag == "--python"
+            continue
+        if flag in {"--branch-coverage", "--no-branch-coverage"}:
+            sub_table = policy_sub_table("branch_coverage")
+            target = policy if sub_table is None else policy.setdefault(sub_table, {})
+            target["branch-coverage"] = flag == "--branch-coverage"
             continue
         field = _flag_to_field(flag)
         if field == "environment_variables":

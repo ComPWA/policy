@@ -11,9 +11,9 @@ from compwa_policy.utilities.toml import to_toml_array
 POLICY_REPO_DIR = Path(__file__).absolute().parent.parent.parent
 
 
-class TestPyprojectToml:
+def describe_load():
     @pytest.mark.parametrize("path", [None, POLICY_REPO_DIR / "pyproject.toml"])
-    def test_load_from_path(self, path: Path | None):
+    def reads_from_path(path: Path | None):
         if path is None:
             pyproject = Pyproject.load()
         else:
@@ -21,7 +21,7 @@ class TestPyprojectToml:
         assert "build-system" in pyproject._document
         assert "tool" in pyproject._document
 
-    def test_load_from_str(self):
+    def reads_from_str():
         pyproject = Pyproject.load("""
             [build-system]
             build-backend = "setuptools.build_meta"
@@ -48,43 +48,51 @@ class TestPyprojectToml:
             "sympy >=1.10",
         ]
 
-    def test_load_type_error(self):
+    def raises_type_error_for_unsupported_source():
         with pytest.raises(TypeError, match="Source of type int is not supported"):
             _ = Pyproject.load(1)  # ty:ignore[invalid-argument-type]
 
+    def get_table_accepts_none_as_fallback():
+        pyproject = Pyproject.load("""
+            [project]
+            name = "my-package"
+        """)
+        assert pyproject.get_table("tool.pytest", fallback=None) is None
 
-def test_edit_and_dump():
-    src = dedent("""
-        [owner]
-        name = "John Smith"
-        age = 30
-        [owner.address]
-        city = "Wonderland"
-        street = "123 Main St"
-    """)
-    with ModifiablePyproject.load(src) as pyproject:
-        address = pyproject.get_table("owner.address")
-        address["city"] = "New York"
-        work = pyproject.get_table("owner.work", create=True)
-        work["type"] = "scientist"
-        tools = pyproject.get_table("tool", create=True)
-        tools["black"] = to_toml_array(["--line-length=79"], multiline=True)
 
-    new_content = pyproject.dumps()
-    expected = dedent("""
-        [owner]
-        name = "John Smith"
-        age = 30
-        [owner.address]
-        city = "New York"
-        street = "123 Main St"
+def describe_edit_and_dump():
+    def creates_and_modifies_tables():
+        src = dedent("""
+            [owner]
+            name = "John Smith"
+            age = 30
+            [owner.address]
+            city = "Wonderland"
+            street = "123 Main St"
+        """)
+        with ModifiablePyproject.load(src) as pyproject:
+            address = pyproject.get_table("owner.address")
+            address["city"] = "New York"
+            work = pyproject.get_table("owner.work", create=True)
+            work["type"] = "scientist"
+            tools = pyproject.get_table("tool", create=True)
+            tools["black"] = to_toml_array(["--line-length=79"], multiline=True)
 
-        [owner.work]
-        type = "scientist"
+        new_content = pyproject.dumps()
+        expected = dedent("""
+            [owner]
+            name = "John Smith"
+            age = 30
+            [owner.address]
+            city = "New York"
+            street = "123 Main St"
 
-        [tool]
-        black = [
-            "--line-length=79",
-        ]
-    """)
-    assert new_content.strip() == expected.strip()
+            [owner.work]
+            type = "scientist"
+
+            [tool]
+            black = [
+                "--line-length=79",
+            ]
+        """)
+        assert new_content.strip() == expected.strip()

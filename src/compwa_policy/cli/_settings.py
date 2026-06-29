@@ -65,9 +65,9 @@ _SUBCOMMAND_TABLES = ("python", "github", "nb", "format", "repo", "setup")
 _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "python": frozenset({
         "allow_vscode_coverage_gutters",
+        "branch_coverage",
         "excluded_python_versions",
         "imports_on_top",
-        "keep_local_precommit",
         "type_checker",
     }),
     "github": frozenset({
@@ -185,8 +185,8 @@ class Settings(BaseSettings):
     excluded_python_versions: str = ""
     no_ruff: bool = False
     imports_on_top: bool = False
+    branch_coverage: bool = True
     type_checker: list[str] = []
-    keep_local_precommit: bool = False
     pytest_single_threaded: bool = False
     allow_vscode_coverage_gutters: bool = False
     allow_labels: bool = False

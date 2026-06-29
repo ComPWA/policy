@@ -112,16 +112,17 @@ ImportsOnTop = Annotated[
     bool | None,
     typer.Option("--imports-on-top", help="Sort notebook imports on the top."),
 ]
+BranchCoverage = Annotated[
+    bool | None,
+    typer.Option(
+        "--branch-coverage/--no-branch-coverage",
+        help="Enable branch coverage in the Coverage.py pytest configuration.",
+    ),
+]
 TypeCheckerOption = Annotated[
     list[TypeChecker] | None,
     typer.Option(
         "--type-checker", help="Specify which type checker to use for the project."
-    ),
-]
-KeepLocalPrecommit = Annotated[
-    bool | None,
-    typer.Option(
-        "--keep-local-precommit", help="Do not remove local pre-commit hooks."
     ),
 ]
 PytestSingleThreaded = Annotated[
