@@ -1,4 +1,3 @@
-import io
 import json
 from pathlib import Path
 from textwrap import dedent
@@ -17,21 +16,34 @@ from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
+def _write_pyproject(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / "pyproject.toml"
+    path.write_text(dedent(content).lstrip())
+    return path
+
+
+def _write_precommit(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / ".pre-commit-config.yaml"
+    path.write_text(dedent(content).lstrip())
+    return path
+
+
 def describe_update_configuration():
-    def sets_rules_and_terminal():
+    def sets_rules_and_terminal(tmp_path: Path):
+        pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
         with (
             pytest.raises(PrecommitError, match=r"tool.ty"),
-            ModifiablePyproject.load(
-                io.StringIO("[project]\nname = 'x'\n")
-            ) as pyproject,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _update_configuration(pyproject)
         rules = pyproject.get_table("tool.ty.rules")
         assert rules["division-by-zero"] == "warn"
         assert pyproject.get_table("tool.ty.terminal")["error-on-warning"] is True
 
-    def removes_default_unused_ignore_rule():
-        config = dedent("""
+    def removes_default_unused_ignore_rule(tmp_path: Path):
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
             [tool.ty.rules]
             unused-ignore-comment = "warn"
             division-by-zero = "warn"
@@ -40,49 +52,128 @@ def describe_update_configuration():
 
             [tool.ty.terminal]
             error-on-warning = true
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError, match=r"Removed tool.ty.rules"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _update_configuration(pyproject)
         assert "unused-ignore-comment" not in pyproject.get_table("tool.ty.rules")
 
 
 def describe_update_precommit_config():
-    def adds_local_ty_hook():
-        config = dedent("""
+    def adds_official_ty_hook(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: meta
                 hooks:
                   - id: check-hooks-apply
-        """).lstrip()
+            """,
+        )
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
+            [dependency-groups]
+            style = ["ty"]
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
-            _update_precommit_config(precommit)
+            _update_precommit_config(precommit, pyproject)
         result = precommit.dumps()
-        assert "repo: local" in result
+        assert "https://github.com/astral-sh/ty-pre-commit" in result
         assert "id: ty" in result
+        assert "args: [--no-default-groups, --group=style]" in result
 
-    def preserves_existing_exclude():
-        config = dedent("""
+    def prefers_types_group_over_style(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
+            repos:
+              - repo: meta
+                hooks:
+                  - id: check-hooks-apply
+            """,
+        )
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
+            [dependency-groups]
+            style = ["ty"]
+            types = ["ty"]
+            typechecking = ["ty"]
+            """,
+        )
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(config) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
+        ):
+            _update_precommit_config(precommit, pyproject)
+        assert "args: [--no-default-groups, --group=types]" in precommit.dumps()
+
+    def omits_args_without_matching_group(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
+            repos:
+              - repo: meta
+                hooks:
+                  - id: check-hooks-apply
+            """,
+        )
+        pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
+        with (
+            pytest.raises(PrecommitError),
+            ModifiablePrecommit.load(config) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
+        ):
+            _update_precommit_config(precommit, pyproject)
+        assert "args:" not in precommit.dumps()
+
+    def migrates_local_hook(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: local
                 hooks:
                   - id: ty
                     name: ty
                     entry: ty check
+                    args: [--no-progress, --output-format=concise]
                     language: system
-                    exclude: ^docs/
-        """).lstrip()
+                    require_serial: true
+                    types_or: [python, pyi, jupyter]
+                    exclude: docs/.*
+            """,
+        )
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
+            [dependency-groups]
+            typechecking = ["ty"]
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
-            _update_precommit_config(precommit)
-        assert "exclude: ^docs/" in precommit.dumps()
+            _update_precommit_config(precommit, pyproject)
+        result = precommit.dumps()
+        assert "repo: local" not in result
+        assert "https://github.com/astral-sh/ty-pre-commit" in result
+        assert "entry: ty check" not in result
+        assert "language: system" not in result
+        assert "exclude: docs/.*" in result
+        assert "args: [--no-default-groups, --group=typechecking]" in result
 
 
 def describe_update_vscode_settings():
@@ -114,7 +205,9 @@ def describe_remove_ty():
     def removes_config_and_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "ty.toml").write_text("")
-        config = dedent("""
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
             [project]
             name = "x"
 
@@ -123,8 +216,11 @@ def describe_remove_ty():
 
             [dependency-groups]
             style = ["ty"]
-        """).lstrip()
-        precommit_yaml = dedent("""
+            """,
+        )
+        precommit_path = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: local
                 hooks:
@@ -132,11 +228,12 @@ def describe_remove_ty():
                     name: ty
                     entry: ty check
                     language: system
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            ModifiablePrecommit.load(precommit_path) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _remove_ty(precommit, pyproject)
         assert not (tmp_path / "ty.toml").exists()
@@ -149,13 +246,13 @@ def describe_main():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        _write_pyproject(tmp_path, '[project]\nname = "x"\n')
+        precommit_path = _write_precommit(tmp_path, "repos: []\n")
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
+            ModifiablePrecommit.load(precommit_path) as precommit,
         ):
             main({"ty"}, precommit=precommit)
-        # All steps are applied in a single pass (no per-step short-circuit).
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
         assert "id: ty" in precommit.dumps()
@@ -164,10 +261,13 @@ def describe_main():
 
     def removes_ty_when_not_selected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(
-            '[project]\nname = "x"\n\n[tool.ty.rules]\ndivision-by-zero = "warn"\n'
+        _write_pyproject(
+            tmp_path,
+            '[project]\nname = "x"\n\n[tool.ty.rules]\ndivision-by-zero = "warn"\n',
         )
-        precommit_yaml = dedent("""
+        precommit_path = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: local
                 hooks:
@@ -175,10 +275,11 @@ def describe_main():
                     name: ty
                     entry: ty check
                     language: system
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
+            ModifiablePrecommit.load(precommit_path) as precommit,
         ):
             main(precommit=precommit, type_checkers=set())
         assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()

@@ -1,4 +1,3 @@
-import io
 import json
 import subprocess  # noqa: S404
 from pathlib import Path
@@ -23,21 +22,29 @@ def _git_init(directory: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
 
 
+def _write_precommit(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / ".pre-commit-config.yaml"
+    path.write_text(dedent(content).lstrip())
+    return path
+
+
 def describe_update_cspell_repo_url():
-    def migrates_mirror_url():
-        bad_config = dedent("""
+    def migrates_mirror_url(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: https://github.com/ComPWA/mirrors-cspell
                 rev: v5.10.1
                 hooks:
                   - id: cspell
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError, match=r"Updated cSpell pre-commit repo URL"),
-            ModifiablePrecommit.load(io.StringIO(bad_config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
         ):
             _update_cspell_repo_url(precommit)
-
         repo_url = precommit.document["repos"][0]["repo"]
         assert repo_url == "https://github.com/streetsidesoftware/cspell-cli"
 
@@ -59,16 +66,19 @@ def describe_remove_configuration():
 
 
 def describe_update_precommit_repo():
-    def adds_cspell_hook():
-        config = dedent("""
+    def adds_cspell_hook(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: meta
                 hooks:
                   - id: check-hooks-apply
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
         ):
             _update_precommit_repo(precommit)
         result = precommit.dumps()
@@ -118,26 +128,30 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / ".cspell.json").write_text('{"words": ["zebra", "apple"]}')
-        config = dedent("""
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: https://github.com/streetsidesoftware/cspell-cli
                 rev: v8.0.0
                 hooks:
                   - id: cspell
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
         ):
             main(precommit, no_cspell_update=True)
         result = json.loads((tmp_path / ".cspell.json").read_text())
-        assert result["words"] == ["apple", "zebra"]  # sorted
+        assert result["words"] == ["apple", "zebra"]
 
     def removes_config_without_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
+        config = _write_precommit(tmp_path, "repos: []\n")
         with (
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
             pytest.raises(PrecommitError, match=r"no longer required"),
         ):
             main(precommit, no_cspell_update=False)

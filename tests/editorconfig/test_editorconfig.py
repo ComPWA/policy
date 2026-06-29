@@ -1,4 +1,4 @@
-import io
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -9,20 +9,22 @@ from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
 def describe_update_precommit_config():
-    def configures_editorconfig_checker_hook():
-        bad_config = dedent("""
-            repos:
-              - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-                rev: 2.7.3
-                hooks:
-                  - id: editorconfig-checker
-        """).lstrip()
+    def configures_editorconfig_checker_hook(tmp_path: Path):
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
+                    rev: 2.7.3
+                    hooks:
+                      - id: editorconfig-checker
+            """).lstrip()
+        )
         with (
             pytest.raises(PrecommitError, match=r"Updated editorconfig-checker hook"),
-            ModifiablePrecommit.load(io.StringIO(bad_config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
         ):
             _update_precommit_config(precommit)
-
         expected = dedent(r"""
             repos:
               - repo: https://github.com/editorconfig-checker/editorconfig-checker.python

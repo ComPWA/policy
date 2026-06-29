@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import subprocess  # noqa: S404
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -15,7 +14,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from compwa_policy.utilities.pyproject.getters import PythonVersion
-
 
 BAD_OVERWRITE_WITH_JOBS = dedent("""
     version: 2
@@ -88,8 +86,14 @@ def _expected_message(python_version: str) -> str:
     """).strip()
 
 
+def _write_rtd(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / ".readthedocs.yml"
+    path.write_text(content)
+    return path
+
+
 def describe_main():
-    def updates_extend_style_config():
+    def updates_extend_style_config(tmp_path: Path):
         bad_config = dedent("""
             version: 2
             build:
@@ -108,34 +112,31 @@ def describe_main():
             sphinx:
               configuration: docs/conf.py
         """).lstrip()
-        input_stream = io.StringIO(bad_config)
+        config = _write_rtd(tmp_path, bad_config)
         with pytest.raises(PrecommitError) as exception:
             readthedocs.main(
                 "conda",
                 python_version=DEFAULT_DEV_PYTHON_VERSION,
-                source=input_stream,
+                source=config,
             )
         assert str(exception.value).strip() == _expected_message(
             DEFAULT_DEV_PYTHON_VERSION
         )
-
-        input_stream.seek(0)
-        assert input_stream.read().strip() == _good_extend().strip()
+        assert config.read_text().strip() == _good_extend().strip()
 
     @pytest.mark.parametrize(
         "good_config",
         [_good_extend(), _good_overwrite(DEFAULT_DEV_PYTHON_VERSION)],
         ids=["extend", "overwrite"],
     )
-    def leaves_good_config_unchanged(good_config: str):
-        input_stream = io.StringIO(good_config)
+    def leaves_good_config_unchanged(good_config: str, tmp_path: Path):
+        config = _write_rtd(tmp_path, good_config)
         readthedocs.main(
             "conda",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
-            source=input_stream,
+            source=config,
         )
-        input_stream.seek(0)
-        assert input_stream.read().strip() == good_config.strip()
+        assert config.read_text().strip() == good_config.strip()
 
     @pytest.mark.parametrize(
         "bad_config",
@@ -143,17 +144,17 @@ def describe_main():
         ids=["with-jobs", "without-jobs"],
     )
     @pytest.mark.parametrize("python_version", ["3.9", "3.10"])
-    def overwrites_bad_config(python_version: PythonVersion, bad_config: str):
-        input_stream = io.StringIO(bad_config)
+    def overwrites_bad_config(
+        python_version: PythonVersion, bad_config: str, tmp_path: Path
+    ):
+        config = _write_rtd(tmp_path, bad_config)
         with pytest.raises(PrecommitError) as exception:
-            readthedocs.main("conda", python_version, source=input_stream)
+            readthedocs.main("conda", python_version, source=config)
         assert str(exception.value).strip() == _expected_message(python_version)
-
-        input_stream.seek(0)
-        assert input_stream.read().strip() == _good_overwrite(python_version).strip()
+        assert config.read_text().strip() == _good_overwrite(python_version).strip()
 
     def returns_early_when_config_missing(tmp_path: Path):
-        readthedocs.main(  # no .readthedocs.yml -> no-op, no error
+        readthedocs.main(
             "uv",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=tmp_path / ".readthedocs.yml",
@@ -163,7 +164,8 @@ def describe_main():
         (rtd_repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[dependency-groups]\ndoc = ["poethepoet"]\n'
         )
-        (rtd_repo / ".readthedocs.yml").write_text(
+        _write_rtd(
+            rtd_repo,
             dedent("""
             version: 2
             build:
@@ -177,20 +179,21 @@ def describe_main():
                   - pip install -e .[doc]
             sphinx:
               configuration: docs/conf.py
-            """).lstrip()
+            """).lstrip(),
         )
         with pytest.raises(PrecommitError):
             readthedocs.main("uv", python_version="3.12")
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi global install graphviz uv" in result
         assert "uvx --from poethepoet poe doc" in result
-        assert "apt_packages" not in result  # redundant settings removed
+        assert "apt_packages" not in result
 
     def configures_pixi_build_with_poe(rtd_repo: Path):
         (rtd_repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[dependency-groups]\ndoc = ["poethepoet"]\n'
         )
-        (rtd_repo / ".readthedocs.yml").write_text(
+        _write_rtd(
+            rtd_repo,
             dedent("""
             version: 2
             build:
@@ -199,7 +202,7 @@ def describe_main():
                 python: "3.12"
             sphinx:
               configuration: docs/conf.py
-            """).lstrip()
+            """).lstrip(),
         )
         with pytest.raises(PrecommitError):
             readthedocs.main("pixi+uv", python_version="3.12")
@@ -208,14 +211,15 @@ def describe_main():
 
     def sets_sphinx_configuration_when_missing(rtd_repo: Path):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        (rtd_repo / ".readthedocs.yml").write_text(
+        _write_rtd(
+            rtd_repo,
             dedent("""
             version: 2
             build:
               os: ubuntu-24.04
               tools:
                 python: "3.12"
-            """).lstrip()
+            """).lstrip(),
         )
         with pytest.raises(PrecommitError, match=r"Set sphinx.configuration"):
             readthedocs.main("conda", python_version="3.12")
@@ -224,7 +228,8 @@ def describe_main():
 
     def reuses_existing_pixi_packages(rtd_repo: Path):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        (rtd_repo / ".readthedocs.yml").write_text(
+        _write_rtd(
+            rtd_repo,
             dedent("""
             version: 2
             build:
@@ -238,16 +243,17 @@ def describe_main():
                   pixi global install graphviz julia
             sphinx:
               configuration: docs/conf.py
-            """).lstrip()
+            """).lstrip(),
         )
         with pytest.raises(PrecommitError):
             readthedocs.main("uv", python_version="3.12")
         result = (rtd_repo / ".readthedocs.yml").read_text()
-        assert "pixi global install graphviz julia uv" in result  # existing kept
+        assert "pixi global install graphviz julia uv" in result
 
     def configures_pixi_build_without_poe(rtd_repo: Path):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        (rtd_repo / ".readthedocs.yml").write_text(
+        _write_rtd(
+            rtd_repo,
             dedent("""
             version: 2
             build:
@@ -256,7 +262,7 @@ def describe_main():
                 python: "3.12"
             sphinx:
               configuration: docs/conf.py
-            """).lstrip()
+            """).lstrip(),
         )
         with pytest.raises(PrecommitError):
             readthedocs.main("pixi+uv", python_version="3.12")

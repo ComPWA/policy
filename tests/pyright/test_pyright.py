@@ -1,4 +1,3 @@
-import io
 import json
 import re
 from pathlib import Path
@@ -25,16 +24,26 @@ def this_dir() -> Path:
     return Path(__file__).parent
 
 
+def _write_pyproject(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / "pyproject.toml"
+    path.write_text(dedent(content).lstrip())
+    return path
+
+
+def _write_precommit(tmp_path: Path, content: str) -> Path:
+    path = tmp_path / ".pre-commit-config.yaml"
+    path.write_text(dedent(content).lstrip())
+    return path
+
+
 def describe_merge_config_into_pyproject():
     def is_noop_without_config(tmp_path: Path):
-        input_stream = io.StringIO("[project]\nname = 'x'\n")
-        with ModifiablePyproject.load(input_stream) as pyproject:
-            _merge_config_into_pyproject(
-                pyproject, tmp_path / "pyrightconfig.json"
-            )  # no config file -> no-op
+        pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _merge_config_into_pyproject(pyproject, tmp_path / "pyrightconfig.json")
 
-    def imports_from_json(this_dir: Path):
-        input_stream = io.StringIO()
+    def imports_from_json(this_dir: Path, tmp_path: Path):
+        pyproject_path = _write_pyproject(tmp_path, "")
         old_config_path = this_dir / "pyrightconfig.json"
         with (
             pytest.raises(
@@ -43,11 +52,9 @@ def describe_merge_config_into_pyproject():
                     f"Imported pyright configuration from {old_config_path}"
                 ),
             ),
-            ModifiablePyproject.load(input_stream) as pyproject,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _merge_config_into_pyproject(pyproject, old_config_path, remove=False)
-
-        result = input_stream.getvalue()
         expected_result = dedent("""
             [tool.pyright]
             include = ["src/**/*.py"]
@@ -56,23 +63,25 @@ def describe_merge_config_into_pyproject():
             reportMissingTypeStubs = false
             reportMissingImports = true
         """)
-        assert result.strip() == expected_result.strip()
+        assert pyproject_path.read_text().strip() == expected_result.strip()
 
 
 def describe_update_precommit():
-    def adds_pyright_hook():
-        bad_config = dedent("""
+    def adds_pyright_hook(tmp_path: Path):
+        config = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: meta
                 hooks:
                   - id: check-hooks-apply
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(bad_config)) as precommit,
+            ModifiablePrecommit.load(config) as precommit,
         ):
             _update_precommit(precommit)
-
         expected = dedent("""
             repos:
               - repo: meta
@@ -88,19 +97,20 @@ def describe_update_precommit():
 
 
 def describe_update_settings():
-    def adds_strict_settings():
-        bad_config = dedent("""
+    def adds_strict_settings(tmp_path: Path):
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
             [tool.pyright]
             include = ["**/*.py"]
             reportUnusedImport = true
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError, match=r"Updated pyright configuration"),
-            ModifiablePyproject.load(io.StringIO(bad_config)) as pyproject,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _update_settings(pyproject)
-
-        result = pyproject.dumps()
         expected_result = dedent("""
             [tool.pyright]
             include = ["**/*.py"]
@@ -109,33 +119,37 @@ def describe_update_settings():
             venv = ".venv"
             venvPath = "."
         """)
-        assert result.strip() == expected_result.strip()
+        assert pyproject.dumps().strip() == expected_result.strip()
 
 
 def describe_remove_excludes():
-    def removes_exclude_key():
-        config = dedent("""
+    def removes_exclude_key(tmp_path: Path):
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
             [tool.pyright]
             include = ["src"]
             exclude = ["tests"]
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError, match=r"Removed pyright excludes"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _remove_excludes(pyproject)
         assert "exclude" not in pyproject.get_table("tool.pyright")
 
-    def is_noop_without_exclude():
-        config = '[tool.pyright]\ninclude = ["src"]\n'
-        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
-            _remove_excludes(pyproject)  # no exclude -> no-op
+    def is_noop_without_exclude(tmp_path: Path):
+        pyproject_path = _write_pyproject(
+            tmp_path, '[tool.pyright]\ninclude = ["src"]\n'
+        )
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _remove_excludes(pyproject)
 
-    def is_noop_without_pyright_table():
-        with ModifiablePyproject.load(
-            io.StringIO("[project]\nname = 'x'\n")
-        ) as pyproject:
-            _remove_excludes(pyproject)  # no tool.pyright -> no-op
+    def is_noop_without_pyright_table(tmp_path: Path):
+        pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _remove_excludes(pyproject)
 
 
 def describe_update_vscode_settings():
@@ -163,7 +177,9 @@ def describe_remove_pyright():
     def removes_config_and_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyrightconfig.json").write_text("{}")
-        config = dedent("""
+        pyproject_path = _write_pyproject(
+            tmp_path,
+            """
             [project]
             name = "x"
 
@@ -172,18 +188,22 @@ def describe_remove_pyright():
 
             [dependency-groups]
             style = ["pyright"]
-        """).lstrip()
-        precommit_yaml = dedent("""
+            """,
+        )
+        precommit_path = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: https://github.com/ComPWA/pyright-pre-commit
                 rev: v1.1.0
                 hooks:
                   - id: pyright
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            ModifiablePrecommit.load(precommit_path) as precommit,
+            ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
             _remove_pyright(precommit, pyproject)
         assert not (tmp_path / "pyrightconfig.json").exists()
@@ -196,34 +216,38 @@ def describe_main():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        _write_pyproject(tmp_path, '[project]\nname = "x"\n')
+        precommit_path = _write_precommit(tmp_path, "repos: []\n")
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
+            ModifiablePrecommit.load(precommit_path) as precommit,
         ):
             main(active=True, precommit=precommit)
-        # All steps are applied in a single pass (no per-step short-circuit).
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
-        assert "typeCheckingMode" in pyproject_text  # _update_settings ran
+        assert "typeCheckingMode" in pyproject_text
         assert "id: pyright" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
 
     def removes_pyright_when_inactive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(
-            '[project]\nname = "x"\n\n[tool.pyright]\ntypeCheckingMode = "strict"\n'
+        _write_pyproject(
+            tmp_path,
+            '[project]\nname = "x"\n\n[tool.pyright]\ntypeCheckingMode = "strict"\n',
         )
-        precommit_yaml = dedent("""
+        precommit_path = _write_precommit(
+            tmp_path,
+            """
             repos:
               - repo: https://github.com/ComPWA/pyright-pre-commit
                 rev: v1.1.0
                 hooks:
                   - id: pyright
-        """).lstrip()
+            """,
+        )
         with (
             pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(precommit_yaml)) as precommit,
+            ModifiablePrecommit.load(precommit_path) as precommit,
         ):
             main(active=False, precommit=precommit)
         assert "tool.pyright" not in (tmp_path / "pyproject.toml").read_text()

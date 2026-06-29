@@ -5,14 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from ruamel.yaml.comments import CommentedSeq
-
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.readme import add_badge, remove_badge
+from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -27,7 +26,7 @@ def main(type_checkers: set[TypeChecker], precommit: ModifiablePrecommit) -> Non
         if "ty" in type_checkers:
             do(_update_configuration, pyproject)
             do(pyproject.add_dependency, "ty", dependency_group=["style", "dev"])
-            do(_update_precommit_config, precommit)
+            do(_update_precommit_config, precommit, pyproject)
         else:
             do(_remove_ty, precommit, pyproject)
 
@@ -76,27 +75,32 @@ def _update_configuration(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append("Set tool.ty.terminal.error-on-warning = true")
 
 
-def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
-    args = CommentedSeq(["--no-progress", "--output-format=concise"])
-    args.fa.set_flow_style()
-    types_or = CommentedSeq(["python", "pyi", "jupyter"])
-    types_or.fa.set_flow_style()
-    hook = Hook(
-        id="ty",
-        name="ty",
-        entry="ty check",
-        args=args,
-        require_serial=True,
-        language="system",
-        types_or=types_or,
-    )
+def _update_precommit_config(
+    precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
+) -> None:
     existing_hook = find_hook(precommit.document, r"^ty$")
-    if existing_hook:
-        exclude = existing_hook.get("exclude")
-        if exclude:
-            hook["exclude"] = exclude
-    expected_repo = Repo(repo="local", hooks=[hook])
+    exclude = existing_hook.get("exclude") if existing_hook else None
+    precommit.remove_hook("ty", repo_url="local")
+    hook = Hook(id="ty")
+    if exclude:
+        hook["exclude"] = exclude
+    group = _select_dependency_group(pyproject)
+    if group is not None:
+        hook["args"] = read_preserved_yaml(f"[--no-default-groups, --group={group}]")
+    expected_repo = Repo(
+        repo="https://github.com/astral-sh/ty-pre-commit",
+        rev="",
+        hooks=[hook],
+    )
     precommit.update_single_hook_repo(expected_repo)
+
+
+def _select_dependency_group(pyproject: ModifiablePyproject) -> str | None:
+    dependency_groups = pyproject.get_table("dependency-groups", fallback={})
+    for group in ("types", "style", "typechecking"):
+        if group in dependency_groups:
+            return group
+    return None
 
 
 def _remove_ty(precommit: ModifiablePrecommit, pyproject: ModifiablePyproject) -> None:

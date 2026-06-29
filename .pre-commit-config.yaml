@@ -87,12 +87,8 @@ repos:
             .*\.py
           )$
 
-  - repo: local
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.55
     hooks:
       - id: ty
-        name: ty
-        entry: ty check
-        args: [--no-progress, --output-format=concise]
-        require_serial: true
-        language: system
-        types_or: [python, pyi, jupyter]
+        args: [--no-default-groups, --group=types]
