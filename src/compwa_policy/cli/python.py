@@ -9,7 +9,6 @@ from compwa_policy.cli._options import (
     DevPythonVersion,
     ExcludedPythonVersions,
     ImportsOnTop,
-    KeepLocalPrecommit,
     NoRuff,
     PytestSingleThreaded,
     Python,
@@ -26,7 +25,6 @@ def python(  # noqa: PLR0917
     no_ruff: NoRuff = None,
     imports_on_top: ImportsOnTop = None,
     branch_coverage: BranchCoverage = None,
-    keep_local_precommit: KeepLocalPrecommit = None,
     pytest_single_threaded: PytestSingleThreaded = None,
     allow_vscode_coverage_gutters: AllowVscodeCoverageGutters = None,
 ) -> None:
@@ -39,7 +37,6 @@ def python(  # noqa: PLR0917
         no_ruff=no_ruff,
         imports_on_top=imports_on_top,
         branch_coverage=branch_coverage,
-        keep_local_precommit=keep_local_precommit,
         pytest_single_threaded=pytest_single_threaded,
         allow_vscode_coverage_gutters=allow_vscode_coverage_gutters,
     )

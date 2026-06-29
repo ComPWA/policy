@@ -68,7 +68,6 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "branch_coverage",
         "excluded_python_versions",
         "imports_on_top",
-        "keep_local_precommit",
         "type_checker",
     }),
     "github": frozenset({
@@ -188,7 +187,6 @@ class Settings(BaseSettings):
     imports_on_top: bool = False
     branch_coverage: bool = True
     type_checker: list[str] = []
-    keep_local_precommit: bool = False
     pytest_single_threaded: bool = False
     allow_vscode_coverage_gutters: bool = False
     allow_labels: bool = False

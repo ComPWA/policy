@@ -190,7 +190,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
         do(pyproject.main, args.excluded_python_versions)
         do(mypy.main, "mypy" in args.type_checker, precommit_config)
         do(pyright.main, "pyright" in args.type_checker, precommit_config)
-        do(ty.main, args.type_checker, args.keep_local_precommit, precommit_config)
+        do(ty.main, args.type_checker, precommit_config)
         do(
             pytest.main,
             args.allow_vscode_coverage_gutters,

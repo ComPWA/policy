@@ -21,18 +21,13 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 """The type of type checkers supported."""
 
 
-def main(
-    type_checkers: set[TypeChecker],
-    keep_precommit: bool,
-    precommit: ModifiablePrecommit,
-) -> None:
+def main(type_checkers: set[TypeChecker], precommit: ModifiablePrecommit) -> None:
     with Executor() as do, ModifiablePyproject.load() as pyproject:
         do(_update_vscode_settings, type_checkers)
         if "ty" in type_checkers:
             do(_update_configuration, pyproject)
             do(pyproject.add_dependency, "ty", dependency_group=["style", "dev"])
-            if not keep_precommit:
-                do(_update_precommit_config, precommit)
+            do(_update_precommit_config, precommit)
         else:
             do(_remove_ty, precommit, pyproject)
 
