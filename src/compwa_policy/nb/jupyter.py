@@ -4,24 +4,27 @@ from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
-def main(no_ruff: bool) -> None:
-    _update_dev_requirements(no_ruff)
+def main(no_ruff: bool) -> list[str]:
+    changes = _update_dev_requirements(no_ruff)
     # cspell:ignore toolsai
-    vscode.add_extension_recommendation("ms-toolsai.jupyter")
-    vscode.add_extension_recommendation("ms-toolsai.vscode-jupyter-cell-tags")
-    vscode.remove_extension_recommendation(
+    changes += vscode.add_extension_recommendation("ms-toolsai.jupyter")
+    changes += vscode.add_extension_recommendation(
+        "ms-toolsai.vscode-jupyter-cell-tags"
+    )
+    changes += vscode.remove_extension_recommendation(
         "ms-toolsai.vscode-jupyter-slideshow",
         unwanted=True,
     )
+    return changes
 
 
-def _update_dev_requirements(no_ruff: bool) -> None:
+def _update_dev_requirements(no_ruff: bool) -> list[str]:
     if not CONFIG_PATH.pyproject.exists():
-        return
+        return []
     with ModifiablePyproject.load() as pyproject:
         supported_python_versions = pyproject.get_supported_python_versions()
         if "3.6" in supported_python_versions:
-            return
+            return []
         packages = {
             "jupyterlab",
             "jupyterlab-git",
@@ -49,3 +52,4 @@ def _update_dev_requirements(no_ruff: bool) -> None:
             packages.add("jupyter-ruff")
         for package in sorted(packages):
             pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
+    return list(pyproject.changelog)

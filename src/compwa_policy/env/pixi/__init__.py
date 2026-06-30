@@ -22,12 +22,11 @@ def main(
     package_manager: PackageManagerChoice,
     is_python_package: bool,
     dev_python_version: PythonVersion,
-) -> None:
+) -> list[str]:
     if "pixi" in package_manager:
-        update_pixi_configuration(
+        return update_pixi_configuration(
             is_python_package,
             dev_python_version,
             package_manager,
         )
-    else:
-        remove_pixi_configuration()
+    return remove_pixi_configuration()

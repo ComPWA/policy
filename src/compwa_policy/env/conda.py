@@ -20,11 +20,12 @@ PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
-def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -> None:
+def main(
+    python_version: PythonVersion, package_manager: PackageManagerChoice
+) -> list[str]:
     if package_manager == "conda":
-        update_conda_environment(python_version)
-    else:
-        _remove_conda_configuration()
+        return update_conda_environment(python_version)
+    return _remove_conda_configuration()
 
 
 def update_conda_environment(python_version: PythonVersion) -> list[str]:

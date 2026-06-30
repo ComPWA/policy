@@ -14,36 +14,42 @@ if TYPE_CHECKING:
 
 def main(
     has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> None:
-    _update_extensions()
-    _update_settings(has_notebooks, is_python_repo, package_manager)
+) -> list[str]:
+    changes = _update_extensions()
+    changes += _update_settings(has_notebooks, is_python_repo, package_manager)
+    return changes
 
 
-def _update_extensions() -> None:
-    vscode.add_extension_recommendation("eamodio.gitlens")  # cspell:ignore eamodio
-    vscode.add_extension_recommendation("mhutchie.git-graph")  # cspell:ignore mhutchie
-    vscode.add_extension_recommendation(
+def _update_extensions() -> list[str]:
+    changes = vscode.add_extension_recommendation(
+        "eamodio.gitlens"
+    )  # cspell:ignore eamodio
+    changes += vscode.add_extension_recommendation(
+        "mhutchie.git-graph"
+    )  # cspell:ignore mhutchie
+    changes += vscode.add_extension_recommendation(
         "soulcode.vscode-unwanted-extensions"
     )  # cspell:ignore Soulcode
-    vscode.add_extension_recommendation("stkb.rewrap")  # cspell:ignore stkb
-    vscode.remove_extension_recommendation(
+    changes += vscode.add_extension_recommendation("stkb.rewrap")  # cspell:ignore stkb
+    changes += vscode.remove_extension_recommendation(
         "garaioag.garaio-vscode-unwanted-recommendations",  # cspell:ignore garaio garaioag
         unwanted=True,
     )
-    vscode.remove_extension_recommendation(
+    changes += vscode.remove_extension_recommendation(
         "travisillig.vscode-json-stable-stringify",  # cspell:ignore travisillig
         unwanted=True,
     )
-    vscode.remove_extension_recommendation(
+    changes += vscode.remove_extension_recommendation(
         "tyriar.sort-lines",  # cspell:ignore tyriar
         unwanted=True,
     )
+    return changes
 
 
 def _update_settings(
     has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> None:
-    vscode.update_settings({
+) -> list[str]:
+    changes = vscode.update_settings({
         "diffEditor.experimental.showMoves": True,
         "editor.formatOnSave": True,
         "gitlens.telemetry.enabled": False,
@@ -51,7 +57,7 @@ def _update_settings(
         "redhat.telemetry.enabled": False,
         "telemetry.telemetryLevel": "off",
     })
-    vscode.update_settings({
+    changes += vscode.update_settings({
         "[git-commit]": {
             "editor.rulers": [72],
             "rewrap.wrappingColumn": 72,
@@ -60,13 +66,13 @@ def _update_settings(
             "editor.wordWrap": "on",
         },
     })
-    _remove_outdated_settings()
-    _update_doc_settings()
+    changes += _remove_outdated_settings()
+    changes += _update_doc_settings()
     if has_notebooks:
-        _update_notebook_settings()
-    _update_pytest_settings()
+        changes += _update_notebook_settings()
+    changes += _update_pytest_settings()
     if has_constraint_files():
-        vscode.update_settings({
+        changes += vscode.update_settings({
             "files.associations": {"**/.constraints/py*.txt": "pip-requirements"}
         })
     if is_python_repo:
@@ -74,15 +80,18 @@ def _update_settings(
             python_path = ".pixi/envs/default/bin/python"
         else:
             python_path = ".venv/bin/python"
-        vscode.update_settings({
+        changes += vscode.update_settings({
             "python.defaultInterpreterPath": python_path,
             "rewrap.wrappingColumn": 88,
         })
         if CONFIG_PATH.envrc.exists():
-            vscode.update_settings({"python.terminal.activateEnvironment": False})
+            changes += vscode.update_settings({
+                "python.terminal.activateEnvironment": False
+            })
+    return changes
 
 
-def _remove_outdated_settings() -> None:
+def _remove_outdated_settings() -> list[str]:
     outdated_settings = [
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
@@ -100,31 +109,34 @@ def _remove_outdated_settings() -> None:
         "telemetry.enableCrashReporter",
         "telemetry.enableTelemetry",
     ]
-    vscode.remove_settings(outdated_settings)
+    return vscode.remove_settings(outdated_settings)
 
 
-def _update_doc_settings() -> None:
+def _update_doc_settings() -> list[str]:
     if not os.path.exists("docs/"):
-        return
-    vscode.update_settings({"livePreview.defaultPreviewPath": "docs/_build/html"})
-    vscode.add_extension_recommendation("ms-vscode.live-server")
+        return []
+    changes = vscode.update_settings({
+        "livePreview.defaultPreviewPath": "docs/_build/html"
+    })
+    changes += vscode.add_extension_recommendation("ms-vscode.live-server")
     # cspell:ignore executablebookproject
     myst_extension = "executablebookproject.myst-highlight"
     if myst_extension not in vscode.get_unwanted_extensions():
-        vscode.add_extension_recommendation(myst_extension)
+        changes += vscode.add_extension_recommendation(myst_extension)
+    return changes
 
 
-def _update_notebook_settings() -> None:
+def _update_notebook_settings() -> list[str]:
     """https://code.visualstudio.com/updates/v1_83#_go-to-symbol-in-notebooks."""
     if not os.path.exists("docs/"):
-        return
-    vscode.update_settings({"notebook.gotoSymbols.showAllSymbols": True})
+        return []
+    return vscode.update_settings({"notebook.gotoSymbols.showAllSymbols": True})
 
 
-def _update_pytest_settings() -> None:
+def _update_pytest_settings() -> list[str]:
     if not os.path.exists("tests/"):
-        return
-    vscode.update_settings({
+        return []
+    return vscode.update_settings({
         "python.testing.pytestEnabled": True,
         "python.testing.unittestEnabled": False,
     })

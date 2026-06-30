@@ -28,16 +28,17 @@ def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-) -> None:
+) -> list[str]:
     if "pixi" not in package_manager:
-        return
+        return []
     if package_manager == "pixi":
         config_path = CONFIG_PATH.pyproject
     else:
         config_path = CONFIG_PATH.pixi_toml
         CONFIG_PATH.pixi_toml.touch()
+    extra: list[str] = []
     with ModifiablePyproject.load(config_path) as config:
-        add_badge(
+        extra += add_badge(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
         _rename_workspace_table(config)
@@ -54,12 +55,13 @@ def update_pixi_configuration(
             _update_docnb_and_doclive(config, "tasks")
             _update_docnb_and_doclive(config, "feature.dev.tasks")
         _clean_up_task_env(config)
-        vscode.update_settings(
+        extra += vscode.update_settings(
             {"files.associations": {"**/pixi.lock": "yaml"}},
         )
         if has_pixi_config(config):
             config.changelog.extend(__update_gitattributes())
             config.changelog.extend(__update_gitignore())
+    return list(config.changelog) + extra
 
 
 def _define_combined_ci_job(config: ModifiablePyproject) -> None:

@@ -9,21 +9,26 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def remove_pixi_configuration() -> None:
-    remove_lines(CONFIG_PATH.gitattributes, "pixi")
-    remove_lines(CONFIG_PATH.gitignore, ".*pixi.*")
-    _remove_file(CONFIG_PATH.pixi_lock)
-    _remove_file(CONFIG_PATH.pixi_toml)
-    vscode.remove_settings({"files.associations": ["**/pixi.lock", "pixi.lock"]})
+def remove_pixi_configuration() -> list[str]:
+    changes = remove_lines(CONFIG_PATH.gitattributes, "pixi")
+    changes += remove_lines(CONFIG_PATH.gitignore, ".*pixi.*")
+    changes += _remove_file(CONFIG_PATH.pixi_lock)
+    changes += _remove_file(CONFIG_PATH.pixi_toml)
+    changes += vscode.remove_settings({
+        "files.associations": ["**/pixi.lock", "pixi.lock"]
+    })
     if CONFIG_PATH.pyproject.exists():
         with ModifiablePyproject.load() as pyproject:
             if not pyproject.has_table("tool.pixi"):
-                return
+                return changes
             del pyproject._document["tool"]["pixi"]  # noqa: SLF001
             pyproject.changelog.append("Removed Pixi configuration table")
+        changes += list(pyproject.changelog)
+    return changes
 
 
-def _remove_file(path: Path) -> None:
+def _remove_file(path: Path) -> list[str]:
     if not path.exists():
-        return
+        return []
     path.unlink(missing_ok=True)
+    return [f"Removed redundant file {path!r}"]
