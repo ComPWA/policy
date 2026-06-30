@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> None:
+def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> list[str]:
     if no_cd:
         paths_to_remove: list[Path] = [
             CONFIG_PATH.release_drafter_workflow,
@@ -23,26 +22,26 @@ def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> Non
         if paths_to_remove:
             for path in paths_to_remove:
                 path.unlink()
-            msg = f"Removed {', '.join(str(p) for p in paths_to_remove)}"
-            raise PrecommitError(msg)
-    else:
-        update_file(CONFIG_PATH.release_drafter_workflow)
-        _update_draft(repo_name, repo_title, organization)
+            return [f"Removed {', '.join(str(p) for p in paths_to_remove)}"]
+        return []
+    changes: list[str] = []
+    changes += update_file(CONFIG_PATH.release_drafter_workflow)
+    changes += _update_draft(repo_name, repo_title, organization)
+    return changes
 
 
-def _update_draft(repo_name: str, repo_title: str, organization: str) -> None:
+def _update_draft(repo_name: str, repo_title: str, organization: str) -> list[str]:
     yaml = create_prettier_round_trip_yaml()
     expected = _get_expected_config(repo_name, repo_title, organization)
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
         yaml.dump(expected, output_path)
-        msg = f"Created {output_path}"
-        raise PrecommitError(msg)
+        return [f"Created {output_path}"]
     existing = _get_existing_config()
     if existing != expected:
         yaml.dump(expected, output_path)
-        msg = f"Updated {output_path}"
-        raise PrecommitError(msg)
+        return [f"Updated {output_path}"]
+    return []
 
 
 def _get_expected_config(

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import rtoml
 
 from compwa_policy.env.pixi import has_pixi_config
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 
@@ -16,30 +15,29 @@ if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
 
 
-def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> None:
+def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> list[str]:
     if package_manager == "none":
-        return
+        return []
     if package_manager == "uv":
         script = __get_uv_direnv(variables) + "\n"
-        __update_envrc_content(script)
-    elif package_manager == "pixi+uv":
+        return __update_envrc_content(script)
+    if package_manager == "pixi+uv":
         script = __get_pixi_direnv() + "\n"
         script += __get_uv_direnv(variables) + "\n"
-        __update_envrc_content(script)
-    elif package_manager == "pixi":
+        return __update_envrc_content(script)
+    if package_manager == "pixi":
         script = __get_pixi_direnv() + "\n"
-        __update_envrc_content(script)
-    else:
-        statements: list[tuple[str | None, str]] = [
-            (".venv", "source .venv/bin/activate"),
-            ("venv", "source venv/bin/activate"),
-        ]
-        if has_pixi_config():
-            script = __get_pixi_direnv()
-            statements.append((".pixi", script))
-        if CONFIG_PATH.conda.exists():
-            statements.append((None, "layout anaconda"))
-        _update_envrc(statements)
+        return __update_envrc_content(script)
+    statements: list[tuple[str | None, str]] = [
+        (".venv", "source .venv/bin/activate"),
+        ("venv", "source venv/bin/activate"),
+    ]
+    if has_pixi_config():
+        script = __get_pixi_direnv()
+        statements.append((".pixi", script))
+    if CONFIG_PATH.conda.exists():
+        statements.append((None, "layout anaconda"))
+    return _update_envrc(statements)
 
 
 def __get_pixi_direnv() -> str:
@@ -88,7 +86,7 @@ def __get_pixi_environment_names() -> set[str]:
     return set()
 
 
-def _update_envrc(statements: list[tuple[str | None, str]]) -> None:
+def _update_envrc(statements: list[tuple[str | None, str]]) -> list[str]:
     expected = ""
     for i, (trigger_path, script) in enumerate(statements):
         if trigger_path is not None:
@@ -99,16 +97,16 @@ def _update_envrc(statements: list[tuple[str | None, str]]) -> None:
         script = dedent(script).strip()
         expected += indent(script, prefix="  ") + "\n"
     expected += "fi\n"
-    __update_envrc_content(expected)
+    return __update_envrc_content(expected)
 
 
-def __update_envrc_content(expected: str) -> None:
+def __update_envrc_content(expected: str) -> list[str]:
     if __get_existing_envrc() == expected:
-        return
+        return []
     with open(CONFIG_PATH.envrc, "w") as f:
         f.write(expected)
     msg = f"Updated {CONFIG_PATH.envrc} for direnv"
-    raise PrecommitError(msg)
+    return [msg]
 
 
 def __get_existing_envrc() -> str | None:

@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.pyupgrade import _remove_pyupgrade, main
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -34,12 +33,10 @@ def describe_main():
                 hooks:
                   - id: nbqa-isort
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             main(precommit, no_ruff=True)
 
+        assert precommit.changelog  # something changed
         result = precommit.dumps()
         assert "https://github.com/asottile/pyupgrade" in result
         assert "--py310-plus" in result
@@ -54,12 +51,10 @@ def describe_main():
                   - id: pyupgrade
                     args: [--py310-plus]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"pyupgrade"),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             main(precommit, no_ruff=False)
 
+        assert any("pyupgrade" in m for m in precommit.changelog)
         assert "pyupgrade" not in precommit.dumps()
 
 
@@ -76,10 +71,8 @@ def describe_remove_pyupgrade():
                 hooks:
                   - id: nbqa-pyupgrade
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             _remove_pyupgrade(precommit)
 
+        assert precommit.changelog  # something was removed
         assert "pyupgrade" not in precommit.dumps()

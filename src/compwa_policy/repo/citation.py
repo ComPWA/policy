@@ -14,28 +14,31 @@ from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> None:
-    with Executor() as do:
-        if CONFIG_PATH.zenodo.exists():
-            if CONFIG_PATH.citation.exists():
-                do(remove_zenodo_json)
-            else:
-                do(convert_zenodo_json)
+def main(precommit: ModifiablePrecommit) -> list[str]:
+    changes: list[str] = []
+    just_converted = False
+    if CONFIG_PATH.zenodo.exists():
         if CONFIG_PATH.citation.exists():
-            do(check_citation_keys)
-            do(add_json_schema_precommit, precommit)
-            do(vscode.add_extension_recommendation, "redhat.vscode-yaml")
-            do(update_vscode_settings)
+            changes += remove_zenodo_json()
+        else:
+            changes += convert_zenodo_json()
+            just_converted = True
+    if CONFIG_PATH.citation.exists():
+        if not just_converted:
+            check_citation_keys()
+        add_json_schema_precommit(precommit)
+        changes += vscode.add_extension_recommendation("redhat.vscode-yaml")
+        update_vscode_settings()
+    return changes
 
 
-def convert_zenodo_json() -> None:
+def convert_zenodo_json() -> list[str]:
     with open(CONFIG_PATH.zenodo) as f:
         zenodo = json.load(f)
     citation_cff = _convert_zenodo(zenodo)
@@ -46,15 +49,15 @@ def convert_zenodo_json() -> None:
     see https://citation-file-format.github.io
     """
     msg = dedent(msg).strip()
-    raise PrecommitError(msg)
+    return [msg]
 
 
-def remove_zenodo_json() -> None:
+def remove_zenodo_json() -> list[str]:
     CONFIG_PATH.zenodo.unlink()
     msg = (
         f"Removed {CONFIG_PATH.zenodo}, because a {CONFIG_PATH.citation} already exists"
     )
-    raise PrecommitError(msg)
+    return [msg]
 
 
 def _convert_zenodo(zenodo: dict) -> CommentedMap:

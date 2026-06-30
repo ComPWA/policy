@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.format.prettier import (
     _remove_configuration,
     _update_prettier_hook,
@@ -39,10 +38,7 @@ _WITH_PRETTIER = dedent("""
 
 def describe_update_prettier_hook():
     def renames_mirror():
-        with (
-            pytest.raises(PrecommitError, match=r"Updated URL for Prettier"),
-            ModifiablePrecommit.load(io.StringIO(_WITH_MIRROR)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(_WITH_MIRROR)) as precommit:
             _update_prettier_hook(precommit)
         assert "https://github.com/ComPWA/prettier-pre-commit" in precommit.dumps()
 
@@ -56,10 +52,8 @@ def describe_remove_configuration():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".prettierrc.json").write_text("{}")
         (tmp_path / ".prettierrc").write_text("{}")
-        with pytest.raises(
-            PrecommitError, match=r"Removed redundant configuration files"
-        ):
-            _remove_configuration()
+        changes = _remove_configuration()
+        assert any("Removed redundant configuration files" in m for m in changes)
         assert not (tmp_path / ".prettierrc.json").exists()
         assert not (tmp_path / ".prettierrc").exists()
 
@@ -73,23 +67,23 @@ def describe_update_prettier_ignore():
     def removes_forbidden_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".prettierignore").write_text(".cspell.json\nbuild/\n")
-        with pytest.raises(PrecommitError, match=r"Removed forbidden paths"):
-            _update_prettier_ignore()
+        changes = _update_prettier_ignore()
+        assert any("Removed forbidden paths" in m for m in changes)
         assert ".cspell.json" not in (tmp_path / ".prettierignore").read_text()
 
     def inserts_obligatory_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "LICENSE").touch()
         (tmp_path / ".prettierignore").write_text("build/\n")
-        with pytest.raises(PrecommitError, match=r"Added paths"):
-            _update_prettier_ignore()
+        changes = _update_prettier_ignore()
+        assert any("Added paths" in m for m in changes)
         assert "LICENSE" in (tmp_path / ".prettierignore").read_text()
 
     def removes_empty_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".prettierignore").write_text("")
-        with pytest.raises(PrecommitError, match=r"is not needed"):
-            _update_prettier_ignore()
+        changes = _update_prettier_ignore()
+        assert any("is not needed" in m for m in changes)
         assert not (tmp_path / ".prettierignore").exists()
 
 
@@ -99,11 +93,9 @@ def describe_main():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
-        with (
-            ModifiablePrecommit.load(io.StringIO(_WITH_PRETTIER)) as precommit,
-            pytest.raises(PrecommitError),
-        ):
-            main(precommit)
+        with ModifiablePrecommit.load(io.StringIO(_WITH_PRETTIER)) as precommit:
+            changes = main(precommit)
+        assert changes
         assert "prettier" in (tmp_path / "README.md").read_text()
 
     def cleans_up_without_prettier_repo(
@@ -112,8 +104,6 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / ".prettierrc.json").write_text("{}")
-        with (
-            ModifiablePrecommit.load(io.StringIO(_META_ONLY)) as precommit,
-            pytest.raises(PrecommitError, match=r"Removed redundant configuration"),
-        ):
-            main(precommit)
+        with ModifiablePrecommit.load(io.StringIO(_META_ONLY)) as precommit:
+            changes = main(precommit)
+        assert any("Removed redundant configuration" in m for m in changes)

@@ -7,9 +7,7 @@ from typing import Literal
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -29,9 +27,9 @@ def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -
         _remove_conda_configuration()
 
 
-def update_conda_environment(python_version: PythonVersion) -> None:
+def update_conda_environment(python_version: PythonVersion) -> list[str]:
     if not has_pyproject_package_name():
-        return
+        return []
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
@@ -47,7 +45,8 @@ def update_conda_environment(python_version: PythonVersion) -> None:
     if updated:
         yaml.dump(conda_env, CONFIG_PATH.conda)
         msg = f"Updated Conda environment for Python {python_version}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __create_conda_environment(python_version: PythonVersion) -> CommentedMap:
@@ -105,19 +104,20 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration() -> None:
-    with Executor() as do:
-        do(__remove_environment_yml)
-        # cspell:ignore condaenv
-        do(remove_lines, CONFIG_PATH.gitignore, r".*condaenv.*")
-        do(remove_lines, CONFIG_PATH.gitignore, r".*environment\.yml.*")
+def _remove_conda_configuration() -> list[str]:
+    changes: list[str] = []
+    changes += __remove_environment_yml()
+    # cspell:ignore condaenv
+    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*")
+    changes += remove_lines(CONFIG_PATH.gitignore, r".*environment\.yml.*")
+    return changes
 
 
-def __remove_environment_yml() -> None:
+def __remove_environment_yml() -> list[str]:
     if not CONFIG_PATH.conda.exists():
-        return
+        return []
     CONFIG_PATH.conda.unlink()
     msg = (
         "Removed Conda configuration, because conda was not selected as package manager"
     )
-    raise PrecommitError(msg)
+    return [msg]

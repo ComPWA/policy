@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 import rtoml
 import tomlkit
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
@@ -27,22 +25,23 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
 ]
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit) -> list[str]:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
     ]
     if not any(f.exists() for f in trigger_files):
-        return
-    with Executor() as do:
-        do(_rename_taplo_config)
-        do(_update_taplo_config)
-        do(_rename_precommit_url, precommit)
-        do(_update_precommit_repo, precommit)
-        do(_update_tomlsort_config)
-        do(_update_tomlsort_hook, precommit)
-        do(_update_vscode_extensions)
+        return []
+    changes: list[str] = []
+    changes += _rename_taplo_config()
+    changes += _update_taplo_config()
+    _rename_precommit_url(precommit)
+    _update_precommit_repo(precommit)
+    _update_tomlsort_config()
+    _update_tomlsort_hook(precommit)
+    changes += _update_vscode_extensions()
+    return changes
 
 
 def _update_tomlsort_config() -> None:
@@ -93,21 +92,22 @@ def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _rename_taplo_config() -> None:
+def _rename_taplo_config() -> list[str]:
     for path in __INCORRECT_TAPLO_CONFIG_PATHS:
         if not path.exists():
             continue
         shutil.move(path, CONFIG_PATH.taplo)
         msg = f"Renamed {path} to {CONFIG_PATH.taplo}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
-def _update_taplo_config() -> None:
+def _update_taplo_config() -> list[str]:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     if not CONFIG_PATH.taplo.exists():
         shutil.copyfile(template_path, CONFIG_PATH.taplo)
         msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
-        raise PrecommitError(msg)
+        return [msg]
     with open(template_path) as f:
         expected = tomlkit.load(f)
 
@@ -144,7 +144,8 @@ def _update_taplo_config() -> None:
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __taplo_rule(toml_path: Path | str, keys: list[str]) -> dict:
@@ -185,11 +186,14 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions() -> None:
+def _update_vscode_extensions() -> list[str]:
     # cspell:ignore bungcip tamasfe
-    with Executor() as do:
-        do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
-        do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)
+    changes: list[str] = []
+    changes += vscode.add_extension_recommendation("tamasfe.even-better-toml")
+    changes += vscode.remove_extension_recommendation(
+        "bungcip.better-toml", unwanted=True
+    )
+    return changes
 
 
 def _to_regex(glob: str) -> str:

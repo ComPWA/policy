@@ -102,8 +102,14 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
         Executor(raise_exception=False) as do,
         ModifiablePrecommit.load() as precommit_config,
     ):
-        run_checks(do, precommit_config, args, ctx, groups=groups)
-    return 1 if do.error_messages else 0
+        changes = run_checks(do, precommit_config, args, ctx, groups=groups)
+    changes += precommit_config.changelog
+    if do.error_messages:
+        return 1
+    if changes:
+        print("\n--------------------\n".join(changes))  # noqa: T201
+        return 1
+    return 0
 
 
 def run_checks(  # noqa: C901, PLR0912, PLR0915
@@ -113,7 +119,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
     ctx: Context,
     *,
     groups: frozenset[Group] = ALL_GROUPS,
-) -> None:
+) -> list[str]:
     """Dispatch the requested check *groups* in the canonical order.
 
     This is the single source of truth for which checks run and in what order. Running
@@ -122,107 +128,153 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
     sequence means a subcommand can never order a shared config file (such as
     ``.pre-commit-config.yaml``) differently from the full run.
     """
+    changes: list[str] = []
     if "repo" in groups:
-        do(citation.main, precommit_config)
-        do(commitlint.main)
+        changes += do(citation.main, precommit_config) or []
+        changes += do(commitlint.main) or []
     if "env" in groups:
-        do(conda.main, args.dev_python_version, args.package_manager)
+        changes += do(conda.main, args.dev_python_version, args.package_manager) or []
     if "github" in groups:
-        do(dependabot.main, args.upgrade_frequency)
+        changes += do(dependabot.main, args.upgrade_frequency) or []
     if "format" in groups:
-        do(editorconfig.main, precommit_config)
+        changes += do(editorconfig.main, precommit_config) or []
     if "github" in groups and not args.allow_labels:
-        do(labels.main)
+        changes += do(labels.main) or []
     if "github" in groups and not args.no_github_actions:
-        do(
-            workflows.main,
-            precommit_config,
-            allow_deprecated=args.allow_deprecated_workflows,
-            doc_apt_packages=ctx.doc_apt_packages,
-            environment_variables=ctx.environment_variables,
-            github_pages=args.github_pages,
-            keep_pr_linting=args.keep_pr_linting,
-            macos_python_version=args.macos_python_version,
-            no_cd=args.no_cd,
-            no_milestones=args.no_milestones,
-            no_pypi=args.no_pypi,
-            no_version_branches=args.no_version_branches,
-            python_version=args.dev_python_version,
-            single_threaded=args.pytest_single_threaded,
-            skip_tests=_to_list(args.ci_skipped_tests),
+        changes += (
+            do(
+                workflows.main,
+                precommit_config,
+                allow_deprecated=args.allow_deprecated_workflows,
+                doc_apt_packages=ctx.doc_apt_packages,
+                environment_variables=ctx.environment_variables,
+                github_pages=args.github_pages,
+                keep_pr_linting=args.keep_pr_linting,
+                macos_python_version=args.macos_python_version,
+                no_cd=args.no_cd,
+                no_milestones=args.no_milestones,
+                no_pypi=args.no_pypi,
+                no_version_branches=args.no_version_branches,
+                python_version=args.dev_python_version,
+                single_threaded=args.pytest_single_threaded,
+                skip_tests=_to_list(args.ci_skipped_tests),
+            )
+            or []
         )
     if "nb" in groups and ctx.has_notebooks:
         if not args.no_binder:
-            do(
-                binder.main,
-                args.package_manager,
-                args.dev_python_version,
-                ctx.doc_apt_packages,
+            changes += (
+                do(
+                    binder.main,
+                    args.package_manager,
+                    args.dev_python_version,
+                    ctx.doc_apt_packages,
+                )
+                or []
             )
-        do(jupyter.main, args.no_ruff)
+        changes += do(jupyter.main, args.no_ruff) or []
     if "nb" in groups:
-        do(
-            nbstripout.main,
-            precommit_config,
-            ctx.has_notebooks,
-            _to_list(args.allowed_cell_metadata),
+        changes += (
+            do(
+                nbstripout.main,
+                precommit_config,
+                ctx.has_notebooks,
+                _to_list(args.allowed_cell_metadata),
+            )
+            or []
         )
     if "env" in groups:
-        do(pixi.main, args.package_manager, ctx.is_python_repo, args.dev_python_version)
-        do(direnv.main, args.package_manager, ctx.environment_variables)
+        changes += (
+            do(
+                pixi.main,
+                args.package_manager,
+                ctx.is_python_repo,
+                args.dev_python_version,
+            )
+            or []
+        )
+        changes += (
+            do(direnv.main, args.package_manager, ctx.environment_variables) or []
+        )
     if "format" in groups:
-        do(toml.main, precommit_config)  # has to run before pre-commit
+        changes += do(toml.main, precommit_config) or []  # has to run before pre-commit
     if "repo" in groups:
-        do(poe.main, ctx.has_notebooks, args.package_manager)
+        changes += do(poe.main, ctx.has_notebooks, args.package_manager) or []
     if "format" in groups:
-        do(prettier.main, precommit_config)
+        changes += do(prettier.main, precommit_config) or []
     if "python" in groups and ctx.is_python_repo and args.no_ruff:
-        do(black.main, precommit_config, ctx.has_notebooks)
+        changes += do(black.main, precommit_config, ctx.has_notebooks) or []
     if "github" in groups and ctx.is_python_repo and not args.no_github_actions:
-        do(
-            release_drafter.main,
-            args.no_cd,
-            args.repo_name,
-            args.repo_title,
-            args.repo_organization,
+        changes += (
+            do(
+                release_drafter.main,
+                args.no_cd,
+                args.repo_name,
+                args.repo_title,
+                args.repo_organization,
+            )
+            or []
         )
     if "python" in groups and ctx.is_python_repo:
-        do(pyproject.main, args.excluded_python_versions)
-        do(mypy.main, "mypy" in args.type_checker, precommit_config)
-        do(pyright.main, "pyright" in args.type_checker, precommit_config)
-        do(ty.main, args.type_checker, precommit_config)
-        do(
-            pytest.main,
-            args.allow_vscode_coverage_gutters,
-            args.pytest_single_threaded,
-            args.branch_coverage,
+        changes += do(pyproject.main, args.excluded_python_versions) or []
+        changes += do(mypy.main, "mypy" in args.type_checker, precommit_config) or []
+        changes += (
+            do(pyright.main, "pyright" in args.type_checker, precommit_config) or []
         )
-        do(pyupgrade.main, precommit_config, args.no_ruff)
+        changes += do(ty.main, args.type_checker, precommit_config) or []
+        changes += (
+            do(
+                pytest.main,
+                args.allow_vscode_coverage_gutters,
+                args.pytest_single_threaded,
+                args.branch_coverage,
+            )
+            or []
+        )
+        changes += do(pyupgrade.main, precommit_config, args.no_ruff) or []
         if not args.no_ruff:
-            do(ruff.main, precommit_config, ctx.has_notebooks, args.imports_on_top)
+            changes += (
+                do(ruff.main, precommit_config, ctx.has_notebooks, args.imports_on_top)
+                or []
+            )
     if "github" in groups and args.upgrade_frequency != "no":
-        do(
-            upgrade_lock.main,
-            precommit_config,
-            frequency=args.upgrade_frequency,
-            keep_workflow=args.keep_workflow,
+        changes += (
+            do(
+                upgrade_lock.main,
+                precommit_config,
+                frequency=args.upgrade_frequency,
+                keep_workflow=args.keep_workflow,
+            )
+            or []
         )
     if "repo" in groups:
-        do(readthedocs.main, args.package_manager, args.dev_python_version)
-        do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
-        do(vscode.main, ctx.has_notebooks, ctx.is_python_repo, args.package_manager)
-        do(gitpod.main, args.gitpod, args.dev_python_version)
+        changes += (
+            do(readthedocs.main, args.package_manager, args.dev_python_version) or []
+        )
+        changes += (
+            do(remove_deprecated_tools, precommit_config, args.keep_issue_templates)
+            or []
+        )
+        changes += (
+            do(vscode.main, ctx.has_notebooks, ctx.is_python_repo, args.package_manager)
+            or []
+        )
+        changes += do(gitpod.main, args.gitpod, args.dev_python_version) or []
     if "format" in groups:
-        do(precommit.main, precommit_config, ctx.has_notebooks)
+        changes += do(precommit.main, precommit_config, ctx.has_notebooks) or []
     if "env" in groups:
-        do(
-            uv.main,
-            precommit_config,
-            args.dev_python_version,
-            args.keep_contributing_md,
-            args.package_manager,
-            args.repo_organization,
-            args.repo_name,
+        changes += (
+            do(
+                uv.main,
+                precommit_config,
+                args.dev_python_version,
+                args.keep_contributing_md,
+                args.package_manager,
+                args.repo_organization,
+                args.repo_name,
+            )
+            or []
         )
     if "format" in groups:
-        do(cspell.main, precommit_config, args.no_cspell_update)
+        changes += do(cspell.main, precommit_config, args.no_cspell_update) or []
+    return changes

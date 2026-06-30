@@ -10,22 +10,22 @@ import os
 from functools import cache
 from pathlib import Path
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.match import git_ls_files
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def main() -> None:
+def main() -> list[str]:
     if os.path.exists(__LABELS_CONFIG_FILE):
         os.remove(__LABELS_CONFIG_FILE)
-        msg = (
-            f'Repository contains a file "{__LABELS_CONFIG_FILE}" for the labels'
-            " package (see https://pypi.org/project/labels). This file should not be"
-            " there, because labels are maintained through"
-            " https://github.com/ComPWA/policy. It has been removed."
-        )
-        raise PrecommitError(msg)
+        return [
+            (
+                f'Repository contains a file "{__LABELS_CONFIG_FILE}" for the labels'
+                " package (see https://pypi.org/project/labels). This file should not be"
+                " there, because labels are maintained through"
+                " https://github.com/ComPWA/policy. It has been removed."
+            )
+        ]
     faulty_req_files = [
         str(file.absolute())
         for file in _get_requirement_files()
@@ -33,11 +33,13 @@ def main() -> None:
     ]
     if faulty_req_files:
         _remove_all_labels_requirement()
-        msg = (
-            "Repository lists the labels package (https://pypi.org/project/labels) as a"
-            " developer requirement. Problems have been fixed, please re-stage files."
-        )
-        raise PrecommitError(msg)
+        return [
+            (
+                "Repository lists the labels package (https://pypi.org/project/labels) as a"
+                " developer requirement. Problems have been fixed, please re-stage files."
+            )
+        ]
+    return []
 
 
 def _check_has_labels_requirement(path: Path) -> bool:

@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 import rtoml
 from jinja2 import Environment, FileSystemLoader
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
@@ -30,46 +28,43 @@ def main(  # noqa: PLR0917
     package_manager: PackageManagerChoice,
     organization: str,
     repo_name: str,
-) -> None:
-    with Executor() as do:
-        if "uv" in package_manager:
-            do(
-                readme.add_badge,
-                "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
-            )
-            do(_update_editor_config)
-            do(_update_python_version_file, dev_python_version)
-            do(_update_uv_lock_hook, precommit_config)
-            if not keep_contributing_md:
-                do(_update_contributing_file, organization, repo_name)
-            do(_remove_pip_constraint_files)
-            do(
-                vscode.remove_settings,
-                {"files.associations": ["**/.constraints/py*.txt"]},
-            )
-            do(
-                vscode.remove_settings,
-                {
-                    "search.exclude": [
-                        "**/.constraints/py*.txt",
-                        ".constraints/*.txt",
-                    ]
-                },
-            )
-        else:
-            do(_remove_uv_configuration)
-            do(_remove_uv_lock)
-            do(precommit_config.remove_hook, "uv-lock")
-            do(
-                readme.remove_badge,
-                r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
-            )
-            do(vscode.remove_settings, {"search.exclude": ["uv.lock", "**/uv.lock"]})
+) -> list[str]:
+    changes: list[str] = []
+    if "uv" in package_manager:
+        changes += readme.add_badge(
+            "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
+        )
+        _update_editor_config()
+        changes += _update_python_version_file(dev_python_version)
+        _update_uv_lock_hook(precommit_config)
+        if not keep_contributing_md:
+            changes += _update_contributing_file(organization, repo_name)
+        changes += _remove_pip_constraint_files()
+        changes += vscode.remove_settings(
+            {"files.associations": ["**/.constraints/py*.txt"]},
+        )
+        changes += vscode.remove_settings(
+            {
+                "search.exclude": [
+                    "**/.constraints/py*.txt",
+                    ".constraints/*.txt",
+                ]
+            },
+        )
+    else:
+        changes += _remove_uv_configuration()
+        changes += _remove_uv_lock()
+        precommit_config.remove_hook("uv-lock")
+        changes += readme.remove_badge(
+            r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
+        )
+        changes += vscode.remove_settings({"search.exclude": ["uv.lock", "**/uv.lock"]})
+    return changes
 
 
-def _remove_pip_constraint_files() -> None:
+def _remove_pip_constraint_files() -> list[str]:
     if not CONFIG_PATH.pip_constraints.exists():
-        return
+        return []
     for item in CONFIG_PATH.pip_constraints.iterdir():
         if item.is_dir():
             item.rmdir()
@@ -77,29 +72,31 @@ def _remove_pip_constraint_files() -> None:
             item.unlink()
     CONFIG_PATH.pip_constraints.rmdir()
     msg = f"Removed deprecated {CONFIG_PATH.pip_constraints}. Use uv.lock instead."
-    raise PrecommitError(msg)
+    return [msg]
 
 
-def _remove_uv_configuration() -> None:
+def _remove_uv_configuration() -> list[str]:
     if not CONFIG_PATH.pyproject.exists():
-        return
+        return []
     readonly_pyproject = Pyproject.load()._document  # noqa: SLF001
     if "tool" not in readonly_pyproject:
-        return
+        return []
     if "uv" not in readonly_pyproject["tool"]:
-        return
+        return []
     with ModifiablePyproject.load() as pyproject:
         tool_table = pyproject.get_table("tool")
         tool_table.pop("uv")
         pyproject.changelog.append("Removed uv configuration from pyproject.toml.")
+    return []
 
 
-def _remove_uv_lock() -> None:
+def _remove_uv_lock() -> list[str]:
     uv_lock_path = Path("uv.lock")
     if uv_lock_path.exists():
         uv_lock_path.unlink()
         msg = f"Removed {uv_lock_path} file."
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def _update_editor_config() -> None:
@@ -118,9 +115,9 @@ def _update_editor_config() -> None:
         stream.write("\n" + expected_content + "\n")
 
 
-def _update_python_version_file(dev_python_version: PythonVersion) -> None:
+def _update_python_version_file(dev_python_version: PythonVersion) -> list[str]:
     if not CONFIG_PATH.pyproject.exists():
-        return
+        return []
     pyproject = Pyproject.load()
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
@@ -129,19 +126,19 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> None:
             if python_version_file.exists():
                 python_version_file.unlink()
                 msg = f"Removed {python_version_file} file because requires-python already pins the Python version"
-                raise PrecommitError(msg)
-            return
+                return [msg]
+            return []
 
     existing_python_version = ""
     if python_version_file.exists():
         with open(python_version_file) as stream:
             existing_python_version = stream.read().strip()
     if existing_python_version == dev_python_version:
-        return
+        return []
     with open(".python-version", "w") as stream:
         stream.write(dev_python_version + "\n")
     msg = f"Updated {python_version_file} to {dev_python_version}"
-    raise PrecommitError(msg)
+    return [msg]
 
 
 def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
@@ -156,10 +153,10 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
         precommit.remove_hook("uv-lock")
 
 
-def _update_contributing_file(organization: str, repo_name: str) -> None:
+def _update_contributing_file(organization: str, repo_name: str) -> list[str]:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
-        return
+        return []
     template_dir = COMPWA_POLICY_DIR / ".template"
     env = Environment(
         autoescape=True,
@@ -178,7 +175,8 @@ def _update_contributing_file(organization: str, repo_name: str) -> None:
     if expected_content != existing_content:
         contributing_file.write_text(expected_content)
         msg = f"Updated {contributing_file} to latest template"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __get_runner_instructions() -> str:

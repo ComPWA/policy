@@ -5,7 +5,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.ruff import (
     _move_ruff_lint_config,
     _update_lint_dependencies,
@@ -66,10 +65,7 @@ def ruff_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def describe_main():
     def migrates_config_with_notebooks(ruff_repo: Path):
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit:
             main(precommit, has_notebooks=True, imports_on_top=True)
 
         pyproject = (ruff_repo / "pyproject.toml").read_text()
@@ -84,10 +80,7 @@ def describe_main():
 
     @pytest.mark.usefixtures("ruff_repo")
     def adds_ruff_format_without_notebooks():
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit:
             main(precommit, has_notebooks=False, imports_on_top=False)
 
         config = precommit.dumps()
@@ -117,10 +110,7 @@ def describe_main():
             """).lstrip()
         )
         monkeypatch.chdir(tmp_path)
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             main(precommit, has_notebooks=True, imports_on_top=False)
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
@@ -139,11 +129,9 @@ def describe_move_ruff_lint_config():
             [tool.ruff.isort]
             known-first-party = ["my_package"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Moved linting configuration"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _move_ruff_lint_config(pyproject)
+        assert any("Moved linting configuration" in m for m in pyproject.changelog)
         result = pyproject.dumps()
         assert "[tool.ruff.lint]" in result
         assert "[tool.ruff.lint.isort]" in result
@@ -158,11 +146,9 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.10"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_lint_dependencies(pyproject)
+        assert pyproject.changelog  # something changed
         assert "ruff" in pyproject.dumps()
 
     def pins_python_version_for_legacy_python(
@@ -175,11 +161,9 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.6"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_lint_dependencies(pyproject)
+        assert pyproject.changelog  # something changed
         result = pyproject.dumps()
         assert "python_version" in result
         assert "3.7.0" in result

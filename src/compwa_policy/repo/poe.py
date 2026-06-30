@@ -13,7 +13,6 @@ import tomlkit
 from compwa_policy._characterization import has_documentation
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import git_ls_files, is_committed
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -40,38 +39,40 @@ _TEST_TASKS = frozenset({"cov", "test", "test-all"})
 _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
 
 
-def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> None:
+def main(has_notebooks: bool, package_manager: PackageManagerChoice) -> list[str]:
     if not CONFIG_PATH.pyproject.is_file():
-        return
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
+        return []
+    changes: list[str] = []
+    with ModifiablePyproject.load() as pyproject:
         if pyproject.has_table("tool.tox"):
             del pyproject._document["tool"]["tox"]  # noqa: SLF001
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         if pyproject.has_table("tool.poe"):
-            do(_check_expected_sections, pyproject, has_notebooks)
+            _check_expected_sections(pyproject, has_notebooks)
             if package_manager == "uv":
-                do(_configure_uv_executor, pyproject)
-                do(_migrate_tasks_to_groups, pyproject)
-                do(_set_doc_group, pyproject)
-                do(_set_test_group, pyproject)
-                do(_set_notebook_group, pyproject, has_notebooks)
-                do(_check_no_uv_run, pyproject)
+                _configure_uv_executor(pyproject)
+                _migrate_tasks_to_groups(pyproject)
+                _set_doc_group(pyproject)
+                _set_test_group(pyproject)
+                _set_notebook_group(pyproject, has_notebooks)
+                _check_no_uv_run(pyproject)
                 if pyproject.has_table("tool.poe.tasks"):
-                    do(_set_all_task, pyproject)
+                    _set_all_task(pyproject)
                 if has_dependency(pyproject, "jupyterlab"):
-                    do(_set_jupyter_lab_task, pyproject)
+                    _set_jupyter_lab_task(pyproject)
                 if has_notebooks:
                     pyproject.remove_dependency("nbmake")  # cspell:ignore nbmake
-                    do(_set_nb_task, pyproject)
-                do(_set_test_all_task, pyproject)
-                do(_update_doclive, pyproject)
+                    _set_nb_task(pyproject)
+                _set_test_all_task(pyproject)
+                _update_doclive(pyproject)
             if pyproject.has_table("tool.poe.tasks"):
-                do(_set_upgrade_task, pyproject, package_manager)
-        do(remove_lines, CONFIG_PATH.gitignore, r"\.tox/?")
+                _set_upgrade_task(pyproject, package_manager)
+        changes += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
         pyproject.remove_dependency("poethepoet")
         pyproject.remove_dependency("tox")
         pyproject.remove_dependency("tox-uv")
+    return changes
 
 
 def _get_all_poe_tasks(poe_table: Mapping) -> set[str]:

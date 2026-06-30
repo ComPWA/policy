@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -17,12 +16,11 @@ if TYPE_CHECKING:
     from compwa_policy.github.upgrade_lock import Frequency
 
 
-def main(frequency: Frequency) -> None:  # noqa: C901
-    def dump_dependabot_config() -> None:
+def main(frequency: Frequency) -> list[str]:  # noqa: C901
+    def dump_dependabot_config() -> list[str]:
         dependabot_path.parent.mkdir(exist_ok=True)
         rt_yaml.dump(expected, dependabot_path)
-        msg = f"Updated {dependabot_path}"
-        raise PrecommitError(msg)
+        return [f"Updated {dependabot_path}"]
 
     def get_ecosystem(ecosystem_name: str, /) -> dict[str, Any]:
         new_ecosystem = deepcopy(template_ecosystem)  # avoid YAML anchors
@@ -49,15 +47,14 @@ def main(frequency: Frequency) -> None:  # noqa: C901
 
     if not package_ecosystems:
         dependabot_path.unlink(missing_ok=True)
-        msg = f"Removed {dependabot_path}"
-        raise PrecommitError(msg)
-        return
+        return [f"Removed {dependabot_path}"]
     expected["updates"] = package_ecosystems
     if not dependabot_path.exists():
-        dump_dependabot_config()
+        return dump_dependabot_config()
     existing = rt_yaml.load(dependabot_path)
     if existing != expected:
-        dump_dependabot_config()
+        return dump_dependabot_config()
+    return []
 
 
 @cache

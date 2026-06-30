@@ -36,20 +36,18 @@ def describe_remove_deprecated_tools():
                 hooks:
                   - id: markdownlint
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"markdownlint"),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
-            remove_deprecated_tools(precommit, keep_issue_templates=True)
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
+            changes = remove_deprecated_tools(precommit, keep_issue_templates=True)
+        assert any("markdownlint" in m for m in changes) or any(
+            "markdownlint" in m for m in precommit.changelog
+        )
 
     def removes_issue_templates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         template_dir = tmp_path / ".github" / "ISSUE_TEMPLATE"
         template_dir.mkdir(parents=True)
         (template_dir / "bug_report.md").touch()
-        with (
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-            pytest.raises(PrecommitError, match=r"Removed \.github/ISSUE_TEMPLATE"),
-        ):
-            remove_deprecated_tools(precommit, keep_issue_templates=False)
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
+            changes = remove_deprecated_tools(precommit, keep_issue_templates=False)
+        assert any("ISSUE_TEMPLATE" in m for m in changes)
         assert not template_dir.exists()

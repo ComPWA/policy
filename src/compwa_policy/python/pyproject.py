@@ -18,15 +18,16 @@ if TYPE_CHECKING:
     from compwa_policy.config import PythonVersion
 
 
-def main(excluded_python_versions: set[PythonVersion]) -> None:
+def main(excluded_python_versions: set[PythonVersion]) -> list[str]:
     if not CONFIG_PATH.pyproject.exists():
-        return
+        return []
     with ModifiablePyproject.load() as pyproject:
         _update_pypi_link_names(pyproject)
         _convert_to_dependency_groups(pyproject)
         _rename_sty_to_style(pyproject)
         _update_requires_python(pyproject)
         _update_python_version_classifiers(pyproject, excluded_python_versions)
+    return pyproject.changelog
 
 
 def _update_pypi_link_names(pyproject: ModifiablePyproject) -> None:

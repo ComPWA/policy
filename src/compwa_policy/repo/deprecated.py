@@ -4,39 +4,39 @@ import os
 
 from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_configs, remove_lines, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
 def remove_deprecated_tools(
     precommit: ModifiablePrecommit, keep_issue_templates: bool
-) -> None:
-    with Executor() as do:
-        if not keep_issue_templates:
-            do(_remove_github_issue_templates)
-        do(_remove_markdownlint, precommit)
-        for directory in ["docs", "doc"]:
-            do(_remove_relink_references, directory)
+) -> list[str]:
+    changes: list[str] = []
+    if not keep_issue_templates:
+        changes += _remove_github_issue_templates()
+    changes += _remove_markdownlint(precommit)
+    for directory in ["docs", "doc"]:
+        _remove_relink_references(directory)
+    return changes
 
 
-def _remove_github_issue_templates() -> None:
-    remove_configs([
+def _remove_github_issue_templates() -> list[str]:
+    return remove_configs([
         ".github/ISSUE_TEMPLATE",
         ".github/pull_request_template.md",
     ])
 
 
-def _remove_markdownlint(precommit: ModifiablePrecommit) -> None:
-    with Executor() as do:
-        do(remove_configs, [".markdownlint.json", ".markdownlint.yaml"])
-        do(remove_lines, CONFIG_PATH.gitignore, r"\.markdownlint\.json")
-        do(
-            vscode.remove_extension_recommendation,
-            # cspell:ignore davidanson markdownlint
-            extension_name="davidanson.vscode-markdownlint",
-            unwanted=True,
-        )
-        do(precommit.remove_hook, "markdownlint")
+def _remove_markdownlint(precommit: ModifiablePrecommit) -> list[str]:
+    changes: list[str] = []
+    changes += remove_configs([".markdownlint.json", ".markdownlint.yaml"])
+    changes += remove_lines(CONFIG_PATH.gitignore, r"\.markdownlint\.json")
+    changes += vscode.remove_extension_recommendation(
+        # cspell:ignore davidanson markdownlint
+        extension_name="davidanson.vscode-markdownlint",
+        unwanted=True,
+    )
+    precommit.remove_hook("markdownlint")
+    return changes
 
 
 def _remove_relink_references(directory: str) -> None:

@@ -1,9 +1,6 @@
 from pathlib import Path
 from textwrap import dedent
 
-import pytest
-
-from compwa_policy.errors import PrecommitError
 from compwa_policy.format.editorconfig import _update_precommit_config
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -20,11 +17,11 @@ def describe_update_precommit_config():
                       - id: editorconfig-checker
             """).lstrip()
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Updated editorconfig-checker hook"),
-            ModifiablePrecommit.load(config) as precommit,
-        ):
+        with ModifiablePrecommit.load(config) as precommit:
             _update_precommit_config(precommit)
+        assert any(
+            "Updated editorconfig-checker hook" in m for m in precommit.changelog
+        )
         expected = dedent(r"""
             repos:
               - repo: https://github.com/editorconfig-checker/editorconfig-checker.python

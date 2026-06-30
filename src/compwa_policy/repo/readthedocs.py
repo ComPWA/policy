@@ -11,7 +11,6 @@ from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import (
@@ -34,11 +33,11 @@ def main(
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     source: IO | Path | str = CONFIG_PATH.readthedocs,
-) -> None:
+) -> list[str]:
     if isinstance(source, str):
         source = Path(source)
     if isinstance(source, Path) and not source.exists():
-        return
+        return []
     rtd = ReadTheDocs(source)
     _set_sphinx_configuration(rtd)
     _update_os(rtd)
@@ -57,7 +56,7 @@ def main(
         _update_build_step_for_uv(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
-    rtd.finalize()
+    return rtd.finalize()
 
 
 def _set_sphinx_configuration(config: ReadTheDocs) -> None:
@@ -358,10 +357,10 @@ class ReadTheDocs:
             target.seek(0)
             self.__parser.dump(self.document, target)
 
-    def finalize(self) -> None:
+    def finalize(self) -> list[str]:
         if not self.changelog:
-            return
+            return []
         msg = f"Updated {CONFIG_PATH.readthedocs}:\n"
         msg += indent("\n".join(self.changelog), prefix="  - ")
         self.dump(self.source)
-        raise PrecommitError(msg)
+        return [msg]
