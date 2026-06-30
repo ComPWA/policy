@@ -34,7 +34,7 @@ def main(precommit: ModifiablePrecommit) -> list[str]:
             check_citation_keys()
         add_json_schema_precommit(precommit)
         changes += vscode.add_extension_recommendation("redhat.vscode-yaml")
-        update_vscode_settings()
+        changes += update_vscode_settings()
     return changes
 
 
@@ -214,8 +214,8 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append(msg)
 
 
-def update_vscode_settings() -> None:
-    vscode.update_settings(
+def update_vscode_settings() -> list[str]:
+    return vscode.update_settings(
         {
             "yaml.schemas": {
                 "https://citation-file-format.github.io/1.2.0/schema.json": (

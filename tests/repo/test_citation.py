@@ -195,6 +195,34 @@ def describe_main():
         assert (tmp_path / "CITATION.cff").exists()
         assert "check-jsonschema" in precommit.dumps()
 
+    def reports_vscode_settings_update(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
+        vscode_dir = tmp_path / ".vscode"
+        vscode_dir.mkdir()
+        (vscode_dir / "extensions.json").write_text(
+            json.dumps({"recommendations": ["redhat.vscode-yaml"]})
+        )
+        precommit_config = dedent("""
+            repos:
+              - repo: https://github.com/python-jsonschema/check-jsonschema
+                rev: 0.28.0
+                hooks:
+                  - id: check-jsonschema
+                    name: Check CITATION.cff
+                    args:
+                      - --default-filetype
+                      - yaml
+                      - --schemafile
+                      - https://citation-file-format.github.io/1.2.0/schema.json
+                      - CITATION.cff
+                    pass_filenames: false
+        """).lstrip()
+        with ModifiablePrecommit.load(io.StringIO(precommit_config)) as precommit:
+            changes = citation.main(precommit)
+        assert changes == ["Updated VS Code settings"]
+        assert (vscode_dir / "settings.json").exists()
+
     def removes_zenodo_when_citation_present(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):

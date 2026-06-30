@@ -28,8 +28,10 @@ _PYPROJECT = dedent("""
 def _git_commit(directory: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
     subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # noqa: S607
+    # cspell:ignore gpgsign
+    git_config = ["-c", "commit.gpgsign=false"]
     git_author = ["-c", "user.name=t", "-c", "user.email=t@t"]
-    commit = ["git", *git_author, "commit", "-qm", "init", "--allow-empty"]
+    commit = ["git", *git_config, *git_author, "commit", "-qm", "init", "--allow-empty"]
     subprocess.run(commit, cwd=directory, check=True)  # noqa: S603
 
 
