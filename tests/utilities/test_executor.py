@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.executor import Executor
 
 
@@ -8,16 +8,16 @@ def describe_executor():
     def collects_and_merges_error_messages():
         def do_without_args() -> None:
             msg = "Function did not have arguments"
-            raise PrecommitError(msg)
+            raise PolicyError(msg)
 
         def do_with_positional_args(some_list: list) -> None:
             list_content = ", ".join(some_list)
             msg = f"\nList contains {list_content}"
-            raise PrecommitError(msg)
+            raise PolicyError(msg)
 
         def do_with_keyword_args(text: str) -> None:
             msg = f"Text is {text}"
-            raise PrecommitError(msg)
+            raise PolicyError(msg)
 
         def no_error() -> None:
             pass

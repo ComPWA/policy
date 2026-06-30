@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import Precommit
 
@@ -38,7 +38,7 @@ def _load_precommit_hook_definitions() -> dict[str, Hook]:
     hook_ids = [h["id"] for h in hooks]
     if len(hook_ids) != len(set(hook_ids)):
         msg = f"{__HOOK_DEFINITION_FILE} contains duplicate IDs"
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return {h["id"]: h for h in hooks}
 
 
@@ -55,7 +55,7 @@ def _check_hook_definition(hook: Hook, definitions: dict[str, Hook]) -> None:
         stream = StringIO()
         yaml.dump([__reduce(expected)], stream, sort_keys=False)
         expected_content = indent(stream.getvalue(), prefix="  ")
-        raise PrecommitError(msg + "\n\n" + expected_content)
+        raise PolicyError(msg + "\n\n" + expected_content)
 
 
 def __reduce(hook: Hook) -> dict:

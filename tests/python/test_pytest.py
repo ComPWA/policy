@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.python.pytest import (
     _deny_ini_options,
     _merge_coverage_into_pyproject,
@@ -28,7 +28,7 @@ def describe_deny_ini_options():
         """).lstrip()
         with (
             ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-            pytest.raises(PrecommitError, match=r"migrate to a native TOML"),
+            pytest.raises(PolicyError, match=r"migrate to a native TOML"),
         ):
             _deny_ini_options(pyproject)
 

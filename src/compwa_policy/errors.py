@@ -1,3 +1,3 @@
 # noqa: D100
-class PrecommitError(RuntimeError):
-    """Exceptions that are caught by a pre-commit hook and printed instead."""
+class PolicyError(RuntimeError):
+    """Policy violation that is caught by the executor and printed without a traceback."""

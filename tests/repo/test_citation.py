@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo import citation
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -82,13 +82,13 @@ def describe_check_citation_keys():
     def reports_missing_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text("cff-version: 1.2.0\n")
-        with pytest.raises(PrecommitError, match=r"missing the following keys"):
+        with pytest.raises(PolicyError, match=r"missing the following keys"):
             citation.check_citation_keys()
 
     def reports_empty_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text("")
-        with pytest.raises(PrecommitError, match=r"is empty"):
+        with pytest.raises(PolicyError, match=r"is empty"):
             citation.check_citation_keys()
 
     def accepts_complete_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

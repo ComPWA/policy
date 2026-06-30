@@ -4,7 +4,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo.deprecated import (
     _remove_relink_references,
     remove_deprecated_tools,
@@ -22,7 +22,7 @@ def describe_remove_relink_references():
         docs = tmp_path / "docs"
         docs.mkdir()
         (docs / "_relink_references.py").touch()
-        with pytest.raises(PrecommitError, match=r"sphinx-api-relink"):
+        with pytest.raises(PolicyError, match=r"sphinx-api-relink"):
             _remove_relink_references("docs")
 
 

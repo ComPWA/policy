@@ -2,7 +2,7 @@
 
 import os
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, remove_configs, remove_lines, vscode
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -47,4 +47,4 @@ def _remove_relink_references(directory: str) -> None:
         f"Please remove {path!r} and use https://pypi.org/project/sphinx-api-relink"
         " instead."
     )
-    raise PrecommitError(msg)
+    raise PolicyError(msg)

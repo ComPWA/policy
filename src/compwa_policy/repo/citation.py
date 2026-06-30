@@ -12,7 +12,7 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
@@ -154,7 +154,7 @@ def check_citation_keys() -> None:
         citation_cff = yaml.load(f)
     if not citation_cff:
         msg = f"{CONFIG_PATH.citation} is empty"
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     existing: set[str] = set(citation_cff)
     missing_keys = expected - existing
     if missing_keys:
@@ -165,7 +165,7 @@ def check_citation_keys() -> None:
             https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
         """
         msg = dedent(msg).strip()
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
 
 
 def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:

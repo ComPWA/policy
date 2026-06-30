@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.github.dependabot import get_dependabot_ecosystems
 from compwa_policy.github.workflows import remove_workflow, update_workflow
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
@@ -102,7 +102,7 @@ def _update_lock_workflow(
 def _to_cron_schedule(frequency: Frequency) -> str:
     if frequency not in __CRON_SCHEDULES:
         msg = f'No cron schedule defined for frequency "{frequency}"'
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return __CRON_SCHEDULES[frequency]
 
 

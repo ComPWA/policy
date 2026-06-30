@@ -3,7 +3,7 @@
 import os.path
 import re
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 
 __README_PATH = "README.md"
 
@@ -25,7 +25,7 @@ def add_badge(badge: str) -> list[str]:
                 break
         if len(lines) == 0:
             error_message += f"{__README_PATH} contains no title, so cannot add badge"
-            raise PrecommitError(error_message)
+            raise PolicyError(error_message)
         lines.insert(insert_position + 1, f"\n{badge}")
         with open(__README_PATH, "w") as stream:
             stream.writelines(lines)

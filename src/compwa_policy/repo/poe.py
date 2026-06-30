@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import tomlkit
 
 from compwa_policy._characterization import has_documentation
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.match import git_ls_files, is_committed
 from compwa_policy.utilities.pyproject import (
@@ -103,7 +103,7 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
             f"Poe the Poet configuration is missing task definitions:"
             f" {', '.join(sorted(missing_tasks))}"
         )
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
 
 
 def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
@@ -213,7 +213,7 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
             " 'uv'. Offending tasks: "
             f"{', '.join(sorted(offending_tasks))}"
         )
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
 
 
 def __has_uv_run(cmd: str | Sequence) -> bool:

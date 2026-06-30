@@ -5,7 +5,7 @@ import os
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.pyproject import (
     Pyproject,
@@ -40,7 +40,7 @@ def main(use_gitpod: bool, python_version: PythonVersion) -> list[str]:
         return add_badge(
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )
-    except PrecommitError:
+    except PolicyError:
         return []
 
 

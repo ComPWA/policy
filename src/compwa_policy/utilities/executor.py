@@ -1,7 +1,7 @@
-"""Collect `.PrecommitError` instances from several executed functions.
+"""Collect `.PolicyError` instances from several executed functions.
 
 .. autolink-preface::
-    from compwa_policy.errors import PrecommitError
+    from compwa_policy.errors import PolicyError
     from compwa_policy.utilities.executor import Executor
 """
 
@@ -15,7 +15,7 @@ import time
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, TypeVar
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -35,20 +35,20 @@ P = ParamSpec("P")
 
 
 class Executor(AbstractContextManager):
-    r"""Execute functions and collect any `.PrecommitError` exceptions.
+    r"""Execute functions and collect any `.PolicyError` exceptions.
 
     The `Executor` is a context manager that can be used to sequentially execute
-    functions and collect any `.PrecommitError` exceptions they raise. The collected
-    exceptions are merged and re-raised as a new `.PrecommitError` when the context
+    functions and collect any `.PolicyError` exceptions they raise. The collected
+    exceptions are merged and re-raised as a new `.PolicyError` when the context
     manager exits.
 
     To avoid raising the exceptions, set the :code:`raise_exception` argument to
     `False`. The collected exceptions will then be printed to the console instead.
 
     >>> def function1() -> None:
-    ...     raise PrecommitError("Error message 1")
+    ...     raise PolicyError("Error message 1")
     >>> def function2() -> None:
-    ...     raise PrecommitError("Error message 2")
+    ...     raise PolicyError("Error message 2")
     >>> def function3() -> None: ...
     >>>
     >>> with Executor(raise_exception=False) as execute:
@@ -80,7 +80,7 @@ class Executor(AbstractContextManager):
     def __call__(
         self, function: Callable[P, T], *args: P.args, **kwargs: P.kwargs
     ) -> T | None:
-        """Execute a function and collect any `.PrecommitError` exceptions."""
+        """Execute a function and collect any `.PolicyError` exceptions."""
         if not self.__is_in_context:
             msg = "The __call__ method can only be used within a context manager."
             raise RuntimeError(msg)
@@ -97,7 +97,7 @@ class Executor(AbstractContextManager):
                 self.__execution_times[location] = end_time - start_time
             else:
                 result = function(*args, **kwargs)
-        except PrecommitError as exception:
+        except PolicyError as exception:
             error_message = str("\n".join(exception.args))
             self.__error_messages.append(error_message)
             return None
@@ -114,14 +114,14 @@ class Executor(AbstractContextManager):
         exc_value: BaseException | None,
         tb: TracebackType | None,
     ) -> bool:
-        if exc_type is not None and not issubclass(exc_type, PrecommitError):
+        if exc_type is not None and not issubclass(exc_type, PolicyError):
             return False
-        if isinstance(exc_value, PrecommitError):
+        if isinstance(exc_value, PolicyError):
             self.__error_messages.append(str("\n".join(exc_value.args)))
         error_msg = self.merge_messages()
         if error_msg:
             if self.__raise_exception:
-                raise PrecommitError(error_msg)
+                raise PolicyError(error_msg)
             print(error_msg)  # noqa: T201
         if os.getenv("COMPWA_POLICY_DEBUG") is not None:
             self.print_execution_times()

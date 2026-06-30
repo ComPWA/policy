@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo.poe import (
     _check_expected_sections,
     _check_no_uv_run,
@@ -118,7 +118,7 @@ def describe_check_expected_sections():
         monkeypatch.chdir(tmp_path)
         pyproject = Pyproject.load()
         with pytest.raises(
-            PrecommitError, match=r"missing task definitions: doc, doclive"
+            PolicyError, match=r"missing task definitions: doc, doclive"
         ):
             _check_expected_sections(pyproject, has_notebooks=False)
 
@@ -130,7 +130,7 @@ def describe_check_no_uv_run():
             cmd = "uv run pytest"
         """).lstrip()
         pyproject = Pyproject.load(io.StringIO(config))
-        with pytest.raises(PrecommitError, match=r"should not use 'uv run'"):
+        with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
             _check_no_uv_run(pyproject)
 
 

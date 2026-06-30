@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 import rtoml
 from ini2toml.api import Translator
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.pyproject import (
@@ -86,7 +86,7 @@ def _deny_ini_options(pyproject: ModifiablePyproject) -> None:
             " https://docs.pytest.org/en/stable/reference/customize.html#pyproject-toml"
             " to migrate to a native TOML configuration."
         )
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     pytest_config = pyproject.get_table("tool.pytest", fallback=None)
     if pytest_config is None:
         return
