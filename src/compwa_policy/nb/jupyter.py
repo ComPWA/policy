@@ -1,21 +1,18 @@
 """Update the developer setup when using Jupyter notebooks."""
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 
 def main(no_ruff: bool) -> None:
-    with Executor() as do:
-        do(_update_dev_requirements, no_ruff)
-        # cspell:ignore toolsai
-        do(vscode.add_extension_recommendation, "ms-toolsai.jupyter")
-        do(vscode.add_extension_recommendation, "ms-toolsai.vscode-jupyter-cell-tags")
-        do(
-            vscode.remove_extension_recommendation,
-            "ms-toolsai.vscode-jupyter-slideshow",
-            unwanted=True,
-        )
+    _update_dev_requirements(no_ruff)
+    # cspell:ignore toolsai
+    vscode.add_extension_recommendation("ms-toolsai.jupyter")
+    vscode.add_extension_recommendation("ms-toolsai.vscode-jupyter-cell-tags")
+    vscode.remove_extension_recommendation(
+        "ms-toolsai.vscode-jupyter-slideshow",
+        unwanted=True,
+    )
 
 
 def _update_dev_requirements(no_ruff: bool) -> None:
