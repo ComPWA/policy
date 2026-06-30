@@ -9,25 +9,36 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    complies_with_subset,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(active: bool, precommit: ModifiablePrecommit) -> list[str]:
+def main(
+    active: bool,
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     changes: list[str] = []
     changes += _update_vscode_settings(active)
-    with ModifiablePyproject.load() as pyproject:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return changes
         if active:
-            _merge_config_into_pyproject(pyproject)
+            _merge_config_into_pyproject(config)
             _update_precommit(precommit)
-            _remove_excludes(pyproject)
-            _update_settings(pyproject)
+            _remove_excludes(config)
+            _update_settings(config)
         else:
-            changes += _remove_pyright(precommit, pyproject)
-    changes += pyproject.changelog
+            changes += _remove_pyright(precommit, config)
+        if include_changelog:
+            changes += config.changelog
     return changes
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import sys
 from collections import abc
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
 
@@ -220,6 +220,21 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
     def changelog(self) -> list[str]:
         self.__assert_is_in_context()
         return self._changelog
+
+
+@contextmanager
+def use_modifiable_pyproject(
+    pyproject: ModifiablePyproject | None = None,
+    *,
+    load: bool = True,
+) -> abc.Iterator[tuple[ModifiablePyproject | None, bool]]:
+    if pyproject is not None:
+        yield pyproject, False
+    elif load and CONFIG_PATH.pyproject.exists():
+        with ModifiablePyproject.load() as local_pyproject:
+            yield local_pyproject, True
+    else:
+        yield None, False
 
 
 def complies_with_subset(

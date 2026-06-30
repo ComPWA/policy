@@ -6,10 +6,12 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -18,7 +20,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit, PrecommitConfig
 
 
-def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
+def main(
+    precommit: ModifiablePrecommit,
+    has_notebooks: bool,
+    pyproject: ModifiablePyproject | None = None,
+) -> None:
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
     _update_precommit_ci_autofix_commit_msg(precommit)
@@ -26,10 +32,10 @@ def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
     _update_precommit_ci_skip(precommit)
     _update_notebook_hooks(precommit, has_notebooks)
     _update_repo_urls(precommit)
-    if CONFIG_PATH.pyproject.exists():
-        with ModifiablePyproject.load() as pyproject:
-            pyproject.remove_dependency("pre-commit")
-            pyproject.remove_dependency("pre-commit-uv")
+    with use_modifiable_pyproject(pyproject) as (config, _):
+        if config is not None:
+            config.remove_dependency("pre-commit")
+            config.remove_dependency("pre-commit-uv")
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

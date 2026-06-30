@@ -41,7 +41,11 @@ from compwa_policy.repo.deprecated import remove_deprecated_tools
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    use_modifiable_pyproject,
+)
 
 
 @frozen
@@ -96,9 +100,20 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
         return 1
     ctx = compute_context(args)
     try:
-        with ModifiablePrecommit.load() as precommit_config:
-            changes = run_checks(precommit_config, args, ctx, groups=groups)
-        changes += precommit_config.changelog
+        with (
+            ModifiablePrecommit.load() as precommit_config,
+            use_modifiable_pyproject() as (pyproject_config, _),
+        ):
+            changes = run_checks(
+                precommit_config,
+                pyproject_config,
+                args,
+                ctx,
+                groups=groups,
+            )
+            changes += precommit_config.changelog
+            if pyproject_config is not None:
+                changes += pyproject_config.changelog
     except PolicyError as exception:
         print("\n".join(exception.args))  # noqa: T201
         return 1
@@ -110,6 +125,7 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
 
 def run_checks(  # noqa: C901, PLR0912, PLR0915
     precommit_config: ModifiablePrecommit,
+    pyproject_config: ModifiablePyproject | None,
     args: Arguments,
     ctx: Context,
     *,
@@ -159,7 +175,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
                 args.dev_python_version,
                 ctx.doc_apt_packages,
             )
-        changes += jupyter.main(args.no_ruff)
+        changes += jupyter.main(args.no_ruff, pyproject_config)
     if "nb" in groups:
         nbstripout.main(
             precommit_config,
@@ -171,16 +187,20 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
             args.package_manager,
             ctx.is_python_repo,
             args.dev_python_version,
+            pyproject_config,
         )
         changes += direnv.main(args.package_manager, ctx.environment_variables)
     if "format" in groups:
-        changes += toml.main(precommit_config)  # has to run before pre-commit
+        changes += toml.main(  # has to run before pre-commit
+            precommit_config,
+            pyproject_config,
+        )
     if "repo" in groups:
-        changes += poe.main(ctx.has_notebooks, args.package_manager)
+        changes += poe.main(ctx.has_notebooks, args.package_manager, pyproject_config)
     if "format" in groups:
         changes += prettier.main(precommit_config)
     if "python" in groups and ctx.is_python_repo and args.no_ruff:
-        changes += black.main(precommit_config, ctx.has_notebooks)
+        changes += black.main(precommit_config, ctx.has_notebooks, pyproject_config)
     if "github" in groups and ctx.is_python_repo and not args.no_github_actions:
         changes += release_drafter.main(
             args.no_cd,
@@ -189,14 +209,23 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
             args.repo_organization,
         )
     if "python" in groups and ctx.is_python_repo:
-        changes += pyproject.main(args.excluded_python_versions)
-        changes += mypy.main("mypy" in args.type_checker, precommit_config)
-        changes += pyright.main("pyright" in args.type_checker, precommit_config)
-        changes += ty.main(args.type_checker, precommit_config)
+        changes += pyproject.main(args.excluded_python_versions, pyproject_config)
+        changes += mypy.main(
+            "mypy" in args.type_checker,
+            precommit_config,
+            pyproject_config,
+        )
+        changes += pyright.main(
+            "pyright" in args.type_checker,
+            precommit_config,
+            pyproject_config,
+        )
+        changes += ty.main(args.type_checker, precommit_config, pyproject_config)
         changes += pytest.main(
             args.allow_vscode_coverage_gutters,
             args.pytest_single_threaded,
             args.branch_coverage,
+            pyproject_config,
         )
         changes += pyupgrade.main(precommit_config, args.no_ruff)
         if not args.no_ruff:
@@ -204,6 +233,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
                 precommit_config,
                 ctx.has_notebooks,
                 args.imports_on_top,
+                pyproject_config,
             )
     if "github" in groups and args.upgrade_frequency != "no":
         changes += upgrade_lock.main(
@@ -221,7 +251,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
         )
         changes += gitpod.main(args.gitpod, args.dev_python_version)
     if "format" in groups:
-        precommit.main(precommit_config, ctx.has_notebooks)
+        precommit.main(precommit_config, ctx.has_notebooks, pyproject_config)
     if "env" in groups:
         changes += uv.main(
             precommit_config,
@@ -230,6 +260,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
             args.package_manager,
             args.repo_organization,
             args.repo_name,
+            pyproject_config,
         )
     if "format" in groups:
         changes += cspell.main(precommit_config, args.no_cspell_update)

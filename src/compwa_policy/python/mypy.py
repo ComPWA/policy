@@ -9,26 +9,36 @@ from ruamel.yaml.comments import CommentedSeq
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 
-def main(active: bool, precommit: ModifiablePrecommit) -> list[str]:
+def main(
+    active: bool,
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     changes: list[str] = []
     changes += _update_vscode_settings(active)
-    with ModifiablePyproject.load() as pyproject:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return changes
         if active:
-            pyproject.add_dependency("mypy", dependency_group=["style", "dev"])
-            _merge_mypy_into_pyproject(pyproject)
+            config.add_dependency("mypy", dependency_group=["style", "dev"])
+            _merge_mypy_into_pyproject(config)
             _update_precommit_config(precommit)
             changes += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
             changes += add_badge(
                 "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
             )
         else:
-            changes += _remove_mypy(precommit, pyproject)
+            changes += _remove_mypy(precommit, config)
             changes += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
-    changes += pyproject.changelog
+        if include_changelog:
+            changes += config.changelog
     return changes
 
 

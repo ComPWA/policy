@@ -2,21 +2,29 @@
 
 from typing import Any
 
-from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    complies_with_subset,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 
-def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> list[str]:
-    if not CONFIG_PATH.pyproject.exists():
-        return []
+def main(
+    precommit: ModifiablePrecommit,
+    has_notebooks: bool,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     changes: list[str] = []
-    with ModifiablePyproject.load() as pyproject:
-        _remove_outdated_settings(pyproject)
-        _update_black_settings(pyproject)
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
+        _remove_outdated_settings(config)
+        _update_black_settings(config)
         precommit.remove_hook(
             hook_id="black",
             repo_url="https://github.com/psf/black",
@@ -37,7 +45,8 @@ def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> list[str]:
             },
         })
         precommit.remove_hook("nbqa-black")
-    changes += pyproject.changelog
+        if include_changelog:
+            changes += config.changelog
     return changes
 
 

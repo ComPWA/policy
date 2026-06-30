@@ -12,7 +12,11 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
@@ -28,6 +32,7 @@ def main(  # noqa: PLR0917
     package_manager: PackageManagerChoice,
     organization: str,
     repo_name: str,
+    pyproject: ModifiablePyproject | None = None,
 ) -> list[str]:
     changes: list[str] = []
     if "uv" in package_manager:
@@ -52,7 +57,7 @@ def main(  # noqa: PLR0917
             },
         )
     else:
-        changes += _remove_uv_configuration()
+        changes += _remove_uv_configuration(pyproject)
         changes += _remove_uv_lock()
         precommit_config.remove_hook("uv-lock")
         changes += readme.remove_badge(
@@ -75,18 +80,22 @@ def _remove_pip_constraint_files() -> list[str]:
     return [msg]
 
 
-def _remove_uv_configuration() -> list[str]:
-    if not CONFIG_PATH.pyproject.exists():
-        return []
-    readonly_pyproject = Pyproject.load()._document  # noqa: SLF001
-    if "tool" not in readonly_pyproject:
-        return []
-    if "uv" not in readonly_pyproject["tool"]:
-        return []
-    with ModifiablePyproject.load() as pyproject:
-        tool_table = pyproject.get_table("tool")
+def _remove_uv_configuration(
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
+        readonly_pyproject = config._document  # noqa: SLF001
+        if "tool" not in readonly_pyproject:
+            return []
+        if "uv" not in readonly_pyproject["tool"]:
+            return []
+        tool_table = config.get_table("tool")
         tool_table.pop("uv")
-        pyproject.changelog.append("Removed uv configuration from pyproject.toml.")
+        config.changelog.append("Removed uv configuration from pyproject.toml.")
+        if include_changelog:
+            return list(config.changelog)
     return []
 
 

@@ -17,6 +17,7 @@ from compwa_policy.utilities.pyproject import (
     complies_with_subset,
     has_dependency,
     has_pyproject_package_name,
+    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
@@ -34,27 +35,31 @@ def main(
     precommit: ModifiablePrecommit,
     has_notebooks: bool,
     imports_on_top: bool,
+    pyproject: ModifiablePyproject | None = None,
 ) -> list[str]:
     changes: list[str] = []
-    with ModifiablePyproject.load() as pyproject:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
         changes += add_badge(
             "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
         )
-        pyproject.remove_dependency("radon")
-        changes += _remove_black(precommit, pyproject)
-        changes += _remove_flake8(precommit, pyproject)
-        changes += _remove_isort(precommit, pyproject, imports_on_top)
-        changes += _remove_pydocstyle(precommit, pyproject)
-        changes += _remove_pylint(precommit, pyproject)
-        _move_ruff_lint_config(pyproject)
+        config.remove_dependency("radon")
+        changes += _remove_black(precommit, config)
+        changes += _remove_flake8(precommit, config)
+        changes += _remove_isort(precommit, config, imports_on_top)
+        changes += _remove_pydocstyle(precommit, config)
+        changes += _remove_pylint(precommit, config)
+        _move_ruff_lint_config(config)
         if has_notebooks and imports_on_top:
-            _sort_imports_on_top(precommit, pyproject)
-        _update_ruff_config(precommit, pyproject, has_notebooks)
+            _sort_imports_on_top(precommit, config)
+        _update_ruff_config(precommit, config, has_notebooks)
         _update_precommit_hook(precommit, has_notebooks)
-        if not has_dependency(pyproject, "ruff"):
-            _update_lint_dependencies(pyproject)
+        if not has_dependency(config, "ruff"):
+            _update_lint_dependencies(config)
         changes += _update_vscode_settings()
-    changes += pyproject.changelog
+        if include_changelog:
+            changes += config.changelog
     return changes
 
 

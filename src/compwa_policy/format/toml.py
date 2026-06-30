@@ -12,7 +12,11 @@ import tomlkit
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -25,7 +29,10 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
 ]
 
 
-def main(precommit: ModifiablePrecommit) -> list[str]:
+def main(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
@@ -38,13 +45,15 @@ def main(precommit: ModifiablePrecommit) -> list[str]:
     changes += _update_taplo_config()
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    _update_tomlsort_config()
+    _update_tomlsort_config(pyproject)
     _update_tomlsort_hook(precommit)
     changes += _update_vscode_extensions()
     return changes
 
 
-def _update_tomlsort_config() -> None:
+def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> None:
+    if pyproject is None and not CONFIG_PATH.pyproject.exists():
+        return
     sort_first = [
         "build-system",
         "project",
@@ -52,8 +61,8 @@ def _update_tomlsort_config() -> None:
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
-    pyproject = Pyproject.load()
-    sort_first = [table for table in sort_first if pyproject.has_table(table)]
+    readonly_pyproject = pyproject or Pyproject.load()
+    sort_first = [table for table in sort_first if readonly_pyproject.has_table(table)]
     expected_config = dict(
         all=False,
         ignore_case=True,
@@ -64,12 +73,14 @@ def _update_tomlsort_config() -> None:
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    with ModifiablePyproject.load() as pyproject:
-        tool_table = pyproject.get_table("tool", create=True)
+    with use_modifiable_pyproject(pyproject) as (config, _):
+        if config is None:
+            return
+        tool_table = config.get_table("tool", create=True)
         if tool_table.get("tomlsort") == expected_config:
             return
         tool_table["tomlsort"] = expected_config
-        pyproject.changelog.append("Updated toml-sort configuration")
+        config.changelog.append("Updated toml-sort configuration")
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:

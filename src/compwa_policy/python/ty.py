@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING, Literal
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
@@ -19,20 +22,27 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 """The type of type checkers supported."""
 
 
-def main(type_checkers: set[TypeChecker], precommit: ModifiablePrecommit) -> list[str]:
+def main(
+    type_checkers: set[TypeChecker],
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     changes: list[str] = []
     changes += _update_vscode_settings(type_checkers)
-    with ModifiablePyproject.load() as pyproject:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return changes
         if "ty" in type_checkers:
-            _update_configuration(pyproject)
-            pyproject.add_dependency("ty", dependency_group=["style", "dev"])
-            _update_precommit_config(precommit, pyproject)
+            _update_configuration(config)
+            config.add_dependency("ty", dependency_group=["style", "dev"])
+            _update_precommit_config(precommit, config)
             changes += add_badge(
                 "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
             )
         else:
-            changes += _remove_ty(precommit, pyproject)
-    changes += pyproject.changelog
+            changes += _remove_ty(precommit, config)
+        if include_changelog:
+            changes += config.changelog
     return changes
 
 

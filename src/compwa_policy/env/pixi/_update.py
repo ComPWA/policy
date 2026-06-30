@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -28,16 +29,22 @@ def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
+    pyproject: ModifiablePyproject | None = None,
 ) -> list[str]:
     if "pixi" not in package_manager:
         return []
+    include_changelog = True
     if package_manager == "pixi":
-        config_path = CONFIG_PATH.pyproject
+        if pyproject is None:
+            config_context = ModifiablePyproject.load(CONFIG_PATH.pyproject)
+        else:
+            config_context = nullcontext(pyproject)
+            include_changelog = False
     else:
-        config_path = CONFIG_PATH.pixi_toml
         CONFIG_PATH.pixi_toml.touch()
+        config_context = ModifiablePyproject.load(CONFIG_PATH.pixi_toml)
     extra: list[str] = []
-    with ModifiablePyproject.load(config_path) as config:
+    with config_context as config:
         extra += add_badge(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
@@ -61,7 +68,9 @@ def update_pixi_configuration(
         if has_pixi_config(config):
             config.changelog.extend(__update_gitattributes())
             config.changelog.extend(__update_gitignore())
-    return list(config.changelog) + extra
+        if include_changelog:
+            return list(config.changelog) + extra
+    return extra
 
 
 def _define_combined_ci_job(config: ModifiablePyproject) -> None:

@@ -10,6 +10,7 @@ from compwa_policy.env.pixi._update import update_pixi_configuration
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 __all__ = [
@@ -22,11 +23,13 @@ def main(
     package_manager: PackageManagerChoice,
     is_python_package: bool,
     dev_python_version: PythonVersion,
+    pyproject: ModifiablePyproject | None = None,
 ) -> list[str]:
     if "pixi" in package_manager:
         return update_pixi_configuration(
             is_python_package,
             dev_python_version,
             package_manager,
+            pyproject,
         )
-    return remove_pixi_configuration()
+    return remove_pixi_configuration(pyproject)
