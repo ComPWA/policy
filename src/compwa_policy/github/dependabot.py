@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -17,12 +16,11 @@ if TYPE_CHECKING:
     from compwa_policy.github.upgrade_lock import Frequency
 
 
-def main(frequency: Frequency) -> None:  # noqa: C901
-    def dump_dependabot_config() -> None:
+def main(frequency: Frequency) -> list[str]:  # noqa: C901
+    def dump_dependabot_config() -> list[str]:
         dependabot_path.parent.mkdir(exist_ok=True)
         rt_yaml.dump(expected, dependabot_path)
-        msg = f"Updated {dependabot_path}"
-        raise PrecommitError(msg)
+        return [f"Updated {dependabot_path}"]
 
     def get_ecosystem(ecosystem_name: str, /) -> dict[str, Any]:
         new_ecosystem = deepcopy(template_ecosystem)  # avoid YAML anchors
@@ -38,26 +36,25 @@ def main(frequency: Frequency) -> None:  # noqa: C901
         expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
     template_ecosystem = cast("dict[str, Any]", expected["updates"][0])
     package_ecosystems: list[dict[str, Any]] = []
-    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}"):
+    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}", untracked=True):
         package_ecosystems.append(get_ecosystem("github-actions"))
-    if is_committed("**/Manifest.toml"):
+    if is_committed("**/Manifest.toml", untracked=True):
         package_ecosystems.append(get_ecosystem("julia"))
-    if is_committed(".pre-commit-config.yaml"):
+    if is_committed(".pre-commit-config.yaml", untracked=True):
         package_ecosystems.append(get_ecosystem("pre-commit"))
-    if is_committed("uv.lock"):
+    if is_committed("uv.lock", untracked=True):
         package_ecosystems.append(get_ecosystem("uv"))
 
     if not package_ecosystems:
         dependabot_path.unlink(missing_ok=True)
-        msg = f"Removed {dependabot_path}"
-        raise PrecommitError(msg)
-        return
+        return [f"Removed {dependabot_path}"]
     expected["updates"] = package_ecosystems
     if not dependabot_path.exists():
-        dump_dependabot_config()
+        return dump_dependabot_config()
     existing = rt_yaml.load(dependabot_path)
     if existing != expected:
-        dump_dependabot_config()
+        return dump_dependabot_config()
+    return []
 
 
 @cache

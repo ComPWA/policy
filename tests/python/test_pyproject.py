@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.pyproject import (
     _convert_to_dependency_groups,
     _rename_sty_to_style,
@@ -22,11 +21,9 @@ def describe_update_pypi_link_names():
             [project.urls]
             Repository = "https://github.com/ComPWA/policy"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Renamed"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_pypi_link_names(pyproject)
+        assert any("Renamed" in m for m in pyproject.changelog)
         urls = pyproject.get_table("project.urls")
         assert "Source" in urls
         assert "Repository" not in urls
@@ -36,11 +33,9 @@ def describe_update_pypi_link_names():
             [project.urls]
             homepage = "https://compwa.github.io"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Capitalized"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_pypi_link_names(pyproject)
+        assert any("Capitalized" in m for m in pyproject.changelog)
         assert "Homepage" in pyproject.get_table("project.urls")
 
     def is_noop_without_urls():
@@ -60,11 +55,9 @@ def describe_convert_to_dependency_groups():
             test = ["pytest"]
             viz = ["matplotlib"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Converted optional-dependencies"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _convert_to_dependency_groups(pyproject)
+        assert any("Converted optional-dependencies" in m for m in pyproject.changelog)
         groups = pyproject.get_table("dependency-groups")
         assert list(groups["test"]) == ["pytest"]
         optional = pyproject.get_table("project.optional-dependencies")
@@ -84,11 +77,9 @@ def describe_rename_sty_to_style():
             sty = ["ruff"]
             dev = [{include-group = "sty"}]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Renamed 'sty'"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _rename_sty_to_style(pyproject)
+        assert any("Renamed 'sty'" in m for m in pyproject.changelog)
         groups = pyproject.get_table("dependency-groups")
         assert "style" in groups
         assert "sty" not in groups
@@ -107,13 +98,11 @@ def describe_update_requires_python():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".python-version").write_text("3.12\n")
-        with (
-            pytest.raises(PrecommitError, match=r"requires-python"),
-            ModifiablePyproject.load(
-                io.StringIO("[project]\nname = 'x'\n")
-            ) as pyproject,
-        ):
+        with ModifiablePyproject.load(
+            io.StringIO("[project]\nname = 'x'\n")
+        ) as pyproject:
             _update_requires_python(pyproject)
+        assert any("requires-python" in m for m in pyproject.changelog)
         assert pyproject.get_table("project")["requires-python"] == ">=3.12"
 
     def is_noop_when_already_set():
@@ -134,13 +123,13 @@ def describe_update_python_version_classifiers():
             requires-python = ">=3.12"
             classifiers = ["Programming Language :: Python :: 3.10"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated Python version classifiers"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_python_version_classifiers(
                 pyproject, excluded_python_versions=set()
             )
+        assert any(
+            "Updated Python version classifiers" in m for m in pyproject.changelog
+        )
         classifiers = list(pyproject.get_table("project")["classifiers"])
         assert "Programming Language :: Python :: 3.12" in classifiers
         assert "Programming Language :: Python :: 3.10" not in classifiers
@@ -171,8 +160,7 @@ def describe_main():
             classifiers = ["Programming Language :: Python :: 3.10"]
             """).lstrip()
         )
-        with pytest.raises(PrecommitError):
-            main(excluded_python_versions=set())
+        main(excluded_python_versions=set())
         result = (tmp_path / "pyproject.toml").read_text()
         assert "Python :: 3.12" in result
 

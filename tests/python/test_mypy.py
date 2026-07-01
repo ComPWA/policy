@@ -5,7 +5,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.mypy import (
     _merge_mypy_into_pyproject,
     _remove_mypy,
@@ -37,11 +36,9 @@ def describe_merge_mypy_into_pyproject():
             ignore_missing_imports = True
             """).lstrip()
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Imported mypy configuration"),
-            ModifiablePyproject.load(io.StringIO("")) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO("")) as pyproject:
             _merge_mypy_into_pyproject(pyproject)
+        assert any("Imported mypy configuration" in m for m in pyproject.changelog)
         assert "[tool.mypy]" in pyproject.dumps()
         assert not (tmp_path / ".mypy.ini").exists()
 
@@ -59,11 +56,9 @@ def describe_update_precommit_config():
                 hooks:
                   - id: check-hooks-apply
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             _update_precommit_config(precommit)
+        assert precommit.changelog  # something changed
         result = precommit.dumps()
         assert "id: mypy" in result
         assert "entry: mypy" in result
@@ -79,7 +74,6 @@ def describe_remove_mypy():
             strict = true
         """).lstrip()
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit,
             ModifiablePyproject.load(io.StringIO(pyproject_config)) as pyproject,
         ):
@@ -100,8 +94,7 @@ def describe_update_vscode_settings():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings(mypy=True)
+        _update_vscode_settings(mypy=True)
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert "mypy-type-checker.args" in settings
 
@@ -109,8 +102,7 @@ def describe_update_vscode_settings():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings(mypy=False)
+        _update_vscode_settings(mypy=False)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.mypy-type-checker" in extensions["unwantedRecommendations"]
 
@@ -126,19 +118,13 @@ def describe_main():
                 hooks:
                   - id: check-hooks-apply
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             main(active=True, precommit=precommit)
         assert "id: mypy" in precommit.dumps()
 
     def deactivates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.mypy]\nstrict = true\n")
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit:
             main(active=False, precommit=precommit)
         assert "mypy" not in precommit.dumps()

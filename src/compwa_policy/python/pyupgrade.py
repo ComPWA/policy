@@ -2,20 +2,19 @@
 
 from ruamel.yaml.comments import CommentedSeq
 
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 
-def main(precommit: ModifiablePrecommit, no_ruff: bool) -> None:
-    with Executor() as do:
-        if no_ruff:
-            do(_update_precommit_repo, precommit)
-            do(_update_precommit_nbqa_hook, precommit)
-        else:
-            do(_remove_pyupgrade, precommit)
+def main(precommit: ModifiablePrecommit, no_ruff: bool) -> list[str]:
+    if no_ruff:
+        _update_precommit_repo(precommit)
+        _update_precommit_nbqa_hook(precommit)
+    else:
+        _remove_pyupgrade(precommit)
+    return []
 
 
 def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
@@ -55,6 +54,5 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
 
 
 def _remove_pyupgrade(precommit: ModifiablePrecommit) -> None:
-    with Executor() as do:
-        do(precommit.remove_hook, "nbqa-pyupgrade")
-        do(precommit.remove_hook, "pyupgrade")
+    precommit.remove_hook("nbqa-pyupgrade")
+    precommit.remove_hook("pyupgrade")

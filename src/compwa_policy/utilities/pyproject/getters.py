@@ -10,7 +10,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from compwa_policy.config import PYTHON_VERSIONS, PythonVersion
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -30,7 +30,7 @@ def get_package_name(doc: PyprojectTOML, raise_on_missing: bool = False):
     if not has_sub_table(doc, "project"):
         if raise_on_missing:
             msg = "Please provide a name for the package under the [project] table in pyproject.toml"
-            raise PrecommitError(msg)
+            raise PolicyError(msg)
         return None
     project = get_sub_table(doc, "project")
     package_name = project.get("name")
@@ -52,7 +52,7 @@ def get_project_urls(pyproject: PyprojectTOML) -> ProjectURLs:
                 Tracker = "https://github.com/ComPWA/ampform/issues"
         """
         msg = dedent(msg)
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return urls
 
 
@@ -61,7 +61,7 @@ def get_source_url(pyproject: PyprojectTOML) -> str:
     source_url = urls.get("Source")
     if source_url is None:
         msg = '[project.urls] in pyproject.toml does not contain a "Source" URL'
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return source_url
 
 
@@ -92,7 +92,7 @@ def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersio
         python_versions = _get_allowed_versions(requires_python)
     if not python_versions:
         msg = "Could not determine Python version classifiers of this package"
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return sorted(python_versions, key=lambda s: tuple(int(i) for i in s.split(".")))
 
 

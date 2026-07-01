@@ -9,11 +9,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.github.dependabot import get_dependabot_ecosystems
 from compwa_policy.github.workflows import remove_workflow, update_workflow
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -36,26 +35,28 @@ __TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 def main(
     precommit: ModifiablePrecommit, frequency: Frequency, keep_workflow: set[str]
-) -> None:
-    with Executor() as do:
-        do(_update_precommit_schedule, precommit, frequency)
-        do(_remove_script, "pin_requirements.py")
-        do(_remove_script, "upgrade.sh")
-        do(_update_lock_workflow, precommit, frequency, keep_workflow)
+) -> list[str]:
+    changes: list[str] = []
+    _update_precommit_schedule(precommit, frequency)
+    changes += _remove_script("pin_requirements.py")
+    changes += _remove_script("upgrade.sh")
+    changes += _update_lock_workflow(precommit, frequency, keep_workflow)
+    return changes
 
 
-def _remove_script(script_name: str) -> None:
+def _remove_script(script_name: str) -> list[str]:
     bash_script_name = CONFIG_PATH.pip_constraints / script_name
     if bash_script_name.exists():
         bash_script_name.unlink()
         msg = f'Removed deprecated "{bash_script_name}" script'
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def _update_lock_workflow(
     precommit: Precommit, frequency: Frequency, keep_workflow: set[str]
-) -> None:
-    def overwrite_workflow(workflow_file: str) -> None:
+) -> list[str]:
+    def overwrite_workflow(workflow_file: str) -> list[str]:
         expected_workflow_path = (
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
@@ -79,27 +80,29 @@ def _update_lock_workflow(
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
-            update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
         if existing_data != expected_data:
-            update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(yaml, expected_data, workflow_path)
+        return []
 
-    with Executor() as do:
-        if "lock.yml" not in keep_workflow:
-            do(overwrite_workflow, "lock.yml")
-        for workflow in (
-            "requirements.yml",
-            "requirements-cron.yml",
-            "requirements-pr.yml",
-        ):
-            if workflow not in keep_workflow:
-                do(remove_workflow, workflow)
+    changes: list[str] = []
+    if "lock.yml" not in keep_workflow:
+        changes += overwrite_workflow("lock.yml")
+    for workflow in (
+        "requirements.yml",
+        "requirements-cron.yml",
+        "requirements-pr.yml",
+    ):
+        if workflow not in keep_workflow:
+            changes += remove_workflow(workflow)
+    return changes
 
 
 def _to_cron_schedule(frequency: Frequency) -> str:
     if frequency not in __CRON_SCHEDULES:
         msg = f'No cron schedule defined for frequency "{frequency}"'
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return __CRON_SCHEDULES[frequency]
 
 

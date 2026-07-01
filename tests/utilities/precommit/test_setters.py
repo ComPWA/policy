@@ -1,9 +1,6 @@
 import io
 from textwrap import dedent
 
-import pytest
-
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
@@ -34,10 +31,7 @@ def describe_update_single_hook_precommit_repo():
                     language: system
         """).lstrip()
 
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             precommit.update_single_hook_repo(_expected_ty_repo())
 
         result = precommit.dumps()
@@ -63,10 +57,7 @@ def describe_update_single_hook_precommit_repo():
                     language: system
         """).lstrip()
 
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             precommit.update_single_hook_repo(_expected_ty_repo())
 
         result = precommit.dumps()
@@ -89,10 +80,7 @@ def describe_update_single_hook_precommit_repo():
                     language: system
         """).lstrip()
 
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             precommit.update_single_hook_repo(_expected_ty_repo())
 
         result = precommit.dumps()

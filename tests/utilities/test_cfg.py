@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.cfg import format_config, open_config
 
 
@@ -86,7 +86,7 @@ def describe_open_config():
     def raises_for_missing_file():
         path = "non-existent.cfg"
         with pytest.raises(
-            PrecommitError, match=rf'^Config file "{path}" does not exist$'
+            PolicyError, match=rf'^Config file "{path}" does not exist$'
         ):
             open_config(path)
 

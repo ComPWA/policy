@@ -12,7 +12,6 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy._characterization import has_documentation
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import (
     COMPWA_POLICY_DIR,
     CONFIG_PATH,
@@ -20,7 +19,6 @@ from compwa_policy.utilities import (
     vscode,
     write,
 )
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -48,33 +46,33 @@ def main(
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> None:
-    with Executor() as do:
-        if no_cd:
-            remove_workflow("cd.yml")
-        else:
-            do(_update_cd_workflow, no_milestones, no_pypi, no_version_branches)
-        do(
-            _update_ci_workflow,
-            precommit,
-            allow_deprecated,
-            doc_apt_packages,
-            environment_variables,
-            github_pages,
-            macos_python_version,
-            python_version,
-            single_threaded,
-            skip_tests,
-        )
-        if not keep_pr_linting:
-            do(_update_pr_linting)
-        do(_recommend_vscode_extension)
+) -> list[str]:
+    changes: list[str] = []
+    if no_cd:
+        changes += remove_workflow("cd.yml")
+    else:
+        changes += _update_cd_workflow(no_milestones, no_pypi, no_version_branches)
+    changes += _update_ci_workflow(
+        precommit,
+        allow_deprecated,
+        doc_apt_packages,
+        environment_variables,
+        github_pages,
+        macos_python_version,
+        python_version,
+        single_threaded,
+        skip_tests,
+    )
+    if not keep_pr_linting:
+        changes += _update_pr_linting()
+    changes += _recommend_vscode_extension()
+    return changes
 
 
 def _update_cd_workflow(  # noqa: C901
     no_milestones: bool, no_pypi: bool, no_version_branches: bool
-) -> None:
-    def update() -> None:  # noqa: C901
+) -> list[str]:
+    def update() -> list[str]:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
@@ -87,15 +85,13 @@ def _update_cd_workflow(  # noqa: C901
         if no_version_branches:
             banned_jobs.add("push")
         if not expected_data["jobs"]:
-            remove_workflow("cd.yml")
-            return
+            return remove_workflow("cd.yml")
         for name in banned_jobs:
             expected_data["jobs"].pop(name, None)
         if not expected_data["jobs"]:
-            remove_workflow("cd.yml")
-            return
+            return remove_workflow("cd.yml")
         if not workflow_path.exists():
-            update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(yaml, expected_data, workflow_path)
         existing_data = yaml.load(workflow_path)
         for name, job_def in existing_data["jobs"].items():
             if name in banned_jobs:
@@ -104,14 +100,16 @@ def _update_cd_workflow(  # noqa: C901
                 continue
             expected_data["jobs"][name] = job_def
         if existing_data != expected_data:
-            update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(yaml, expected_data, workflow_path)
+        return []
 
-    with Executor() as do:
-        do(update)
-        do(remove_workflow, "milestone.yml")
+    changes: list[str] = []
+    changes += update()
+    changes += remove_workflow("milestone.yml")
+    return changes
 
 
-def _update_pr_linting() -> None:
+def _update_pr_linting() -> list[str]:
     filename = "pr-linting.yml"
     input_path = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     output_path = CONFIG_PATH.github_workflow_dir / filename
@@ -119,7 +117,8 @@ def _update_pr_linting() -> None:
     if not output_path.exists() or hash_file(input_path) != hash_file(output_path):
         shutil.copyfile(input_path, output_path)
         msg = f"Updated {output_path} workflow"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def _update_ci_workflow(  # noqa: PLR0917
@@ -132,8 +131,8 @@ def _update_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> None:
-    def update() -> None:
+) -> list[str]:
+    def update() -> list[str]:
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             precommit,
@@ -149,24 +148,25 @@ def _update_ci_workflow(  # noqa: PLR0917
         if not expected_data.get("jobs"):
             if workflow_path.exists():
                 workflow_path.unlink()
-                msg = "Removed redundant CI workflows"
-                raise PrecommitError(msg)
+                return ["Removed redundant CI workflows"]
         else:
             if not workflow_path.exists():
-                update_workflow(yaml, expected_data, workflow_path)
+                return update_workflow(yaml, expected_data, workflow_path)
             existing_data = yaml.load(workflow_path)
             if existing_data != expected_data:
-                update_workflow(yaml, expected_data, workflow_path)
+                return update_workflow(yaml, expected_data, workflow_path)
+        return []
 
-    with Executor() as do:
-        do(update)
-        if not allow_deprecated:
-            do(remove_workflow, "ci-docs.yml")
-            do(remove_workflow, "ci-style.yml")
-            do(remove_workflow, "ci-tests.yml")
-            do(remove_workflow, "linkcheck.yml")
-        do(_copy_workflow_file, "clean-caches.yml")
-        do(remove_workflow, "clean-cache.yml")
+    changes: list[str] = []
+    changes += update()
+    if not allow_deprecated:
+        changes += remove_workflow("ci-docs.yml")
+        changes += remove_workflow("ci-style.yml")
+        changes += remove_workflow("ci-tests.yml")
+        changes += remove_workflow("linkcheck.yml")
+    changes += _copy_workflow_file("clean-caches.yml")
+    changes += remove_workflow("clean-cache.yml")
+    return changes
 
 
 def _get_ci_workflow(  # noqa: PLR0917
@@ -289,7 +289,7 @@ def __get_coverage_python_version() -> PythonVersion:
     return DEFAULT_DEV_PYTHON_VERSION
 
 
-def _copy_workflow_file(filename: str) -> None:
+def _copy_workflow_file(filename: str) -> list[str]:
     expected_workflow_path = (
         COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     )
@@ -302,14 +302,15 @@ def _copy_workflow_file(filename: str) -> None:
     if not os.path.exists(workflow_path):
         write(expected_content, target=workflow_path)
         msg = f"Created {workflow_path} workflow"
-        raise PrecommitError(msg)
+        return [msg]
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
         write(expected_content, target=workflow_path)
         msg = f"Updated {workflow_path} workflow"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __remove_constraint_pinning(content: str) -> str:
@@ -326,32 +327,36 @@ def __remove_constraint_pinning(content: str) -> str:
     )
 
 
-def _recommend_vscode_extension() -> None:
+def _recommend_vscode_extension() -> list[str]:
     if not CONFIG_PATH.github_workflow_dir.exists():
-        return
+        return []
     # cspell:ignore cschleiden
-    with Executor() as do:
-        do(vscode.remove_extension_recommendation, "cschleiden.vscode-github-actions")
-        do(vscode.add_extension_recommendation, "github.vscode-github-actions")
-        ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
-        if ci_workflow.exists():
-            action_settings = {
-                "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
-            }
-            vscode.update_settings(action_settings)
+    changes: list[str] = []
+    changes += vscode.remove_extension_recommendation(
+        "cschleiden.vscode-github-actions"
+    )
+    changes += vscode.add_extension_recommendation("github.vscode-github-actions")
+    ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
+    if ci_workflow.exists():
+        action_settings = {
+            "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
+        }
+        changes += vscode.update_settings(action_settings)
+    return changes
 
 
-def remove_workflow(filename: str) -> None:
+def remove_workflow(filename: str) -> list[str]:
     path = CONFIG_PATH.github_workflow_dir / filename
     if path.exists():
         path.unlink()
         msg = f"Removed deprecated {filename} workflow"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
-def update_workflow(yaml: YAML, config: dict, path: Path) -> None:
+def update_workflow(yaml: YAML, config: dict, path: Path) -> list[str]:
     path.parent.mkdir(exist_ok=True, parents=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"
     msg = f"{verb} {path} workflow"
-    raise PrecommitError(msg)
+    return [msg]

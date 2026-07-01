@@ -9,12 +9,14 @@ from typing import TYPE_CHECKING
 import rtoml
 import tomlkit
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    Pyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -27,25 +29,31 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
 ]
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(
+    precommit: ModifiablePrecommit,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
     ]
     if not any(f.exists() for f in trigger_files):
-        return
-    with Executor() as do:
-        do(_rename_taplo_config)
-        do(_update_taplo_config)
-        do(_rename_precommit_url, precommit)
-        do(_update_precommit_repo, precommit)
-        do(_update_tomlsort_config)
-        do(_update_tomlsort_hook, precommit)
-        do(_update_vscode_extensions)
+        return []
+    changes: list[str] = []
+    changes += _rename_taplo_config()
+    changes += _update_taplo_config()
+    _rename_precommit_url(precommit)
+    _update_precommit_repo(precommit)
+    changes += _update_tomlsort_config(pyproject)
+    _update_tomlsort_hook(precommit)
+    changes += _update_vscode_extensions()
+    return changes
 
 
-def _update_tomlsort_config() -> None:
+def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> list[str]:
+    if pyproject is None and not CONFIG_PATH.pyproject.exists():
+        return []
     sort_first = [
         "build-system",
         "project",
@@ -53,8 +61,8 @@ def _update_tomlsort_config() -> None:
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
-    pyproject = Pyproject.load()
-    sort_first = [table for table in sort_first if pyproject.has_table(table)]
+    readonly_pyproject = pyproject or Pyproject.load()
+    sort_first = [table for table in sort_first if readonly_pyproject.has_table(table)]
     expected_config = dict(
         all=False,
         ignore_case=True,
@@ -65,12 +73,17 @@ def _update_tomlsort_config() -> None:
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    with ModifiablePyproject.load() as pyproject:
-        tool_table = pyproject.get_table("tool", create=True)
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
+        tool_table = config.get_table("tool", create=True)
         if tool_table.get("tomlsort") == expected_config:
-            return
+            return []
         tool_table["tomlsort"] = expected_config
-        pyproject.changelog.append("Updated toml-sort configuration")
+        config.changelog.append("Updated toml-sort configuration")
+        if include_changelog:
+            return list(config.changelog)
+    return []
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
@@ -93,21 +106,18 @@ def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _rename_taplo_config() -> None:
+def _rename_taplo_config() -> list[str]:
     for path in __INCORRECT_TAPLO_CONFIG_PATHS:
         if not path.exists():
             continue
         shutil.move(path, CONFIG_PATH.taplo)
         msg = f"Renamed {path} to {CONFIG_PATH.taplo}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
-def _update_taplo_config() -> None:
+def _update_taplo_config() -> list[str]:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
-    if not CONFIG_PATH.taplo.exists():
-        shutil.copyfile(template_path, CONFIG_PATH.taplo)
-        msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
-        raise PrecommitError(msg)
     with open(template_path) as f:
         expected = tomlkit.load(f)
 
@@ -136,15 +146,21 @@ def _update_taplo_config() -> None:
     if rules:
         expected["rule"] = rules
 
+    expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
+    if not CONFIG_PATH.taplo.exists():
+        with open(CONFIG_PATH.taplo, "w") as stream:
+            stream.write(expected_str)
+        msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
+        return [msg]
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
-    expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
     existing_str = tomlkit.dumps(existing, sort_keys=True)
     if existing_str.strip() != expected_str.strip():
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __taplo_rule(toml_path: Path | str, keys: list[str]) -> dict:
@@ -185,11 +201,14 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions() -> None:
+def _update_vscode_extensions() -> list[str]:
     # cspell:ignore bungcip tamasfe
-    with Executor() as do:
-        do(vscode.add_extension_recommendation, "tamasfe.even-better-toml")
-        do(vscode.remove_extension_recommendation, "bungcip.better-toml", unwanted=True)
+    changes: list[str] = []
+    changes += vscode.add_extension_recommendation("tamasfe.even-better-toml")
+    changes += vscode.remove_extension_recommendation(
+        "bungcip.better-toml", unwanted=True
+    )
+    return changes
 
 
 def _to_regex(glob: str) -> str:

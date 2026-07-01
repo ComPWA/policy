@@ -5,16 +5,14 @@ from __future__ import annotations
 import io
 import sys
 from collections import abc
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from textwrap import indent
 from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
 
 import rtoml
 import tomlkit
 from attrs import field, frozen
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject.getters import (
     PythonVersion,
@@ -156,22 +154,13 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        tb: TracebackType | None,
+        _exc_type: type[BaseException] | None,
+        _exc_value: BaseException | None,
+        _tb: TracebackType | None,
     ) -> bool:
-        if exc_type is not None and not issubclass(exc_type, PrecommitError):
-            return False
-        if not self._changelog:
-            return True
-        if self._source is not None:
+        if self._changelog and self._source is not None:
             self.dump(self._source)
-        msg = "The following modifications were made"
-        if isinstance(self._source, (Path, str)):
-            msg += f" to {self._source}"
-        msg += ":\n"
-        msg += indent("\n".join(self._changelog), prefix="  - ")
-        raise PrecommitError(msg)
+        return False
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None and self._source is None:
@@ -231,6 +220,21 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
     def changelog(self) -> list[str]:
         self.__assert_is_in_context()
         return self._changelog
+
+
+@contextmanager
+def use_modifiable_pyproject(
+    pyproject: ModifiablePyproject | None = None,
+    *,
+    load: bool = True,
+) -> abc.Iterator[tuple[ModifiablePyproject | None, bool]]:
+    if pyproject is not None:
+        yield pyproject, False
+    elif load and CONFIG_PATH.pyproject.exists():
+        with ModifiablePyproject.load() as local_pyproject:
+            yield local_pyproject, True
+    else:
+        yield None, False
 
 
 def complies_with_subset(

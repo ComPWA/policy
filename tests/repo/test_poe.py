@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo.poe import (
     _check_expected_sections,
     _check_no_uv_run,
@@ -69,8 +69,7 @@ def poe_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def describe_main():
     def configures_groups_and_tasks(poe_repo: Path):
-        with pytest.raises(PrecommitError):
-            main(has_notebooks=True, package_manager="uv")
+        main(has_notebooks=True, package_manager="uv")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "[tool.poe.executor]" in pyproject  # uv executor configured
@@ -81,8 +80,7 @@ def describe_main():
         assert "[tool.poe.tasks.upgrade]" in pyproject  # upgrade task added
 
     def uses_pixi_upgrade_command(poe_repo: Path):
-        with pytest.raises(PrecommitError):
-            main(has_notebooks=True, package_manager="pixi")
+        main(has_notebooks=True, package_manager="pixi")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "pixi upgrade" in pyproject  # pixi-specific upgrade command
@@ -102,11 +100,9 @@ def describe_update_doclive():
             [tool.poe.groups.doc.tasks.doclive]
             cmd = "sphinx-autobuild docs docs/_build/html"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated Poe the Poet doclive task"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_doclive(pyproject)
+        assert any("doclive" in m for m in pyproject.changelog)
         result = pyproject.dumps()
         assert "sphinx-autobuild" in result
         assert "executor" in result
@@ -122,7 +118,7 @@ def describe_check_expected_sections():
         monkeypatch.chdir(tmp_path)
         pyproject = Pyproject.load()
         with pytest.raises(
-            PrecommitError, match=r"missing task definitions: doc, doclive"
+            PolicyError, match=r"missing task definitions: doc, doclive"
         ):
             _check_expected_sections(pyproject, has_notebooks=False)
 
@@ -134,7 +130,7 @@ def describe_check_no_uv_run():
             cmd = "uv run pytest"
         """).lstrip()
         pyproject = Pyproject.load(io.StringIO(config))
-        with pytest.raises(PrecommitError, match=r"should not use 'uv run'"):
+        with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
             _check_no_uv_run(pyproject)
 
 
@@ -146,9 +142,9 @@ def describe_set_upgrade_task():
             [tool.poe.tasks.upgrade]
             cmd = "outdated"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Removed Poe the Poet upgrade task"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _set_upgrade_task(pyproject, package_manager="conda")
+        assert any(
+            "Removed Poe the Poet upgrade task" in m for m in pyproject.changelog
+        )
         assert "upgrade" not in pyproject.dumps()

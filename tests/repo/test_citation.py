@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo import citation
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 
@@ -63,8 +63,8 @@ def describe_convert_zenodo_json():
     def writes_citation_cff(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
-        with pytest.raises(PrecommitError, match=r"Converted"):
-            citation.convert_zenodo_json()
+        changes = citation.convert_zenodo_json()
+        assert any("Converted" in m for m in changes)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()
 
@@ -73,8 +73,8 @@ def describe_remove_zenodo_json():
     def removes_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text("{}")
-        with pytest.raises(PrecommitError, match=r"Removed"):
-            citation.remove_zenodo_json()
+        changes = citation.remove_zenodo_json()
+        assert any("Removed" in m for m in changes)
         assert not (tmp_path / ".zenodo.json").exists()
 
 
@@ -82,13 +82,13 @@ def describe_check_citation_keys():
     def reports_missing_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text("cff-version: 1.2.0\n")
-        with pytest.raises(PrecommitError, match=r"missing the following keys"):
+        with pytest.raises(PolicyError, match=r"missing the following keys"):
             citation.check_citation_keys()
 
     def reports_empty_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text("")
-        with pytest.raises(PrecommitError, match=r"is empty"):
+        with pytest.raises(PolicyError, match=r"is empty"):
             citation.check_citation_keys()
 
     def accepts_complete_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -101,11 +101,9 @@ def describe_add_json_schema_precommit():
     def adds_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pre-commit hook"),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             citation.add_json_schema_precommit(precommit)
+        assert any("Updated pre-commit hook" in m for m in precommit.changelog)
         assert "check-jsonschema" in precommit.dumps()
 
     def is_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -147,11 +145,9 @@ def describe_add_json_schema_precommit():
                       - https://example.test/outdated-schema.json
                       - CITATION.cff
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pre-commit hook"),
-            ModifiablePrecommit.load(io.StringIO(existing)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(existing)) as precommit:
             citation.add_json_schema_precommit(precommit)
+        assert any("Updated pre-commit hook" in m for m in precommit.changelog)
         result = precommit.dumps()
         assert "outdated-schema" not in result  # stale args replaced
         assert "citation-file-format.github.io/1.2.0/schema.json" in result
@@ -173,11 +169,9 @@ def describe_add_json_schema_precommit():
                     name: Check GitHub Workflows
                     files: ^\\.github/workflows/
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pre-commit hook"),
-            ModifiablePrecommit.load(io.StringIO(existing)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(existing)) as precommit:
             citation.add_json_schema_precommit(precommit)
+        assert any("Updated pre-commit hook" in m for m in precommit.changelog)
         result = precommit.dumps()
         assert "Check GitHub Workflows" in result  # original hook kept
         assert "Check CITATION.cff" in result  # new hook appended
@@ -187,10 +181,7 @@ def describe_main():
     def processes_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             citation.main(precommit)
         assert "check-jsonschema" in precommit.dumps()
 
@@ -198,14 +189,39 @@ def describe_main():
         """Regression test for https://github.com/ComPWA/policy/issues/616."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             citation.main(precommit)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()
         assert "check-jsonschema" in precommit.dumps()
+
+    def reports_vscode_settings_update(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
+        vscode_dir = tmp_path / ".vscode"
+        vscode_dir.mkdir()
+        (vscode_dir / "extensions.json").write_text(
+            json.dumps({"recommendations": ["redhat.vscode-yaml"]})
+        )
+        precommit_config = dedent("""
+            repos:
+              - repo: https://github.com/python-jsonschema/check-jsonschema
+                rev: 0.28.0
+                hooks:
+                  - id: check-jsonschema
+                    name: Check CITATION.cff
+                    args:
+                      - --default-filetype
+                      - yaml
+                      - --schemafile
+                      - https://citation-file-format.github.io/1.2.0/schema.json
+                      - CITATION.cff
+                    pass_filenames: false
+        """).lstrip()
+        with ModifiablePrecommit.load(io.StringIO(precommit_config)) as precommit:
+            changes = citation.main(precommit)
+        assert changes == ["Updated VS Code settings"]
+        assert (vscode_dir / "settings.json").exists()
 
     def removes_zenodo_when_citation_present(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -213,10 +229,7 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             citation.main(precommit)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()

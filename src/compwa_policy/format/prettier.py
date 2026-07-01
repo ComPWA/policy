@@ -5,9 +5,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
@@ -23,18 +21,18 @@ __BADGE = """
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(precommit: ModifiablePrecommit) -> list[str]:
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
-        _remove_configuration()
-    else:
-        with Executor() as do:
-            do(add_badge, __BADGE)
-            do(vscode.add_extension_recommendation, __VSCODE_EXTENSION_NAME)
-            do(_update_prettier_hook, precommit)
-            do(_update_prettier_ignore)
+        return _remove_configuration()
+    changes: list[str] = []
+    changes += add_badge(__BADGE)
+    changes += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    _update_prettier_hook(precommit)
+    changes += _update_prettier_ignore()
+    return changes
 
 
-def _remove_configuration() -> None:
+def _remove_configuration() -> list[str]:
     old_config_files = [
         ".prettierrc.json",
         ".prettierrc.json5",
@@ -51,9 +49,11 @@ def _remove_configuration() -> None:
     if removed_paths:
         removed_paths_str = ", ".join(removed_paths)
         msg = f"Removed redundant configuration files: {removed_paths_str}"
-        raise PrecommitError(msg)
-    remove_badge(__BADGE_PATTERN)
-    vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
+        return [msg]
+    changes: list[str] = []
+    changes += remove_badge(__BADGE_PATTERN)
+    changes += vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    return changes
 
 
 def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:
@@ -64,14 +64,16 @@ def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append("Updated URL for Prettier pre-commit hook")
 
 
-def _update_prettier_ignore() -> None:
-    __remove_forbidden_paths()
-    __insert_expected_paths()
+def _update_prettier_ignore() -> list[str]:
+    changes: list[str] = []
+    changes += __remove_forbidden_paths()
+    changes += __insert_expected_paths()
+    return changes
 
 
-def __remove_forbidden_paths() -> None:
+def __remove_forbidden_paths() -> list[str]:
     if not os.path.exists(CONFIG_PATH.prettier_ignore):
-        return
+        return []
     existing = __get_existing_lines()
     forbidden = {
         ".cspell.json",
@@ -84,10 +86,11 @@ def __remove_forbidden_paths() -> None:
     if existing != expected:
         __write_lines(expected)
         msg = f"Removed forbidden paths from {CONFIG_PATH.prettier_ignore}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
-def __insert_expected_paths() -> None:
+def __insert_expected_paths() -> list[str]:
     existing = __get_existing_lines()
     obligatory = [
         "LICENSE",
@@ -98,11 +101,12 @@ def __insert_expected_paths() -> None:
     if expected == [""] and os.path.exists(CONFIG_PATH.prettier_ignore):
         os.remove(CONFIG_PATH.prettier_ignore)
         msg = f"{CONFIG_PATH.prettier_ignore} is not needed"
-        raise PrecommitError(msg)
+        return [msg]
     if existing != expected:
         __write_lines(expected)
         msg = f"Added paths to {CONFIG_PATH.prettier_ignore}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __get_existing_lines() -> list[str]:

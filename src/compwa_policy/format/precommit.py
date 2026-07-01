@@ -6,37 +6,40 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
-    from compwa_policy.utilities.precommit import (
-        ModifiablePrecommit,
-        Precommit,
-        PrecommitConfig,
-    )
+    from compwa_policy.utilities.precommit import ModifiablePrecommit, PrecommitConfig
 
 
-def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    with Executor() as do:
-        do(_sort_hooks, precommit)
-        do(_update_conda_environment, precommit)
-        do(_update_precommit_ci_autofix_commit_msg, precommit)
-        do(_update_precommit_ci_autoupdate_commit_msg, precommit)
-        do(_update_precommit_ci_skip, precommit)
-        do(_update_notebook_hooks, precommit, has_notebooks)
-        do(_update_repo_urls, precommit)
-        if CONFIG_PATH.pyproject.exists():
-            with ModifiablePyproject.load() as pyproject:
-                pyproject.remove_dependency("pre-commit")
-                pyproject.remove_dependency("pre-commit-uv")
+def main(
+    precommit: ModifiablePrecommit,
+    has_notebooks: bool,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
+    changes: list[str] = []
+    _sort_hooks(precommit)
+    _update_conda_environment(precommit)
+    _update_precommit_ci_autofix_commit_msg(precommit)
+    _update_precommit_ci_autoupdate_commit_msg(precommit)
+    _update_precommit_ci_skip(precommit)
+    _update_notebook_hooks(precommit, has_notebooks)
+    _update_repo_urls(precommit)
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is not None:
+            config.remove_dependency("pre-commit")
+            config.remove_dependency("pre-commit-uv")
+            if include_changelog:
+                changes += config.changelog
+    return changes
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:
@@ -218,7 +221,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
     ]
 
 
-def _update_conda_environment(precommit: Precommit) -> None:
+def _update_conda_environment(precommit: ModifiablePrecommit) -> None:
     """Temporary fix for Prettier v4 alpha releases.
 
     https://prettier.io/blog/2023/11/30/cli-deep-dive#installation
@@ -235,15 +238,13 @@ def _update_conda_environment(precommit: Precommit) -> None:
             variables[key] = 1
             conda_env["variables"] = variables
             yaml.dump(conda_env, path)
-            msg = f"Set {key} environment variable in {path}"
-            raise PrecommitError(msg)
+            precommit.changelog.append(f"Set {key} environment variable in {path}")
     elif key in variables:
         del variables[key]
         if not variables:
             del conda_env["variables"]
         yaml.dump(conda_env, path)
-        msg = f"Removed {key} environment variable {path}"
-        raise PrecommitError(msg)
+        precommit.changelog.append(f"Removed {key} environment variable {path}")
 
 
 def __has_prettier_v4alpha(config: PrecommitConfig) -> bool:

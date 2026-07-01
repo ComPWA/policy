@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any
 import rtoml
 from ini2toml.api import Translator
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     has_dependency,
+    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.pyproject.getters import get_package_name
 from compwa_policy.utilities.toml import to_toml_array
@@ -26,21 +26,30 @@ if TYPE_CHECKING:
 
 
 def main(
-    coverage_gutters: bool, single_threaded: bool, branch_coverage: bool = True
-) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        if not has_dependency(pyproject, "pytest"):
-            return
-        do(_merge_coverage_into_pyproject, pyproject)
-        do(_merge_pytest_into_pyproject, pyproject)
-        do(_deny_ini_options, pyproject)
-        do(_update_codecov_settings, pyproject, branch_coverage)
-        do(_update_settings, pyproject)
-        do(_update_vscode_settings, pyproject, coverage_gutters, single_threaded)
+    coverage_gutters: bool,
+    single_threaded: bool,
+    branch_coverage: bool = True,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
+    changes: list[str] = []
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
+        if not has_dependency(config, "pytest"):
+            return []
+        _merge_coverage_into_pyproject(config)
+        _merge_pytest_into_pyproject(config)
+        _deny_ini_options(config)
+        _update_codecov_settings(config, branch_coverage)
+        _update_settings(config)
+        changes += _update_vscode_settings(config, coverage_gutters, single_threaded)
         if single_threaded:
-            do(pyproject.remove_dependency, "pytest-xdist")
+            config.remove_dependency("pytest-xdist")
         else:
-            do(pyproject.add_dependency, "pytest-xdist", ["test", "dev"])
+            config.add_dependency("pytest-xdist", ["test", "dev"])
+        if include_changelog:
+            changes += config.changelog
+    return changes
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -84,7 +93,7 @@ def _deny_ini_options(pyproject: ModifiablePyproject) -> None:
             " https://docs.pytest.org/en/stable/reference/customize.html#pyproject-toml"
             " to migrate to a native TOML configuration."
         )
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     pytest_config = pyproject.get_table("tool.pytest", fallback=None)
     if pytest_config is None:
         return
@@ -168,72 +177,56 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
 
 def _update_vscode_settings(
     pyproject: Pyproject, coverage_gutters: bool, single_threaded: bool
-) -> None:
-    with Executor() as do:
-        # cspell:ignore ryanluker
-        if coverage_gutters:
-            do(
-                vscode.add_extension_recommendation,
-                "ryanluker.vscode-coverage-gutters",
-            )
-        else:
-            do(
-                vscode.remove_extension_recommendation,
-                extension_name="ryanluker.vscode-coverage-gutters",
-                unwanted=True,
-            )
-        do(
-            vscode.update_settings,
-            {
-                "testing.coverageToolbarEnabled": True,
-                "testing.showCoverageInExplorer": True,
-            },
+) -> list[str]:
+    changes: list[str] = []
+    # cspell:ignore ryanluker
+    if coverage_gutters:
+        changes += vscode.add_extension_recommendation(
+            "ryanluker.vscode-coverage-gutters",
         )
-        do(
-            vscode.remove_settings,
-            {"python.testing.pytestArgs": ["--color=no", "--no-cov"]},
+    else:
+        changes += vscode.remove_extension_recommendation(
+            extension_name="ryanluker.vscode-coverage-gutters",
+            unwanted=True,
         )
-        package_name = get_package_name(pyproject._document)  # noqa: SLF001
-        if package_name is not None:
-            module_name = package_name.replace("-", "_")
-            do(
-                vscode.remove_settings,
-                {"python.testing.pytestArgs": [f"--cov={module_name}"]},
-            )
-        if single_threaded:
-            do(
-                vscode.remove_settings,
-                {
-                    "python.testing.pytestArgs": [
-                        "--numprocesses auto",
-                        "--numprocesses=auto",
-                        "-n auto",
-                        "-nauto",  # cspell:ignore nauto
-                    ]
-                },
-            )
-        else:
-            do(
-                vscode.update_settings,
-                {"python.testing.pytestArgs": ["--numprocesses=auto"]},
-            )
-            do(
-                vscode.remove_settings,
-                {
-                    "python.testing.pytestArgs": [
-                        "--numprocesses auto",
-                        "-n auto",
-                        "-nauto",
-                    ]
-                },
-            )
-        if not coverage_gutters:
-            do(
-                vscode.remove_settings,
-                [
-                    "coverage-gutters.coverageFileNames",
-                    "coverage-gutters.coverageReportFileName",
-                    "coverage-gutters.showGutterCoverage",
-                    "coverage-gutters.showLineCoverage",
-                ],
-            )
+    changes += vscode.update_settings({
+        "testing.coverageToolbarEnabled": True,
+        "testing.showCoverageInExplorer": True,
+    })
+    changes += vscode.remove_settings({
+        "python.testing.pytestArgs": ["--color=no", "--no-cov"]
+    })
+    package_name = get_package_name(pyproject._document)  # noqa: SLF001
+    if package_name is not None:
+        module_name = package_name.replace("-", "_")
+        changes += vscode.remove_settings({
+            "python.testing.pytestArgs": [f"--cov={module_name}"]
+        })
+    if single_threaded:
+        changes += vscode.remove_settings({
+            "python.testing.pytestArgs": [
+                "--numprocesses auto",
+                "--numprocesses=auto",
+                "-n auto",
+                "-nauto",  # cspell:ignore nauto
+            ]
+        })
+    else:
+        changes += vscode.update_settings({
+            "python.testing.pytestArgs": ["--numprocesses=auto"]
+        })
+        changes += vscode.remove_settings({
+            "python.testing.pytestArgs": [
+                "--numprocesses auto",
+                "-n auto",
+                "-nauto",
+            ]
+        })
+    if not coverage_gutters:
+        changes += vscode.remove_settings([
+            "coverage-gutters.coverageFileNames",
+            "coverage-gutters.coverageReportFileName",
+            "coverage-gutters.showGutterCoverage",
+            "coverage-gutters.showLineCoverage",
+        ])
+    return changes

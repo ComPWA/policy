@@ -24,7 +24,7 @@ from rich.syntax import Syntax
 
 from compwa_policy import _get_environment_variables
 from compwa_policy.cli._settings import POLICY_TABLE, Settings, policy_sub_table
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.format.precommit import (
     __NBHOOKS_REPO_URL,
     NOTEBOOK_HOOK_IDS,
@@ -248,7 +248,7 @@ def _write_pyproject(policy: dict[str, Any]) -> None:
         with pyproject:
             _apply(pyproject, policy)
             pyproject.changelog.append(f"imported args of the '{_HOOK_ID}' hook")
-    except PrecommitError:
+    except PolicyError:
         pass
 
 
@@ -281,7 +281,7 @@ def _find_relocatable_notebook_hooks(precommit: ModifiablePrecommit) -> list[str
 def _apply_precommit_changes(
     precommit: ModifiablePrecommit, hook: Hook, *, strip_args: bool, relocate: bool
 ) -> None:
-    with contextlib.suppress(PrecommitError), precommit:
+    with contextlib.suppress(PolicyError), precommit:
         if strip_args:
             del hook["args"]
             precommit.changelog.append(

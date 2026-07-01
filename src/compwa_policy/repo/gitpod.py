@@ -5,9 +5,8 @@ import os
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -17,12 +16,12 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
 
-def main(use_gitpod: bool, python_version: PythonVersion) -> None:
+def main(use_gitpod: bool, python_version: PythonVersion) -> list[str]:
     if not use_gitpod:
-        with Executor() as do:
-            do(remove_gitpod_config)
-            do(remove_badge, r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
-        return
+        changes: list[str] = []
+        changes += remove_gitpod_config()
+        changes += remove_badge(r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
+        return changes
     error_message = ""
     expected_config = _generate_gitpod_config(python_version)
     if CONFIG_PATH.gitpod.exists():
@@ -35,21 +34,21 @@ def main(use_gitpod: bool, python_version: PythonVersion) -> None:
     if error_message:
         write_yaml(expected_config, output_path=CONFIG_PATH.gitpod)
         error_message += ". Problem has been fixed."
-        raise PrecommitError(error_message)
+        return [error_message]
     try:
         repo_url = Pyproject.load().get_repo_url()
-        add_badge(
+        return add_badge(
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )
-    except PrecommitError:
-        pass
+    except PolicyError:
+        return []
 
 
-def remove_gitpod_config() -> None:
+def remove_gitpod_config() -> list[str]:
     if CONFIG_PATH.gitpod.exists():
         os.remove(CONFIG_PATH.gitpod)
-        msg = f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"
-        raise PrecommitError(msg)
+        return [f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"]
+    return []
 
 
 def _extract_extensions() -> dict:

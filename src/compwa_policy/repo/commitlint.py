@@ -6,17 +6,14 @@ See https://github.com/ComPWA/policy/issues/177.
 import os
 from textwrap import dedent
 
-from compwa_policy.errors import PrecommitError
 
-
-def main() -> None:
+def main() -> list[str]:
     path = "commitlint.config.js"
     if not os.path.exists(path):
-        return
+        return []
     os.remove(path)
     msg = f"""
     Remove outdated {path}. Commitlint is now configured through
     https://github.com/ComPWA/commitlint-config.
     """
-    msg = dedent(msg).strip().replace("\n", " ")
-    raise PrecommitError(msg)
+    return [dedent(msg).strip().replace("\n", " ")]

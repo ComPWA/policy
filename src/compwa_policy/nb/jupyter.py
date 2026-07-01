@@ -1,30 +1,39 @@
 """Update the developer setup when using Jupyter notebooks."""
 
-from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities import vscode
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 
 
-def main(no_ruff: bool) -> None:
-    with Executor() as do:
-        do(_update_dev_requirements, no_ruff)
-        # cspell:ignore toolsai
-        do(vscode.add_extension_recommendation, "ms-toolsai.jupyter")
-        do(vscode.add_extension_recommendation, "ms-toolsai.vscode-jupyter-cell-tags")
-        do(
-            vscode.remove_extension_recommendation,
-            "ms-toolsai.vscode-jupyter-slideshow",
-            unwanted=True,
-        )
+def main(
+    no_ruff: bool,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
+    changes = _update_dev_requirements(no_ruff, pyproject)
+    # cspell:ignore toolsai
+    changes += vscode.add_extension_recommendation("ms-toolsai.jupyter")
+    changes += vscode.add_extension_recommendation(
+        "ms-toolsai.vscode-jupyter-cell-tags"
+    )
+    changes += vscode.remove_extension_recommendation(
+        "ms-toolsai.vscode-jupyter-slideshow",
+        unwanted=True,
+    )
+    return changes
 
 
-def _update_dev_requirements(no_ruff: bool) -> None:
-    if not CONFIG_PATH.pyproject.exists():
-        return
-    with ModifiablePyproject.load() as pyproject:
-        supported_python_versions = pyproject.get_supported_python_versions()
+def _update_dev_requirements(
+    no_ruff: bool,
+    pyproject: ModifiablePyproject | None = None,
+) -> list[str]:
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+        if config is None:
+            return []
+        supported_python_versions = config.get_supported_python_versions()
         if "3.6" in supported_python_versions:
-            return
+            return []
         packages = {
             "jupyterlab",
             "jupyterlab-git",
@@ -37,18 +46,21 @@ def _update_dev_requirements(no_ruff: bool) -> None:
         if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
             packages.add("jupyterlab-myst")
         else:
-            pyproject.remove_dependency("jupyterlab-myst")
+            config.remove_dependency("jupyterlab-myst")
         if "quarto.quarto" in recommended_vscode_extensions:
             packages.add("jupyterlab-quarto")
         else:
-            pyproject.remove_dependency("jupyterlab-quarto")
-        pyproject.remove_dependency("python-lsp-server[rope]")
+            config.remove_dependency("jupyterlab-quarto")
+        config.remove_dependency("python-lsp-server[rope]")
         if not no_ruff:
-            pyproject.remove_dependency(
+            config.remove_dependency(
                 "black", ignored_sections=["doc", "notebooks", "test"]
             )
-            pyproject.remove_dependency("isort")
-            pyproject.remove_dependency("jupyterlab-code-formatter")
+            config.remove_dependency("isort")
+            config.remove_dependency("jupyterlab-code-formatter")
             packages.add("jupyter-ruff")
         for package in sorted(packages):
-            pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
+            config.add_dependency(package, dependency_group=["jupyter", "dev"])
+        if include_changelog:
+            return list(config.changelog)
+    return []
