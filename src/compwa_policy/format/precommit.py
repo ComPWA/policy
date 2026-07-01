@@ -24,7 +24,8 @@ def main(
     precommit: ModifiablePrecommit,
     has_notebooks: bool,
     pyproject: ModifiablePyproject | None = None,
-) -> None:
+) -> list[str]:
+    changes: list[str] = []
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
     _update_precommit_ci_autofix_commit_msg(precommit)
@@ -32,10 +33,13 @@ def main(
     _update_precommit_ci_skip(precommit)
     _update_notebook_hooks(precommit, has_notebooks)
     _update_repo_urls(precommit)
-    with use_modifiable_pyproject(pyproject) as (config, _):
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is not None:
             config.remove_dependency("pre-commit")
             config.remove_dependency("pre-commit-uv")
+            if include_changelog:
+                changes += config.changelog
+    return changes
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

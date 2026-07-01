@@ -5,14 +5,20 @@ from textwrap import dedent
 import pytest
 import typer
 
+from compwa_policy import _characterization
 from compwa_policy.cli._checks import (
     ALL_GROUPS,
     check_dev_python_version,
     compute_context,
     dispatch,
     run_all,
+    run_checks,
 )
 from compwa_policy.cli._options import build_arguments
+from compwa_policy.repo import readthedocs
+from compwa_policy.utilities import match
+from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 _PYPROJECT = dedent("""
     [project]
@@ -33,6 +39,22 @@ def _git_commit(directory: Path) -> None:
     git_author = ["-c", "user.name=t", "-c", "user.email=t@t"]
     commit = ["git", *git_config, *git_author, "commit", "-qm", "init", "--allow-empty"]
     subprocess.run(commit, cwd=directory, check=True)  # noqa: S603
+
+
+def _clear_caches() -> None:
+    match._git_ls_files_cmd.cache_clear()
+    _characterization.has_documentation.cache_clear()
+    _characterization.has_python_code.cache_clear()
+    readthedocs._determine_docs_dir.cache_clear()
+
+
+def _snapshot_files(directory: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(directory).as_posix(): path.read_bytes()
+        for path in sorted(directory.rglob("*"))
+        if path.is_file()
+        if ".git" not in path.parts
+    }
 
 
 def describe_check_dev_python_version():
@@ -104,6 +126,42 @@ def describe_run_all():
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         assert run_all(args) == 1  # pristine repo needs updates
         capsys.readouterr()
+
+    def is_idempotent_after_applying_changes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ):
+        _runnable_repo(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        args = build_arguments(dev_python_version="3.12", package_manager="uv")
+        assert run_all(args) == 1
+        capsys.readouterr()
+        _git_commit(tmp_path)
+        _clear_caches()
+
+        before = _snapshot_files(tmp_path)
+        assert run_all(args) == 0
+        assert not capsys.readouterr().out
+        assert _snapshot_files(tmp_path) == before
+
+
+def describe_run_checks():
+    def keeps_config_changelogs_out_of_returned_changes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        _runnable_repo(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        args = build_arguments(dev_python_version="3.12", package_manager="uv")
+        ctx = compute_context(args)
+        with (
+            ModifiablePrecommit.load() as precommit_config,
+            ModifiablePyproject.load() as pyproject_config,
+        ):
+            changes = run_checks(precommit_config, pyproject_config, args, ctx)
+            assert set(changes).isdisjoint(precommit_config.changelog)
+            assert set(changes).isdisjoint(pyproject_config.changelog)
 
 
 def describe_dispatch():

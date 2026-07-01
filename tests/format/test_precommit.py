@@ -258,6 +258,23 @@ def describe_update_conda_environment():
 
 
 def describe_main():
+    def reports_standalone_pyproject_changes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text("""
+            [project]
+            name = "x"
+
+            [dependency-groups]
+            dev = ["pre-commit", "pre-commit-uv"]
+        """)
+        with _load("repos: []") as pc:
+            changes = precommit.main(pc, has_notebooks=False)
+        assert any("Removed pre-commit from dependencies" in m for m in changes)
+        assert any("Removed pre-commit-uv from dependencies" in m for m in changes)
+
     def sorts_and_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[dependency-groups]\ndev = []\n")

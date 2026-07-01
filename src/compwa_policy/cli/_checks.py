@@ -145,8 +145,6 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
         changes += commitlint.main()
     if "env" in groups:
         changes += conda.main(args.dev_python_version, args.package_manager)
-    if "github" in groups:
-        changes += dependabot.main(args.upgrade_frequency)
     if "format" in groups:
         editorconfig.main(precommit_config)
     if "github" in groups and not args.allow_labels:
@@ -241,6 +239,8 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
             frequency=args.upgrade_frequency,
             keep_workflow=args.keep_workflow,
         )
+    if "github" in groups:
+        changes += dependabot.main(args.upgrade_frequency)
     if "repo" in groups:
         changes += readthedocs.main(args.package_manager, args.dev_python_version)
         changes += remove_deprecated_tools(precommit_config, args.keep_issue_templates)
@@ -251,7 +251,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
         )
         changes += gitpod.main(args.gitpod, args.dev_python_version)
     if "format" in groups:
-        precommit.main(precommit_config, ctx.has_notebooks, pyproject_config)
+        changes += precommit.main(precommit_config, ctx.has_notebooks, pyproject_config)
     if "env" in groups:
         changes += uv.main(
             precommit_config,

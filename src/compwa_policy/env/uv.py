@@ -39,7 +39,7 @@ def main(  # noqa: PLR0917
         changes += readme.add_badge(
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
         )
-        _update_editor_config()
+        changes += _update_editor_config()
         changes += _update_python_version_file(dev_python_version)
         _update_uv_lock_hook(precommit_config)
         if not keep_contributing_md:
@@ -108,20 +108,21 @@ def _remove_uv_lock() -> list[str]:
     return []
 
 
-def _update_editor_config() -> None:
+def _update_editor_config() -> list[str]:
     if not CONFIG_PATH.editorconfig.exists():
-        return
+        return []
     if not is_committed("uv.lock"):
-        return
+        return []
     expected_content = dedent("""
     [uv.lock]
     indent_size = 4
     """).strip()
     existing_content = CONFIG_PATH.editorconfig.read_text()
     if expected_content in existing_content:
-        return
+        return []
     with open(CONFIG_PATH.editorconfig, "a") as stream:
         stream.write("\n" + expected_content + "\n")
+    return [f"Updated {CONFIG_PATH.editorconfig} for uv.lock"]
 
 
 def _update_python_version_file(dev_python_version: PythonVersion) -> list[str]:

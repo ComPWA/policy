@@ -36,13 +36,13 @@ def main(frequency: Frequency) -> list[str]:  # noqa: C901
         expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
     template_ecosystem = cast("dict[str, Any]", expected["updates"][0])
     package_ecosystems: list[dict[str, Any]] = []
-    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}"):
+    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}", untracked=True):
         package_ecosystems.append(get_ecosystem("github-actions"))
-    if is_committed("**/Manifest.toml"):
+    if is_committed("**/Manifest.toml", untracked=True):
         package_ecosystems.append(get_ecosystem("julia"))
-    if is_committed(".pre-commit-config.yaml"):
+    if is_committed(".pre-commit-config.yaml", untracked=True):
         package_ecosystems.append(get_ecosystem("pre-commit"))
-    if is_committed("uv.lock"):
+    if is_committed("uv.lock", untracked=True):
         package_ecosystems.append(get_ecosystem("uv"))
 
     if not package_ecosystems:

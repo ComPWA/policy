@@ -45,15 +45,15 @@ def main(
     changes += _update_taplo_config()
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    _update_tomlsort_config(pyproject)
+    changes += _update_tomlsort_config(pyproject)
     _update_tomlsort_hook(precommit)
     changes += _update_vscode_extensions()
     return changes
 
 
-def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> None:
+def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> list[str]:
     if pyproject is None and not CONFIG_PATH.pyproject.exists():
-        return
+        return []
     sort_first = [
         "build-system",
         "project",
@@ -73,14 +73,17 @@ def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Non
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    with use_modifiable_pyproject(pyproject) as (config, _):
+    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
-            return
+            return []
         tool_table = config.get_table("tool", create=True)
         if tool_table.get("tomlsort") == expected_config:
-            return
+            return []
         tool_table["tomlsort"] = expected_config
         config.changelog.append("Updated toml-sort configuration")
+        if include_changelog:
+            return list(config.changelog)
+    return []
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
@@ -115,10 +118,6 @@ def _rename_taplo_config() -> list[str]:
 
 def _update_taplo_config() -> list[str]:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
-    if not CONFIG_PATH.taplo.exists():
-        shutil.copyfile(template_path, CONFIG_PATH.taplo)
-        msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
-        return [msg]
     with open(template_path) as f:
         expected = tomlkit.load(f)
 
@@ -147,9 +146,14 @@ def _update_taplo_config() -> list[str]:
     if rules:
         expected["rule"] = rules
 
+    expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
+    if not CONFIG_PATH.taplo.exists():
+        with open(CONFIG_PATH.taplo, "w") as stream:
+            stream.write(expected_str)
+        msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
+        return [msg]
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
-    expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
     existing_str = tomlkit.dumps(existing, sort_keys=True)
     if existing_str.strip() != expected_str.strip():
         with open(CONFIG_PATH.taplo, "w") as stream:

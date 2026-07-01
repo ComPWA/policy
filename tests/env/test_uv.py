@@ -118,7 +118,8 @@ def describe_update_editor_config():
         (tmp_path / ".editorconfig").write_text("root = true\n")
         _git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
-        _update_editor_config()  # appends a [uv.lock] section, no error
+        changes = _update_editor_config()
+        assert any("uv.lock" in m for m in changes)
         assert "[uv.lock]" in (tmp_path / ".editorconfig").read_text()
 
 

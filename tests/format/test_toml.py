@@ -102,7 +102,8 @@ def describe_update_tomlsort_config():
     def configures_sort_first(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        _update_tomlsort_config()
+        changes = _update_tomlsort_config()
+        assert any("toml-sort" in m for m in changes)
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.tomlsort]" in result
         assert 'sort_first = ["project"]' in result
@@ -114,15 +115,24 @@ def describe_update_tomlsort_config():
         (tmp_path / "pyproject.toml").write_text("[tool.other]\nkey = 1\n")
         _update_tomlsort_config()
         assert "sort_first" not in (tmp_path / "pyproject.toml").read_text()
-        _update_tomlsort_config()  # second run is a no-op
+        assert _update_tomlsort_config() == []
 
 
 def describe_update_taplo_config():
     def creates_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         changes = _update_taplo_config()
         assert any(".taplo.toml" in m for m in changes)
         assert (tmp_path / ".taplo.toml").exists()
+
+    def creates_normalized_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        _git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        assert _update_taplo_config()
+        before = (tmp_path / ".taplo.toml").read_text()
+        assert _update_taplo_config() == []
+        assert (tmp_path / ".taplo.toml").read_text() == before
 
 
 def describe_update_vscode_extensions():
