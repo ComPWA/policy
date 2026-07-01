@@ -13,7 +13,7 @@ def test_dir() -> Path:
     return Path(__file__).parent
 
 
-@pytest.fixture(autouse=True)  # noqa: RUF076
+@pytest.fixture(autouse=True)
 def _clear_git_ls_files_cache() -> None:
     """Reset caches that depend on the working directory but do not key on it.
 
@@ -27,7 +27,7 @@ def _clear_git_ls_files_cache() -> None:
     readthedocs._determine_docs_dir.cache_clear()
 
 
-@pytest.fixture(autouse=True)  # noqa: RUF076
+@pytest.fixture(autouse=True)
 def _offline_git_ls_remote(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep the test suite offline: pretend ``git ls-remote`` finds no tags.
 
