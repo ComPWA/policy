@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
@@ -36,8 +37,8 @@ def main(
     has_notebooks: bool,
     imports_on_top: bool,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []
@@ -66,8 +67,8 @@ def main(
 def _remove_black(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += vscode.remove_extension_recommendation(
         "ms-python.black-formatter",
         unwanted=True,
@@ -87,8 +88,8 @@ def _remove_black(
 def _remove_flake8(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += remove_configs([".flake8"])
     __remove_nbqa_option(pyproject, "flake8")
     pyproject.remove_dependency("flake8")
@@ -105,8 +106,8 @@ def _remove_isort(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     imports_on_top: bool,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     __remove_nbqa_option(pyproject, "black")
     changes += vscode.remove_extension_recommendation("ms-python.isort", unwanted=True)
     precommit.remove_hook("isort")
@@ -143,7 +144,7 @@ def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None
 def _remove_pydocstyle(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> list[str]:
+) -> Changelog:
     changes = remove_configs([
         ".pydocstyle",
         "docs/.pydocstyle",
@@ -157,8 +158,8 @@ def _remove_pydocstyle(
 def _remove_pylint(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += remove_configs([".pylintrc"])  # cspell:ignore pylintrc
     pyproject.remove_dependency("pylint")
     changes += vscode.remove_extension_recommendation("ms-python.pylint", unwanted=True)
@@ -686,9 +687,9 @@ def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
     pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 
-def _update_vscode_settings() -> list[str]:
+def _update_vscode_settings() -> Changelog:
     # cspell:ignore charliermarsh
-    changes: list[str] = []
+    changes: Changelog = []
     changes += vscode.add_extension_recommendation("charliermarsh.ruff")
     changes += vscode.update_settings({
         "notebook.codeActionsOnSave": {"notebook.source.organizeImports": "explicit"},

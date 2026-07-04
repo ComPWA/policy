@@ -14,10 +14,11 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.github.upgrade_lock import Frequency
+    from compwa_policy.utilities.changelog import Changelog
 
 
-def main(frequency: Frequency) -> list[str]:  # noqa: C901
-    def dump_dependabot_config() -> list[str]:
+def main(frequency: Frequency) -> Changelog:  # noqa: C901
+    def dump_dependabot_config() -> Changelog:
         dependabot_path.parent.mkdir(exist_ok=True)
         rt_yaml.dump(expected, dependabot_path)
         return [f"Updated {dependabot_path}"]

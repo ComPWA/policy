@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, MutableMapping, Sequence
     from types import TracebackType
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
 
 T = TypeVar("T", bound="Pyproject")
@@ -121,7 +122,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
     """
 
     _is_in_context = False
-    _changelog: list[str] = field(factory=list)
+    _changelog: Changelog = field(factory=list)
 
     @override
     @classmethod
@@ -217,7 +218,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             raise RuntimeError(msg)
 
     @property
-    def changelog(self) -> list[str]:
+    def changelog(self) -> Changelog:
         self.__assert_is_in_context()
         return self._changelog
 

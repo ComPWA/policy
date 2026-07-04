@@ -9,9 +9,12 @@ import re
 import shutil
 from pathlib import Path
 from shutil import copyfile
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import compwa_policy
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -102,14 +105,14 @@ def write(content: str, target: Path | io.TextIOBase | str) -> None:
         raise TypeError(msg)
 
 
-def remove_configs(paths: list[str]) -> list[str]:
-    changes: list[str] = []
+def remove_configs(paths: list[str]) -> Changelog:
+    changes: Changelog = []
     for path in paths:
         changes += __remove_file(path)
     return changes
 
 
-def __remove_file(path: str) -> list[str]:
+def __remove_file(path: str) -> Changelog:
     if not os.path.exists(path):
         return []
     if os.path.isdir(path):
@@ -119,7 +122,7 @@ def __remove_file(path: str) -> list[str]:
     return [f"Removed {path}"]
 
 
-def rename_file(old: str, new: str) -> list[str]:
+def rename_file(old: str, new: str) -> Changelog:
     if os.path.exists(old):
         os.rename(old, new)
         return [f"File {old} has been renamed to {new}"]
@@ -128,7 +131,7 @@ def rename_file(old: str, new: str) -> list[str]:
 
 def remove_lines(
     file: Path, pattern: str, flags: re.RegexFlag = re.IGNORECASE
-) -> list[str]:
+) -> Changelog:
     if not file.exists():
         return []
     with open(file) as stream:
@@ -154,7 +157,7 @@ def natural_sorting(text: str) -> list[float | str]:
     ]
 
 
-def update_file(relative_path: Path, in_template_folder: bool = False) -> list[str]:
+def update_file(relative_path: Path, in_template_folder: bool = False) -> Changelog:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
     else:

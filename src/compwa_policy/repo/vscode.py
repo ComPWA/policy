@@ -10,17 +10,18 @@ from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
 
 
 def main(
     has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> list[str]:
+) -> Changelog:
     changes = _update_extensions()
     changes += _update_settings(has_notebooks, is_python_repo, package_manager)
     return changes
 
 
-def _update_extensions() -> list[str]:
+def _update_extensions() -> Changelog:
     changes = vscode.add_extension_recommendation(
         "eamodio.gitlens"
     )  # cspell:ignore eamodio
@@ -48,7 +49,7 @@ def _update_extensions() -> list[str]:
 
 def _update_settings(
     has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> list[str]:
+) -> Changelog:
     changes = vscode.update_settings({
         "diffEditor.experimental.showMoves": True,
         "editor.formatOnSave": True,
@@ -91,7 +92,7 @@ def _update_settings(
     return changes
 
 
-def _remove_outdated_settings() -> list[str]:
+def _remove_outdated_settings() -> Changelog:
     outdated_settings = [
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
@@ -112,7 +113,7 @@ def _remove_outdated_settings() -> list[str]:
     return vscode.remove_settings(outdated_settings)
 
 
-def _update_doc_settings() -> list[str]:
+def _update_doc_settings() -> Changelog:
     if not os.path.exists("docs/"):
         return []
     changes = vscode.update_settings({
@@ -126,14 +127,14 @@ def _update_doc_settings() -> list[str]:
     return changes
 
 
-def _update_notebook_settings() -> list[str]:
+def _update_notebook_settings() -> Changelog:
     """https://code.visualstudio.com/updates/v1_83#_go-to-symbol-in-notebooks."""
     if not os.path.exists("docs/"):
         return []
     return vscode.update_settings({"notebook.gotoSymbols.showAllSymbols": True})
 
 
-def _update_pytest_settings() -> list[str]:
+def _update_pytest_settings() -> Changelog:
     if not os.path.exists("tests/"):
         return []
     return vscode.update_settings({

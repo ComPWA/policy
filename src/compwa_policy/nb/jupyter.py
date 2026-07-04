@@ -1,16 +1,23 @@
 """Update the developer setup when using Jupyter notebooks."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     use_modifiable_pyproject,
 )
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
+
 
 def main(
     no_ruff: bool,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     changes = _update_dev_requirements(no_ruff, pyproject)
     # cspell:ignore toolsai
     changes += vscode.add_extension_recommendation("ms-toolsai.jupyter")
@@ -27,7 +34,7 @@ def main(
 def _update_dev_requirements(
     no_ruff: bool,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []

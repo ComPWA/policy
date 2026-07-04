@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
@@ -16,19 +16,22 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
+
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
 def main(
     python_version: PythonVersion, package_manager: PackageManagerChoice
-) -> list[str]:
+) -> Changelog:
     if package_manager == "conda":
         return update_conda_environment(python_version)
     return _remove_conda_configuration()
 
 
-def update_conda_environment(python_version: PythonVersion) -> list[str]:
+def update_conda_environment(python_version: PythonVersion) -> Changelog:
     if not has_pyproject_package_name():
         return []
     yaml = create_prettier_round_trip_yaml()
@@ -105,8 +108,8 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration() -> list[str]:
-    changes: list[str] = []
+def _remove_conda_configuration() -> Changelog:
+    changes: Changelog = []
     changes += __remove_environment_yml()
     # cspell:ignore condaenv
     changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*")
@@ -114,7 +117,7 @@ def _remove_conda_configuration() -> list[str]:
     return changes
 
 
-def __remove_environment_yml() -> list[str]:
+def __remove_environment_yml() -> Changelog:
     if not CONFIG_PATH.conda.exists():
         return []
     CONFIG_PATH.conda.unlink()

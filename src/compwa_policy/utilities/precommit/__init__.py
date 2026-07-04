@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from ruamel.yaml import YAML
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
 
 T = TypeVar("T", bound="Precommit")
@@ -82,7 +83,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
     ) -> None:
         super().__init__(document, parser, source)
         self.__is_in_context = False
-        self.__changelog: list[str] = []
+        self.__changelog: Changelog = []
 
     def __enter__(self) -> Self:
         self.__is_in_context = True
@@ -117,7 +118,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             raise TypeError(msg)
 
     @property
-    def changelog(self) -> list[str]:
+    def changelog(self) -> Changelog:
         self.__assert_is_in_context()
         return self.__changelog
 

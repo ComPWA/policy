@@ -11,10 +11,12 @@ from compwa_policy.utilities.pyproject import (
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from compwa_policy.utilities.changelog import Changelog
+
 
 def remove_pixi_configuration(
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     changes = remove_lines(CONFIG_PATH.gitattributes, "pixi")
     changes += remove_lines(CONFIG_PATH.gitignore, ".*pixi.*")
     changes += _remove_file(CONFIG_PATH.pixi_lock)
@@ -31,7 +33,7 @@ def remove_pixi_configuration(
     return changes
 
 
-def _remove_file(path: Path) -> list[str]:
+def _remove_file(path: Path) -> Changelog:
     if not path.exists():
         return []
     path.unlink(missing_ok=True)

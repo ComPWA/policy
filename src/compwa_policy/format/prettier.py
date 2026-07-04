@@ -11,6 +11,7 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 # cspell:ignore rettier
@@ -21,10 +22,10 @@ __BADGE = """
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-def main(precommit: ModifiablePrecommit) -> list[str]:
+def main(precommit: ModifiablePrecommit) -> Changelog:
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
         return _remove_configuration()
-    changes: list[str] = []
+    changes: Changelog = []
     changes += add_badge(__BADGE)
     changes += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
     _update_prettier_hook(precommit)
@@ -32,7 +33,7 @@ def main(precommit: ModifiablePrecommit) -> list[str]:
     return changes
 
 
-def _remove_configuration() -> list[str]:
+def _remove_configuration() -> Changelog:
     old_config_files = [
         ".prettierrc.json",
         ".prettierrc.json5",
@@ -50,7 +51,7 @@ def _remove_configuration() -> list[str]:
         removed_paths_str = ", ".join(removed_paths)
         msg = f"Removed redundant configuration files: {removed_paths_str}"
         return [msg]
-    changes: list[str] = []
+    changes: Changelog = []
     changes += remove_badge(__BADGE_PATTERN)
     changes += vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
     return changes
@@ -64,14 +65,14 @@ def _update_prettier_hook(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append("Updated URL for Prettier pre-commit hook")
 
 
-def _update_prettier_ignore() -> list[str]:
-    changes: list[str] = []
+def _update_prettier_ignore() -> Changelog:
+    changes: Changelog = []
     changes += __remove_forbidden_paths()
     changes += __insert_expected_paths()
     return changes
 
 
-def __remove_forbidden_paths() -> list[str]:
+def __remove_forbidden_paths() -> Changelog:
     if not os.path.exists(CONFIG_PATH.prettier_ignore):
         return []
     existing = __get_existing_lines()
@@ -90,7 +91,7 @@ def __remove_forbidden_paths() -> list[str]:
     return []
 
 
-def __insert_expected_paths() -> list[str]:
+def __insert_expected_paths() -> Changelog:
     existing = __get_existing_lines()
     obligatory = [
         "LICENSE",

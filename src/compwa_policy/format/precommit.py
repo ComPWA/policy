@@ -17,6 +17,7 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit, PrecommitConfig
 
 
@@ -24,8 +25,8 @@ def main(
     precommit: ModifiablePrecommit,
     has_notebooks: bool,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
     _update_precommit_ci_autofix_commit_msg(precommit)

@@ -21,6 +21,7 @@ from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
@@ -33,8 +34,8 @@ def main(  # noqa: PLR0917
     organization: str,
     repo_name: str,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     if "uv" in package_manager:
         changes += readme.add_badge(
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
@@ -67,7 +68,7 @@ def main(  # noqa: PLR0917
     return changes
 
 
-def _remove_pip_constraint_files() -> list[str]:
+def _remove_pip_constraint_files() -> Changelog:
     if not CONFIG_PATH.pip_constraints.exists():
         return []
     for item in CONFIG_PATH.pip_constraints.iterdir():
@@ -82,7 +83,7 @@ def _remove_pip_constraint_files() -> list[str]:
 
 def _remove_uv_configuration(
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []
@@ -99,7 +100,7 @@ def _remove_uv_configuration(
     return []
 
 
-def _remove_uv_lock() -> list[str]:
+def _remove_uv_lock() -> Changelog:
     uv_lock_path = Path("uv.lock")
     if uv_lock_path.exists():
         uv_lock_path.unlink()
@@ -108,7 +109,7 @@ def _remove_uv_lock() -> list[str]:
     return []
 
 
-def _update_editor_config() -> list[str]:
+def _update_editor_config() -> Changelog:
     if not CONFIG_PATH.editorconfig.exists():
         return []
     if not is_committed("uv.lock"):
@@ -125,7 +126,7 @@ def _update_editor_config() -> list[str]:
     return [f"Updated {CONFIG_PATH.editorconfig} for uv.lock"]
 
 
-def _update_python_version_file(dev_python_version: PythonVersion) -> list[str]:
+def _update_python_version_file(dev_python_version: PythonVersion) -> Changelog:
     if not CONFIG_PATH.pyproject.exists():
         return []
     pyproject = Pyproject.load()
@@ -163,7 +164,7 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
         precommit.remove_hook("uv-lock")
 
 
-def _update_contributing_file(organization: str, repo_name: str) -> list[str]:
+def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
         return []

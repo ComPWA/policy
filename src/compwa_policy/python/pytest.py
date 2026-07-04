@@ -24,14 +24,16 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
+    from compwa_policy.utilities.changelog import Changelog
+
 
 def main(
     coverage_gutters: bool,
     single_threaded: bool,
     branch_coverage: bool = True,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []
@@ -177,8 +179,8 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
 
 def _update_vscode_settings(
     pyproject: Pyproject, coverage_gutters: bool, single_threaded: bool
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     # cspell:ignore ryanluker
     if coverage_gutters:
         changes += vscode.add_extension_recommendation(

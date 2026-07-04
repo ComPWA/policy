@@ -1,7 +1,10 @@
 """Extract :code:`.gitpod.yml` file from :code:`launch.json`."""
 
+from __future__ import annotations
+
 import json
 import os
+from typing import TYPE_CHECKING
 
 import yaml
 
@@ -15,10 +18,13 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
-def main(use_gitpod: bool, python_version: PythonVersion) -> list[str]:
+
+def main(use_gitpod: bool, python_version: PythonVersion) -> Changelog:
     if not use_gitpod:
-        changes: list[str] = []
+        changes: Changelog = []
         changes += remove_gitpod_config()
         changes += remove_badge(r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
         return changes
@@ -44,7 +50,7 @@ def main(use_gitpod: bool, python_version: PythonVersion) -> list[str]:
         return []
 
 
-def remove_gitpod_config() -> list[str]:
+def remove_gitpod_config() -> Changelog:
     if CONFIG_PATH.gitpod.exists():
         os.remove(CONFIG_PATH.gitpod)
         return [f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"]

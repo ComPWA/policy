@@ -3,11 +3,17 @@
 See https://github.com/ComPWA/policy/issues/177.
 """
 
+from __future__ import annotations
+
 import os
 from textwrap import dedent
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
 
-def main() -> list[str]:
+def main() -> Changelog:
     path = "commitlint.config.js"
     if not os.path.exists(path):
         return []

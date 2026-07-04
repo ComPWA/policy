@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
 
 _DOC_TASKS = frozenset({
     "doc",
@@ -44,8 +45,8 @@ def main(
     has_notebooks: bool,
     package_manager: PackageManagerChoice,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []
@@ -151,7 +152,7 @@ def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
     if not pyproject.has_table("tool.poe.tasks"):
         return
     tasks = pyproject.get_table("tool.poe.tasks")
-    migrated: list[str] = []
+    migrated: Changelog = []
     for task_name in list(tasks.keys()):
         target_group = None
         if task_name in _DOC_TASKS:

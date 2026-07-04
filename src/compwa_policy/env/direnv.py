@@ -13,9 +13,10 @@ from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
 
 
-def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> list[str]:
+def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> Changelog:
     if package_manager == "none":
         return []
     if package_manager == "uv":
@@ -86,7 +87,7 @@ def __get_pixi_environment_names() -> set[str]:
     return set()
 
 
-def _update_envrc(statements: list[tuple[str | None, str]]) -> list[str]:
+def _update_envrc(statements: list[tuple[str | None, str]]) -> Changelog:
     expected = ""
     for i, (trigger_path, script) in enumerate(statements):
         if trigger_path is not None:
@@ -100,7 +101,7 @@ def _update_envrc(statements: list[tuple[str | None, str]]) -> list[str]:
     return __update_envrc_content(expected)
 
 
-def __update_envrc_content(expected: str) -> list[str]:
+def __update_envrc_content(expected: str) -> Changelog:
     if __get_existing_envrc() == expected:
         return []
     with open(CONFIG_PATH.envrc, "w") as f:

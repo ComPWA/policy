@@ -17,6 +17,7 @@ from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
 
 Frequency = Literal[
@@ -35,8 +36,8 @@ __TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 def main(
     precommit: ModifiablePrecommit, frequency: Frequency, keep_workflow: set[str]
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     _update_precommit_schedule(precommit, frequency)
     changes += _remove_script("pin_requirements.py")
     changes += _remove_script("upgrade.sh")
@@ -44,7 +45,7 @@ def main(
     return changes
 
 
-def _remove_script(script_name: str) -> list[str]:
+def _remove_script(script_name: str) -> Changelog:
     bash_script_name = CONFIG_PATH.pip_constraints / script_name
     if bash_script_name.exists():
         bash_script_name.unlink()
@@ -55,8 +56,8 @@ def _remove_script(script_name: str) -> list[str]:
 
 def _update_lock_workflow(
     precommit: Precommit, frequency: Frequency, keep_workflow: set[str]
-) -> list[str]:
-    def overwrite_workflow(workflow_file: str) -> list[str]:
+) -> Changelog:
+    def overwrite_workflow(workflow_file: str) -> Changelog:
         expected_workflow_path = (
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
@@ -86,7 +87,7 @@ def _update_lock_workflow(
             return update_workflow(yaml, expected_data, workflow_path)
         return []
 
-    changes: list[str] = []
+    changes: Changelog = []
     if "lock.yml" not in keep_workflow:
         changes += overwrite_workflow("lock.yml")
     for workflow in (

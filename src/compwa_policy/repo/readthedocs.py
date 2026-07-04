@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
@@ -33,7 +34,7 @@ def main(
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     source: IO | Path | str = CONFIG_PATH.readthedocs,
-) -> list[str]:
+) -> Changelog:
     if isinstance(source, str):
         source = Path(source)
     if isinstance(source, Path) and not source.exists():
@@ -311,7 +312,7 @@ def _update_post_install(
 def __get_install_steps(
     python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-) -> list[str]:
+) -> Changelog:
     pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
     if package_manager == "uv":
@@ -339,7 +340,7 @@ def __find_step(steps: list[str], pattern: str, invert: bool = False) -> int | N
 class ReadTheDocs:
     def __init__(self, source: IO | Path | str) -> None:
         self.__parser = create_prettier_round_trip_yaml()
-        self.changelog: list[str] = []
+        self.changelog: Changelog = []
         self.source = source
         if isinstance(source, (Path, str)):
             with open(source) as f:
@@ -357,7 +358,7 @@ class ReadTheDocs:
             target.seek(0)
             self.__parser.dump(self.document, target)
 
-    def finalize(self) -> list[str]:
+    def finalize(self) -> Changelog:
         if not self.changelog:
             return []
         msg = f"Updated {CONFIG_PATH.readthedocs}:\n"

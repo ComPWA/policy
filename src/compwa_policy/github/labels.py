@@ -9,13 +9,17 @@ from __future__ import annotations
 import os
 from functools import cache
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from compwa_policy.utilities.match import git_ls_files
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def main() -> list[str]:
+def main() -> Changelog:
     if os.path.exists(__LABELS_CONFIG_FILE):
         os.remove(__LABELS_CONFIG_FILE)
         return [

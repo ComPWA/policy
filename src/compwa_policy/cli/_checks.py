@@ -8,7 +8,7 @@ individual checks themselves live under the `compwa_policy` modules and are unch
 
 from __future__ import annotations
 
-from typing import Literal, get_args
+from typing import TYPE_CHECKING, Literal, get_args
 
 import typer
 from attrs import frozen
@@ -46,6 +46,9 @@ from compwa_policy.utilities.pyproject import (
     Pyproject,
     use_modifiable_pyproject,
 )
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
 
 @frozen
@@ -130,7 +133,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
     ctx: Context,
     *,
     groups: frozenset[Group] = ALL_GROUPS,
-) -> list[str]:
+) -> Changelog:
     """Dispatch the requested check *groups* in the canonical order.
 
     This is the single source of truth for which checks run and in what order. Running
@@ -139,7 +142,7 @@ def run_checks(  # noqa: C901, PLR0912, PLR0915
     sequence means a subcommand can never order a shared config file (such as
     ``.pre-commit-config.yaml``) differently from the full run.
     """
-    changes: list[str] = []
+    changes: Changelog = []
     if "repo" in groups:
         changes += citation.main(precommit_config)
         changes += commitlint.main()

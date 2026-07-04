@@ -17,11 +17,12 @@ from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
-def main(precommit: ModifiablePrecommit) -> list[str]:
-    changes: list[str] = []
+def main(precommit: ModifiablePrecommit) -> Changelog:
+    changes: Changelog = []
     just_converted = False
     if CONFIG_PATH.zenodo.exists():
         if CONFIG_PATH.citation.exists():
@@ -38,7 +39,7 @@ def main(precommit: ModifiablePrecommit) -> list[str]:
     return changes
 
 
-def convert_zenodo_json() -> list[str]:
+def convert_zenodo_json() -> Changelog:
     with open(CONFIG_PATH.zenodo) as f:
         zenodo = json.load(f)
     citation_cff = _convert_zenodo(zenodo)
@@ -52,7 +53,7 @@ def convert_zenodo_json() -> list[str]:
     return [msg]
 
 
-def remove_zenodo_json() -> list[str]:
+def remove_zenodo_json() -> Changelog:
     CONFIG_PATH.zenodo.unlink()
     msg = (
         f"Removed {CONFIG_PATH.zenodo}, because a {CONFIG_PATH.citation} already exists"
@@ -214,7 +215,7 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append(msg)
 
 
-def update_vscode_settings() -> list[str]:
+def update_vscode_settings() -> Changelog:
     return vscode.update_settings(
         {
             "yaml.schemas": {

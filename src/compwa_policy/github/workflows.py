@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.main import YAML
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import Precommit
 
 
@@ -46,8 +47,8 @@ def main(
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     if no_cd:
         changes += remove_workflow("cd.yml")
     else:
@@ -71,8 +72,8 @@ def main(
 
 def _update_cd_workflow(  # noqa: C901
     no_milestones: bool, no_pypi: bool, no_version_branches: bool
-) -> list[str]:
-    def update() -> list[str]:  # noqa: C901
+) -> Changelog:
+    def update() -> Changelog:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
@@ -103,13 +104,13 @@ def _update_cd_workflow(  # noqa: C901
             return update_workflow(yaml, expected_data, workflow_path)
         return []
 
-    changes: list[str] = []
+    changes: Changelog = []
     changes += update()
     changes += remove_workflow("milestone.yml")
     return changes
 
 
-def _update_pr_linting() -> list[str]:
+def _update_pr_linting() -> Changelog:
     filename = "pr-linting.yml"
     input_path = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     output_path = CONFIG_PATH.github_workflow_dir / filename
@@ -131,8 +132,8 @@ def _update_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> list[str]:
-    def update() -> list[str]:
+) -> Changelog:
+    def update() -> Changelog:
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             precommit,
@@ -157,7 +158,7 @@ def _update_ci_workflow(  # noqa: PLR0917
                 return update_workflow(yaml, expected_data, workflow_path)
         return []
 
-    changes: list[str] = []
+    changes: Changelog = []
     changes += update()
     if not allow_deprecated:
         changes += remove_workflow("ci-docs.yml")
@@ -289,7 +290,7 @@ def __get_coverage_python_version() -> PythonVersion:
     return DEFAULT_DEV_PYTHON_VERSION
 
 
-def _copy_workflow_file(filename: str) -> list[str]:
+def _copy_workflow_file(filename: str) -> Changelog:
     expected_workflow_path = (
         COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     )
@@ -327,11 +328,11 @@ def __remove_constraint_pinning(content: str) -> str:
     )
 
 
-def _recommend_vscode_extension() -> list[str]:
+def _recommend_vscode_extension() -> Changelog:
     if not CONFIG_PATH.github_workflow_dir.exists():
         return []
     # cspell:ignore cschleiden
-    changes: list[str] = []
+    changes: Changelog = []
     changes += vscode.remove_extension_recommendation(
         "cschleiden.vscode-github-actions"
     )
@@ -345,7 +346,7 @@ def _recommend_vscode_extension() -> list[str]:
     return changes
 
 
-def remove_workflow(filename: str) -> list[str]:
+def remove_workflow(filename: str) -> Changelog:
     path = CONFIG_PATH.github_workflow_dir / filename
     if path.exists():
         path.unlink()
@@ -354,7 +355,7 @@ def remove_workflow(filename: str) -> list[str]:
     return []
 
 
-def update_workflow(yaml: YAML, config: dict, path: Path) -> list[str]:
+def update_workflow(yaml: YAML, config: dict, path: Path) -> Changelog:
     path.parent.mkdir(exist_ok=True, parents=True)
     yaml.dump(config, path)
     verb = "Updated" if path.exists() else "Created"

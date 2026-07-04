@@ -18,12 +18,13 @@ from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from compwa_policy.config import PythonVersion
+    from compwa_policy.utilities.changelog import Changelog
 
 
 def main(
     excluded_python_versions: set[PythonVersion],
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []

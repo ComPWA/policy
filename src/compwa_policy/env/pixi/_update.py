@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Table
 
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
@@ -30,7 +31,7 @@ def update_pixi_configuration(
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     if "pixi" not in package_manager:
         return []
     include_changelog = True
@@ -43,7 +44,7 @@ def update_pixi_configuration(
     else:
         CONFIG_PATH.pixi_toml.touch()
         config_context = ModifiablePyproject.load(CONFIG_PATH.pixi_toml)
-    extra: list[str] = []
+    extra: Changelog = []
     with config_context as config:
         extra += add_badge(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
@@ -246,7 +247,7 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes() -> list[str]:
+def __update_gitattributes() -> Changelog:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
     if append_safe(expected_line, CONFIG_PATH.gitattributes):
         return [
@@ -255,7 +256,7 @@ def __update_gitattributes() -> list[str]:
     return []
 
 
-def __update_gitignore() -> list[str]:
+def __update_gitignore() -> Changelog:
     ignore_path = ".pixi/"
     if append_safe(ignore_path, CONFIG_PATH.gitignore):
         return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]

@@ -16,6 +16,7 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
@@ -26,8 +27,8 @@ def main(
     type_checkers: set[TypeChecker],
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += _update_vscode_settings(type_checkers)
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
@@ -46,13 +47,13 @@ def main(
     return changes
 
 
-def _update_vscode_settings(type_checkers: set[TypeChecker]) -> list[str]:
+def _update_vscode_settings(type_checkers: set[TypeChecker]) -> Changelog:
     settings = {
         "ty.completions.autoImport": False,
         "ty.diagnosticMode": "workspace",
         "ty.importStrategy": "fromEnvironment",
     }
-    changes: list[str] = []
+    changes: Changelog = []
     if "ty" in type_checkers:
         if "pyright" not in type_checkers:
             changes += vscode.remove_settings(["python.languageServer"])
@@ -117,7 +118,7 @@ def _select_dependency_group(pyproject: ModifiablePyproject) -> str | None:
 
 def _remove_ty(
     precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
-) -> list[str]:
+) -> Changelog:
     config_path = Path("ty.toml")
     if config_path.exists():
         config_path.unlink()

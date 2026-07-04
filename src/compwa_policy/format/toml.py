@@ -22,6 +22,7 @@ from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
@@ -32,7 +33,7 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
 def main(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
+) -> Changelog:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
@@ -40,7 +41,7 @@ def main(
     ]
     if not any(f.exists() for f in trigger_files):
         return []
-    changes: list[str] = []
+    changes: Changelog = []
     changes += _rename_taplo_config()
     changes += _update_taplo_config()
     _rename_precommit_url(precommit)
@@ -51,7 +52,7 @@ def main(
     return changes
 
 
-def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> list[str]:
+def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Changelog:
     if pyproject is None and not CONFIG_PATH.pyproject.exists():
         return []
     sort_first = [
@@ -106,7 +107,7 @@ def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _rename_taplo_config() -> list[str]:
+def _rename_taplo_config() -> Changelog:
     for path in __INCORRECT_TAPLO_CONFIG_PATHS:
         if not path.exists():
             continue
@@ -116,7 +117,7 @@ def _rename_taplo_config() -> list[str]:
     return []
 
 
-def _update_taplo_config() -> list[str]:
+def _update_taplo_config() -> Changelog:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     with open(template_path) as f:
         expected = tomlkit.load(f)
@@ -201,9 +202,9 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions() -> list[str]:
+def _update_vscode_extensions() -> Changelog:
     # cspell:ignore bungcip tamasfe
-    changes: list[str] = []
+    changes: Changelog = []
     changes += vscode.add_extension_recommendation("tamasfe.even-better-toml")
     changes += vscode.remove_extension_recommendation(
         "bungcip.better-toml", unwanted=True

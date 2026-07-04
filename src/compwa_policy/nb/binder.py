@@ -19,14 +19,15 @@ if TYPE_CHECKING:
 
     from compwa_policy.config import PythonVersion
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.changelog import Changelog
 
 
 def main(
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     apt_packages: list[str],
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += _update_apt_txt(apt_packages)
     changes += _update_post_build(package_manager)
     changes += _make_executable(CONFIG_PATH.binder / "postBuild")
@@ -34,7 +35,7 @@ def main(
     return changes
 
 
-def _update_apt_txt(apt_packages: list[str]) -> list[str]:
+def _update_apt_txt(apt_packages: list[str]) -> Changelog:
     apt_txt = CONFIG_PATH.binder / "apt.txt"
     if not apt_packages:
         if apt_txt.exists():
@@ -49,7 +50,7 @@ def _update_apt_txt(apt_packages: list[str]) -> list[str]:
     )
 
 
-def _update_post_build(package_manager: PackageManagerChoice) -> list[str]:
+def _update_post_build(package_manager: PackageManagerChoice) -> Changelog:
     if package_manager == "pixi+uv":
         expected_content = __get_post_builder_for_pixi_with_uv()
     elif package_manager == "uv":
@@ -153,7 +154,7 @@ def ___safe_get_table(dotted_header: str) -> Mapping[str, Any]:
     return pyproject.get_table(dotted_header)
 
 
-def _make_executable(path: Path) -> list[str]:
+def _make_executable(path: Path) -> Changelog:
     if os.access(path, os.X_OK):
         return []
     msg = f"{path} has been made executable"
@@ -161,14 +162,14 @@ def _make_executable(path: Path) -> list[str]:
     return [msg]
 
 
-def _update_runtime_txt(python_version: PythonVersion) -> list[str]:
+def _update_runtime_txt(python_version: PythonVersion) -> Changelog:
     return __update_file(
         expected_content=f"python-{python_version}\n",
         path=CONFIG_PATH.binder / "runtime.txt",
     )
 
 
-def __update_file(expected_content: str, path: Path) -> list[str]:
+def __update_file(expected_content: str, path: Path) -> Changelog:
     path.parent.mkdir(exist_ok=True)
     if path.exists():
         with open(path) as stream:

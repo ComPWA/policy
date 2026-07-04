@@ -1,13 +1,15 @@
 """Check and update :code:`mypy` settings."""
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import rtoml
 from ini2toml.api import Translator
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
-from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -15,13 +17,17 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
+
 
 def main(
     active: bool,
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += _update_vscode_settings(active)
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
@@ -59,7 +65,7 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
 
 def _remove_mypy(
     precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
-) -> list[str]:
+) -> Changelog:
     if pyproject.has_table("tool.mypy"):
         del pyproject._document["tool"]["mypy"]  # noqa: SLF001
         pyproject.changelog.append("Removed mypy configuration table")
@@ -83,8 +89,8 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_vscode_settings(mypy: bool) -> list[str]:
-    changes: list[str] = []
+def _update_vscode_settings(mypy: bool) -> Changelog:
+    changes: Changelog = []
     if mypy:
         changes += vscode.add_extension_recommendation("ms-python.mypy-type-checker")
         settings = {

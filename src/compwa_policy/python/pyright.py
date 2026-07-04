@@ -17,6 +17,7 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 
@@ -24,8 +25,8 @@ def main(
     active: bool,
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject | None = None,
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += _update_vscode_settings(active)
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
@@ -102,8 +103,8 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _update_vscode_settings(active: bool) -> list[str]:
-    changes: list[str] = []
+def _update_vscode_settings(active: bool) -> Changelog:
+    changes: Changelog = []
     if active:
         changes += vscode.add_extension_recommendation("ms-python.vscode-pylance")
         changes += vscode.update_settings({
@@ -125,7 +126,7 @@ def _update_vscode_settings(active: bool) -> list[str]:
 def _remove_pyright(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> list[str]:
+) -> Changelog:
     pyright_config = Path("pyrightconfig.json")
     if pyright_config.exists():
         os.remove(pyright_config)

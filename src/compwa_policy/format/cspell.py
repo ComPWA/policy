@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from pathlib import Path
 
+    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
@@ -32,8 +33,8 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main(precommit: ModifiablePrecommit, no_cspell_update: bool) -> list[str]:
-    changes: list[str] = []
+def main(precommit: ModifiablePrecommit, no_cspell_update: bool) -> Changelog:
+    changes: Changelog = []
     changes += rename_file("cspell.json", str(CONFIG_PATH.cspell))
     _update_cspell_repo_url(precommit)
     has_cspell_hook = False
@@ -69,8 +70,8 @@ def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
         precommit.changelog.append(msg)
 
 
-def _remove_configuration() -> list[str]:
-    changes: list[str] = []
+def _remove_configuration() -> Changelog:
+    changes: Changelog = []
     if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)
         msg = f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
@@ -104,7 +105,7 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_config_content() -> list[str]:
+def _update_config_content() -> Changelog:
     if not CONFIG_PATH.cspell.exists():
         with open(CONFIG_PATH.cspell, "w") as stream:
             stream.write("{}")
@@ -137,7 +138,7 @@ def _update_config_content() -> list[str]:
     return []
 
 
-def _sort_config_entries() -> list[str]:
+def _sort_config_entries() -> Changelog:
     config = __get_config(CONFIG_PATH.cspell)
     fixed_sections = []
     for section, section_content in config.items():

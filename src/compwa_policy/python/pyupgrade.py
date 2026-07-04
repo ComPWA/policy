@@ -1,14 +1,21 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
-from ruamel.yaml.comments import CommentedSeq
+from __future__ import annotations
 
-from compwa_policy.utilities.precommit import ModifiablePrecommit
+from typing import TYPE_CHECKING
+
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
+if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedSeq
 
-def main(precommit: ModifiablePrecommit, no_ruff: bool) -> list[str]:
+    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
+
+
+def main(precommit: ModifiablePrecommit, no_ruff: bool) -> Changelog:
     if no_ruff:
         _update_precommit_repo(precommit)
         _update_precommit_nbqa_hook(precommit)

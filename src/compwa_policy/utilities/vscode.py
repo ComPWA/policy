@@ -13,6 +13,8 @@ from compwa_policy.utilities import CONFIG_PATH
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from compwa_policy.utilities.changelog import Changelog
+
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -38,7 +40,7 @@ def _get_extension_recommendations(key: str) -> set[str]:
     return {ext.lower() for ext in extensions}
 
 
-def remove_settings(keys: RemovedKeys) -> list[str]:
+def remove_settings(keys: RemovedKeys) -> Changelog:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new_settings = _remove_keys(settings, keys)
     return _update_settings_if_changed(settings, new=new_settings)
@@ -84,7 +86,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     return obj
 
 
-def update_settings(new_settings: dict) -> list[str]:
+def update_settings(new_settings: dict) -> Changelog:
     old = __load_config(CONFIG_PATH.vscode_settings, create=True)
     updated = _update_dict_recursively(old, new_settings)
     return _update_settings_if_changed(old, updated)
@@ -129,28 +131,28 @@ def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     return new
 
 
-def _update_settings_if_changed(old: dict, new: dict) -> list[str]:
+def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     if old == new:
         return []
     __dump_config(new, CONFIG_PATH.vscode_settings)
     return ["Updated VS Code settings"]
 
 
-def add_extension_recommendation(extension_name: str) -> list[str]:
-    changes: list[str] = []
+def add_extension_recommendation(extension_name: str) -> Changelog:
+    changes: Changelog = []
     changes += __add_extension(extension_name, key="recommendations")
     changes += __remove_extension(extension_name, key="unwantedRecommendations")
     return changes
 
 
-def add_unwanted_extension(extension_name: str) -> list[str]:
-    changes: list[str] = []
+def add_unwanted_extension(extension_name: str) -> Changelog:
+    changes: Changelog = []
     changes += __add_extension(extension_name, key="unwantedRecommendations")
     changes += __remove_extension(extension_name, key="recommendations")
     return changes
 
 
-def __add_extension(extension_name: str, key: str) -> list[str]:
+def __add_extension(extension_name: str, key: str) -> Changelog:
     config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
     recommended_extensions = __to_lower(config.get(key, []))
     extension_name = extension_name.lower()
@@ -162,7 +164,7 @@ def __add_extension(extension_name: str, key: str) -> list[str]:
     return []
 
 
-def __remove_extension(extension_name: str, key: str) -> list[str]:
+def __remove_extension(extension_name: str, key: str) -> Changelog:
     if not CONFIG_PATH.vscode_extensions.exists():
         return []
     with open(CONFIG_PATH.vscode_extensions) as stream:
@@ -179,8 +181,8 @@ def __remove_extension(extension_name: str, key: str) -> list[str]:
 
 def remove_extension_recommendation(
     extension_name: str, *, unwanted: bool = False
-) -> list[str]:
-    changes: list[str] = []
+) -> Changelog:
+    changes: Changelog = []
     changes += __remove_extension(extension_name, key="recommendations")
     if unwanted:
         changes += add_unwanted_extension(extension_name)

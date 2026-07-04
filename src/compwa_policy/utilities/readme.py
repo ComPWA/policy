@@ -1,14 +1,20 @@
 """Helper functions for modifying :file:`README.md`."""
 
+from __future__ import annotations
+
 import os.path
 import re
+from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PolicyError
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.changelog import Changelog
 
 __README_PATH = "README.md"
 
 
-def add_badge(badge: str) -> list[str]:
+def add_badge(badge: str) -> Changelog:
     if not os.path.exists(__README_PATH):
         return []
     with open(__README_PATH) as stream:
@@ -34,7 +40,7 @@ def add_badge(badge: str) -> list[str]:
     return []
 
 
-def remove_badge(badge_pattern: str) -> list[str]:
+def remove_badge(badge_pattern: str) -> Changelog:
     if not os.path.exists(__README_PATH):
         return []
     with open(__README_PATH) as stream:
