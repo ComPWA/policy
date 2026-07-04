@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from compwa_policy.errors import PolicyError
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog
 
 __README_PATH = "README.md"
 

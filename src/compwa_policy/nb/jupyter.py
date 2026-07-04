@@ -11,24 +11,20 @@ from compwa_policy.utilities.pyproject import (
 )
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    no_ruff: bool,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes = _update_dev_requirements(no_ruff, pyproject)
+def main(session: Session, no_ruff: bool) -> None:
+    session.changelog += _update_dev_requirements(no_ruff, session.pyproject)
     # cspell:ignore toolsai
-    changes += vscode.add_extension_recommendation("ms-toolsai.jupyter")
-    changes += vscode.add_extension_recommendation(
+    session.changelog += vscode.add_extension_recommendation("ms-toolsai.jupyter")
+    session.changelog += vscode.add_extension_recommendation(
         "ms-toolsai.vscode-jupyter-cell-tags"
     )
-    changes += vscode.remove_extension_recommendation(
+    session.changelog += vscode.remove_extension_recommendation(
         "ms-toolsai.vscode-jupyter-slideshow",
         unwanted=True,
     )
-    return changes
 
 
 def _update_dev_requirements(

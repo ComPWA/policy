@@ -26,19 +26,20 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
+    session: Session,
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     source: IO | Path | str = CONFIG_PATH.readthedocs,
-) -> Changelog:
+) -> None:
     if isinstance(source, str):
         source = Path(source)
     if isinstance(source, Path) and not source.exists():
-        return []
+        return
     rtd = ReadTheDocs(source)
     _set_sphinx_configuration(rtd)
     _update_os(rtd)
@@ -57,7 +58,7 @@ def main(
         _update_build_step_for_uv(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
-    return rtd.finalize()
+    session.changelog += rtd.finalize()
 
 
 def _set_sphinx_configuration(config: ReadTheDocs) -> None:

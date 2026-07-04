@@ -15,6 +15,7 @@ from compwa_policy.env.uv import (
     main,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 
 def _git_init(directory: Path) -> None:
@@ -145,15 +146,17 @@ def describe_main():
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            changes = main(
-                precommit,
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            main(
+                session,
                 dev_python_version="3.12",
                 keep_contributing_md=True,
                 package_manager="uv",
                 organization="ComPWA",
                 repo_name="policy",
             )
+            changes = session.collect_changes()
         assert changes or precommit.changelog  # something changed
         assert (tmp_path / ".python-version").read_text().strip() == "3.12"
 
@@ -167,9 +170,10 @@ def describe_main():
             '[project]\nname = "x"\n\n[tool.uv]\nmanaged = true\n'
         )
         (tmp_path / "uv.lock").write_text("# lock\n")
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
             main(
-                precommit,
+                session,
                 dev_python_version="3.12",
                 keep_contributing_md=True,
                 package_manager="pixi",

@@ -16,6 +16,7 @@ from compwa_policy.python.pyright import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 @pytest.fixture
@@ -207,8 +208,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
-        with ModifiablePrecommit.load(precommit_path) as precommit:
-            main(active=True, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, active=True)
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "typeCheckingMode" in pyproject_text
         assert "id: pyright" in precommit.dumps()
@@ -231,7 +233,8 @@ def describe_main():
                   - id: pyright
             """,
         )
-        with ModifiablePrecommit.load(precommit_path) as precommit:
-            main(active=False, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, active=False)
         assert "tool.pyright" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: pyright" not in precommit.dumps()

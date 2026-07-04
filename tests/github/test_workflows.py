@@ -5,14 +5,15 @@ from pathlib import Path
 import pytest
 
 from compwa_policy.github.workflows import main, remove_workflow
-from compwa_policy.utilities.precommit import Precommit
+from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import PythonVersion
+from compwa_policy.utilities.session import Session
 
 _WORKFLOW_DIR = Path(".github/workflows")
 
 
-def _precommit(content: str = "repos: []\n") -> Precommit:
-    return Precommit.load(io.StringIO(content))
+def _precommit(content: str = "repos: []\n") -> ModifiablePrecommit:
+    return ModifiablePrecommit.load(io.StringIO(content))
 
 
 @pytest.fixture
@@ -44,22 +45,24 @@ def _run_main(
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
 ) -> list[str]:
-    return main(
-        _precommit(precommit_content),
-        allow_deprecated=False,
-        doc_apt_packages=doc_apt_packages or [],
-        environment_variables=environment_variables or {},
-        github_pages=github_pages,
-        keep_pr_linting=False,
-        macos_python_version=macos_python_version,
-        no_cd=no_cd,
-        no_milestones=no_milestones,
-        no_pypi=no_pypi,
-        no_version_branches=no_version_branches,
-        python_version=python_version,
-        single_threaded=single_threaded,
-        skip_tests=skip_tests or [],
-    )
+    with Session.load(_precommit(precommit_content)) as session:
+        main(
+            session,
+            allow_deprecated=False,
+            doc_apt_packages=doc_apt_packages or [],
+            environment_variables=environment_variables or {},
+            github_pages=github_pages,
+            keep_pr_linting=False,
+            macos_python_version=macos_python_version,
+            no_cd=no_cd,
+            no_milestones=no_milestones,
+            no_pypi=no_pypi,
+            no_version_branches=no_version_branches,
+            python_version=python_version,
+            single_threaded=single_threaded,
+            skip_tests=skip_tests or [],
+        )
+        return session.collect_changes()
 
 
 def describe_main():

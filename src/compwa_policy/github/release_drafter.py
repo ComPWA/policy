@@ -11,10 +11,12 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> Changelog:
+def main(
+    session: Session, no_cd: bool, repo_name: str, repo_title: str, organization: str
+) -> None:
     if no_cd:
         paths_to_remove: list[Path] = [
             CONFIG_PATH.release_drafter_workflow,
@@ -24,12 +26,12 @@ def main(no_cd: bool, repo_name: str, repo_title: str, organization: str) -> Cha
         if paths_to_remove:
             for path in paths_to_remove:
                 path.unlink()
-            return [f"Removed {', '.join(str(p) for p in paths_to_remove)}"]
-        return []
-    changes: Changelog = []
-    changes += update_file(CONFIG_PATH.release_drafter_workflow)
-    changes += _update_draft(repo_name, repo_title, organization)
-    return changes
+            session.changelog.append(
+                f"Removed {', '.join(str(p) for p in paths_to_remove)}"
+            )
+        return
+    session.changelog += update_file(CONFIG_PATH.release_drafter_workflow)
+    session.changelog += _update_draft(repo_name, repo_title, organization)
 
 
 def _update_draft(repo_name: str, repo_title: str, organization: str) -> Changelog:

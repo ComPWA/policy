@@ -28,29 +28,24 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    precommit: ModifiablePrecommit,
-    has_notebooks: bool,
-    imports_on_top: bool,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+def main(session: Session, has_notebooks: bool, imports_on_top: bool) -> None:
+    precommit = session.precommit
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return []
-        changes += add_badge(
+            return
+        session.changelog += add_badge(
             "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
         )
         config.remove_dependency("radon")
-        changes += _remove_black(precommit, config)
-        changes += _remove_flake8(precommit, config)
-        changes += _remove_isort(precommit, config, imports_on_top)
-        changes += _remove_pydocstyle(precommit, config)
-        changes += _remove_pylint(precommit, config)
+        session.changelog += _remove_black(precommit, config)
+        session.changelog += _remove_flake8(precommit, config)
+        session.changelog += _remove_isort(precommit, config, imports_on_top)
+        session.changelog += _remove_pydocstyle(precommit, config)
+        session.changelog += _remove_pylint(precommit, config)
         _move_ruff_lint_config(config)
         if has_notebooks and imports_on_top:
             _sort_imports_on_top(precommit, config)
@@ -58,10 +53,7 @@ def main(
         _update_precommit_hook(precommit, has_notebooks)
         if not has_dependency(config, "ruff"):
             _update_lint_dependencies(config)
-        changes += _update_vscode_settings()
-        if include_changelog:
-            changes += config.changelog
-    return changes
+        session.changelog += _update_vscode_settings()
 
 
 def _remove_black(

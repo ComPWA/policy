@@ -11,7 +11,7 @@ from compwa_policy.utilities.pyproject import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog
 
 
 def remove_pixi_configuration(

@@ -10,15 +10,19 @@ from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
-    has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> Changelog:
-    changes = _update_extensions()
-    changes += _update_settings(has_notebooks, is_python_repo, package_manager)
-    return changes
+    session: Session,
+    has_notebooks: bool,
+    is_python_repo: bool,
+    package_manager: PackageManagerChoice,
+) -> None:
+    session.changelog += _update_extensions()
+    session.changelog += _update_settings(
+        has_notebooks, is_python_repo, package_manager
+    )
 
 
 def _update_extensions() -> Changelog:

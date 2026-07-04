@@ -11,6 +11,7 @@ from compwa_policy.format.prettier import (
     main,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 _META_ONLY = dedent("""
     repos:
@@ -93,8 +94,10 @@ def describe_main():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
-        with ModifiablePrecommit.load(io.StringIO(_WITH_PRETTIER)) as precommit:
-            changes = main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(_WITH_PRETTIER))
+        with Session.load(precommit) as session:
+            main(session)
+            changes = session.collect_changes()
         assert changes
         assert "prettier" in (tmp_path / "README.md").read_text()
 
@@ -104,6 +107,8 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / ".prettierrc.json").write_text("{}")
-        with ModifiablePrecommit.load(io.StringIO(_META_ONLY)) as precommit:
-            changes = main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
+        with Session.load(precommit) as session:
+            main(session)
+            changes = session.collect_changes()
         assert any("Removed redundant configuration" in m for m in changes)

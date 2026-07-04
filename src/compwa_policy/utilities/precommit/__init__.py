@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 
     from ruamel.yaml import YAML
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
+    from compwa_policy.utilities.session import Changelog
 
 T = TypeVar("T", bound="Precommit")
 

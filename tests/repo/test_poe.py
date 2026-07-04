@@ -14,6 +14,7 @@ from compwa_policy.repo.poe import (
     main,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.session import Session
 
 _PYPROJECT = dedent("""
     [project]
@@ -69,7 +70,8 @@ def poe_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def describe_main():
     def configures_groups_and_tasks(poe_repo: Path):
-        main(has_notebooks=True, package_manager="uv")
+        with Session.load() as session:
+            main(session, has_notebooks=True, package_manager="uv")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "[tool.poe.executor]" in pyproject  # uv executor configured
@@ -80,14 +82,16 @@ def describe_main():
         assert "[tool.poe.tasks.upgrade]" in pyproject  # upgrade task added
 
     def uses_pixi_upgrade_command(poe_repo: Path):
-        main(has_notebooks=True, package_manager="pixi")
+        with Session.load() as session:
+            main(session, has_notebooks=True, package_manager="pixi")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "pixi upgrade" in pyproject  # pixi-specific upgrade command
 
     def is_noop_without_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        main(has_notebooks=False, package_manager="uv")  # no pyproject.toml -> no-op
+        with Session.load() as session:
+            main(session, has_notebooks=False, package_manager="uv")  # no pyproject
 
 
 def describe_update_doclive():

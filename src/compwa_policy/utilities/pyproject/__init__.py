@@ -41,8 +41,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, MutableMapping, Sequence
     from types import TracebackType
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
+    from compwa_policy.utilities.session import Changelog
 
 T = TypeVar("T", bound="Pyproject")
 _NO_FALLBACK: Final = object()

@@ -8,6 +8,7 @@ import yaml
 
 from compwa_policy.format import precommit
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.session import Session
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -270,15 +271,16 @@ def describe_main():
             [dependency-groups]
             dev = ["pre-commit", "pre-commit-uv"]
         """)
-        with _load("repos: []") as pc:
-            changes = precommit.main(pc, has_notebooks=False)
+        with Session.load(_load("repos: []")) as session:
+            precommit.main(session, has_notebooks=False)
+            changes = session.collect_changes()
         assert any("Removed pre-commit from dependencies" in m for m in changes)
         assert any("Removed pre-commit-uv from dependencies" in m for m in changes)
 
     def sorts_and_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[dependency-groups]\ndev = []\n")
-        with _load("""
+        pc = _load("""
                 ci:
                   autofix_prs: true
                 repos:
@@ -288,7 +290,8 @@ def describe_main():
                   - repo: meta
                     hooks:
                       - id: check-hooks-apply
-            """) as pc:
-            precommit.main(pc, has_notebooks=False)
+            """)
+        with Session.load(pc) as session:
+            precommit.main(session, has_notebooks=False)
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")  # hooks sorted

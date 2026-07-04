@@ -15,19 +15,15 @@ from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
 
 
-def main(
-    precommit: ModifiablePrecommit,
-    has_notebooks: bool,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+def main(session: Session, has_notebooks: bool) -> None:
+    precommit = session.precommit
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return []
+            return
         _remove_outdated_settings(config)
         _update_black_settings(config)
         precommit.remove_hook(
@@ -39,20 +35,19 @@ def main(
             repo_url="https://github.com/psf/black",
         )
         _update_precommit_repo(precommit, has_notebooks)
-        changes += vscode.add_extension_recommendation("ms-python.black-formatter")
-        changes += vscode.update_settings({
+        session.changelog += vscode.add_extension_recommendation(
+            "ms-python.black-formatter"
+        )
+        session.changelog += vscode.update_settings({
             "black-formatter.importStrategy": "fromEnvironment"
         })
-        changes += vscode.update_settings({
+        session.changelog += vscode.update_settings({
             "[python]": {
                 "editor.defaultFormatter": "ms-python.black-formatter",
                 "editor.rulers": [88],
             },
         })
         precommit.remove_hook("nbqa-black")
-        if include_changelog:
-            changes += config.changelog
-    return changes
 
 
 def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:

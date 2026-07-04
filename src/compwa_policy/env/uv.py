@@ -21,35 +21,34 @@ from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(  # noqa: PLR0917
-    precommit_config: ModifiablePrecommit,
+    session: Session,
     dev_python_version: PythonVersion,
     keep_contributing_md: bool,
     package_manager: PackageManagerChoice,
     organization: str,
     repo_name: str,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
+) -> None:
+    precommit_config = session.precommit
     if "uv" in package_manager:
-        changes += readme.add_badge(
+        session.changelog += readme.add_badge(
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
         )
-        changes += _update_editor_config()
-        changes += _update_python_version_file(dev_python_version)
+        session.changelog += _update_editor_config()
+        session.changelog += _update_python_version_file(dev_python_version)
         _update_uv_lock_hook(precommit_config)
         if not keep_contributing_md:
-            changes += _update_contributing_file(organization, repo_name)
-        changes += _remove_pip_constraint_files()
-        changes += vscode.remove_settings(
+            session.changelog += _update_contributing_file(organization, repo_name)
+        session.changelog += _remove_pip_constraint_files()
+        session.changelog += vscode.remove_settings(
             {"files.associations": ["**/.constraints/py*.txt"]},
         )
-        changes += vscode.remove_settings(
+        session.changelog += vscode.remove_settings(
             {
                 "search.exclude": [
                     "**/.constraints/py*.txt",
@@ -58,14 +57,15 @@ def main(  # noqa: PLR0917
             },
         )
     else:
-        changes += _remove_uv_configuration(pyproject)
-        changes += _remove_uv_lock()
+        session.changelog += _remove_uv_configuration(session.pyproject)
+        session.changelog += _remove_uv_lock()
         precommit_config.remove_hook("uv-lock")
-        changes += readme.remove_badge(
+        session.changelog += readme.remove_badge(
             r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
         )
-        changes += vscode.remove_settings({"search.exclude": ["uv.lock", "**/uv.lock"]})
-    return changes
+        session.changelog += vscode.remove_settings({
+            "search.exclude": ["uv.lock", "**/uv.lock"]
+        })
 
 
 def _remove_pip_constraint_files() -> Changelog:

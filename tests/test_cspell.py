@@ -15,6 +15,7 @@ from compwa_policy.format.cspell import (
 )
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 
 def _git_init(directory: Path) -> None:
@@ -135,8 +136,10 @@ def describe_main():
                   - id: cspell
             """,
         )
-        with ModifiablePrecommit.load(config) as precommit:
-            changes = main(precommit, no_cspell_update=True)
+        precommit = ModifiablePrecommit.load(config)
+        with Session.load(precommit) as session:
+            main(session, no_cspell_update=True)
+            changes = session.collect_changes()
         assert changes or precommit.changelog  # something changed
         result = json.loads((tmp_path / ".cspell.json").read_text())
         assert result["words"] == ["apple", "zebra"]
@@ -145,7 +148,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
         config = _write_precommit(tmp_path, "repos: []\n")
-        with ModifiablePrecommit.load(config) as precommit:
-            changes = main(precommit, no_cspell_update=False)
+        precommit = ModifiablePrecommit.load(config)
+        with Session.load(precommit) as session:
+            main(session, no_cspell_update=False)
+            changes = session.collect_changes()
         assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()

@@ -16,35 +16,28 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
 """The type of type checkers supported."""
 
 
-def main(
-    type_checkers: set[TypeChecker],
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    changes += _update_vscode_settings(type_checkers)
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+def main(session: Session, type_checkers: set[TypeChecker]) -> None:
+    precommit = session.precommit
+    session.changelog += _update_vscode_settings(type_checkers)
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return changes
+            return
         if "ty" in type_checkers:
             _update_configuration(config)
             config.add_dependency("ty", dependency_group=["style", "dev"])
             _update_precommit_config(precommit, config)
-            changes += add_badge(
+            session.changelog += add_badge(
                 "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
             )
         else:
-            changes += _remove_ty(precommit, config)
-        if include_changelog:
-            changes += config.changelog
-    return changes
+            session.changelog += _remove_ty(precommit, config)
 
 
 def _update_vscode_settings(type_checkers: set[TypeChecker]) -> Changelog:

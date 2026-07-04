@@ -10,16 +10,16 @@ from textwrap import dedent
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Session
 
 
-def main() -> Changelog:
+def main(session: Session) -> None:
     path = "commitlint.config.js"
     if not os.path.exists(path):
-        return []
+        return
     os.remove(path)
     msg = f"""
     Remove outdated {path}. Commitlint is now configured through
     https://github.com/ComPWA/commitlint-config.
     """
-    return [dedent(msg).strip().replace("\n", " ")]
+    session.changelog.append(dedent(msg).strip().replace("\n", " "))

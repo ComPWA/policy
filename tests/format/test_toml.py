@@ -16,6 +16,7 @@ from compwa_policy.format.toml import (
     main,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 _META_ONLY = dedent("""
     repos:
@@ -150,8 +151,10 @@ def describe_main():
         _git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        with ModifiablePrecommit.load(io.StringIO(_META_ONLY)) as precommit:
-            changes = main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
+        with Session.load(precommit) as session:
+            main(session)
+            changes = session.collect_changes()
         result = precommit.dumps()
         assert changes or precommit.changelog
         assert "https://github.com/ComPWA/taplo-pre-commit" in result
@@ -159,5 +162,6 @@ def describe_main():
 
     def skips_without_trigger_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        with ModifiablePrecommit.load(io.StringIO(_META_ONLY)) as precommit:
-            main(precommit)  # no pyproject.toml or taplo config -> no-op
+        precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
+        with Session.load(precommit) as session:
+            main(session)  # no pyproject.toml or taplo config -> no-op

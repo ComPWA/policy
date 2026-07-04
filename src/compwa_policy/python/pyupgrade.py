@@ -11,17 +11,17 @@ from compwa_policy.utilities.yaml import read_preserved_yaml
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedSeq
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
 
 
-def main(precommit: ModifiablePrecommit, no_ruff: bool) -> Changelog:
+def main(session: Session, no_ruff: bool) -> None:
+    precommit = session.precommit
     if no_ruff:
         _update_precommit_repo(precommit)
         _update_precommit_nbqa_hook(precommit)
     else:
         _remove_pyupgrade(precommit)
-    return []
 
 
 def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:

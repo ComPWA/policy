@@ -8,25 +8,18 @@ from typing import TYPE_CHECKING, cast
 
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import use_modifiable_pyproject
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit, PrecommitConfig
+    from compwa_policy.utilities.session import Session
 
 
-def main(
-    precommit: ModifiablePrecommit,
-    has_notebooks: bool,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
+def main(session: Session, has_notebooks: bool) -> None:
+    precommit = session.precommit
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
     _update_precommit_ci_autofix_commit_msg(precommit)
@@ -34,13 +27,10 @@ def main(
     _update_precommit_ci_skip(precommit)
     _update_notebook_hooks(precommit, has_notebooks)
     _update_repo_urls(precommit)
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is not None:
             config.remove_dependency("pre-commit")
             config.remove_dependency("pre-commit-uv")
-            if include_changelog:
-                changes += config.changelog
-    return changes
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

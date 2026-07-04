@@ -14,10 +14,10 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.github.upgrade_lock import Frequency
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(frequency: Frequency) -> Changelog:  # noqa: C901
+def main(session: Session, frequency: Frequency) -> None:  # noqa: C901
     def dump_dependabot_config() -> Changelog:
         dependabot_path.parent.mkdir(exist_ok=True)
         rt_yaml.dump(expected, dependabot_path)
@@ -48,14 +48,15 @@ def main(frequency: Frequency) -> Changelog:  # noqa: C901
 
     if not package_ecosystems:
         dependabot_path.unlink(missing_ok=True)
-        return [f"Removed {dependabot_path}"]
+        session.changelog.append(f"Removed {dependabot_path}")
+        return
     expected["updates"] = package_ecosystems
     if not dependabot_path.exists():
-        return dump_dependabot_config()
+        session.changelog += dump_dependabot_config()
+        return
     existing = rt_yaml.load(dependabot_path)
     if existing != expected:
-        return dump_dependabot_config()
-    return []
+        session.changelog += dump_dependabot_config()
 
 
 @cache

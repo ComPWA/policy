@@ -14,6 +14,7 @@ from compwa_policy.python.mypy import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 _PRECOMMIT_WITH_MYPY = dedent("""
     repos:
@@ -118,13 +119,15 @@ def describe_main():
                 hooks:
                   - id: check-hooks-apply
         """).lstrip()
-        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
-            main(active=True, precommit=precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(config))
+        with Session.load(precommit) as session:
+            main(session, active=True)
         assert "id: mypy" in precommit.dumps()
 
     def deactivates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.mypy]\nstrict = true\n")
-        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit:
-            main(active=False, precommit=precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY))
+        with Session.load(precommit) as session:
+            main(session, active=False)
         assert "mypy" not in precommit.dumps()

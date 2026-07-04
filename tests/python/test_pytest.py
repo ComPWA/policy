@@ -16,6 +16,7 @@ from compwa_policy.python.pytest import (
     main,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.session import Session
 
 # cspell:ignore minversion ryanluker xdist
 
@@ -200,7 +201,8 @@ def describe_main():
             addopts = "--color=no"
             """).lstrip()
         )
-        main(coverage_gutters=False, single_threaded=True)
+        with Session.load() as session:
+            main(session, coverage_gutters=False, single_threaded=True)
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.coverage.run]" in result
 
@@ -218,10 +220,12 @@ def describe_main():
             addopts = ["--color=yes", "--import-mode=importlib"]
             """).lstrip()
         )
-        main(coverage_gutters=True, single_threaded=False)
+        with Session.load() as session:
+            main(session, coverage_gutters=True, single_threaded=False)
         assert "pytest-xdist" in (tmp_path / "pyproject.toml").read_text()
 
     def is_noop_without_pytest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
-        main(coverage_gutters=False, single_threaded=True)  # no pytest dep -> no-op
+        with Session.load() as session:
+            main(session, coverage_gutters=False, single_threaded=True)  # no pytest dep

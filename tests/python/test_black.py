@@ -12,6 +12,7 @@ from compwa_policy.python.black import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 def describe_remove_outdated_settings():
@@ -112,8 +113,9 @@ def describe_update_precommit_repo():
 def describe_main():
     def is_noop_without_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            main(precommit, has_notebooks=False)  # no pyproject.toml -> no-op
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=False)  # no pyproject.toml -> no-op
 
     def replaces_black_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
@@ -133,8 +135,9 @@ def describe_main():
                 hooks:
                   - id: black
         """).lstrip()
-        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
-            main(precommit, has_notebooks=False)
+        precommit = ModifiablePrecommit.load(io.StringIO(config))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=False)
         result = precommit.dumps()
         assert "https://github.com/psf/black\n" not in result
         assert "https://github.com/psf/black-pre-commit-mirror" in result

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import compwa_policy
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog
 
 
 class _ConfigFilePaths(NamedTuple):

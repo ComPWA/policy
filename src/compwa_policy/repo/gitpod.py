@@ -19,15 +19,16 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(use_gitpod: bool, python_version: PythonVersion) -> Changelog:
+def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> None:
     if not use_gitpod:
-        changes: Changelog = []
-        changes += remove_gitpod_config()
-        changes += remove_badge(r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod")
-        return changes
+        session.changelog += remove_gitpod_config()
+        session.changelog += remove_badge(
+            r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod"
+        )
+        return
     error_message = ""
     expected_config = _generate_gitpod_config(python_version)
     if CONFIG_PATH.gitpod.exists():
@@ -40,14 +41,15 @@ def main(use_gitpod: bool, python_version: PythonVersion) -> Changelog:
     if error_message:
         write_yaml(expected_config, output_path=CONFIG_PATH.gitpod)
         error_message += ". Problem has been fixed."
-        return [error_message]
+        session.changelog.append(error_message)
+        return
     try:
         repo_url = Pyproject.load().get_repo_url()
-        return add_badge(
+        session.changelog += add_badge(
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
         )
     except PolicyError:
-        return []
+        return
 
 
 def remove_gitpod_config() -> Changelog:

@@ -24,34 +24,32 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
+    session: Session,
     coverage_gutters: bool,
     single_threaded: bool,
     branch_coverage: bool = True,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+) -> None:
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return []
+            return
         if not has_dependency(config, "pytest"):
-            return []
+            return
         _merge_coverage_into_pyproject(config)
         _merge_pytest_into_pyproject(config)
         _deny_ini_options(config)
         _update_codecov_settings(config, branch_coverage)
         _update_settings(config)
-        changes += _update_vscode_settings(config, coverage_gutters, single_threaded)
+        session.changelog += _update_vscode_settings(
+            config, coverage_gutters, single_threaded
+        )
         if single_threaded:
             config.remove_dependency("pytest-xdist")
         else:
             config.add_dependency("pytest-xdist", ["test", "dev"])
-        if include_changelog:
-            changes += config.changelog
-    return changes
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:

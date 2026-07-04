@@ -17,18 +17,21 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
 def main(
-    python_version: PythonVersion, package_manager: PackageManagerChoice
-) -> Changelog:
+    session: Session,
+    python_version: PythonVersion,
+    package_manager: PackageManagerChoice,
+) -> None:
     if package_manager == "conda":
-        return update_conda_environment(python_version)
-    return _remove_conda_configuration()
+        session.changelog += update_conda_environment(python_version)
+    else:
+        session.changelog += _remove_conda_configuration()
 
 
 def update_conda_environment(python_version: PythonVersion) -> Changelog:

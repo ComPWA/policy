@@ -9,20 +9,16 @@ from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, remove_configs, remove_lines, vscode
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def remove_deprecated_tools(
-    precommit: ModifiablePrecommit, keep_issue_templates: bool
-) -> Changelog:
-    changes: Changelog = []
+def remove_deprecated_tools(session: Session, keep_issue_templates: bool) -> None:
     if not keep_issue_templates:
-        changes += _remove_github_issue_templates()
-    changes += _remove_markdownlint(precommit)
+        session.changelog += _remove_github_issue_templates()
+    session.changelog += _remove_markdownlint(session.precommit)
     for directory in ["docs", "doc"]:
         _remove_relink_references(directory)
-    return changes
 
 
 def _remove_github_issue_templates() -> Changelog:

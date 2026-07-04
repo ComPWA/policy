@@ -13,7 +13,7 @@ from compwa_policy.utilities import CONFIG_PATH
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog
 
 
 K = TypeVar("K")

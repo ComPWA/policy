@@ -12,6 +12,7 @@ from compwa_policy.python.ruff import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 _PRECOMMIT_TO_CLEAN = dedent("""
     repos:
@@ -65,8 +66,9 @@ def ruff_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def describe_main():
     def migrates_config_with_notebooks(ruff_repo: Path):
-        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit:
-            main(precommit, has_notebooks=True, imports_on_top=True)
+        precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=True, imports_on_top=True)
 
         pyproject = (ruff_repo / "pyproject.toml").read_text()
         assert "[tool.black]" not in pyproject  # black settings removed
@@ -80,8 +82,9 @@ def describe_main():
 
     @pytest.mark.usefixtures("ruff_repo")
     def adds_ruff_format_without_notebooks():
-        with ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN)) as precommit:
-            main(precommit, has_notebooks=False, imports_on_top=False)
+        precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=False, imports_on_top=False)
 
         config = precommit.dumps()
         assert "https://github.com/astral-sh/ruff-pre-commit" in config
@@ -110,8 +113,9 @@ def describe_main():
             """).lstrip()
         )
         monkeypatch.chdir(tmp_path)
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            main(precommit, has_notebooks=True, imports_on_top=False)
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=True, imports_on_top=False)
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert "target-version" not in pyproject  # dropped for requires-python

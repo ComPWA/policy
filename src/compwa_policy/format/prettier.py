@@ -11,8 +11,8 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 # cspell:ignore rettier
 __VSCODE_EXTENSION_NAME = "esbenp.prettier-vscode"
@@ -22,15 +22,15 @@ __BADGE = """
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
 
 
-def main(precommit: ModifiablePrecommit) -> Changelog:
+def main(session: Session) -> None:
+    precommit = session.precommit
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
-        return _remove_configuration()
-    changes: Changelog = []
-    changes += add_badge(__BADGE)
-    changes += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
+        session.changelog += _remove_configuration()
+        return
+    session.changelog += add_badge(__BADGE)
+    session.changelog += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
     _update_prettier_hook(precommit)
-    changes += _update_prettier_ignore()
-    return changes
+    session.changelog += _update_prettier_ignore()
 
 
 def _remove_configuration() -> Changelog:

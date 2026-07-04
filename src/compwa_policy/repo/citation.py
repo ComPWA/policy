@@ -17,26 +17,24 @@ from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(precommit: ModifiablePrecommit) -> Changelog:
-    changes: Changelog = []
+def main(session: Session) -> None:
     just_converted = False
     if CONFIG_PATH.zenodo.exists():
         if CONFIG_PATH.citation.exists():
-            changes += remove_zenodo_json()
+            session.changelog += remove_zenodo_json()
         else:
-            changes += convert_zenodo_json()
+            session.changelog += convert_zenodo_json()
             just_converted = True
     if CONFIG_PATH.citation.exists():
         if not just_converted:
             check_citation_keys()
-        add_json_schema_precommit(precommit)
-        changes += vscode.add_extension_recommendation("redhat.vscode-yaml")
-        changes += update_vscode_settings()
-    return changes
+        add_json_schema_precommit(session.precommit)
+        session.changelog += vscode.add_extension_recommendation("redhat.vscode-yaml")
+        session.changelog += update_vscode_settings()
 
 
 def convert_zenodo_json() -> Changelog:

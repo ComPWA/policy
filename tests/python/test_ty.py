@@ -13,6 +13,7 @@ from compwa_policy.python.ty import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 def _write_pyproject(tmp_path: Path, content: str) -> Path:
@@ -236,8 +237,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
-        with ModifiablePrecommit.load(precommit_path) as precommit:
-            main({"ty"}, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, {"ty"})
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
         assert "id: ty" in precommit.dumps()
@@ -262,7 +264,8 @@ def describe_main():
                     language: system
             """,
         )
-        with ModifiablePrecommit.load(precommit_path) as precommit:
-            main(precommit=precommit, type_checkers=set())
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, type_checkers=set())
         assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: ty" not in precommit.dumps()

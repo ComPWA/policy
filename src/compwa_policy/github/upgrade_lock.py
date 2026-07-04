@@ -17,8 +17,8 @@ from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 Frequency = Literal[
     "monthly",
@@ -34,15 +34,12 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
 __TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 
-def main(
-    precommit: ModifiablePrecommit, frequency: Frequency, keep_workflow: set[str]
-) -> Changelog:
-    changes: Changelog = []
+def main(session: Session, frequency: Frequency, keep_workflow: set[str]) -> None:
+    precommit = session.precommit
     _update_precommit_schedule(precommit, frequency)
-    changes += _remove_script("pin_requirements.py")
-    changes += _remove_script("upgrade.sh")
-    changes += _update_lock_workflow(precommit, frequency, keep_workflow)
-    return changes
+    session.changelog += _remove_script("pin_requirements.py")
+    session.changelog += _remove_script("upgrade.sh")
+    session.changelog += _update_lock_workflow(precommit, frequency, keep_workflow)
 
 
 def _remove_script(script_name: str) -> Changelog:

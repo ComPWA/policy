@@ -27,12 +27,12 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.main import YAML
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import Precommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
-    precommit: Precommit,
+    session: Session,
     *,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
@@ -47,14 +47,15 @@ def main(
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> Changelog:
-    changes: Changelog = []
+) -> None:
     if no_cd:
-        changes += remove_workflow("cd.yml")
+        session.changelog += remove_workflow("cd.yml")
     else:
-        changes += _update_cd_workflow(no_milestones, no_pypi, no_version_branches)
-    changes += _update_ci_workflow(
-        precommit,
+        session.changelog += _update_cd_workflow(
+            no_milestones, no_pypi, no_version_branches
+        )
+    session.changelog += _update_ci_workflow(
+        session.precommit,
         allow_deprecated,
         doc_apt_packages,
         environment_variables,
@@ -65,9 +66,8 @@ def main(
         skip_tests,
     )
     if not keep_pr_linting:
-        changes += _update_pr_linting()
-    changes += _recommend_vscode_extension()
-    return changes
+        session.changelog += _update_pr_linting()
+    session.changelog += _recommend_vscode_extension()
 
 
 def _update_cd_workflow(  # noqa: C901

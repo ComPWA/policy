@@ -18,34 +18,27 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    active: bool,
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    changes += _update_vscode_settings(active)
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+def main(session: Session, active: bool) -> None:
+    precommit = session.precommit
+    session.changelog += _update_vscode_settings(active)
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return changes
+            return
         if active:
             config.add_dependency("mypy", dependency_group=["style", "dev"])
             _merge_mypy_into_pyproject(config)
             _update_precommit_config(precommit)
-            changes += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
-            changes += add_badge(
+            session.changelog += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
+            session.changelog += add_badge(
                 "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
             )
         else:
-            changes += _remove_mypy(precommit, config)
-            changes += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
-        if include_changelog:
-            changes += config.changelog
-    return changes
+            session.changelog += _remove_mypy(precommit, config)
+            session.changelog += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:

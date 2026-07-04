@@ -17,8 +17,7 @@ from compwa_policy.cli._checks import (
 from compwa_policy.cli._options import build_arguments
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
-from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 _PYPROJECT = dedent("""
     [project]
@@ -147,7 +146,7 @@ def describe_run_all():
 
 
 def describe_run_checks():
-    def keeps_config_changelogs_out_of_returned_changes(
+    def aggregates_config_changelogs_into_collected_changes(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
     ):
@@ -155,13 +154,12 @@ def describe_run_checks():
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         ctx = compute_context(args)
-        with (
-            ModifiablePrecommit.load() as precommit_config,
-            ModifiablePyproject.load() as pyproject_config,
-        ):
-            changes = run_checks(precommit_config, pyproject_config, args, ctx)
-            assert set(changes).isdisjoint(precommit_config.changelog)
-            assert set(changes).isdisjoint(pyproject_config.changelog)
+        with Session.load() as session:
+            run_checks(session, args, ctx)
+            changes = session.collect_changes()
+            assert set(session.precommit.changelog) <= set(changes)
+            assert session.pyproject is not None
+            assert set(session.pyproject.changelog) <= set(changes)
 
 
 def describe_dispatch():

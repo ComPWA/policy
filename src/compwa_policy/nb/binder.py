@@ -19,20 +19,19 @@ if TYPE_CHECKING:
 
     from compwa_policy.config import PythonVersion
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
+    session: Session,
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     apt_packages: list[str],
-) -> Changelog:
-    changes: Changelog = []
-    changes += _update_apt_txt(apt_packages)
-    changes += _update_post_build(package_manager)
-    changes += _make_executable(CONFIG_PATH.binder / "postBuild")
-    changes += _update_runtime_txt(python_version)
-    return changes
+) -> None:
+    session.changelog += _update_apt_txt(apt_packages)
+    session.changelog += _update_post_build(package_manager)
+    session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
+    session.changelog += _update_runtime_txt(python_version)
 
 
 def _update_apt_txt(apt_packages: list[str]) -> Changelog:

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 _DOC_TASKS = frozenset({
     "doc",
@@ -42,14 +42,13 @@ _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
 
 
 def main(
+    session: Session,
     has_notebooks: bool,
     package_manager: PackageManagerChoice,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
-    changes: Changelog = []
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
+) -> None:
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
         if config is None:
-            return []
+            return
         if config.has_table("tool.tox"):
             del config._document["tool"]["tox"]  # noqa: SLF001
             msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
@@ -74,13 +73,10 @@ def main(
                 _update_doclive(config)
             if config.has_table("tool.poe.tasks"):
                 _set_upgrade_task(config, package_manager)
-        changes += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
+        session.changelog += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
         config.remove_dependency("poethepoet")
         config.remove_dependency("tox")
         config.remove_dependency("tox-uv")
-        if include_changelog:
-            changes += config.changelog
-    return changes
 
 
 def _get_all_poe_tasks(poe_table: Mapping) -> set[str]:

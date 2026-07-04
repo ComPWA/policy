@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from compwa_policy.nb import binder
+from compwa_policy.utilities.session import Session
 
 # cspell:ignore nenv
 
@@ -12,7 +13,9 @@ from compwa_policy.nb import binder
 def describe_main():
     def configures_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        changes = binder.main("uv", "3.12", ["graphviz"])
+        with Session() as session:
+            binder.main(session, "uv", "3.12", ["graphviz"])
+            changes = session.collect_changes()
         assert changes
         assert (tmp_path / ".binder" / "apt.txt").read_text() == "graphviz\n"
         assert (tmp_path / ".binder" / "runtime.txt").read_text() == "python-3.12\n"
@@ -29,7 +32,9 @@ def describe_main():
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[dependency-groups]\njupyter = ["jupyterlab"]\n'
         )
-        changes = binder.main("pixi+uv", "3.12", [])
+        with Session() as session:
+            binder.main(session, "pixi+uv", "3.12", [])
+            changes = session.collect_changes()
         assert changes
         post_build = (tmp_path / ".binder" / "postBuild").read_text()
         assert "pixi.sh/install.sh" in post_build

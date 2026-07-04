@@ -8,6 +8,7 @@ import pytest
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo import citation
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 _ZENODO = {
     "title": "My Software",
@@ -181,16 +182,18 @@ def describe_main():
     def processes_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            citation.main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            citation.main(session)
         assert "check-jsonschema" in precommit.dumps()
 
     def converts_zenodo_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         """Regression test for https://github.com/ComPWA/policy/issues/616."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            citation.main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            citation.main(session)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()
         assert "check-jsonschema" in precommit.dumps()
@@ -218,8 +221,10 @@ def describe_main():
                       - CITATION.cff
                     pass_filenames: false
         """).lstrip()
-        with ModifiablePrecommit.load(io.StringIO(precommit_config)) as precommit:
-            changes = citation.main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO(precommit_config))
+        with Session.load(precommit) as session:
+            citation.main(session)
+            changes = session.collect_changes()
         assert changes == ["Updated VS Code settings"]
         assert (vscode_dir / "settings.json").exists()
 
@@ -229,7 +234,8 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            citation.main(precommit)
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            citation.main(session)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()

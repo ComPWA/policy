@@ -13,22 +13,27 @@ from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.changelog import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> Changelog:
+def main(
+    session: Session, package_manager: PackageManagerChoice, variables: dict[str, str]
+) -> None:
     if package_manager == "none":
-        return []
+        return
     if package_manager == "uv":
         script = __get_uv_direnv(variables) + "\n"
-        return __update_envrc_content(script)
+        session.changelog += __update_envrc_content(script)
+        return
     if package_manager == "pixi+uv":
         script = __get_pixi_direnv() + "\n"
         script += __get_uv_direnv(variables) + "\n"
-        return __update_envrc_content(script)
+        session.changelog += __update_envrc_content(script)
+        return
     if package_manager == "pixi":
         script = __get_pixi_direnv() + "\n"
-        return __update_envrc_content(script)
+        session.changelog += __update_envrc_content(script)
+        return
     statements: list[tuple[str | None, str]] = [
         (".venv", "source .venv/bin/activate"),
         ("venv", "source venv/bin/activate"),
@@ -38,7 +43,7 @@ def main(package_manager: PackageManagerChoice, variables: dict[str, str]) -> Ch
         statements.append((".pixi", script))
     if CONFIG_PATH.conda.exists():
         statements.append((None, "layout anaconda"))
-    return _update_envrc(statements)
+    session.changelog += _update_envrc(statements)
 
 
 def __get_pixi_direnv() -> str:

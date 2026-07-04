@@ -22,34 +22,30 @@ from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     Path("taplo.toml"),
 ]
 
 
-def main(
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
+def main(session: Session) -> None:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
     ]
     if not any(f.exists() for f in trigger_files):
-        return []
-    changes: Changelog = []
-    changes += _rename_taplo_config()
-    changes += _update_taplo_config()
+        return
+    precommit = session.precommit
+    session.changelog += _rename_taplo_config()
+    session.changelog += _update_taplo_config()
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    changes += _update_tomlsort_config(pyproject)
+    session.changelog += _update_tomlsort_config(session.pyproject)
     _update_tomlsort_hook(precommit)
-    changes += _update_vscode_extensions()
-    return changes
+    session.changelog += _update_vscode_extensions()
 
 
 def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Changelog:

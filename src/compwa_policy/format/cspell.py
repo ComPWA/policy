@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from pathlib import Path
 
-    from compwa_policy.utilities.changelog import Changelog
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 __VSCODE_EXTENSION_NAME = "streetsidesoftware.code-spell-checker"
 
@@ -33,28 +33,29 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main(precommit: ModifiablePrecommit, no_cspell_update: bool) -> Changelog:
-    changes: Changelog = []
-    changes += rename_file("cspell.json", str(CONFIG_PATH.cspell))
+def main(session: Session, no_cspell_update: bool) -> None:
+    precommit = session.precommit
+    session.changelog += rename_file("cspell.json", str(CONFIG_PATH.cspell))
     _update_cspell_repo_url(precommit)
     has_cspell_hook = False
     if CONFIG_PATH.cspell.exists():
         has_cspell_hook = precommit.find_repo(__REPO_URL) is not None
     if not has_cspell_hook:
-        changes += _remove_configuration()
+        session.changelog += _remove_configuration()
     else:
         _update_precommit_repo(precommit)
         if not no_cspell_update:
-            changes += _update_config_content()
-        changes += _sort_config_entries()
-        changes += add_badge(
+            session.changelog += _update_config_content()
+        session.changelog += _sort_config_entries()
+        session.changelog += add_badge(
             "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)",
         )
-        changes += remove_badge(
+        session.changelog += remove_badge(
             r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*master.*cspell\)\n?",
         )
-        changes += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
-    return changes
+        session.changelog += vscode.add_extension_recommendation(
+            __VSCODE_EXTENSION_NAME
+        )
 
 
 def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:

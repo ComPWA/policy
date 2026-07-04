@@ -13,6 +13,7 @@ from compwa_policy.python.pyproject import (
     main,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 def describe_update_pypi_link_names():
@@ -160,7 +161,8 @@ def describe_main():
             classifiers = ["Programming Language :: Python :: 3.10"]
             """).lstrip()
         )
-        main(excluded_python_versions=set())
+        with Session.load() as session:
+            main(session, excluded_python_versions=set())
         result = (tmp_path / "pyproject.toml").read_text()
         assert "Python :: 3.12" in result
 
@@ -168,4 +170,5 @@ def describe_main():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        main(excluded_python_versions=set())  # no pyproject.toml -> no-op
+        with Session.load() as session:
+            main(session, excluded_python_versions=set())  # no pyproject.toml -> no-op

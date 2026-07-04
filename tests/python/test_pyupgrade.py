@@ -6,6 +6,7 @@ import pytest
 
 from compwa_policy.python.pyupgrade import _remove_pyupgrade, main
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 
 @pytest.fixture
@@ -33,8 +34,9 @@ def describe_main():
                 hooks:
                   - id: nbqa-isort
         """).lstrip()
-        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
-            main(precommit, no_ruff=True)
+        precommit = ModifiablePrecommit.load(io.StringIO(config))
+        with Session.load(precommit) as session:
+            main(session, no_ruff=True)
 
         assert precommit.changelog  # something changed
         result = precommit.dumps()
@@ -51,8 +53,9 @@ def describe_main():
                   - id: pyupgrade
                     args: [--py310-plus]
         """).lstrip()
-        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
-            main(precommit, no_ruff=False)
+        precommit = ModifiablePrecommit.load(io.StringIO(config))
+        with Session.load(precommit) as session:
+            main(session, no_ruff=False)
 
         assert any("pyupgrade" in m for m in precommit.changelog)
         assert "pyupgrade" not in precommit.dumps()

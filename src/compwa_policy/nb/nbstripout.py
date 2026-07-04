@@ -10,13 +10,15 @@ from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
 
 
 def main(
-    precommit: ModifiablePrecommit,
+    session: Session,
     has_notebooks: bool,
     allowed_cell_metadata: list[str],
 ) -> None:
+    precommit = session.precommit
     if not has_notebooks:
         precommit.remove_hook("nbstripout")
     else:
