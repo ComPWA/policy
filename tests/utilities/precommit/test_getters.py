@@ -14,7 +14,7 @@ def example_yaml() -> str:
         return stream.read()
 
 
-@pytest.fixture(autouse=True)  # noqa: RUF076
+@pytest.fixture(autouse=True)
 def _offline_git_ls_remote() -> None:
     """Override the global offline patch so the real implementation is exercised."""
 
