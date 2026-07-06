@@ -275,6 +275,25 @@ def describe_migrate():
                 "args must be preserved"
             )
 
+        def relocates_without_pyproject(
+            tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        ) -> None:
+            monkeypatch.chdir(tmp_path)
+            config = tmp_path / ".pre-commit-config.yaml"
+            config.write_text(_CONFIG_WITH_NOTEBOOK_HOOK)
+
+            migrate(config_file=config, dry_run=False)
+
+            repos = {
+                repo["repo"]: repo
+                for repo in yaml.safe_load(config.read_text())["repos"]
+            }
+            policy_hooks = repos["https://github.com/ComPWA/policy"]["hooks"]
+            nbhooks = repos["https://github.com/ComPWA/nbhooks"]["hooks"]
+            assert {h["id"] for h in policy_hooks} == {"check-dev-files"}
+            assert {h["id"] for h in nbhooks} == {"set-nb-cells"}
+            assert not (tmp_path / "pyproject.toml").exists()
+
         def dry_run_does_not_modify(tmp_path: Path) -> None:
             (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
             config = tmp_path / ".pre-commit-config.yaml"
@@ -292,15 +311,29 @@ def describe_migrate():
             migrate(config_file=tmp_path / "does-not-exist.yaml")
         assert exc.value.exit_code == 1
 
-    def exits_on_missing_pyproject(
+    def migrates_args_into_new_pyproject(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.chdir(tmp_path)
         config = tmp_path / ".pre-commit-config.yaml"
-        config.write_text("repos: []\n")
-        with pytest.raises(typer.Exit) as exc:
-            migrate(config_file=config)
-        assert exc.value.exit_code == 1
+        config.write_text(
+            dedent("""
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: 0.1.0
+                hooks:
+                  - id: check-dev-files
+                    args: [--no-pypi, --repo-name=demo]
+            """).lstrip()
+        )
+
+        migrate(config_file=config)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert "no-pypi = true" in pyproject
+        assert 'repo-name = "demo"' in pyproject
+        hooks = yaml.safe_load(config.read_text())["repos"][0]["hooks"]
+        assert "args" not in hooks[0], "args must be stripped after migration"
 
     def exits_when_no_hook_found(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch

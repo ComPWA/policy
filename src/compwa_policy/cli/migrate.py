@@ -140,10 +140,9 @@ def migrate(
 
 
 def _assert_inputs_exist(config_file: Path) -> None:
-    for path in (config_file, CONFIG_PATH.pyproject):
-        if not path.exists():
-            rich.print(f"[red]No such file:[/red] {path}")
-            raise typer.Exit(code=1)
+    if not config_file.exists():
+        rich.print(f"[red]No such file:[/red] {config_file}")
+        raise typer.Exit(code=1)
 
 
 def _build_validated_policy(args: list[str]) -> dict[str, Any]:
@@ -243,10 +242,14 @@ def _render(policy: dict[str, Any]) -> str:
 
 
 def _write_pyproject(policy: dict[str, Any]) -> None:
-    pyproject = ModifiablePyproject.load()
+    pyproject = ModifiablePyproject.load(
+        CONFIG_PATH.pyproject if CONFIG_PATH.pyproject.exists() else ""
+    )
     try:
         with pyproject:
             _apply(pyproject, policy)
+            if not CONFIG_PATH.pyproject.exists():
+                pyproject.dump(CONFIG_PATH.pyproject)
             pyproject.changelog.append(f"imported args of the '{_HOOK_ID}' hook")
     except PrecommitError:
         pass
