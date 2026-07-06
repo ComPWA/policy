@@ -183,12 +183,15 @@ def describe_update_precommit_ci():
                     rev: v0.0.1
                     hooks:
                       - id: ty
+                  - repo: https://github.com/RobertCraigie/pyright-python
+                    rev: v1.1.405
+                    hooks:
+                      - id: pyright
             """) as pc,
         ):
             precommit._update_precommit_ci_skip(pc)
-        result = pc.dumps()
-        assert "my-local-hook" in result
-        assert "ty" in result
+        result = yaml.safe_load(pc.dumps())
+        assert result["ci"]["skip"] == ["my-local-hook", "pyright"]
 
     def skip_removes_redundant_section():
         with (
@@ -236,11 +239,15 @@ def describe_get_local_and_non_functional_hooks():
                     rev: v0.0.1
                     hooks:
                       - id: ty
+                  - repo: https://github.com/RobertCraigie/pyright-python
+                    rev: v1.1.405
+                    hooks:
+                      - id: pyright
                 """).lstrip()
             )
         ).document
         assert precommit.get_local_hooks(config) == ["my-local-hook"]
-        assert precommit.get_non_functional_hooks(config) == ["ty"]
+        assert precommit.get_non_functional_hooks(config) == ["pyright"]
 
 
 def describe_update_conda_environment():

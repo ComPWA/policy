@@ -5,7 +5,6 @@ ci:
   skip:
     - check-dev-files
     - self-check
-    - ty
 
 repos:
   - repo: meta
