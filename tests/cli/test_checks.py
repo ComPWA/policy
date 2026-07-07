@@ -1,4 +1,4 @@
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -28,16 +28,6 @@ _PYPROJECT = dedent("""
         "Programming Language :: Python :: 3.12",
     ]
 """).lstrip()
-
-
-def _git_commit(directory: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
-    subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # noqa: S607
-    # cspell:ignore gpgsign
-    git_config = ["-c", "commit.gpgsign=false"]
-    git_author = ["-c", "user.name=t", "-c", "user.email=t@t"]
-    commit = ["git", *git_config, *git_author, "commit", "-qm", "init", "--allow-empty"]
-    subprocess.run(commit, cwd=directory, check=True)  # noqa: S603
 
 
 def _clear_caches() -> None:
@@ -79,18 +69,26 @@ def describe_check_dev_python_version():
 
 
 def describe_compute_context():
-    def detects_python_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def detects_python_repo(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_commit: Callable[[Path], None],
+    ):
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "module.py").write_text("x = 1\n")
-        _git_commit(tmp_path)
+        git_commit(tmp_path)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12")
         ctx = compute_context(args)
         assert ctx.is_python_repo is True
         assert ctx.has_notebooks is False
 
-    def respects_explicit_python_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_commit(tmp_path)
+    def respects_explicit_python_flag(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_commit: Callable[[Path], None],
+    ):
+        git_commit(tmp_path)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", python=False)
         ctx = compute_context(args)
@@ -104,14 +102,14 @@ def describe_all_groups():
         )
 
 
-def _runnable_repo(directory: Path) -> None:
+def _runnable_repo(directory: Path, git_commit: Callable[[Path], None]) -> None:
     (directory / ".pre-commit-config.yaml").write_text("repos: []\n")
     (directory / "pyproject.toml").write_text(
         '[project]\nname = "x"\nrequires-python = ">=3.12"\n'
     )
     (directory / "src" / "x").mkdir(parents=True)
     (directory / "src" / "x" / "module.py").write_text("x = 1\n")
-    _git_commit(directory)
+    git_commit(directory)
 
 
 def describe_run_all():
@@ -119,8 +117,9 @@ def describe_run_all():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
+        git_commit: Callable[[Path], None],
     ):
-        _runnable_repo(tmp_path)
+        _runnable_repo(tmp_path, git_commit)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         assert run_all(args) == 1  # pristine repo needs updates
@@ -130,13 +129,15 @@ def describe_run_all():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
+        git_add: Callable[[Path], None],
+        git_commit: Callable[[Path], None],
     ):
-        _runnable_repo(tmp_path)
+        _runnable_repo(tmp_path, git_commit)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         assert run_all(args) == 1
         capsys.readouterr()
-        _git_commit(tmp_path)
+        git_add(tmp_path)
         _clear_caches()
 
         before = _snapshot_files(tmp_path)
@@ -149,8 +150,9 @@ def describe_run_checks():
     def aggregates_config_changelogs_into_collected_changes(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
+        git_commit: Callable[[Path], None],
     ):
-        _runnable_repo(tmp_path)
+        _runnable_repo(tmp_path, git_commit)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         ctx = compute_context(args)
@@ -167,8 +169,9 @@ def describe_dispatch():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
+        git_commit: Callable[[Path], None],
     ):
-        _runnable_repo(tmp_path)
+        _runnable_repo(tmp_path, git_commit)
         monkeypatch.chdir(tmp_path)
         args = build_arguments(dev_python_version="3.12", package_manager="uv")
         with pytest.raises(typer.Exit):

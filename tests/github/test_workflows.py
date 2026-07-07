@@ -1,5 +1,5 @@
 import io
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -17,15 +17,20 @@ def _precommit(content: str = "repos: []\n") -> ModifiablePrecommit:
 
 
 @pytest.fixture
-def workflows_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+def workflows_repo(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_init: Callable[[Path], None],
+    git_add: Callable[[Path], None],
+) -> Path:
+    git_init(tmp_path)
     (tmp_path / "tests").mkdir()
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "conf.py").touch()
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname = "my-package"\nrequires-python = ">=3.10"\n'
     )
-    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
+    git_add(tmp_path)
     monkeypatch.chdir(tmp_path)
     return tmp_path
 
@@ -116,10 +121,15 @@ def describe_main():
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "style:" not in ci  # style job outsourced to pre-commit.ci
 
-    def removes_doc_and_test_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def removes_doc_and_test_jobs(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
+        git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
         changes = _run_main()
         assert changes

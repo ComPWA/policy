@@ -1,5 +1,5 @@
 import json
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -16,10 +16,6 @@ from compwa_policy.format.cspell import (
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
-
-
-def _git_init(directory: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
 
 
 def _write_precommit(tmp_path: Path, content: str) -> Path:
@@ -85,8 +81,12 @@ def describe_update_precommit_repo():
 
 
 def describe_update_config_content():
-    def fixes_wrong_value(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def fixes_wrong_value(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         template = json.loads(
             (COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell).read_text()
@@ -98,8 +98,12 @@ def describe_update_config_content():
         config = json.loads((tmp_path / ".cspell.json").read_text())
         assert config["language"] == "en-US"
 
-    def populates_empty_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def populates_empty_config(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
         changes = _update_config_content()
@@ -121,8 +125,12 @@ def describe_sort_config_entries():
 
 
 def describe_main():
-    def updates_existing_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def updates_existing_config(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / ".cspell.json").write_text('{"words": ["zebra", "apple"]}')

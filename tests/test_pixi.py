@@ -1,4 +1,4 @@
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -72,8 +72,12 @@ def describe_update_pixi_configuration():
         )
         assert not (tmp_path / "pixi.toml").exists()
 
-    def configures_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def configures_pyproject(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT_YML)
@@ -103,8 +107,12 @@ def describe_update_pixi_configuration():
         assert "my-package" in pyproject  # installed as editable pypi-dependency
         assert 'cmd = "pixi run doc"' in pyproject  # docnb task outsourced
 
-    def configures_pixi_toml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def configures_pixi_toml(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / "pixi.toml").write_text(

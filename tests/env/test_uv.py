@@ -1,5 +1,5 @@
 import io
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -16,14 +16,6 @@ from compwa_policy.env.uv import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
-
-
-def _git_init(directory: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
-
-
-def _git_add(directory: Path) -> None:
-    subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # noqa: S607
 
 
 def describe_remove_uv_lock():
@@ -57,18 +49,27 @@ def describe_remove_pip_constraint_files():
 
 
 def describe_update_uv_lock_hook():
-    def adds_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def adds_hook(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "uv.lock").write_text("# lock\n")
-        _git_add(tmp_path)
+        git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
         with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
             _update_uv_lock_hook(precommit)
         assert precommit.changelog  # something changed
         assert "uv-lock" in precommit.dumps()
 
-    def removes_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def removes_hook(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         config = (
             "repos:\n"
@@ -113,11 +114,16 @@ def describe_update_python_version_file():
 
 
 def describe_update_editor_config():
-    def appends_uv_lock_section(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def appends_uv_lock_section(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "uv.lock").write_text("# lock\n")
         (tmp_path / ".editorconfig").write_text("root = true\n")
-        _git_add(tmp_path)
+        git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
         changes = _update_editor_config()
         assert any("uv.lock" in m for m in changes)
@@ -139,8 +145,12 @@ def describe_update_contributing_file():
 
 
 def describe_main():
-    def configures_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def configures_uv(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / "pyproject.toml").write_text(
@@ -161,9 +171,11 @@ def describe_main():
         assert (tmp_path / ".python-version").read_text().strip() == "3.12"
 
     def removes_uv_for_other_package_manager(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
     ):
-        _git_init(tmp_path)
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / "pyproject.toml").write_text(
