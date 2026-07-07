@@ -256,19 +256,26 @@ def _write_pyproject(policy: dict[str, Any]) -> None:
 
 
 def _apply(pyproject: ModifiablePyproject, policy: dict[str, Any]) -> None:
-    root = pyproject.get_table(POLICY_TABLE, create=True)
-    for key, value in policy.items():
-        if not isinstance(value, dict):
-            root[key] = value
-            continue
-        header = f"{POLICY_TABLE}.{key}"
-        sub_table = pyproject.get_table(header, create=True)
-        for sub_key, sub_value in value.items():
-            if isinstance(sub_value, dict):
-                nested = pyproject.get_table(f"{header}.{sub_key}", create=True)
-                nested.update(sub_value)
-            else:
-                sub_table[sub_key] = sub_value
+    _apply_table(pyproject, POLICY_TABLE, policy)
+
+
+def _apply_table(
+    pyproject: ModifiablePyproject, header: str, table: dict[str, Any]
+) -> None:
+    """Write ``table`` under ``header``, creating a section only when it has keys.
+
+    A table is materialized only if it holds scalar keys of its own; parents that
+    contain nothing but sub-tables are left for :func:`create_sub_table` to emit as
+    super-tables, so no empty ``[header]`` sections are written.
+    """
+    scalars = {
+        key: value for key, value in table.items() if not isinstance(value, dict)
+    }
+    if scalars:
+        pyproject.get_table(header, create=True).update(scalars)
+    for key, value in table.items():
+        if isinstance(value, dict):
+            _apply_table(pyproject, f"{header}.{key}", value)
 
 
 def _find_relocatable_notebook_hooks(precommit: ModifiablePrecommit) -> list[str]:
