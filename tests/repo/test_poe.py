@@ -1,5 +1,5 @@
 import io
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -55,14 +55,19 @@ _PYPROJECT = dedent("""
 
 
 @pytest.fixture
-def poe_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+def poe_repo(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_init: Callable[[Path], None],
+    git_add: Callable[[Path], None],
+) -> Path:
+    git_init(tmp_path)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "conf.py").touch()
     (tmp_path / "docs" / "index.ipynb").touch()
     (tmp_path / "tests").mkdir()
     (tmp_path / "pyproject.toml").write_text(_PYPROJECT)
-    subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
+    git_add(tmp_path)
     monkeypatch.chdir(tmp_path)
     return tmp_path
 
@@ -113,12 +118,17 @@ def describe_update_doclive():
 
 
 def describe_check_expected_sections():
-    def reports_missing_tasks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def reports_missing_tasks(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs" / "conf.py").touch()
         (tmp_path / "pyproject.toml").write_text("[tool.poe.tasks]\n")
-        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)  # noqa: S607
+        git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
         pyproject = Pyproject.load()
         with pytest.raises(
@@ -139,8 +149,12 @@ def describe_check_no_uv_run():
 
 
 def describe_set_upgrade_task():
-    def removes_task_when_empty(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def removes_task_when_empty(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         config = dedent("""
             [tool.poe.tasks.upgrade]

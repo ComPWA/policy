@@ -1,3 +1,6 @@
+import os
+import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -7,10 +10,76 @@ from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
 from compwa_policy.utilities.precommit import getters
 
+GitCommand = Callable[[Path], None]
+
 
 @pytest.fixture(scope="session")
 def test_dir() -> Path:
     return Path(__file__).parent
+
+
+@pytest.fixture
+def git_init() -> GitCommand:
+    def run(directory: Path) -> None:
+        subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
+
+    return run
+
+
+@pytest.fixture
+def git_add() -> GitCommand:
+    def run(directory: Path) -> None:
+        subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # noqa: S607
+
+    return run
+
+
+@pytest.fixture
+def git_commit(git_init: GitCommand, git_add: GitCommand) -> GitCommand:
+    """Initialize a repository in a directory, stage everything, and commit it."""
+
+    def run(directory: Path) -> None:
+        git_init(directory)
+        git_add(directory)
+        subprocess.run(
+            ["git", "commit", "-qm", "init", "--allow-empty"],  # noqa: S607
+            cwd=directory,
+            check=True,
+        )
+
+    return run
+
+
+@pytest.fixture(scope="session")
+def _hermetic_gitconfig(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    config = tmp_path_factory.mktemp("gitconfig") / "config"
+    config.write_text(
+        "[user]\n"
+        "\tname = ComPWA\n"
+        "\temail = compwa@example.com\n"
+        "[init]\n"
+        "\tdefaultBranch = main\n"
+    )
+    return config
+
+
+@pytest.fixture(autouse=True)
+def _hermetic_git(monkeypatch: pytest.MonkeyPatch, _hermetic_gitconfig: Path) -> None:
+    """Isolate git in tests from the developer's global and system configuration.
+
+    Tests create throwaway repositories in ``tmp_path`` and commit into them. If those
+    commits inherit the developer's global config with commit signing enabled, every
+    commit shells out to a gpg-agent, which under a burst of commits across the suite
+    fails intermittently with ``fatal: failed to write commit object``. Pointing git at
+    a dedicated config (which leaves signing at its ``false`` default) and supplying a
+    fixed identity makes the commits hermetic and deterministic.
+    """
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(_hermetic_gitconfig))
+    monkeypatch.setenv("GIT_CONFIG_SYSTEM", os.devnull)
+    monkeypatch.setenv("GIT_AUTHOR_NAME", "ComPWA")
+    monkeypatch.setenv("GIT_AUTHOR_EMAIL", "compwa@example.com")
+    monkeypatch.setenv("GIT_COMMITTER_NAME", "ComPWA")
+    monkeypatch.setenv("GIT_COMMITTER_EMAIL", "compwa@example.com")
 
 
 @pytest.fixture(autouse=True)

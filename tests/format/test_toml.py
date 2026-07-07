@@ -1,5 +1,5 @@
 import io
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -32,10 +32,6 @@ _WITH_MIRRORS_TAPLO = dedent("""
         hooks:
           - id: taplo
 """).lstrip()
-
-
-def _git_init(directory: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
 
 
 def describe_rename_precommit_url():
@@ -82,8 +78,12 @@ def describe_update_precommit_repo():
 
 
 def describe_update_tomlsort_hook():
-    def adds_hook_without_excludes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def adds_hook_without_excludes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         with (
             pytest.raises(PrecommitError),
@@ -94,8 +94,12 @@ def describe_update_tomlsort_hook():
         assert "https://github.com/pappasam/toml-sort" in result
         assert "exclude" not in result
 
-    def adds_excludes_when_present(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def adds_excludes_when_present(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "labels.toml").touch()
         monkeypatch.chdir(tmp_path)
         with (
@@ -156,8 +160,12 @@ def describe_update_vscode_extensions():
 
 
 def describe_main():
-    def runs_when_triggered(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        _git_init(tmp_path)
+    def runs_when_triggered(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
         with (

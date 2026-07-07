@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess  # noqa: S404
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -11,6 +10,7 @@ from compwa_policy.errors import PrecommitError
 from compwa_policy.repo import readthedocs
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from compwa_policy.utilities.pyproject.getters import PythonVersion
@@ -271,8 +271,12 @@ def describe_main():
 
 
 @pytest.fixture
-def rtd_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+def rtd_repo(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_init: Callable[[Path], None],
+) -> Path:
+    git_init(tmp_path)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "conf.py").touch()
     monkeypatch.chdir(tmp_path)
