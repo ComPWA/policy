@@ -1,5 +1,5 @@
 import io
-import subprocess  # noqa: S404
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -32,8 +32,12 @@ _PRECOMMIT_TO_CLEAN = dedent("""
 
 
 @pytest.fixture
-def ruff_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+def ruff_repo(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_init: Callable[[Path], None],
+) -> Path:
+    git_init(tmp_path)
     package = tmp_path / "src" / "my_package"
     package.mkdir(parents=True)
     (package / "__init__.py").touch()
@@ -94,8 +98,12 @@ def describe_main():
         assert "https://github.com/astral-sh/ruff-pre-commit" in config
         assert "ruff-format" in config
 
-    def migrates_legacy_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)  # noqa: S607
+    def migrates_legacy_config(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / "pyproject.toml").write_text(
             dedent("""
