@@ -21,6 +21,9 @@ __BADGE = """
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 """.strip()
 __BADGE_PATTERN = r"\[\!\[[Pp]rettier.*\]\(.*prettier.*\)\]\(.*prettier.*\)\n?"
+__GENERATED_LOCK_FILES = [
+    "pixi.lock",
+]
 
 
 def main(precommit: ModifiablePrecommit) -> None:
@@ -89,10 +92,7 @@ def __remove_forbidden_paths() -> None:
 
 def __insert_expected_paths() -> None:
     existing = __get_existing_lines()
-    obligatory = [
-        "LICENSE",
-        "pixi.lock",
-    ]
+    obligatory = ["LICENSE", *__GENERATED_LOCK_FILES]
     obligatory = [p for p in obligatory if os.path.exists(p)]
     expected = [*sorted(set(existing + obligatory) - {""}), ""]
     if expected == [""] and os.path.exists(CONFIG_PATH.prettier_ignore):
