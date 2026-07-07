@@ -80,6 +80,16 @@ def describe_update_prettier_ignore():
         assert any("Added paths" in m for m in changes)
         assert "LICENSE" in (tmp_path / ".prettierignore").read_text()
 
+    def ignores_generated_lock_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pixi.lock").touch()
+        (tmp_path / "uv.lock").touch()  # Prettier ignores TOML lock files
+        changes = _update_prettier_ignore()
+        assert any("Added paths" in m for m in changes)
+        prettier_ignore = (tmp_path / ".prettierignore").read_text()
+        assert "pixi.lock" in prettier_ignore
+        assert "uv.lock" not in prettier_ignore
+
     def removes_empty_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".prettierignore").write_text("")
