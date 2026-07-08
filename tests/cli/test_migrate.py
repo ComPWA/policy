@@ -66,3 +66,16 @@ def describe_migrate():
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert 'repo-name = "demo"' in pyproject
         assert "[tool.compwa.policy]\nrepo-name" in pyproject
+
+    def strips_shell_quotes_from_migrated_arg_values(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+    ):
+        _write_repo(tmp_path, ['--repo-title="ComPWA demos"'])
+        monkeypatch.chdir(tmp_path)
+        migrate(Path(".pre-commit-config.yaml"))
+        capsys.readouterr()
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert 'repo-title = "ComPWA demos"' in pyproject
+        assert R'repo-title = "\"ComPWA demos\""' not in pyproject

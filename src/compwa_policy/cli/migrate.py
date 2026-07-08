@@ -14,6 +14,7 @@ entry, since those hooks were extracted into a separate repository.
 from __future__ import annotations
 
 import contextlib
+import shlex
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, get_origin
 
@@ -210,6 +211,7 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
     environment_variables: dict[str, str] = {}
     for arg in args:
         flag, separator, raw_value = arg.partition("=")
+        raw_value = _unquote_cli_value(raw_value)
         if flag in {"--python", "--no-python"}:
             policy["python"] = flag == "--python"
             continue
@@ -234,6 +236,22 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
     if environment_variables:
         policy.setdefault("setup", {})["env"] = environment_variables
     return policy
+
+
+def _unquote_cli_value(value: str) -> str:
+    """Strip shell quotes from a single option value carried through YAML.
+
+    In a shell, ``--repo-title="ComPWA demos"`` arrives as ``--repo-title=ComPWA
+    demos``. In a pre-commit YAML ``args`` list, the quote characters are part of the
+    scalar, so migration has to remove them explicitly.
+    """
+    try:
+        values = shlex.split(value)
+    except ValueError:
+        return value
+    if len(values) == 1:
+        return values[0]
+    return value
 
 
 def _render(policy: dict[str, Any]) -> str:
