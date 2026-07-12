@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: ComPWA/ampform
-          ref: 88a4bf3d305f4d1d09922ccace4c1e5c010eedf6
+          ref: 6f0c2771f2512a4e76ffec06a0556c1f9af4442f
           path: benchmark-target
       - uses: actions/setup-python@v6
         with:
