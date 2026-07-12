@@ -81,9 +81,7 @@ def _remove_pip_constraint_files() -> Changelog:
     return [msg]
 
 
-def _remove_uv_configuration(
-    pyproject: ModifiablePyproject | None = None,
-) -> Changelog:
+def _remove_uv_configuration(pyproject: ModifiablePyproject | None = None) -> Changelog:
     with use_modifiable_pyproject(pyproject) as (config, include_changelog):
         if config is None:
             return []
