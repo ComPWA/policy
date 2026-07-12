@@ -1,0 +1,62 @@
+name: Benchmark
+
+env:
+  COMPWA_POLICY_BENCHMARK_TARGET: benchmark-target
+  FORCE_COLOR: "1"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - epic/*
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    name: Performance regression
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check out AmpForm benchmark target
+        uses: actions/checkout@v7
+        with:
+          repository: ComPWA/ampform
+          ref: 88a4bf3d305f4d1d09922ccace4c1e5c010eedf6
+          path: benchmark-target
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+      - name: Run pytest-benchmark
+        run: uvx --from poethepoet poe benchmark
+      - name: Warn on performance decrease
+        if: github.event_name == 'pull_request'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          benchmark-data-dir-path: ""
+          comment-on-alert: true
+          fail-on-alert: true
+          gh-repository: github.com/ComPWA/policy-benchmark-results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: ComPWA policy benchmark results
+          output-file-path: benchmarks/output.json
+          tool: pytest
+      - name: Create local benchmark data repository
+        if: github.event_name != 'pull_request'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          benchmark-data-dir-path: ""
+          gh-repository: github.com/ComPWA/policy-benchmark-results
+          github-token: ${{ secrets.PAT }}
+          name: ComPWA policy benchmark results
+          output-file-path: benchmarks/output.json
+          tool: pytest
+      - name: Push results to GitHub Pages
+        if: github.event_name != 'pull_request'
+        run: git push 'https://ComPWA:${{ secrets.PAT }}@github.com/ComPWA/policy-benchmark-results' gh-pages
+        working-directory: benchmark-data-repository

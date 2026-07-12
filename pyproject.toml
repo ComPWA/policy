@@ -85,11 +85,13 @@ style = [
 ]
 test = [
     "pytest",
+    "pytest-benchmark",
     "pytest-cov",
     "pytest-describe",
 ]
 types = [
     "pytest",
+    "pytest-benchmark",
     "sphinx-api-relink",
     "types-PyYAML",
     "types-toml",
@@ -202,6 +204,17 @@ help = "Check external links in the documentation (requires internet connection)
 [tool.poe.groups.test]
 heading = "Testing"
 
+[tool.poe.groups.test.tasks.benchmark]
+cmd = """
+pytest benchmarks \
+    --benchmark-autosave \
+    --benchmark-json benchmarks/output.json \
+    --durations=0 \
+    -k benchmark
+"""
+executor = {group = "test"}
+help = "Run performance benchmarks"
+
 [tool.poe.groups.test.tasks.cov]
 cmd = """
 pytest \
@@ -308,6 +321,7 @@ filterwarnings = [
 ]
 minversion = "9.0"
 testpaths = [
+    "benchmarks",
     "src",
     "tests",
 ]
@@ -367,6 +381,21 @@ ban-relative-imports = "all"
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
+"benchmarks/*" = [
+    "ANN",
+    "D",
+    "INP001",
+    "PLC2701",
+    "PLR2004",
+    "PLR6301",
+    "RUF069",
+    "S101",
+    "S404",
+    "S603",
+    "S607",
+    "SLF001",
+    "T20",
+]
 "docs/*" = [
     "E402",
     "INP001",
