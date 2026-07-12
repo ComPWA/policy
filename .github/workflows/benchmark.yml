@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
       - name: Run pytest-benchmark
         run: uvx --from poethepoet poe benchmark --target benchmark-target
       - name: Warn on performance decrease
