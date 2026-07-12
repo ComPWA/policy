@@ -1,7 +1,6 @@
 name: Benchmark
 
 env:
-  COMPWA_POLICY_BENCHMARK_TARGET: benchmark-target
   FORCE_COLOR: "1"
 
 on:
@@ -33,7 +32,7 @@ jobs:
           python-version: "3.13"
       - uses: astral-sh/setup-uv@v7
       - name: Run pytest-benchmark
-        run: uvx --from poethepoet poe benchmark
+        run: uvx --from poethepoet poe benchmark --target benchmark-target
       - name: Warn on performance decrease
         if: github.event_name == 'pull_request'
         uses: benchmark-action/github-action-benchmark@v1

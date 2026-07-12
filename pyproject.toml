@@ -209,11 +209,17 @@ cmd = """
 pytest benchmarks \
     --benchmark-autosave \
     --benchmark-json benchmarks/output.json \
+    --benchmark-target=${target} \
     --durations=0 \
     -k benchmark
 """
 executor = {group = "test"}
 help = "Run performance benchmarks"
+
+[[tool.poe.groups.test.tasks.benchmark.args]]
+name = "target"
+options = ["--target"]
+required = true
 
 [tool.poe.groups.test.tasks.cov]
 cmd = """
