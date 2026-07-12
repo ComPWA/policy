@@ -10,12 +10,14 @@ version.py
 *.pyc
 .coverage
 .coverage.*
+.benchmarks/
 .pytest_cache/
 __pycache__/
 coverage.xml
 htmlcov/
 oryx-build-commands.txt
 prof/
+benchmarks/output.json
 
 # Virtual environments
 *venv/
