@@ -6,10 +6,8 @@ import io
 import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
-from textwrap import indent
 from typing import IO, TYPE_CHECKING, TypeVar
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit.getters import find_repo, find_repo_with_index
 from compwa_policy.utilities.precommit.setters import (
@@ -30,6 +28,7 @@ if TYPE_CHECKING:
     from ruamel.yaml import YAML
 
     from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
+    from compwa_policy.utilities.session import Changelog
 
 T = TypeVar("T", bound="Precommit")
 
@@ -84,7 +83,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
     ) -> None:
         super().__init__(document, parser, source)
         self.__is_in_context = False
-        self.__changelog: list[str] = []
+        self.__changelog: Changelog = []
 
     def __enter__(self) -> Self:
         self.__is_in_context = True
@@ -92,22 +91,13 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_value: BaseException | None,
-        tb: TracebackType | None,
+        _exc_type: type[BaseException] | None,
+        _exc_value: BaseException | None,
+        _tb: TracebackType | None,
     ) -> bool:
-        if exc_type is not None and not issubclass(exc_type, PrecommitError):
-            return False
-        if not self.__changelog:
-            return True
-        if self.parser is not None:
+        if self.__changelog and self.source is not None:
             self.dump(self.source)
-        msg = "The following modifications were made"
-        if isinstance(self.source, Path):
-            msg += f" to {self.source}"
-        msg += ":\n"
-        msg += indent("\n".join(self.__changelog), prefix="  - ")
-        raise PrecommitError(msg)
+        return False
 
     def dump(self, target: IO | Path | str | None = None) -> None:
         if target is None:
@@ -128,7 +118,7 @@ class ModifiablePrecommit(Precommit, AbstractContextManager):
             raise TypeError(msg)
 
     @property
-    def changelog(self) -> list[str]:
+    def changelog(self) -> Changelog:
         self.__assert_is_in_context()
         return self.__changelog
 

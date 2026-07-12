@@ -6,14 +6,21 @@ from typing import TYPE_CHECKING
 import pytest
 
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
-from compwa_policy.errors import PrecommitError
 from compwa_policy.repo import readthedocs
+from compwa_policy.utilities.session import Session
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+
+
+def _main(*args, **kwargs) -> list[str]:
+    with Session() as session:
+        readthedocs.main(session, *args, **kwargs)
+        return session.collect_changes()
+
 
 BAD_OVERWRITE_WITH_JOBS = dedent("""
     version: 2
@@ -113,15 +120,13 @@ def describe_main():
               configuration: docs/conf.py
         """).lstrip()
         config = _write_rtd(tmp_path, bad_config)
-        with pytest.raises(PrecommitError) as exception:
-            readthedocs.main(
-                "conda",
-                python_version=DEFAULT_DEV_PYTHON_VERSION,
-                source=config,
-            )
-        assert str(exception.value).strip() == _expected_message(
-            DEFAULT_DEV_PYTHON_VERSION
+        changes = _main(
+            "conda",
+            python_version=DEFAULT_DEV_PYTHON_VERSION,
+            source=config,
         )
+        assert changes
+        assert changes[0].strip() == _expected_message(DEFAULT_DEV_PYTHON_VERSION)
         assert config.read_text().strip() == _good_extend().strip()
 
     @pytest.mark.parametrize(
@@ -131,7 +136,7 @@ def describe_main():
     )
     def leaves_good_config_unchanged(good_config: str, tmp_path: Path):
         config = _write_rtd(tmp_path, good_config)
-        readthedocs.main(
+        _main(
             "conda",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=config,
@@ -148,13 +153,13 @@ def describe_main():
         python_version: PythonVersion, bad_config: str, tmp_path: Path
     ):
         config = _write_rtd(tmp_path, bad_config)
-        with pytest.raises(PrecommitError) as exception:
-            readthedocs.main("conda", python_version, source=config)
-        assert str(exception.value).strip() == _expected_message(python_version)
+        changes = _main("conda", python_version, source=config)
+        assert changes
+        assert changes[0].strip() == _expected_message(python_version)
         assert config.read_text().strip() == _good_overwrite(python_version).strip()
 
     def returns_early_when_config_missing(tmp_path: Path):
-        readthedocs.main(
+        _main(
             "uv",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=tmp_path / ".readthedocs.yml",
@@ -181,8 +186,8 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        with pytest.raises(PrecommitError):
-            readthedocs.main("uv", python_version="3.12")
+        changes = _main("uv", python_version="3.12")
+        assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi global install graphviz uv" in result
         assert "uvx --from poethepoet poe doc" in result
@@ -204,8 +209,8 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        with pytest.raises(PrecommitError):
-            readthedocs.main("pixi+uv", python_version="3.12")
+        changes = _main("pixi+uv", python_version="3.12")
+        assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi run poe doc" in result
 
@@ -221,8 +226,8 @@ def describe_main():
                 python: "3.12"
             """).lstrip(),
         )
-        with pytest.raises(PrecommitError, match=r"Set sphinx.configuration"):
-            readthedocs.main("conda", python_version="3.12")
+        changes = _main("conda", python_version="3.12")
+        assert any("Set sphinx.configuration" in m for m in changes)
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "configuration: docs/conf.py" in result
 
@@ -245,8 +250,8 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        with pytest.raises(PrecommitError):
-            readthedocs.main("uv", python_version="3.12")
+        changes = _main("uv", python_version="3.12")
+        assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi global install graphviz julia uv" in result
 
@@ -264,8 +269,8 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        with pytest.raises(PrecommitError):
-            readthedocs.main("pixi+uv", python_version="3.12")
+        changes = _main("pixi+uv", python_version="3.12")
+        assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi run doc" in result
 

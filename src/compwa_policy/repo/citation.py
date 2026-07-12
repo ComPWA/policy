@@ -12,30 +12,32 @@ from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(precommit: ModifiablePrecommit) -> None:
-    with Executor() as do:
-        if CONFIG_PATH.zenodo.exists():
-            if CONFIG_PATH.citation.exists():
-                do(remove_zenodo_json)
-            else:
-                do(convert_zenodo_json)
+def main(session: Session) -> None:
+    just_converted = False
+    if CONFIG_PATH.zenodo.exists():
         if CONFIG_PATH.citation.exists():
-            do(check_citation_keys)
-            do(add_json_schema_precommit, precommit)
-            do(vscode.add_extension_recommendation, "redhat.vscode-yaml")
-            do(update_vscode_settings)
+            session.changelog += remove_zenodo_json()
+        else:
+            session.changelog += convert_zenodo_json()
+            just_converted = True
+    if CONFIG_PATH.citation.exists():
+        if not just_converted:
+            check_citation_keys()
+        add_json_schema_precommit(session.precommit)
+        session.changelog += vscode.add_extension_recommendation("redhat.vscode-yaml")
+        session.changelog += update_vscode_settings()
 
 
-def convert_zenodo_json() -> None:
+def convert_zenodo_json() -> Changelog:
     with open(CONFIG_PATH.zenodo) as f:
         zenodo = json.load(f)
     citation_cff = _convert_zenodo(zenodo)
@@ -46,15 +48,15 @@ def convert_zenodo_json() -> None:
     see https://citation-file-format.github.io
     """
     msg = dedent(msg).strip()
-    raise PrecommitError(msg)
+    return [msg]
 
 
-def remove_zenodo_json() -> None:
+def remove_zenodo_json() -> Changelog:
     CONFIG_PATH.zenodo.unlink()
     msg = (
         f"Removed {CONFIG_PATH.zenodo}, because a {CONFIG_PATH.citation} already exists"
     )
-    raise PrecommitError(msg)
+    return [msg]
 
 
 def _convert_zenodo(zenodo: dict) -> CommentedMap:
@@ -151,7 +153,7 @@ def check_citation_keys() -> None:
         citation_cff = yaml.load(f)
     if not citation_cff:
         msg = f"{CONFIG_PATH.citation} is empty"
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     existing: set[str] = set(citation_cff)
     missing_keys = expected - existing
     if missing_keys:
@@ -162,7 +164,7 @@ def check_citation_keys() -> None:
             https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md#valid-keys
         """
         msg = dedent(msg).strip()
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
 
 
 def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
@@ -211,8 +213,8 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append(msg)
 
 
-def update_vscode_settings() -> None:
-    vscode.update_settings(
+def update_vscode_settings() -> Changelog:
+    return vscode.update_settings(
         {
             "yaml.schemas": {
                 "https://citation-file-format.github.io/1.2.0/schema.json": (

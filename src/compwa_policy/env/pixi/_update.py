@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any
 
 import yaml
 
 from compwa_policy.env.pixi._helpers import has_pixi_config
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -24,46 +23,55 @@ if TYPE_CHECKING:
 
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+    from compwa_policy.utilities.session import Changelog
 
 
 def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-) -> None:
+    pyproject: ModifiablePyproject | None = None,
+) -> Changelog:
     if "pixi" not in package_manager:
-        return
+        return []
+    include_changelog = True
     if package_manager == "pixi":
-        config_path = CONFIG_PATH.pyproject
+        if pyproject is None:
+            config_context = ModifiablePyproject.load(CONFIG_PATH.pyproject)
+        else:
+            config_context = nullcontext(pyproject)
+            include_changelog = False
     else:
-        config_path = CONFIG_PATH.pixi_toml
         CONFIG_PATH.pixi_toml.touch()
-    with Executor() as do, ModifiablePyproject.load(config_path) as config:
-        do(
-            add_badge,
+        config_context = ModifiablePyproject.load(CONFIG_PATH.pixi_toml)
+    extra: Changelog = []
+    with config_context as config:
+        extra += add_badge(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
         )
-        do(_rename_workspace_table, config)
-        do(_define_minimal_project, config)
-        do(_import_conda_dependencies, config)
-        do(_import_conda_environment, config)
+        _rename_workspace_table(config)
+        _define_minimal_project(config)
+        _import_conda_dependencies(config)
+        _import_conda_environment(config)
         if package_manager == "pixi+uv":
-            do(_define_combined_ci_job, config)
+            _define_combined_ci_job(config)
         else:
             if is_python_package:
-                do(_install_package_editable, config)
-            do(_set_dev_python_version, config, dev_python_version)
-            do(_update_dev_environment, config)
-            do(_update_docnb_and_doclive, config, "tasks")
-            do(_update_docnb_and_doclive, config, "feature.dev.tasks")
-        do(_clean_up_task_env, config)
-        do(
-            vscode.update_settings,
+                _install_package_editable(config)
+            _set_dev_python_version(config, dev_python_version)
+            _update_dev_environment(config)
+            _update_docnb_and_doclive(config, "tasks")
+            _update_docnb_and_doclive(config, "feature.dev.tasks")
+        _clean_up_task_env(config)
+        extra += vscode.update_settings(
             {"files.associations": {"**/pixi.lock": "yaml"}},
         )
         if has_pixi_config(config):
-            do(__update_gitattributes)
-            do(__update_gitignore)
+            config.changelog.extend(__update_gitattributes())
+            config.changelog.extend(__update_gitignore())
+        if include_changelog:
+            return list(config.changelog) + extra
+    return extra
 
 
 def _define_combined_ci_job(config: ModifiablePyproject) -> None:
@@ -239,20 +247,20 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes() -> None:
+def __update_gitattributes() -> Changelog:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
     if append_safe(expected_line, CONFIG_PATH.gitattributes):
-        msg = (
+        return [
             f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
-        )
-        raise PrecommitError(msg)
+        ]
+    return []
 
 
-def __update_gitignore() -> None:
+def __update_gitignore() -> Changelog:
     ignore_path = ".pixi/"
     if append_safe(ignore_path, CONFIG_PATH.gitignore):
-        msg = f"Added {ignore_path} under {CONFIG_PATH.gitignore}"
-        raise PrecommitError(msg)
+        return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]
+    return []
 
 
 def _update_dev_environment(config: ModifiablePyproject) -> None:

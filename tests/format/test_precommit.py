@@ -4,15 +4,16 @@ import io
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-import pytest
 import yaml
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.format import precommit
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.session import Session
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    import pytest
 
 
 def _load(content: str) -> ModifiablePrecommit:
@@ -40,12 +41,9 @@ def _run(config: str, *, has_notebooks: bool) -> tuple[bool, str]:
     ComPWA/nbhooks repo entry is pinned to the fallback revision ``PLEASE-UPDATE``.
     """
     stream = io.StringIO(config)
-    changed = False
-    try:
-        with ModifiablePrecommit.load(stream) as pc:
-            precommit._update_notebook_hooks(pc, has_notebooks=has_notebooks)
-    except PrecommitError:
-        changed = True
+    with ModifiablePrecommit.load(stream) as pc:
+        precommit._update_notebook_hooks(pc, has_notebooks=has_notebooks)
+    changed = bool(pc.changelog)
     return changed, stream.getvalue()
 
 
@@ -85,9 +83,7 @@ def describe_update_notebook_hooks():
 
 def describe_sort_hooks():
     def sorts_meta_before_repos():
-        with (
-            pytest.raises(PrecommitError, match=r"Sorted all pre-commit hooks"),
-            _load("""
+        with _load("""
                 repos:
                   - repo: https://github.com/psf/black
                     hooks:
@@ -95,16 +91,14 @@ def describe_sort_hooks():
                   - repo: meta
                     hooks:
                       - id: check-hooks-apply
-            """) as pc,
-        ):
+            """) as pc:
             precommit._sort_hooks(pc)
+        assert any("Sorted all pre-commit hooks" in m for m in pc.changelog)
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")
 
     def orders_all_categories():
-        with (
-            pytest.raises(PrecommitError, match=r"Sorted all pre-commit hooks"),
-            _load("""
+        with _load("""
                 repos:
                   - repo: https://github.com/some/other
                     hooks:
@@ -128,8 +122,7 @@ def describe_sort_hooks():
                   - repo: meta
                     hooks:
                       - id: check-hooks-apply
-            """) as pc,
-        ):
+            """) as pc:
             precommit._sort_hooks(pc)
         result = pc.dumps()
         expected_order = [
@@ -158,21 +151,17 @@ def describe_update_precommit_ci():
             precommit._update_precommit_ci_skip(pc)  # no ci section -> nothing to do
 
     def sets_autofix_commit_msg():
-        with (
-            pytest.raises(PrecommitError, match=r"autofix_commit_msg"),
-            _load("""
+        with _load("""
                 ci:
                   autofix_prs: true
                 repos: []
-            """) as pc,
-        ):
+            """) as pc:
             precommit._update_precommit_ci_autofix_commit_msg(pc)
+        assert any("autofix_commit_msg" in m for m in pc.changelog)
         assert "MAINT: implement pre-commit autofixes" in pc.dumps()
 
     def skip_collects_local_and_non_functional_hooks():
-        with (
-            pytest.raises(PrecommitError, match=r"Updated ci.skip"),
-            _load("""
+        with _load("""
                 ci:
                   autofix_prs: true
                 repos:
@@ -183,17 +172,15 @@ def describe_update_precommit_ci():
                     rev: v0.0.1
                     hooks:
                       - id: ty
-            """) as pc,
-        ):
+            """) as pc:
             precommit._update_precommit_ci_skip(pc)
+        assert any("Updated ci.skip" in m for m in pc.changelog)
         result = pc.dumps()
         assert "my-local-hook" in result
         assert "ty" in result
 
     def skip_removes_redundant_section():
-        with (
-            pytest.raises(PrecommitError, match=r"Removed redundant ci.skip"),
-            _load("""
+        with _load("""
                 ci:
                   skip:
                     - some-hook
@@ -201,25 +188,23 @@ def describe_update_precommit_ci():
                   - repo: meta
                     hooks:
                       - id: check-hooks-apply
-            """) as pc,
-        ):
+            """) as pc:
             precommit._update_precommit_ci_skip(pc)
+        assert any("Removed redundant ci.skip" in m for m in pc.changelog)
         assert "skip" not in pc.dumps()
 
 
 def describe_update_repo_urls():
     def migrates_repo_maintenance_url():
-        with (
-            pytest.raises(PrecommitError, match=r"Updated repo URLs"),
-            _load("""
+        with _load("""
                 repos:
                   - repo: https://github.com/ComPWA/repo-maintenance
                     rev: "1.0"
                     hooks:
                       - id: check-dev-files
-            """) as pc,
-        ):
+            """) as pc:
             precommit._update_repo_urls(pc)
+        assert any("Updated repo URLs" in m for m in pc.changelog)
         assert _POLICY_URL in pc.dumps()
 
 
@@ -247,7 +232,7 @@ def describe_update_conda_environment():
     def sets_legacy_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "environment.yml").write_text("dependencies:\n  - python\n")
-        config = Precommit.load(
+        with ModifiablePrecommit.load(
             io.StringIO(
                 dedent("""
                 repos:
@@ -257,9 +242,9 @@ def describe_update_conda_environment():
                       - id: prettier
                 """).lstrip()
             )
-        )
-        with pytest.raises(PrecommitError, match=r"Set PRETTIER_LEGACY_CLI"):
-            precommit._update_conda_environment(config)
+        ) as pc:
+            precommit._update_conda_environment(pc)
+        assert any("Set PRETTIER_LEGACY_CLI" in m for m in pc.changelog)
         assert "PRETTIER_LEGACY_CLI" in (tmp_path / "environment.yml").read_text()
 
     def removes_legacy_flag(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -267,19 +252,35 @@ def describe_update_conda_environment():
         (tmp_path / "environment.yml").write_text(
             "variables:\n  PRETTIER_LEGACY_CLI: 1\n"
         )
-        config = Precommit.load(io.StringIO("repos: []\n"))
-        with pytest.raises(PrecommitError, match=r"Removed PRETTIER_LEGACY_CLI"):
-            precommit._update_conda_environment(config)
+        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as pc:
+            precommit._update_conda_environment(pc)
+        assert any("Removed PRETTIER_LEGACY_CLI" in m for m in pc.changelog)
         assert "PRETTIER_LEGACY_CLI" not in (tmp_path / "environment.yml").read_text()
 
 
 def describe_main():
+    def reports_standalone_pyproject_changes(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text("""
+            [project]
+            name = "x"
+
+            [dependency-groups]
+            dev = ["pre-commit", "pre-commit-uv"]
+        """)
+        with Session.load(_load("repos: []")) as session:
+            precommit.main(session, has_notebooks=False)
+            changes = session.collect_changes()
+        assert any("Removed pre-commit from dependencies" in m for m in changes)
+        assert any("Removed pre-commit-uv from dependencies" in m for m in changes)
+
     def sorts_and_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[dependency-groups]\ndev = []\n")
-        with (
-            pytest.raises(PrecommitError),
-            _load("""
+        pc = _load("""
                 ci:
                   autofix_prs: true
                 repos:
@@ -289,8 +290,8 @@ def describe_main():
                   - repo: meta
                     hooks:
                       - id: check-hooks-apply
-            """) as pc,
-        ):
-            precommit.main(pc, has_notebooks=False)
+            """)
+        with Session.load(pc) as session:
+            precommit.main(session, has_notebooks=False)
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")  # hooks sorted

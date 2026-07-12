@@ -8,12 +8,12 @@ from collections.abc import Iterable, Sized
 from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from compwa_policy.utilities.session import Changelog
 
 
 K = TypeVar("K")
@@ -40,10 +40,10 @@ def _get_extension_recommendations(key: str) -> set[str]:
     return {ext.lower() for ext in extensions}
 
 
-def remove_settings(keys: RemovedKeys) -> None:
+def remove_settings(keys: RemovedKeys) -> Changelog:
     settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
     new_settings = _remove_keys(settings, keys)
-    _update_settings_if_changed(settings, new=new_settings)
+    return _update_settings_if_changed(settings, new=new_settings)
 
 
 def _remove_keys(obj: T, keys: RemovedKeys) -> T:
@@ -86,10 +86,10 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     return obj
 
 
-def update_settings(new_settings: dict) -> None:
+def update_settings(new_settings: dict) -> Changelog:
     old = __load_config(CONFIG_PATH.vscode_settings, create=True)
     updated = _update_dict_recursively(old, new_settings)
-    _update_settings_if_changed(old, updated)
+    return _update_settings_if_changed(old, updated)
 
 
 def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
@@ -131,47 +131,28 @@ def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     return new
 
 
-def _update_settings_if_changed(old: dict, new: dict) -> None:
+def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     if old == new:
-        return
+        return []
     __dump_config(new, CONFIG_PATH.vscode_settings)
-    msg = "Updated VS Code settings"
-    raise PrecommitError(msg)
+    return ["Updated VS Code settings"]
 
 
-def add_extension_recommendation(extension_name: str) -> None:
-    with Executor() as do:
-        do(
-            __add_extension,
-            extension_name,
-            key="recommendations",
-            msg=f'Added VS Code extension recommendation "{extension_name}"',
-        )
-        do(
-            __remove_extension,
-            extension_name,
-            key="unwantedRecommendations",
-            msg=f'Removed unwanted VS Code extension "{extension_name}"',
-        )
+def add_extension_recommendation(extension_name: str) -> Changelog:
+    changes: Changelog = []
+    changes += __add_extension(extension_name, key="recommendations")
+    changes += __remove_extension(extension_name, key="unwantedRecommendations")
+    return changes
 
 
-def add_unwanted_extension(extension_name: str) -> None:
-    with Executor() as do:
-        do(
-            __add_extension,
-            extension_name,
-            key="unwantedRecommendations",
-            msg=f'Added unwanted VS Code extension "{extension_name}"',
-        )
-        do(
-            __remove_extension,
-            extension_name,
-            key="recommendations",
-            msg=f'Removed VS Code extension recommendation "{extension_name}"',
-        )
+def add_unwanted_extension(extension_name: str) -> Changelog:
+    changes: Changelog = []
+    changes += __add_extension(extension_name, key="unwantedRecommendations")
+    changes += __remove_extension(extension_name, key="recommendations")
+    return changes
 
 
-def __add_extension(extension_name: str, key: str, msg: str) -> None:
+def __add_extension(extension_name: str, key: str) -> Changelog:
     config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
     recommended_extensions = __to_lower(config.get(key, []))
     extension_name = extension_name.lower()
@@ -179,13 +160,13 @@ def __add_extension(extension_name: str, key: str, msg: str) -> None:
         recommended_extensions.append(extension_name)
         config[key] = sorted(recommended_extensions)
         __dump_config(config, CONFIG_PATH.vscode_extensions)
-        msg = f'Added VS Code extension recommendation "{extension_name}"'
-        raise PrecommitError(msg)
+        return [f'Added VS Code extension recommendation "{extension_name}"']
+    return []
 
 
-def __remove_extension(extension_name: str, key: str, msg: str) -> None:
+def __remove_extension(extension_name: str, key: str) -> Changelog:
     if not CONFIG_PATH.vscode_extensions.exists():
-        return
+        return []
     with open(CONFIG_PATH.vscode_extensions) as stream:
         config = json.load(stream)
     recommended_extensions = __to_lower(config.get(key, []))
@@ -194,22 +175,18 @@ def __remove_extension(extension_name: str, key: str, msg: str) -> None:
         recommended_extensions.remove(extension_name)
         config[key] = sorted(recommended_extensions)
         __dump_config(config, CONFIG_PATH.vscode_extensions)
-        msg = f'Removed VS Code extension recommendation "{extension_name}"'
-        raise PrecommitError(msg)
+        return [f'Removed VS Code extension recommendation "{extension_name}"']
+    return []
 
 
 def remove_extension_recommendation(
     extension_name: str, *, unwanted: bool = False
-) -> None:
-    with Executor() as do:
-        do(
-            __remove_extension,
-            extension_name,
-            key="recommendations",
-            msg=f'Removed VS Code extension recommendation "{extension_name}"',
-        )
-        if unwanted:
-            do(add_unwanted_extension, extension_name)
+) -> Changelog:
+    changes: Changelog = []
+    changes += __remove_extension(extension_name, key="recommendations")
+    if unwanted:
+        changes += add_unwanted_extension(extension_name)
+    return changes
 
 
 def __to_lower(lst: list[str]) -> list[str]:

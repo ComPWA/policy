@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
 
 
@@ -30,20 +29,14 @@ def describe_modifiable_precommit():
 
     def restores_path_source_on_change(example_config: str):
         input_stream = io.StringIO(example_config)
-        with (
-            pytest.raises(PrecommitError, match=r"Fake modification$"),
-            ModifiablePrecommit.load(input_stream) as precommit,
-        ):
+        with ModifiablePrecommit.load(input_stream) as precommit:
             precommit.changelog.append("Fake modification")
         yaml = precommit.dumps()
         assert yaml == example_config
 
     def writes_back_to_string_stream(example_config: str):
         stream = io.StringIO(example_config)
-        with (
-            pytest.raises(PrecommitError, match=r"Fake modification$"),
-            ModifiablePrecommit.load(stream) as precommit,
-        ):
+        with ModifiablePrecommit.load(stream) as precommit:
             precommit.changelog.append("Fake modification")
         stream.seek(0)
         yaml = stream.read()

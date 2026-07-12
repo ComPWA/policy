@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.ty import (
     _remove_ty,
     _update_configuration,
@@ -14,6 +13,7 @@ from compwa_policy.python.ty import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 def _write_pyproject(tmp_path: Path, content: str) -> Path:
@@ -31,11 +31,9 @@ def _write_precommit(tmp_path: Path, content: str) -> Path:
 def describe_update_configuration():
     def sets_rules_and_terminal(tmp_path: Path):
         pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
-        with (
-            pytest.raises(PrecommitError, match=r"tool.ty"),
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
             _update_configuration(pyproject)
+        assert any("tool.ty" in m for m in pyproject.changelog)
         rules = pyproject.get_table("tool.ty.rules")
         assert rules["division-by-zero"] == "warn"
         assert pyproject.get_table("tool.ty.terminal")["error-on-warning"] is True
@@ -54,11 +52,9 @@ def describe_update_configuration():
             error-on-warning = true
             """,
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Removed tool.ty.rules"),
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
             _update_configuration(pyproject)
+        assert any("Removed tool.ty.rules" in m for m in pyproject.changelog)
         assert "unused-ignore-comment" not in pyproject.get_table("tool.ty.rules")
 
 
@@ -81,7 +77,6 @@ def describe_update_precommit_config():
             """,
         )
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(config) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -111,7 +106,6 @@ def describe_update_precommit_config():
             """,
         )
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(config) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -130,7 +124,6 @@ def describe_update_precommit_config():
         )
         pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(config) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -162,7 +155,6 @@ def describe_update_precommit_config():
             """,
         )
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(config) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -181,8 +173,7 @@ def describe_update_vscode_settings():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings({"ty"})
+        _update_vscode_settings({"ty"})
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
 
@@ -195,8 +186,7 @@ def describe_update_vscode_settings():
         (vscode_dir / "extensions.json").write_text(
             json.dumps({"recommendations": ["astral-sh.ty"]})
         )
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings({"mypy"})
+        _update_vscode_settings({"mypy"})
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "astral-sh.ty" not in extensions.get("recommendations", [])
 
@@ -231,7 +221,6 @@ def describe_remove_ty():
             """,
         )
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -248,11 +237,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(precommit_path) as precommit,
-        ):
-            main({"ty"}, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, {"ty"})
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
         assert "id: ty" in precommit.dumps()
@@ -277,10 +264,8 @@ def describe_main():
                     language: system
             """,
         )
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(precommit_path) as precommit,
-        ):
-            main(precommit=precommit, type_checkers=set())
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, type_checkers=set())
         assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: ty" not in precommit.dumps()

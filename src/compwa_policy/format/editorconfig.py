@@ -18,11 +18,12 @@ from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
 
 
-def main(precommit: ModifiablePrecommit) -> None:
+def main(session: Session) -> None:
     if CONFIG_PATH.editorconfig.exists():
-        _update_precommit_config(precommit)
+        _update_precommit_config(session.precommit)
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:

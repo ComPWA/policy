@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.python.pytest import (
     _deny_ini_options,
     _merge_coverage_into_pyproject,
@@ -16,6 +16,7 @@ from compwa_policy.python.pytest import (
     main,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.session import Session
 
 # cspell:ignore minversion ryanluker xdist
 
@@ -28,7 +29,7 @@ def describe_deny_ini_options():
         """).lstrip()
         with (
             ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-            pytest.raises(PrecommitError, match=r"migrate to a native TOML"),
+            pytest.raises(PolicyError, match=r"migrate to a native TOML"),
         ):
             _deny_ini_options(pyproject)
 
@@ -37,11 +38,9 @@ def describe_deny_ini_options():
             [tool.pytest]
             addopts = "--color=yes"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"minimum pytest version"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _deny_ini_options(pyproject)
+        assert any("minimum pytest version" in m for m in pyproject.changelog)
         assert pyproject.get_table("tool.pytest")["minversion"] == "9.0"
 
     def is_noop_with_minversion():
@@ -68,11 +67,9 @@ def describe_update_settings():
             [tool.pytest]
             addopts = "--color=no -ra"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated \[tool.pytest\]"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_settings(pyproject)
+        assert any("Updated [tool.pytest]" in m for m in pyproject.changelog)
         addopts = list(pyproject.get_table("tool.pytest")["addopts"])
         assert "--color=yes" in addopts
         assert "--import-mode=importlib" in addopts
@@ -98,13 +95,11 @@ def describe_merge_pytest_into_pyproject():
     def imports_and_removes_ini(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pytest.ini").write_text("[pytest]\nminversion = 7.0\n")
-        with (
-            pytest.raises(PrecommitError, match=r"Imported pytest configuration"),
-            ModifiablePyproject.load(
-                io.StringIO("[project]\nname = 'x'\n")
-            ) as pyproject,
-        ):
+        with ModifiablePyproject.load(
+            io.StringIO("[project]\nname = 'x'\n")
+        ) as pyproject:
             _merge_pytest_into_pyproject(pyproject)
+        assert any("Imported pytest configuration" in m for m in pyproject.changelog)
         assert not (tmp_path / "pytest.ini").exists()
         assert "ini_options" in pyproject.dumps()
 
@@ -122,13 +117,13 @@ def describe_merge_coverage_into_pyproject():
         (tmp_path / "pytest.ini").write_text(
             "[coverage:run]\nbranch = True\nsource = my_pkg\n"
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Imported Coverage.py configuration"),
-            ModifiablePyproject.load(
-                io.StringIO("[project]\nname = 'x'\n")
-            ) as pyproject,
-        ):
+        with ModifiablePyproject.load(
+            io.StringIO("[project]\nname = 'x'\n")
+        ) as pyproject:
             _merge_coverage_into_pyproject(pyproject)
+        assert any(
+            "Imported Coverage.py configuration" in m for m in pyproject.changelog
+        )
         coverage = pyproject.get_table("tool.coverage.run")
         assert coverage["source"] == ["my_pkg"]
 
@@ -152,11 +147,9 @@ def describe_update_codecov_settings():
             [dependency-groups]
             test = ["pytest-cov"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pytest coverage settings"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_codecov_settings(pyproject)
+        assert any("Updated pytest coverage settings" in m for m in pyproject.changelog)
         coverage = pyproject.get_table("tool.coverage.run")
         assert coverage["branch"] is True
         assert coverage["source"] == ["src"]
@@ -169,11 +162,9 @@ def describe_update_codecov_settings():
             [dependency-groups]
             test = ["pytest-cov"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pytest coverage settings"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_codecov_settings(pyproject, branch_coverage=False)
+        assert any("Updated pytest coverage settings" in m for m in pyproject.changelog)
         coverage = pyproject.get_table("tool.coverage.run")
         assert coverage["branch"] is False
 
@@ -188,10 +179,7 @@ def describe_update_vscode_settings():
     def enables_coverage_gutters(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         pyproject = Pyproject.load(io.StringIO('[project]\nname = "my-package"\n'))
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings(
-                pyproject, coverage_gutters=True, single_threaded=False
-            )
+        _update_vscode_settings(pyproject, coverage_gutters=True, single_threaded=False)
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert settings["testing.showCoverageInExplorer"] is True
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
@@ -213,8 +201,8 @@ def describe_main():
             addopts = "--color=no"
             """).lstrip()
         )
-        with pytest.raises(PrecommitError):
-            main(coverage_gutters=False, single_threaded=True)
+        with Session.load() as session:
+            main(session, coverage_gutters=False, single_threaded=True)
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.coverage.run]" in result
 
@@ -232,11 +220,12 @@ def describe_main():
             addopts = ["--color=yes", "--import-mode=importlib"]
             """).lstrip()
         )
-        with pytest.raises(PrecommitError):
-            main(coverage_gutters=True, single_threaded=False)
+        with Session.load() as session:
+            main(session, coverage_gutters=True, single_threaded=False)
         assert "pytest-xdist" in (tmp_path / "pyproject.toml").read_text()
 
     def is_noop_without_pytest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
-        main(coverage_gutters=False, single_threaded=True)  # no pytest dep -> no-op
+        with Session.load() as session:
+            main(session, coverage_gutters=False, single_threaded=True)  # no pytest dep

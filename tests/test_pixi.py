@@ -12,7 +12,6 @@ from compwa_policy.env.pixi._update import (
     _update_docnb_and_doclive,
     update_pixi_configuration,
 )
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 _ENVIRONMENT_YML = dedent("""
@@ -44,11 +43,11 @@ def describe_update_docnb_and_doclive():
             [{table_key}.docnb-test]
             cmd = "should not change"
         """)
-        with (
-            pytest.raises(PrecommitError, match="Updated `cmd` of Pixi tasks docnb"),
-            ModifiablePyproject.load(content) as pyproject,
-        ):
+        with ModifiablePyproject.load(content) as pyproject:
             _update_docnb_and_doclive(pyproject, table_key)
+        assert any(
+            "Updated `cmd` of Pixi tasks docnb" in m for m in pyproject.changelog
+        )
         new_content = pyproject.dumps()
         expected = dedent(f"""
             [{table_key}.doc]
@@ -94,12 +93,11 @@ def describe_update_pixi_configuration():
             cmd = "outdated"
             """).lstrip()
         )
-        with pytest.raises(PrecommitError):
-            update_pixi_configuration(
-                is_python_package=True,
-                dev_python_version="3.12",
-                package_manager="pixi",
-            )
+        update_pixi_configuration(
+            is_python_package=True,
+            dev_python_version="3.12",
+            package_manager="pixi",
+        )
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.pixi.workspace]" in pyproject  # project table renamed
@@ -126,12 +124,11 @@ def describe_update_pixi_configuration():
             cmd = "build docs"
             """).lstrip()
         )
-        with pytest.raises(PrecommitError):
-            update_pixi_configuration(
-                is_python_package=True,
-                dev_python_version="3.12",
-                package_manager="pixi+uv",
-            )
+        update_pixi_configuration(
+            is_python_package=True,
+            dev_python_version="3.12",
+            package_manager="pixi+uv",
+        )
 
         pixi = (tmp_path / "pixi.toml").read_text()
         assert "[feature.dev.tasks.ci]" in pixi  # combined CI job defined
@@ -147,11 +144,9 @@ def describe_define_combined_ci_job():
             [feature.dev.tasks.doc]
             cmd = "build docs"
         """)
-        with (
-            pytest.raises(PrecommitError, match=r"Updated combined CI job"),
-            ModifiablePyproject.load(content) as config,
-        ):
+        with ModifiablePyproject.load(content) as config:
             _define_combined_ci_job(config)
+        assert any("Updated combined CI job" in m for m in config.changelog)
         result = config.dumps()
         assert "tests" in result
         assert "doc" in result
@@ -167,13 +162,11 @@ def describe_clean_up_task_env():
             SHARED = "global"
             LOCAL = "value"
         """)
-        with (
-            pytest.raises(
-                PrecommitError, match=r"Removed redundant environment variables"
-            ),
-            ModifiablePyproject.load(content) as config,
-        ):
+        with ModifiablePyproject.load(content) as config:
             _clean_up_task_env(config)
+        assert any(
+            "Removed redundant environment variables" in m for m in config.changelog
+        )
         result = config.dumps()
         assert "LOCAL" in result
         assert result.count("SHARED") == 1  # only the global activation entry remains
@@ -186,11 +179,9 @@ def describe_update_dev_environment():
             dev = ["pytest"]
             doc = ["sphinx"]
         """)
-        with (
-            pytest.raises(PrecommitError, match=r"Updated Pixi developer environment"),
-            ModifiablePyproject.load(content) as config,
-        ):
+        with ModifiablePyproject.load(content) as config:
             _update_dev_environment(config)
+        assert any("Updated Pixi developer environment" in m for m in config.changelog)
         result = config.dumps()
         assert "features" in result
         assert "doc" in result
@@ -202,9 +193,7 @@ def describe_set_dev_python_version():
             [dependencies]
             python = "3.10.*"
         """)
-        with (
-            pytest.raises(PrecommitError, match=r"Set Python version"),
-            ModifiablePyproject.load(content) as config,
-        ):
+        with ModifiablePyproject.load(content) as config:
             _set_dev_python_version(config, "3.12")
+        assert any("Set Python version" in m for m in config.changelog)
         assert 'python = "3.12.*"' in config.dumps()

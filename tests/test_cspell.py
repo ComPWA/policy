@@ -5,7 +5,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.format.cspell import (
     _remove_configuration,
     _sort_config_entries,
@@ -16,6 +15,7 @@ from compwa_policy.format.cspell import (
 )
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.session import Session
 
 
 def _write_precommit(tmp_path: Path, content: str) -> Path:
@@ -36,11 +36,11 @@ def describe_update_cspell_repo_url():
                   - id: cspell
             """,
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Updated cSpell pre-commit repo URL"),
-            ModifiablePrecommit.load(config) as precommit,
-        ):
+        with ModifiablePrecommit.load(config) as precommit:
             _update_cspell_repo_url(precommit)
+        assert any(
+            "Updated cSpell pre-commit repo URL" in m for m in precommit.changelog
+        )
         repo_url = precommit.document["repos"][0]["repo"]
         assert repo_url == "https://github.com/streetsidesoftware/cspell-cli"
 
@@ -49,15 +49,15 @@ def describe_remove_configuration():
     def removes_config_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
-        with pytest.raises(PrecommitError, match=r"no longer required"):
-            _remove_configuration()
+        changes = _remove_configuration()
+        assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()
 
     def cleans_editorconfig(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".editorconfig").write_text(".cspell.json\nother-entry\n")
-        with pytest.raises(PrecommitError, match=r"no longer"):
-            _remove_configuration()
+        changes = _remove_configuration()
+        assert any("no longer" in m for m in changes)
         assert ".cspell.json" not in (tmp_path / ".editorconfig").read_text()
 
 
@@ -72,11 +72,9 @@ def describe_update_precommit_repo():
                   - id: check-hooks-apply
             """,
         )
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(config) as precommit,
-        ):
+        with ModifiablePrecommit.load(config) as precommit:
             _update_precommit_repo(precommit)
+        assert precommit.changelog  # something was changed
         result = precommit.dumps()
         assert "https://github.com/streetsidesoftware/cspell-cli" in result
         assert "id: cspell" in result
@@ -95,8 +93,8 @@ def describe_update_config_content():
         )
         template["language"] = "xx-XX"
         (tmp_path / ".cspell.json").write_text(json.dumps(template))
-        with pytest.raises(PrecommitError, match=r"has been updated"):
-            _update_config_content()
+        changes = _update_config_content()
+        assert any("has been updated" in m for m in changes)
         config = json.loads((tmp_path / ".cspell.json").read_text())
         assert config["language"] == "en-US"
 
@@ -108,8 +106,8 @@ def describe_update_config_content():
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
-        with pytest.raises(PrecommitError, match=r"has been updated"):
-            _update_config_content()
+        changes = _update_config_content()
+        assert any("has been updated" in m for m in changes)
         config = json.loads((tmp_path / ".cspell.json").read_text())
         assert config["language"] == "en-US"
 
@@ -120,8 +118,8 @@ def describe_sort_config_entries():
         (tmp_path / ".cspell.json").write_text(
             json.dumps({"words": ["zebra", "apple", "mango"]})
         )
-        with pytest.raises(PrecommitError, match=r"sorted alphabetically"):
-            _sort_config_entries()
+        changes = _sort_config_entries()
+        assert any("sorted alphabetically" in m for m in changes)
         config = json.loads((tmp_path / ".cspell.json").read_text())
         assert config["words"] == ["apple", "mango", "zebra"]
 
@@ -146,11 +144,11 @@ def describe_main():
                   - id: cspell
             """,
         )
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(config) as precommit,
-        ):
-            main(precommit, no_cspell_update=True)
+        precommit = ModifiablePrecommit.load(config)
+        with Session.load(precommit) as session:
+            main(session, no_cspell_update=True)
+            changes = session.collect_changes()
+        assert changes or precommit.changelog  # something changed
         result = json.loads((tmp_path / ".cspell.json").read_text())
         assert result["words"] == ["apple", "zebra"]
 
@@ -158,9 +156,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
         config = _write_precommit(tmp_path, "repos: []\n")
-        with (
-            ModifiablePrecommit.load(config) as precommit,
-            pytest.raises(PrecommitError, match=r"no longer required"),
-        ):
-            main(precommit, no_cspell_update=False)
+        precommit = ModifiablePrecommit.load(config)
+        with Session.load(precommit) as session:
+            main(session, no_cspell_update=False)
+            changes = session.collect_changes()
+        assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()

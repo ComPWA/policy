@@ -33,6 +33,7 @@ The **ComPWA/policy** repository provides the [`check-dev-files`](./check-dev-fi
 :hidden:
 check-dev-files
 API <api/compwa_policy>
+Continuous benchmarks <https://compwa.github.io/policy-benchmark-results>
 Changelog <https://github.com/ComPWA/policy/releases>
 Upcoming features <https://github.com/ComPWA/policy/milestones?direction=asc&sort=title&state=open>
 Help developing <https://compwa.github.io/develop>

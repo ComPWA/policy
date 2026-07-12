@@ -8,7 +8,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import read, write
 
 if TYPE_CHECKING:
@@ -49,7 +49,7 @@ def open_config(definition: Path | io.TextIOBase | str) -> ConfigParser:
         path = Path(definition)
         if not path.exists():
             msg = f'Config file "{path}" does not exist'
-            raise PrecommitError(msg)
+            raise PolicyError(msg)
         cfg.read(path)
     else:
         msg = (

@@ -11,7 +11,6 @@ from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import (
@@ -28,9 +27,11 @@ if TYPE_CHECKING:
 
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
+    session: Session,
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     source: IO | Path | str = CONFIG_PATH.readthedocs,
@@ -57,7 +58,7 @@ def main(
         _update_build_step_for_uv(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
-    rtd.finalize()
+    session.changelog += rtd.finalize()
 
 
 def _set_sphinx_configuration(config: ReadTheDocs) -> None:
@@ -312,7 +313,7 @@ def _update_post_install(
 def __get_install_steps(
     python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-) -> list[str]:
+) -> Changelog:
     pip_install = "python -m uv pip install"
     constraints_file = get_constraints_file(python_version)
     if package_manager == "uv":
@@ -340,7 +341,7 @@ def __find_step(steps: list[str], pattern: str, invert: bool = False) -> int | N
 class ReadTheDocs:
     def __init__(self, source: IO | Path | str) -> None:
         self.__parser = create_prettier_round_trip_yaml()
-        self.changelog: list[str] = []
+        self.changelog: Changelog = []
         self.source = source
         if isinstance(source, (Path, str)):
             with open(source) as f:
@@ -358,10 +359,10 @@ class ReadTheDocs:
             target.seek(0)
             self.__parser.dump(self.document, target)
 
-    def finalize(self) -> None:
+    def finalize(self) -> Changelog:
         if not self.changelog:
-            return
+            return []
         msg = f"Updated {CONFIG_PATH.readthedocs}:\n"
         msg += indent("\n".join(self.changelog), prefix="  - ")
         self.dump(self.source)
-        raise PrecommitError(msg)
+        return [msg]

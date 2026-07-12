@@ -1,34 +1,44 @@
 """Check and update :code:`mypy` settings."""
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import rtoml
 from ini2toml.api import Translator
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
-from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
-def main(active: bool, precommit: ModifiablePrecommit) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_update_vscode_settings, active)
+
+def main(session: Session, active: bool) -> None:
+    precommit = session.precommit
+    session.changelog += _update_vscode_settings(active)
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
+        if config is None:
+            return
         if active:
-            pyproject.add_dependency("mypy", dependency_group=["style", "dev"])
-            do(_merge_mypy_into_pyproject, pyproject)
-            do(_update_precommit_config, precommit)
-            do(remove_badge, r"http://(www\.)?mypy\-lang\.org/")
-            do(
-                add_badge,
+            config.add_dependency("mypy", dependency_group=["style", "dev"])
+            _merge_mypy_into_pyproject(config)
+            _update_precommit_config(precommit)
+            session.changelog += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
+            session.changelog += add_badge(
                 "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
             )
         else:
-            do(_remove_mypy, precommit, pyproject)
-            do(remove_lines, CONFIG_PATH.gitignore, ".*mypy.*")
+            session.changelog += _remove_mypy(precommit, config)
+            session.changelog += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -48,13 +58,13 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
 
 def _remove_mypy(
     precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
-) -> None:
+) -> Changelog:
     if pyproject.has_table("tool.mypy"):
         del pyproject._document["tool"]["mypy"]  # noqa: SLF001
         pyproject.changelog.append("Removed mypy configuration table")
     pyproject.remove_dependency("mypy")
     precommit.remove_hook("mypy")
-    remove_badge(r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?")
+    return remove_badge(r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?")
 
 
 def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
@@ -72,23 +82,22 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_vscode_settings(mypy: bool) -> None:
-    with Executor() as do:
-        if mypy:
-            do(vscode.add_extension_recommendation, "ms-python.mypy-type-checker")
-            settings = {
-                "mypy-type-checker.args": [
-                    f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
-                ],
-            }
-            do(vscode.update_settings, settings)
-        else:
-            do(
-                vscode.remove_extension_recommendation,
-                "ms-python.mypy-type-checker",
-                unwanted=True,
-            )
-            do(
-                vscode.remove_settings,
-                ["mypy-type-checker.args", "mypy-type-checker.importStrategy"],
-            )
+def _update_vscode_settings(mypy: bool) -> Changelog:
+    changes: Changelog = []
+    if mypy:
+        changes += vscode.add_extension_recommendation("ms-python.mypy-type-checker")
+        settings = {
+            "mypy-type-checker.args": [
+                f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
+            ],
+        }
+        changes += vscode.update_settings(settings)
+    else:
+        changes += vscode.remove_extension_recommendation(
+            "ms-python.mypy-type-checker",
+            unwanted=True,
+        )
+        changes += vscode.remove_settings(
+            ["mypy-type-checker.args", "mypy-type-checker.importStrategy"],
+        )
+    return changes

@@ -11,6 +11,7 @@ from compwa_policy.env.pixi._update import update_pixi_configuration
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
+    from compwa_policy.utilities.session import Session
 
 __all__ = [
     "has_pixi_config",
@@ -19,15 +20,17 @@ __all__ = [
 
 
 def main(
+    session: Session,
     package_manager: PackageManagerChoice,
     is_python_package: bool,
     dev_python_version: PythonVersion,
 ) -> None:
     if "pixi" in package_manager:
-        update_pixi_configuration(
+        session.changelog += update_pixi_configuration(
             is_python_package,
             dev_python_version,
             package_manager,
+            session.pyproject,
         )
     else:
-        remove_pixi_configuration()
+        session.changelog += remove_pixi_configuration(session.pyproject)

@@ -4,7 +4,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.black import (
     _remove_outdated_settings,
     _update_black_settings,
@@ -13,6 +12,7 @@ from compwa_policy.python.black import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 def describe_remove_outdated_settings():
@@ -22,11 +22,9 @@ def describe_remove_outdated_settings():
             line-length = 88
             preview = true
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Removed line-length"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _remove_outdated_settings(pyproject)
+        assert any("Removed line-length" in m for m in pyproject.changelog)
         assert "line-length" not in pyproject.dumps()
 
     def keeps_other_options():
@@ -48,11 +46,9 @@ def describe_update_black_settings():
             [tool.black]
             target-version = ["py39"]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_black_settings(pyproject)
+        assert pyproject.changelog  # something changed
         result = pyproject.dumps()
         assert "target-version" not in result
         assert "preview = true" in result
@@ -62,11 +58,9 @@ def describe_update_black_settings():
             [project]
             requires-python = ">=3.10"
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated black configuration"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_black_settings(pyproject)
+        assert any("Updated black configuration" in m for m in pyproject.changelog)
         result = pyproject.dumps()
         assert "preview = true" in result
         assert "target-version" not in result
@@ -79,11 +73,9 @@ def describe_update_black_settings():
                 "Programming Language :: Python :: 3.11",
             ]
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError, match=r"Updated black configuration"),
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-        ):
+        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
             _update_black_settings(pyproject)
+        assert any("Updated black configuration" in m for m in pyproject.changelog)
         result = pyproject.dumps()
         assert '"py310"' in result
         assert '"py311"' in result
@@ -110,11 +102,9 @@ def describe_update_precommit_repo():
                 hooks:
                   - id: check-hooks-apply
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             _update_precommit_repo(precommit, has_notebooks)
+        assert precommit.changelog  # something changed
         result = precommit.dumps()
         assert "https://github.com/psf/black-pre-commit-mirror" in result
         assert ("black-jupyter" in result) is has_notebooks
@@ -123,8 +113,9 @@ def describe_update_precommit_repo():
 def describe_main():
     def is_noop_without_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        with ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit:
-            main(precommit, has_notebooks=False)  # no pyproject.toml -> no-op
+        precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=False)  # no pyproject.toml -> no-op
 
     def replaces_black_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
@@ -144,11 +135,9 @@ def describe_main():
                 hooks:
                   - id: black
         """).lstrip()
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(io.StringIO(config)) as precommit,
-        ):
-            main(precommit, has_notebooks=False)
+        precommit = ModifiablePrecommit.load(io.StringIO(config))
+        with Session.load(precommit) as session:
+            main(session, has_notebooks=False)
         result = precommit.dumps()
         assert "https://github.com/psf/black\n" not in result
         assert "https://github.com/psf/black-pre-commit-mirror" in result

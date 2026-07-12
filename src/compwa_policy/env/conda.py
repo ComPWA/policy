@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -18,20 +16,27 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.session import Changelog, Session
+
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
-def main(python_version: PythonVersion, package_manager: PackageManagerChoice) -> None:
+def main(
+    session: Session,
+    python_version: PythonVersion,
+    package_manager: PackageManagerChoice,
+) -> None:
     if package_manager == "conda":
-        update_conda_environment(python_version)
+        session.changelog += update_conda_environment(python_version)
     else:
-        _remove_conda_configuration()
+        session.changelog += _remove_conda_configuration()
 
 
-def update_conda_environment(python_version: PythonVersion) -> None:
+def update_conda_environment(python_version: PythonVersion) -> Changelog:
     if not has_pyproject_package_name():
-        return
+        return []
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
@@ -47,7 +52,8 @@ def update_conda_environment(python_version: PythonVersion) -> None:
     if updated:
         yaml.dump(conda_env, CONFIG_PATH.conda)
         msg = f"Updated Conda environment for Python {python_version}"
-        raise PrecommitError(msg)
+        return [msg]
+    return []
 
 
 def __create_conda_environment(python_version: PythonVersion) -> CommentedMap:
@@ -105,19 +111,20 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration() -> None:
-    with Executor() as do:
-        do(__remove_environment_yml)
-        # cspell:ignore condaenv
-        do(remove_lines, CONFIG_PATH.gitignore, r".*condaenv.*")
-        do(remove_lines, CONFIG_PATH.gitignore, r".*environment\.yml.*")
+def _remove_conda_configuration() -> Changelog:
+    changes: Changelog = []
+    changes += __remove_environment_yml()
+    # cspell:ignore condaenv
+    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*")
+    changes += remove_lines(CONFIG_PATH.gitignore, r".*environment\.yml.*")
+    return changes
 
 
-def __remove_environment_yml() -> None:
+def __remove_environment_yml() -> Changelog:
     if not CONFIG_PATH.conda.exists():
-        return
+        return []
     CONFIG_PATH.conda.unlink()
     msg = (
         "Removed Conda configuration, because conda was not selected as package manager"
     )
-    raise PrecommitError(msg)
+    return [msg]

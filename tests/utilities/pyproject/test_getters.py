@@ -1,7 +1,7 @@
 import pytest
 import rtoml
 
-from compwa_policy.errors import PrecommitError
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.pyproject import load_pyproject_toml
 from compwa_policy.utilities.pyproject.getters import (
     get_package_name,
@@ -39,7 +39,7 @@ def describe_get_package_name():
         pyproject = load_pyproject_toml(src, modifiable=False)
         package_name = get_package_name(pyproject)
         assert package_name is None
-        with pytest.raises(PrecommitError):
+        with pytest.raises(PolicyError):
             package_name = get_package_name(pyproject, raise_on_missing=True)
 
 
@@ -68,7 +68,7 @@ def describe_get_project_urls():
         """
         pyproject = load_pyproject_toml(src, modifiable=False)
         with pytest.raises(
-            PrecommitError,
+            PolicyError,
             match=r"pyproject\.toml does not contain project URLs",
         ):
             get_project_urls(pyproject)
@@ -82,7 +82,7 @@ def describe_get_source_url():
         """
         pyproject = load_pyproject_toml(src, modifiable=False)
         with pytest.raises(
-            PrecommitError,
+            PolicyError,
             match=r'\[project\.urls\] in pyproject\.toml does not contain a "Source" URL',
         ):
             get_source_url(pyproject)

@@ -6,50 +6,56 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from compwa_policy.utilities import vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
 """The type of type checkers supported."""
 
 
-def main(type_checkers: set[TypeChecker], precommit: ModifiablePrecommit) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_update_vscode_settings, type_checkers)
+def main(session: Session, type_checkers: set[TypeChecker]) -> None:
+    precommit = session.precommit
+    session.changelog += _update_vscode_settings(type_checkers)
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
+        if config is None:
+            return
         if "ty" in type_checkers:
-            do(_update_configuration, pyproject)
-            do(pyproject.add_dependency, "ty", dependency_group=["style", "dev"])
-            do(_update_precommit_config, precommit, pyproject)
+            _update_configuration(config)
+            config.add_dependency("ty", dependency_group=["style", "dev"])
+            _update_precommit_config(precommit, config)
+            session.changelog += add_badge(
+                "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
+            )
         else:
-            do(_remove_ty, precommit, pyproject)
+            session.changelog += _remove_ty(precommit, config)
 
 
-def _update_vscode_settings(type_checkers: set[TypeChecker]) -> None:
+def _update_vscode_settings(type_checkers: set[TypeChecker]) -> Changelog:
     settings = {
         "ty.completions.autoImport": False,
         "ty.diagnosticMode": "workspace",
         "ty.importStrategy": "fromEnvironment",
     }
-    with Executor() as do:
-        if "ty" in type_checkers:
-            if "pyright" not in type_checkers:
-                do(vscode.remove_settings, ["python.languageServer"])
-            do(vscode.add_extension_recommendation, "astral-sh.ty")
-            do(vscode.update_settings, settings)
-            do(
-                add_badge,
-                "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
-            )
-        else:
-            do(vscode.remove_extension_recommendation, "astral-sh.ty", unwanted=True)
-            do(vscode.remove_settings, [*settings, "python.languageServer"])
+    changes: Changelog = []
+    if "ty" in type_checkers:
+        if "pyright" not in type_checkers:
+            changes += vscode.remove_settings(["python.languageServer"])
+        changes += vscode.add_extension_recommendation("astral-sh.ty")
+        changes += vscode.update_settings(settings)
+    else:
+        changes += vscode.remove_extension_recommendation("astral-sh.ty", unwanted=True)
+        changes += vscode.remove_settings([*settings, "python.languageServer"])
+    return changes
 
 
 def _update_configuration(pyproject: ModifiablePyproject) -> None:
@@ -103,7 +109,9 @@ def _select_dependency_group(pyproject: ModifiablePyproject) -> str | None:
     return None
 
 
-def _remove_ty(precommit: ModifiablePrecommit, pyproject: ModifiablePyproject) -> None:
+def _remove_ty(
+    precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
+) -> Changelog:
     config_path = Path("ty.toml")
     if config_path.exists():
         config_path.unlink()
@@ -113,4 +121,4 @@ def _remove_ty(precommit: ModifiablePrecommit, pyproject: ModifiablePyproject) -
         pyproject.changelog.append("Removed ty configuration table")
     pyproject.remove_dependency("ty")
     precommit.remove_hook("ty")
-    remove_badge(r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*")
+    return remove_badge(r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*")

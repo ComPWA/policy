@@ -10,9 +10,7 @@ from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
@@ -21,36 +19,37 @@ if TYPE_CHECKING:
 
     from compwa_policy.config import PythonVersion
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(
+    session: Session,
     package_manager: PackageManagerChoice,
     python_version: PythonVersion,
     apt_packages: list[str],
 ) -> None:
-    with Executor() as do:
-        do(_update_apt_txt, apt_packages)
-        do(_update_post_build, package_manager)
-        do(_make_executable, CONFIG_PATH.binder / "postBuild")
-        do(_update_runtime_txt, python_version)
+    session.changelog += _update_apt_txt(apt_packages)
+    session.changelog += _update_post_build(package_manager)
+    session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
+    session.changelog += _update_runtime_txt(python_version)
 
 
-def _update_apt_txt(apt_packages: list[str]) -> None:
+def _update_apt_txt(apt_packages: list[str]) -> Changelog:
     apt_txt = CONFIG_PATH.binder / "apt.txt"
     if not apt_packages:
         if apt_txt.exists():
             apt_txt.unlink()
             msg = f"Removed {apt_txt}, because --doc-apt-packages does not specify any packages."
-            raise PrecommitError(msg)
-        return
+            return [msg]
+        return []
     apt_packages = sorted(set(apt_packages))
-    __update_file(
+    return __update_file(
         expected_content="\n".join(apt_packages) + "\n",
         path=apt_txt,
     )
 
 
-def _update_post_build(package_manager: PackageManagerChoice) -> None:
+def _update_post_build(package_manager: PackageManagerChoice) -> Changelog:
     if package_manager == "pixi+uv":
         expected_content = __get_post_builder_for_pixi_with_uv()
     elif package_manager == "uv":
@@ -58,7 +57,7 @@ def _update_post_build(package_manager: PackageManagerChoice) -> None:
     else:
         msg = f"Package manager {package_manager} is not supported."
         raise NotImplementedError(msg)
-    __update_file(
+    return __update_file(
         expected_content.strip() + "\n",
         path=CONFIG_PATH.binder / "postBuild",
     )
@@ -154,28 +153,28 @@ def ___safe_get_table(dotted_header: str) -> Mapping[str, Any]:
     return pyproject.get_table(dotted_header)
 
 
-def _make_executable(path: Path) -> None:
+def _make_executable(path: Path) -> Changelog:
     if os.access(path, os.X_OK):
-        return
+        return []
     msg = f"{path} has been made executable"
     path.chmod(0o755)
-    raise PrecommitError(msg)
+    return [msg]
 
 
-def _update_runtime_txt(python_version: PythonVersion) -> None:
-    __update_file(
+def _update_runtime_txt(python_version: PythonVersion) -> Changelog:
+    return __update_file(
         expected_content=f"python-{python_version}\n",
         path=CONFIG_PATH.binder / "runtime.txt",
     )
 
 
-def __update_file(expected_content: str, path: Path) -> None:
+def __update_file(expected_content: str, path: Path) -> Changelog:
     path.parent.mkdir(exist_ok=True)
     if path.exists():
         with open(path) as stream:
             if stream.read() == expected_content:
-                return
+                return []
     with open(path, "w") as stream:
         stream.write(expected_content)
     msg = f"Updated {path}"
-    raise PrecommitError(msg)
+    return [msg]

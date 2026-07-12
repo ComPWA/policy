@@ -5,7 +5,6 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.errors import PrecommitError
 from compwa_policy.python.pyright import (
     _merge_config_into_pyproject,
     _remove_excludes,
@@ -17,6 +16,7 @@ from compwa_policy.python.pyright import (
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 
 @pytest.fixture
@@ -45,16 +45,15 @@ def describe_merge_config_into_pyproject():
     def imports_from_json(this_dir: Path, tmp_path: Path):
         pyproject_path = _write_pyproject(tmp_path, "")
         old_config_path = this_dir / "pyrightconfig.json"
-        with (
-            pytest.raises(
-                PrecommitError,
-                match=re.escape(
-                    f"Imported pyright configuration from {old_config_path}"
-                ),
-            ),
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
             _merge_config_into_pyproject(pyproject, old_config_path, remove=False)
+        assert any(
+            re.search(
+                rf"Imported pyright configuration from {re.escape(str(old_config_path))}",
+                m,
+            )
+            for m in pyproject.changelog
+        )
         expected_result = dedent("""
             [tool.pyright]
             include = ["src/**/*.py"]
@@ -77,11 +76,9 @@ def describe_update_precommit():
                   - id: check-hooks-apply
             """,
         )
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(config) as precommit,
-        ):
+        with ModifiablePrecommit.load(config) as precommit:
             _update_precommit(precommit)
+        assert precommit.changelog  # something changed
         expected = dedent("""
             repos:
               - repo: meta
@@ -106,11 +103,9 @@ def describe_update_settings():
             reportUnusedImport = true
             """,
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Updated pyright configuration"),
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
             _update_settings(pyproject)
+        assert any("Updated pyright configuration" in m for m in pyproject.changelog)
         expected_result = dedent("""
             [tool.pyright]
             include = ["**/*.py"]
@@ -132,11 +127,9 @@ def describe_remove_excludes():
             exclude = ["tests"]
             """,
         )
-        with (
-            pytest.raises(PrecommitError, match=r"Removed pyright excludes"),
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
             _remove_excludes(pyproject)
+        assert any("Removed pyright excludes" in m for m in pyproject.changelog)
         assert "exclude" not in pyproject.get_table("tool.pyright")
 
     def is_noop_without_exclude(tmp_path: Path):
@@ -155,8 +148,7 @@ def describe_remove_excludes():
 def describe_update_vscode_settings():
     def recommends_pylance_when_active(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings(active=True)
+        _update_vscode_settings(active=True)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
 
@@ -167,8 +159,7 @@ def describe_update_vscode_settings():
         (vscode_dir / "extensions.json").write_text(
             json.dumps({"recommendations": ["ms-python.vscode-pylance"]})
         )
-        with pytest.raises(PrecommitError):
-            _update_vscode_settings(active=False)
+        _update_vscode_settings(active=False)
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" not in extensions.get("recommendations", [])
 
@@ -201,7 +192,6 @@ def describe_remove_pyright():
             """,
         )
         with (
-            pytest.raises(PrecommitError),
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
         ):
@@ -218,11 +208,9 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(precommit_path) as precommit,
-        ):
-            main(active=True, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, active=True)
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "typeCheckingMode" in pyproject_text
         assert "id: pyright" in precommit.dumps()
@@ -245,10 +233,8 @@ def describe_main():
                   - id: pyright
             """,
         )
-        with (
-            pytest.raises(PrecommitError),
-            ModifiablePrecommit.load(precommit_path) as precommit,
-        ):
-            main(active=False, precommit=precommit)
+        precommit = ModifiablePrecommit.load(precommit_path)
+        with Session.load(precommit) as session:
+            main(session, active=False)
         assert "tool.pyright" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: pyright" not in precommit.dumps()

@@ -3,13 +3,17 @@
 See https://github.com/ComPWA/policy/issues/177.
 """
 
+from __future__ import annotations
+
 import os
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
-from compwa_policy.errors import PrecommitError
+if TYPE_CHECKING:
+    from compwa_policy.utilities.session import Session
 
 
-def main() -> None:
+def main(session: Session) -> None:
     path = "commitlint.config.js"
     if not os.path.exists(path):
         return
@@ -18,5 +22,4 @@ def main() -> None:
     Remove outdated {path}. Commitlint is now configured through
     https://github.com/ComPWA/commitlint-config.
     """
-    msg = dedent(msg).strip().replace("\n", " ")
-    raise PrecommitError(msg)
+    session.changelog.append(dedent(msg).strip().replace("\n", " "))

@@ -9,11 +9,12 @@ import re
 import shutil
 from pathlib import Path
 from shutil import copyfile
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import compwa_policy
-from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import Executor
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.session import Changelog
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -104,47 +105,48 @@ def write(content: str, target: Path | io.TextIOBase | str) -> None:
         raise TypeError(msg)
 
 
-def remove_configs(paths: list[str]) -> None:
-    with Executor() as do:
-        for path in paths:
-            do(__remove_file, path)
+def remove_configs(paths: list[str]) -> Changelog:
+    changes: Changelog = []
+    for path in paths:
+        changes += __remove_file(path)
+    return changes
 
 
-def __remove_file(path: str) -> None:
+def __remove_file(path: str) -> Changelog:
     if not os.path.exists(path):
-        return
+        return []
     if os.path.isdir(path):
         shutil.rmtree(path)
     else:
         os.remove(path)
-    msg = f"Removed {path}"
-    raise PrecommitError(msg)
+    return [f"Removed {path}"]
 
 
-def rename_file(old: str, new: str) -> None:
-    """Rename a file and raise a `.PrecommitError`."""
+def rename_file(old: str, new: str) -> Changelog:
     if os.path.exists(old):
         os.rename(old, new)
-        msg = f"File {old} has been renamed to {new}"
-        raise PrecommitError(msg)
+        return [f"File {old} has been renamed to {new}"]
+    return []
 
 
-def remove_lines(file: Path, pattern: str, flags: re.RegexFlag = re.IGNORECASE) -> None:
+def remove_lines(
+    file: Path, pattern: str, flags: re.RegexFlag = re.IGNORECASE
+) -> Changelog:
     if not file.exists():
-        return
+        return []
     with open(file) as stream:
         lines = stream.readlines()
     filtered_lines = [s for s in lines if not re.match(pattern, s.strip(), flags)]
     if not any(line.strip() for line in filtered_lines):
         file.unlink()
-        msg = f"Removed {pattern!r} from {file} and removed file because it was empty."
-        raise PrecommitError(msg)
+        return [
+            f"Removed {pattern!r} from {file} and removed file because it was empty."
+        ]
     if len(filtered_lines) == len(lines):
-        return
+        return []
     with open(file, "w") as stream:
         stream.writelines(filtered_lines)
-    msg = f"Removed {pattern!r} from {file}"
-    raise PrecommitError(msg)
+    return [f"Removed {pattern!r} from {file}"]
 
 
 def natural_sorting(text: str) -> list[float | str]:
@@ -155,7 +157,7 @@ def natural_sorting(text: str) -> list[float | str]:
     ]
 
 
-def update_file(relative_path: Path, in_template_folder: bool = False) -> None:
+def update_file(relative_path: Path, in_template_folder: bool = False) -> Changelog:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
     else:
@@ -163,16 +165,15 @@ def update_file(relative_path: Path, in_template_folder: bool = False) -> None:
     template_path = template_dir / relative_path
     if not os.path.exists(relative_path):
         copyfile(template_path, relative_path)
-        msg = f"{relative_path} is missing, so created a new one. Please commit it."
-        raise PrecommitError(msg)
+        return [f"{relative_path} is missing, so created a new one. Please commit it."]
     with open(template_path) as f:
         expected_content = f.read()
     with open(relative_path) as f:
         existing_content = f.read()
     if expected_content != existing_content:
         copyfile(template_path, relative_path)
-        msg = f"{relative_path} has been updated."
-        raise PrecommitError(msg)
+        return [f"{relative_path} has been updated."]
+    return []
 
 
 def __attempt_number_cast(text: str) -> float | str:

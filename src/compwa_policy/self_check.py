@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from compwa_policy.errors import PrecommitError
-from compwa_policy.utilities.executor import Executor
+from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.precommit import Precommit
 
 if TYPE_CHECKING:
@@ -25,11 +24,16 @@ def main(precommit: Precommit | None = None) -> int:
         repo for repo in precommit.document["repos"] if repo["repo"] == "local"
     ]
     hook_definitions = _load_precommit_hook_definitions()
-    with Executor(raise_exception=False) as do:
-        for repo in local_repos:
-            for hook in repo["hooks"]:
-                do(_check_hook_definition, hook, hook_definitions)
-    return 1 if do.error_messages else 0
+    errors = [
+        error
+        for repo in local_repos
+        for hook in repo["hooks"]
+        if (error := _get_hook_definition_error(hook, hook_definitions)) is not None
+    ]
+    if errors:
+        print("\n--------------------\n".join(error.strip() for error in errors))  # noqa: T201
+        return 1
+    return 0
 
 
 def _load_precommit_hook_definitions() -> dict[str, Hook]:
@@ -38,7 +42,7 @@ def _load_precommit_hook_definitions() -> dict[str, Hook]:
     hook_ids = [h["id"] for h in hooks]
     if len(hook_ids) != len(set(hook_ids)):
         msg = f"{__HOOK_DEFINITION_FILE} contains duplicate IDs"
-        raise PrecommitError(msg)
+        raise PolicyError(msg)
     return {h["id"]: h for h in hooks}
 
 
@@ -55,7 +59,15 @@ def _check_hook_definition(hook: Hook, definitions: dict[str, Hook]) -> None:
         stream = StringIO()
         yaml.dump([__reduce(expected)], stream, sort_keys=False)
         expected_content = indent(stream.getvalue(), prefix="  ")
-        raise PrecommitError(msg + "\n\n" + expected_content)
+        raise PolicyError(msg + "\n\n" + expected_content)
+
+
+def _get_hook_definition_error(hook: Hook, definitions: dict[str, Hook]) -> str | None:
+    try:
+        _check_hook_definition(hook, definitions)
+    except PolicyError as exception:
+        return "\n".join(exception.args)
+    return None
 
 
 def __reduce(hook: Hook) -> dict:

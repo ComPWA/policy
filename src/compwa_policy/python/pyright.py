@@ -8,25 +8,32 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
-from compwa_policy.utilities.executor import Executor
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    complies_with_subset,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(active: bool, precommit: ModifiablePrecommit) -> None:
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_update_vscode_settings, active)
+def main(session: Session, active: bool) -> None:
+    precommit = session.precommit
+    session.changelog += _update_vscode_settings(active)
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
+        if config is None:
+            return
         if active:
-            do(_merge_config_into_pyproject, pyproject)
-            do(_update_precommit, precommit)
-            do(_remove_excludes, pyproject)
-            do(_update_settings, pyproject)
+            _merge_config_into_pyproject(config)
+            _update_precommit(precommit)
+            _remove_excludes(config)
+            _update_settings(config)
         else:
-            do(_remove_pyright, precommit, pyproject)
+            session.changelog += _remove_pyright(precommit, config)
 
 
 def _merge_config_into_pyproject(
@@ -89,36 +96,30 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _update_vscode_settings(active: bool) -> None:
-    with Executor() as do:
-        if active:
-            do(vscode.add_extension_recommendation, "ms-python.vscode-pylance")
-            do(
-                vscode.update_settings,
-                {
-                    "python.analysis.autoImportCompletions": False,
-                    "python.analysis.inlayHints.pytestParameters": True,
-                },
-            )
-        else:
-            do(
-                vscode.remove_settings,
-                [
-                    "python.analysis.autoImportCompletions",
-                    "python.analysis.inlayHints.pytestParameters",
-                ],
-            )
-            do(
-                vscode.remove_extension_recommendation,
-                "ms-python.vscode-pylance",
-                unwanted=True,
-            )
+def _update_vscode_settings(active: bool) -> Changelog:
+    changes: Changelog = []
+    if active:
+        changes += vscode.add_extension_recommendation("ms-python.vscode-pylance")
+        changes += vscode.update_settings({
+            "python.analysis.autoImportCompletions": False,
+            "python.analysis.inlayHints.pytestParameters": True,
+        })
+    else:
+        changes += vscode.remove_settings([
+            "python.analysis.autoImportCompletions",
+            "python.analysis.inlayHints.pytestParameters",
+        ])
+        changes += vscode.remove_extension_recommendation(
+            "ms-python.vscode-pylance",
+            unwanted=True,
+        )
+    return changes
 
 
 def _remove_pyright(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
-) -> None:
+) -> Changelog:
     pyright_config = Path("pyrightconfig.json")
     if pyright_config.exists():
         os.remove(pyright_config)
@@ -130,4 +131,4 @@ def _remove_pyright(
         pyproject.changelog.append(msg)
     pyproject.remove_dependency("pyright")
     precommit.remove_hook("pyright")
-    remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json")
+    return remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json")

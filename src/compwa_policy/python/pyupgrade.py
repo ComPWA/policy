@@ -1,21 +1,27 @@
 """Install `pyupgrade <https://github.com/asottile/pyupgrade>`_ as a hook."""
 
-from ruamel.yaml.comments import CommentedSeq
+from __future__ import annotations
 
-from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import ModifiablePrecommit
+from typing import TYPE_CHECKING
+
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
+if TYPE_CHECKING:
+    from ruamel.yaml.comments import CommentedSeq
 
-def main(precommit: ModifiablePrecommit, no_ruff: bool) -> None:
-    with Executor() as do:
-        if no_ruff:
-            do(_update_precommit_repo, precommit)
-            do(_update_precommit_nbqa_hook, precommit)
-        else:
-            do(_remove_pyupgrade, precommit)
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
+
+
+def main(session: Session, no_ruff: bool) -> None:
+    precommit = session.precommit
+    if no_ruff:
+        _update_precommit_repo(precommit)
+        _update_precommit_nbqa_hook(precommit)
+    else:
+        _remove_pyupgrade(precommit)
 
 
 def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
@@ -55,6 +61,5 @@ def __get_pyupgrade_version_argument() -> CommentedSeq:
 
 
 def _remove_pyupgrade(precommit: ModifiablePrecommit) -> None:
-    with Executor() as do:
-        do(precommit.remove_hook, "nbqa-pyupgrade")
-        do(precommit.remove_hook, "pyupgrade")
+    precommit.remove_hook("nbqa-pyupgrade")
+    precommit.remove_hook("pyupgrade")

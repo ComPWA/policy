@@ -1,48 +1,53 @@
 """Update :file:`pyproject.toml` black configuration."""
 
-from typing import Any
+from __future__ import annotations
 
-from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.executor import Executor
-from compwa_policy.utilities.precommit import ModifiablePrecommit
+from typing import TYPE_CHECKING, Any
+
+from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
+from compwa_policy.utilities.pyproject import (
+    ModifiablePyproject,
+    complies_with_subset,
+    use_modifiable_pyproject,
+)
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
+if TYPE_CHECKING:
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.session import Session
 
-def main(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
-    if not CONFIG_PATH.pyproject.exists():
-        return
-    with Executor() as do, ModifiablePyproject.load() as pyproject:
-        do(_remove_outdated_settings, pyproject)
-        do(_update_black_settings, pyproject)
-        do(
-            precommit.remove_hook,
+
+def main(session: Session, has_notebooks: bool) -> None:
+    precommit = session.precommit
+    with use_modifiable_pyproject(session.pyproject) as (config, _):
+        if config is None:
+            return
+        _remove_outdated_settings(config)
+        _update_black_settings(config)
+        precommit.remove_hook(
             hook_id="black",
             repo_url="https://github.com/psf/black",
         )
-        do(
-            precommit.remove_hook,
+        precommit.remove_hook(
             hook_id="black-jupyter",
             repo_url="https://github.com/psf/black",
         )
-        do(_update_precommit_repo, precommit, has_notebooks)
-        do(vscode.add_extension_recommendation, "ms-python.black-formatter")
-        do(
-            vscode.update_settings,
-            {"black-formatter.importStrategy": "fromEnvironment"},
+        _update_precommit_repo(precommit, has_notebooks)
+        session.changelog += vscode.add_extension_recommendation(
+            "ms-python.black-formatter"
         )
-        do(
-            vscode.update_settings,
-            {
-                "[python]": {
-                    "editor.defaultFormatter": "ms-python.black-formatter",
-                    "editor.rulers": [88],
-                },
+        session.changelog += vscode.update_settings({
+            "black-formatter.importStrategy": "fromEnvironment"
+        })
+        session.changelog += vscode.update_settings({
+            "[python]": {
+                "editor.defaultFormatter": "ms-python.black-formatter",
+                "editor.rulers": [88],
             },
-        )
-        do(precommit.remove_hook, "nbqa-black")
+        })
+        precommit.remove_hook("nbqa-black")
 
 
 def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:

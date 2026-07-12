@@ -4,7 +4,7 @@ from textwrap import dedent
 import pytest
 
 from compwa_policy.env import conda
-from compwa_policy.errors import PrecommitError
+from compwa_policy.utilities.session import Session
 
 _ENVIRONMENT = dedent("""
     name: my-package
@@ -26,8 +26,8 @@ def describe_main():
     def creates_environment_for_conda(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path)
-        with pytest.raises(PrecommitError, match=r"Updated Conda environment"):
-            conda.main("3.12", "conda")
+        with Session() as session:
+            conda.main(session, "3.12", "conda")
         result = (tmp_path / "environment.yml").read_text()
         assert "python==3.12.*" in result
 
@@ -36,8 +36,8 @@ def describe_main():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT)
-        with pytest.raises(PrecommitError, match=r"Removed Conda configuration"):
-            conda.main("3.12", "uv")
+        with Session() as session:
+            conda.main(session, "3.12", "uv")
         assert not (tmp_path / "environment.yml").exists()
 
 
@@ -51,8 +51,8 @@ def describe_update_conda_environment():
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT)
-        with pytest.raises(PrecommitError, match=r"Updated Conda environment"):
-            conda.update_conda_environment("3.12")
+        changes = conda.update_conda_environment("3.12")
+        assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()
         assert "python==3.12.*" in result
 
@@ -69,7 +69,7 @@ def describe_update_conda_environment():
         constraints.mkdir()
         (constraints / "py3.12.txt").write_text("numpy==1.0\n")
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT.replace("3.10", "3.12"))
-        with pytest.raises(PrecommitError, match=r"Updated Conda environment"):
-            conda.update_conda_environment("3.12")
+        changes = conda.update_conda_environment("3.12")
+        assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()
         assert "-c .constraints/py3.12.txt -e .[dev]" in result
