@@ -42,8 +42,10 @@
     "FURB",
     "MAINT",
     "PyPI",
+    "addoption",
     "addopts",
     "argparse",
+    "argparsing",
     "automethod",
     "autonumbering",
     "autoupdate",
@@ -111,6 +113,7 @@
   "useGitignore": true,
   "version": "0.2",
   "words": [
+    "AmpForm",
     "autouse",
     "Colaboratory",
     "compwa",
