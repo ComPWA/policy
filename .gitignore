@@ -25,6 +25,7 @@ pyvenv*/
 uv.lock
 
 # Settings
+.agents/
 .claude/
 .codex/
 .idea/
