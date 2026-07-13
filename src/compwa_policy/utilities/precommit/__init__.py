@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import io
 import sys
-from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, TypeVar
 
@@ -15,6 +14,7 @@ from compwa_policy.utilities.precommit.setters import (
     update_precommit_hook,
     update_single_hook_precommit_repo,
 )
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if sys.version_info >= (3, 11):
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from ruamel.yaml import YAML
 
     from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
-    from compwa_policy.utilities.session import Changelog
 
 T = TypeVar("T", bound="Precommit")
 
@@ -77,7 +76,7 @@ class Precommit:
         return find_repo_with_index(self.__document, search_pattern)
 
 
-class ModifiablePrecommit(Precommit, AbstractContextManager):
+class ModifiablePrecommit(Precommit, ModifiableResource):
     def __init__(
         self, document: PrecommitConfig, parser: YAML, source: IO | Path | None = None
     ) -> None:

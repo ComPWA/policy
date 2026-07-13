@@ -6,10 +6,6 @@ import os
 import re
 from typing import TYPE_CHECKING
 
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    use_modifiable_pyproject,
-)
 from compwa_policy.utilities.pyproject.getters import (
     _get_allowed_versions,
     _get_requires_python,
@@ -18,18 +14,19 @@ from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
     from compwa_policy.config import PythonVersion
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Session
 
 
 def main(session: Session, excluded_python_versions: set[PythonVersion]) -> None:
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        _update_pypi_link_names(config)
-        _convert_to_dependency_groups(config)
-        _rename_sty_to_style(config)
-        _update_requires_python(config)
-        _update_python_version_classifiers(config, excluded_python_versions)
+    config = session.pyproject
+    if config is None:
+        return
+    _update_pypi_link_names(config)
+    _convert_to_dependency_groups(config)
+    _rename_sty_to_style(config)
+    _update_requires_python(config)
+    _update_python_version_classifiers(config, excluded_python_versions)
 
 
 def _update_pypi_link_names(pyproject: ModifiablePyproject) -> None:

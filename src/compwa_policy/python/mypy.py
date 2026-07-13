@@ -11,34 +11,31 @@ from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    use_modifiable_pyproject,
-)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(session: Session, active: bool) -> None:
     precommit = session.precommit
     session.changelog += _update_vscode_settings(active)
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if active:
-            config.add_dependency("mypy", dependency_group=["style", "dev"])
-            _merge_mypy_into_pyproject(config)
-            _update_precommit_config(precommit)
-            session.changelog += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
-            session.changelog += add_badge(
-                "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
-            )
-        else:
-            session.changelog += _remove_mypy(precommit, config)
-            session.changelog += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
+    config = session.pyproject
+    if config is None:
+        return
+    if active:
+        config.add_dependency("mypy", dependency_group=["style", "dev"])
+        _merge_mypy_into_pyproject(config)
+        _update_precommit_config(precommit)
+        session.changelog += remove_badge(r"http://(www\.)?mypy\-lang\.org/")
+        session.changelog += add_badge(
+            "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
+        )
+    else:
+        session.changelog += _remove_mypy(precommit, config)
+        session.changelog += remove_lines(CONFIG_PATH.gitignore, ".*mypy.*")
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:

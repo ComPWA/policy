@@ -14,7 +14,6 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     has_dependency,
-    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.pyproject.getters import get_package_name
 from compwa_policy.utilities.toml import to_toml_array
@@ -33,23 +32,21 @@ def main(
     single_threaded: bool,
     branch_coverage: bool = True,
 ) -> None:
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if not has_dependency(config, "pytest"):
-            return
-        _merge_coverage_into_pyproject(config)
-        _merge_pytest_into_pyproject(config)
-        _deny_ini_options(config)
-        _update_codecov_settings(config, branch_coverage)
-        _update_settings(config)
-        session.changelog += _update_vscode_settings(
-            config, coverage_gutters, single_threaded
-        )
-        if single_threaded:
-            config.remove_dependency("pytest-xdist")
-        else:
-            config.add_dependency("pytest-xdist", ["test", "dev"])
+    config = session.pyproject
+    if config is None or not has_dependency(config, "pytest"):
+        return
+    _merge_coverage_into_pyproject(config)
+    _merge_pytest_into_pyproject(config)
+    _deny_ini_options(config)
+    _update_codecov_settings(config, branch_coverage)
+    _update_settings(config)
+    session.changelog += _update_vscode_settings(
+        config, coverage_gutters, single_threaded
+    )
+    if single_threaded:
+        config.remove_dependency("pytest-xdist")
+    else:
+        config.add_dependency("pytest-xdist", ["test", "dev"])
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:

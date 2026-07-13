@@ -12,6 +12,7 @@ from shutil import copyfile
 from typing import TYPE_CHECKING, NamedTuple
 
 import compwa_policy
+from compwa_policy.utilities.resource import ModifiableConfigFiles, get_active_session
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.session import Changelog
@@ -106,6 +107,10 @@ def write(content: str, target: Path | io.TextIOBase | str) -> None:
 
 
 def remove_configs(paths: list[str]) -> Changelog:
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableConfigFiles).remove(paths)
+        return []
     changes: Changelog = []
     for path in paths:
         changes += __remove_file(path)

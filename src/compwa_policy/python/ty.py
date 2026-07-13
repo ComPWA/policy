@@ -8,15 +8,12 @@ from typing import TYPE_CHECKING, Literal
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    use_modifiable_pyproject,
-)
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Changelog, Session
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
@@ -26,18 +23,18 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 def main(session: Session, type_checkers: set[TypeChecker]) -> None:
     precommit = session.precommit
     session.changelog += _update_vscode_settings(type_checkers)
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if "ty" in type_checkers:
-            _update_configuration(config)
-            config.add_dependency("ty", dependency_group=["style", "dev"])
-            _update_precommit_config(precommit, config)
-            session.changelog += add_badge(
-                "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
-            )
-        else:
-            session.changelog += _remove_ty(precommit, config)
+    config = session.pyproject
+    if config is None:
+        return
+    if "ty" in type_checkers:
+        _update_configuration(config)
+        config.add_dependency("ty", dependency_group=["style", "dev"])
+        _update_precommit_config(precommit, config)
+        session.changelog += add_badge(
+            "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
+        )
+    else:
+        session.changelog += _remove_ty(precommit, config)
 
 
 def _update_vscode_settings(type_checkers: set[TypeChecker]) -> Changelog:

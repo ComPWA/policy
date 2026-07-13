@@ -7,24 +7,27 @@ managed file is loaded once and, on exit, written back only if it changed. Each 
 reports its modifications either by mutating one of the managed containers (whose own
 changelog is collected here) or by appending to :attr:`Session.changelog` directly.
 
-.. note::
-
-    The two follow-up issues on this design extend this class *additively*: opening the
-    session to more file containers (:code:`README.md`, :code:`.vscode/*`, ...) and
-    dispatching the check hooks over the session. The public interface used by the
-    checks (:attr:`~.Session.precommit`, :attr:`~.Session.pyproject`,
-    :attr:`~.Session.changelog`) is intended to stay stable across both.
+Resources are discovered lazily through :meth:`Session.get`; adding another file type
+therefore requires implementing
+:class:`~compwa_policy.utilities.resource.ModifiableResource`, without modifying
+:class:`Session`.
 """
 
 from __future__ import annotations
 
 import sys
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.resource import (
+    Changelog,
+    ModifiableResource,
+    activate_session,
+    deactivate_session,
+)
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -32,14 +35,11 @@ else:
     from typing_extensions import Self
 
 if TYPE_CHECKING:
+    from contextvars import Token
     from types import TracebackType
 
 
-ChangelogItem: TypeAlias = str
-"""A user-facing message that describes one policy change."""
-
-Changelog: TypeAlias = list[ChangelogItem]
-"""Messages reported by a policy check."""
+R = TypeVar("R", bound=ModifiableResource)
 
 
 class Session(AbstractContextManager):
@@ -55,37 +55,54 @@ class Session(AbstractContextManager):
         precommit: ModifiablePrecommit | None = None,
         pyproject: ModifiablePyproject | None = None,
     ) -> None:
-        self._precommit = precommit
-        self._pyproject = pyproject
+        self._loaded: dict[type[ModifiableResource], ModifiableResource] = {}
+        if precommit is not None:
+            self._loaded[type(precommit)] = precommit
+        if pyproject is not None:
+            self._loaded[type(pyproject)] = pyproject
+        self._entered: set[type[ModifiableResource]] = set()
+        self._flushed: set[type[ModifiableResource]] = set()
+        self._is_in_context = False
+        self._active_token: Token[Session | None] | None = None
         self.changelog: Changelog = []
         """Change messages that do not belong to one of the managed containers."""
 
     @classmethod
-    def load(cls, precommit: ModifiablePrecommit | None = None) -> Self:
-        """Load every managed file that is present in the working directory.
+    def load(cls, precommit: ModifiablePrecommit | None = None) -> Session:
+        """Create a lazy session, optionally with an injected pre-commit resource."""
+        return cls(precommit=precommit)
 
-        An already-loaded *precommit* can be injected (the remaining files are still
-        read from disk); otherwise it is loaded from the working directory as well.
-        """
-        if precommit is None and CONFIG_PATH.precommit.exists():
-            precommit = ModifiablePrecommit.load()
-        pyproject = (
-            ModifiablePyproject.load() if CONFIG_PATH.pyproject.exists() else None
-        )
-        return cls(precommit, pyproject)
+    def get(self, resource: type[R]) -> R:
+        """Return the one session-owned instance of *resource*, loading it lazily."""
+        loaded = self._loaded.get(resource)
+        if loaded is None:
+            loaded = resource.load()
+            self._loaded[resource] = loaded
+        if self._is_in_context and resource not in self._entered:
+            loaded.__enter__()  # noqa: PLC2801
+            self._entered.add(resource)
+        return cast("R", loaded)
 
     @property
     def precommit(self) -> ModifiablePrecommit:
         """The managed :code:`.pre-commit-config.yaml` file."""
-        if self._precommit is None:
+        if (
+            not CONFIG_PATH.precommit.exists()
+            and ModifiablePrecommit not in self._loaded
+        ):
             msg = "This session has no .pre-commit-config.yaml loaded"
             raise ValueError(msg)
-        return self._precommit
+        return self.get(ModifiablePrecommit)
 
     @property
     def pyproject(self) -> ModifiablePyproject | None:
         """The managed :code:`pyproject.toml` file, if the repository has one."""
-        return self._pyproject
+        if (
+            not CONFIG_PATH.pyproject.exists()
+            and ModifiablePyproject not in self._loaded
+        ):
+            return None
+        return self.get(ModifiablePyproject)
 
     def collect_changes(self) -> Changelog:
         """Aggregate every reported change.
@@ -95,17 +112,25 @@ class Session(AbstractContextManager):
         checks ran), then the container changelogs.
         """
         messages: Changelog = list(self.changelog)
-        if self._precommit is not None:
-            messages += self._precommit.changelog
-        if self._pyproject is not None:
-            messages += self._pyproject.changelog
+        for resource in self._loaded.values():
+            messages += resource.changelog
+        return messages
+
+    def flush(self) -> Changelog:
+        """Write each changed resource at most once and return the run changelog."""
+        messages = self.collect_changes()
+        for resource_type, resource in self._loaded.items():
+            if resource_type not in self._flushed and resource.changelog:
+                resource.dump()
+                self._flushed.add(resource_type)
         return messages
 
     def __enter__(self) -> Self:
-        if self._precommit is not None:
-            self._precommit.__enter__()
-        if self._pyproject is not None:
-            self._pyproject.__enter__()
+        self._is_in_context = True
+        self._active_token = activate_session(self)
+        for resource_type, resource in self._loaded.items():
+            resource.__enter__()
+            self._entered.add(resource_type)
         return self
 
     def __exit__(
@@ -114,8 +139,12 @@ class Session(AbstractContextManager):
         exc_value: BaseException | None,
         tb: TracebackType | None,
     ) -> bool:
-        if self._pyproject is not None:
-            self._pyproject.__exit__(exc_type, exc_value, tb)
-        if self._precommit is not None:
-            self._precommit.__exit__(exc_type, exc_value, tb)
+        try:
+            if exc_type is None:
+                self.flush()
+        finally:
+            self._is_in_context = False
+            if self._active_token is not None:
+                deactivate_session(self._active_token)
+                self._active_token = None
         return False

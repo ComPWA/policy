@@ -12,11 +12,7 @@ import tomlkit
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -70,16 +66,17 @@ def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Cha
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
-        if config is None:
+    if pyproject is None:
+        if not CONFIG_PATH.pyproject.exists():
             return []
-        tool_table = config.get_table("tool", create=True)
-        if tool_table.get("tomlsort") == expected_config:
-            return []
-        tool_table["tomlsort"] = expected_config
-        config.changelog.append("Updated toml-sort configuration")
-        if include_changelog:
+        with ModifiablePyproject.load() as config:
+            _update_tomlsort_config(config)
             return list(config.changelog)
+    tool_table = pyproject.get_table("tool", create=True)
+    if tool_table.get("tomlsort") == expected_config:
+        return []
+    tool_table["tomlsort"] = expected_config
+    pyproject.changelog.append("Updated toml-sort configuration")
     return []
 
 

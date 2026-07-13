@@ -98,7 +98,7 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
     try:
         with Session.load() as session:
             run_checks(session, args, ctx, groups=groups)
-            changes = session.collect_changes()
+            changes = session.flush()
     except PolicyError as exception:
         print("\n".join(exception.args))  # noqa: T201
         return 1

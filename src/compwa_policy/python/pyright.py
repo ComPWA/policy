@@ -9,11 +9,7 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    complies_with_subset,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -24,16 +20,16 @@ if TYPE_CHECKING:
 def main(session: Session, active: bool) -> None:
     precommit = session.precommit
     session.changelog += _update_vscode_settings(active)
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if active:
-            _merge_config_into_pyproject(config)
-            _update_precommit(precommit)
-            _remove_excludes(config)
-            _update_settings(config)
-        else:
-            session.changelog += _remove_pyright(precommit, config)
+    config = session.pyproject
+    if config is None:
+        return
+    if active:
+        _merge_config_into_pyproject(config)
+        _update_precommit(precommit)
+        _remove_excludes(config)
+        _update_settings(config)
+    else:
+        session.changelog += _remove_pyright(precommit, config)
 
 
 def _merge_config_into_pyproject(

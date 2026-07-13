@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 import sys
 from collections import abc
-from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
 
@@ -28,6 +27,7 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
     split_dependency_definition,
 )
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
-    from compwa_policy.utilities.session import Changelog
 
 T = TypeVar("T", bound="Pyproject")
 _NO_FALLBACK: Final = object()
@@ -114,7 +113,7 @@ class Pyproject:
 
 
 @frozen(slots=False)
-class ModifiablePyproject(Pyproject, AbstractContextManager):
+class ModifiablePyproject(Pyproject, ModifiableResource):
     """Stateful representation of a :code:`pyproject.toml` file.
 
     Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
@@ -164,7 +163,11 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         return False
 
     def dump(self, target: IO | Path | str | None = None) -> None:
-        if target is None and self._source is None:
+        if target is None:
+            target = self._source
+        if target is None and CONFIG_PATH.pyproject.exists():
+            target = CONFIG_PATH.pyproject
+        if target is None:
             msg = "Target required when source is not a file or I/O stream"
             raise ValueError(msg)
         if isinstance(target, io.IOBase):
@@ -221,21 +224,6 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
     def changelog(self) -> Changelog:
         self.__assert_is_in_context()
         return self._changelog
-
-
-@contextmanager
-def use_modifiable_pyproject(
-    pyproject: ModifiablePyproject | None = None,
-    *,
-    load: bool = True,
-) -> abc.Iterator[tuple[ModifiablePyproject | None, bool]]:
-    if pyproject is not None:
-        yield pyproject, False
-    elif load and CONFIG_PATH.pyproject.exists():
-        with ModifiablePyproject.load() as local_pyproject:
-            yield local_pyproject, True
-    else:
-        yield None, False
 
 
 def complies_with_subset(

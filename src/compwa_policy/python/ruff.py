@@ -17,7 +17,6 @@ from compwa_policy.utilities.pyproject import (
     complies_with_subset,
     has_dependency,
     has_pyproject_package_name,
-    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import to_toml_array
@@ -34,26 +33,26 @@ if TYPE_CHECKING:
 
 def main(session: Session, has_notebooks: bool, imports_on_top: bool) -> None:
     precommit = session.precommit
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        session.changelog += add_badge(
-            "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
-        )
-        config.remove_dependency("radon")
-        session.changelog += _remove_black(precommit, config)
-        session.changelog += _remove_flake8(precommit, config)
-        session.changelog += _remove_isort(precommit, config, imports_on_top)
-        session.changelog += _remove_pydocstyle(precommit, config)
-        session.changelog += _remove_pylint(precommit, config)
-        _move_ruff_lint_config(config)
-        if has_notebooks and imports_on_top:
-            _sort_imports_on_top(precommit, config)
-        _update_ruff_config(precommit, config, has_notebooks)
-        _update_precommit_hook(precommit, has_notebooks)
-        if not has_dependency(config, "ruff"):
-            _update_lint_dependencies(config)
-        session.changelog += _update_vscode_settings()
+    config = session.pyproject
+    if config is None:
+        return
+    session.changelog += add_badge(
+        "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
+    )
+    config.remove_dependency("radon")
+    session.changelog += _remove_black(precommit, config)
+    session.changelog += _remove_flake8(precommit, config)
+    session.changelog += _remove_isort(precommit, config, imports_on_top)
+    session.changelog += _remove_pydocstyle(precommit, config)
+    session.changelog += _remove_pylint(precommit, config)
+    _move_ruff_lint_config(config)
+    if has_notebooks and imports_on_top:
+        _sort_imports_on_top(precommit, config)
+    _update_ruff_config(precommit, config, has_notebooks)
+    _update_precommit_hook(precommit, has_notebooks)
+    if not has_dependency(config, "ruff"):
+        _update_lint_dependencies(config)
+    session.changelog += _update_vscode_settings()
 
 
 def _remove_black(

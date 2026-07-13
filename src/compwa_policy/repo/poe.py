@@ -18,7 +18,6 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     has_dependency,
-    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
@@ -46,37 +45,37 @@ def main(
     has_notebooks: bool,
     package_manager: PackageManagerChoice,
 ) -> None:
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if config.has_table("tool.tox"):
-            del config._document["tool"]["tox"]  # noqa: SLF001
-            msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
-            config.changelog.append(msg)
-        if config.has_table("tool.poe"):
-            _check_expected_sections(config, has_notebooks)
-            if package_manager == "uv":
-                _configure_uv_executor(config)
-                _migrate_tasks_to_groups(config)
-                _set_doc_group(config)
-                _set_test_group(config)
-                _set_notebook_group(config, has_notebooks)
-                _check_no_uv_run(config)
-                if config.has_table("tool.poe.tasks"):
-                    _set_all_task(config)
-                if has_dependency(config, "jupyterlab"):
-                    _set_jupyter_lab_task(config)
-                if has_notebooks:
-                    config.remove_dependency("nbmake")  # cspell:ignore nbmake
-                    _set_nb_task(config)
-                _set_test_all_task(config)
-                _update_doclive(config)
+    config = session.pyproject
+    if config is None:
+        return
+    if config.has_table("tool.tox"):
+        del config._document["tool"]["tox"]  # noqa: SLF001
+        msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
+        config.changelog.append(msg)
+    if config.has_table("tool.poe"):
+        _check_expected_sections(config, has_notebooks)
+        if package_manager == "uv":
+            _configure_uv_executor(config)
+            _migrate_tasks_to_groups(config)
+            _set_doc_group(config)
+            _set_test_group(config)
+            _set_notebook_group(config, has_notebooks)
+            _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
-                _set_upgrade_task(config, package_manager)
-        session.changelog += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
-        config.remove_dependency("poethepoet")
-        config.remove_dependency("tox")
-        config.remove_dependency("tox-uv")
+                _set_all_task(config)
+            if has_dependency(config, "jupyterlab"):
+                _set_jupyter_lab_task(config)
+            if has_notebooks:
+                config.remove_dependency("nbmake")  # cspell:ignore nbmake
+                _set_nb_task(config)
+            _set_test_all_task(config)
+            _update_doclive(config)
+        if config.has_table("tool.poe.tasks"):
+            _set_upgrade_task(config, package_manager)
+    session.changelog += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
+    config.remove_dependency("poethepoet")
+    config.remove_dependency("tox")
+    config.remove_dependency("tox-uv")
 
 
 def _get_all_poe_tasks(poe_table: Mapping) -> set[str]:

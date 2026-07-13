@@ -3,18 +3,25 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections import abc
 from collections.abc import Iterable, Sized
 from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.resource import (
+    Changelog,
+    ModifiableResource,
+    get_active_session,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from compwa_policy.utilities.session import Changelog
-
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -25,11 +32,115 @@ RemovedKeys = Iterable[str] | dict[str, "RemovedKeys"]
 """Type for keys to be removed from a (nested) dictionary."""
 
 
+class _ModifiableJsonResource(ModifiableResource):
+    path: Path
+
+    def __init__(self, document: dict, *, exists: bool) -> None:
+        self._document = document
+        self._exists = exists
+        self._changelog: Changelog = []
+
+    @classmethod
+    def load(cls) -> Self:
+        if not cls.path.exists():
+            return cls({}, exists=False)
+        with cls.path.open() as stream:
+            return cls(json.load(stream), exists=True)
+
+    @property
+    def changelog(self) -> Changelog:
+        return self._changelog
+
+    def dump(self) -> None:
+        if not self._changelog:
+            return
+        self.path.parent.mkdir(exist_ok=True)
+        _dump_config(self._document, self.path)
+
+
+class ModifiableVscodeSettings(_ModifiableJsonResource):
+    """In-memory representation of :file:`.vscode/settings.json`."""
+
+    path = CONFIG_PATH.vscode_settings
+
+    def remove(self, keys: RemovedKeys) -> None:
+        updated = _remove_keys(self._document, keys)
+        if updated != self._document:
+            self._document = updated
+            self._changelog.append("Updated VS Code settings")
+
+    def update(self, new_settings: dict) -> None:
+        updated = _update_dict_recursively(self._document, new_settings)
+        if updated != self._document:
+            self._document = updated
+            self._changelog.append("Updated VS Code settings")
+
+
+class ModifiableVscodeExtensions(_ModifiableJsonResource):
+    """In-memory representation of :file:`.vscode/extensions.json`."""
+
+    path = CONFIG_PATH.vscode_extensions
+
+    def get_recommended(self) -> set[str]:
+        return self._get("recommendations")
+
+    def get_unwanted(self) -> set[str]:
+        return self._get("unwantedRecommendations")
+
+    def add_recommendation(self, extension_name: str) -> None:
+        self._add(extension_name, "recommendations")
+        self._remove(extension_name, "unwantedRecommendations")
+
+    def add_unwanted(self, extension_name: str) -> None:
+        self._add(extension_name, "unwantedRecommendations")
+        self._remove(extension_name, "recommendations")
+
+    def remove_recommendation(
+        self, extension_name: str, *, unwanted: bool = False
+    ) -> None:
+        self._remove(extension_name, "recommendations")
+        if unwanted:
+            self.add_unwanted(extension_name)
+
+    def _get(self, key: str) -> set[str]:
+        return set(_to_lower(self._document.get(key, [])))
+
+    def _add(self, extension_name: str, key: str) -> None:
+        extensions = _to_lower(self._document.get(key, []))
+        extension_name = extension_name.lower()
+        if extension_name in extensions:
+            return
+        extensions.append(extension_name)
+        self._document[key] = sorted(extensions)
+        self._changelog.append(
+            f'Added VS Code extension recommendation "{extension_name}"'
+        )
+
+    def _remove(self, extension_name: str, key: str) -> None:
+        if not self._exists:
+            return
+        extensions = _to_lower(self._document.get(key, []))
+        extension_name = extension_name.lower()
+        if extension_name not in extensions:
+            return
+        extensions.remove(extension_name)
+        self._document[key] = sorted(extensions)
+        self._changelog.append(
+            f'Removed VS Code extension recommendation "{extension_name}"'
+        )
+
+
 def get_recommended_extensions() -> set[str]:
+    session = get_active_session()
+    if session is not None:
+        return session.get(ModifiableVscodeExtensions).get_recommended()
     return _get_extension_recommendations("recommendations")
 
 
 def get_unwanted_extensions() -> set[str]:
+    session = get_active_session()
+    if session is not None:
+        return session.get(ModifiableVscodeExtensions).get_unwanted()
     return _get_extension_recommendations("unwantedRecommendations")
 
 
@@ -41,9 +152,14 @@ def _get_extension_recommendations(key: str) -> set[str]:
 
 
 def remove_settings(keys: RemovedKeys) -> Changelog:
-    settings = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    new_settings = _remove_keys(settings, keys)
-    return _update_settings_if_changed(settings, new=new_settings)
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableVscodeSettings).remove(keys)
+        return []
+    resource = ModifiableVscodeSettings.load()
+    resource.remove(keys)
+    resource.dump()
+    return resource.changelog
 
 
 def _remove_keys(obj: T, keys: RemovedKeys) -> T:
@@ -87,9 +203,14 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
 
 
 def update_settings(new_settings: dict) -> Changelog:
-    old = __load_config(CONFIG_PATH.vscode_settings, create=True)
-    updated = _update_dict_recursively(old, new_settings)
-    return _update_settings_if_changed(old, updated)
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableVscodeSettings).update(new_settings)
+        return []
+    resource = ModifiableVscodeSettings.load()
+    resource.update(new_settings)
+    resource.dump()
+    return resource.changelog
 
 
 def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
@@ -134,32 +255,40 @@ def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
 def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     if old == new:
         return []
-    __dump_config(new, CONFIG_PATH.vscode_settings)
+    _dump_config(new, CONFIG_PATH.vscode_settings)
     return ["Updated VS Code settings"]
 
 
 def add_extension_recommendation(extension_name: str) -> Changelog:
-    changes: Changelog = []
-    changes += __add_extension(extension_name, key="recommendations")
-    changes += __remove_extension(extension_name, key="unwantedRecommendations")
-    return changes
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
+        return []
+    resource = ModifiableVscodeExtensions.load()
+    resource.add_recommendation(extension_name)
+    resource.dump()
+    return resource.changelog
 
 
 def add_unwanted_extension(extension_name: str) -> Changelog:
-    changes: Changelog = []
-    changes += __add_extension(extension_name, key="unwantedRecommendations")
-    changes += __remove_extension(extension_name, key="recommendations")
-    return changes
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
+        return []
+    resource = ModifiableVscodeExtensions.load()
+    resource.add_unwanted(extension_name)
+    resource.dump()
+    return resource.changelog
 
 
 def __add_extension(extension_name: str, key: str) -> Changelog:
     config = __load_config(CONFIG_PATH.vscode_extensions, create=True)
-    recommended_extensions = __to_lower(config.get(key, []))
+    recommended_extensions = _to_lower(config.get(key, []))
     extension_name = extension_name.lower()
     if extension_name not in set(recommended_extensions):
         recommended_extensions.append(extension_name)
         config[key] = sorted(recommended_extensions)
-        __dump_config(config, CONFIG_PATH.vscode_extensions)
+        _dump_config(config, CONFIG_PATH.vscode_extensions)
         return [f'Added VS Code extension recommendation "{extension_name}"']
     return []
 
@@ -169,12 +298,12 @@ def __remove_extension(extension_name: str, key: str) -> Changelog:
         return []
     with open(CONFIG_PATH.vscode_extensions) as stream:
         config = json.load(stream)
-    recommended_extensions = __to_lower(config.get(key, []))
+    recommended_extensions = _to_lower(config.get(key, []))
     extension_name = extension_name.lower()
     if extension_name in recommended_extensions:
         recommended_extensions.remove(extension_name)
         config[key] = sorted(recommended_extensions)
-        __dump_config(config, CONFIG_PATH.vscode_extensions)
+        _dump_config(config, CONFIG_PATH.vscode_extensions)
         return [f'Removed VS Code extension recommendation "{extension_name}"']
     return []
 
@@ -182,18 +311,23 @@ def __remove_extension(extension_name: str, key: str) -> Changelog:
 def remove_extension_recommendation(
     extension_name: str, *, unwanted: bool = False
 ) -> Changelog:
-    changes: Changelog = []
-    changes += __remove_extension(extension_name, key="recommendations")
-    if unwanted:
-        changes += add_unwanted_extension(extension_name)
-    return changes
+    session = get_active_session()
+    if session is not None:
+        session.get(ModifiableVscodeExtensions).remove_recommendation(
+            extension_name, unwanted=unwanted
+        )
+        return []
+    resource = ModifiableVscodeExtensions.load()
+    resource.remove_recommendation(extension_name, unwanted=unwanted)
+    resource.dump()
+    return resource.changelog
 
 
-def __to_lower(lst: list[str]) -> list[str]:
+def _to_lower(lst: list[str]) -> list[str]:
     return [e.lower() for e in lst]
 
 
-def __dump_config(config: dict, path: Path) -> None:
+def _dump_config(config: dict, path: Path) -> None:
     with open(path, "w") as stream:
         json.dump(config, stream, ensure_ascii=False, indent=2, sort_keys=True)
         stream.write("\n")

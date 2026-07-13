@@ -34,13 +34,13 @@ def update_pixi_configuration(
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
-    include_changelog = True
+    session_owned = False
     if package_manager == "pixi":
         if pyproject is None:
             config_context = ModifiablePyproject.load(CONFIG_PATH.pyproject)
         else:
             config_context = nullcontext(pyproject)
-            include_changelog = False
+            session_owned = True
     else:
         CONFIG_PATH.pixi_toml.touch()
         config_context = ModifiablePyproject.load(CONFIG_PATH.pixi_toml)
@@ -69,7 +69,7 @@ def update_pixi_configuration(
         if has_pixi_config(config):
             config.changelog.extend(__update_gitattributes())
             config.changelog.extend(__update_gitignore())
-        if include_changelog:
+        if not session_owned:
             return list(config.changelog) + extra
     return extra
 

@@ -3,10 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -24,12 +21,13 @@ def remove_pixi_configuration(
     changes += vscode.remove_settings({
         "files.associations": ["**/pixi.lock", "pixi.lock"]
     })
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
-        if config is not None and config.has_table("tool.pixi"):
-            del config._document["tool"]["pixi"]  # noqa: SLF001
-            config.changelog.append("Removed Pixi configuration table")
-            if include_changelog:
-                changes += list(config.changelog)
+    if pyproject is None and CONFIG_PATH.pyproject.exists():
+        with ModifiablePyproject.load() as config:
+            remove_pixi_configuration(config)
+            changes += list(config.changelog)
+    elif pyproject is not None and pyproject.has_table("tool.pixi"):
+        del pyproject._document["tool"]["pixi"]  # noqa: SLF001
+        pyproject.changelog.append("Removed Pixi configuration table")
     return changes
 
 

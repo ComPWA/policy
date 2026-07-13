@@ -12,11 +12,7 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
@@ -82,19 +78,18 @@ def _remove_pip_constraint_files() -> Changelog:
 
 
 def _remove_uv_configuration(pyproject: ModifiablePyproject | None = None) -> Changelog:
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
-        if config is None:
+    if pyproject is None:
+        if not CONFIG_PATH.pyproject.exists():
             return []
-        readonly_pyproject = config._document  # noqa: SLF001
-        if "tool" not in readonly_pyproject:
-            return []
-        if "uv" not in readonly_pyproject["tool"]:
-            return []
-        tool_table = config.get_table("tool")
-        tool_table.pop("uv")
-        config.changelog.append("Removed uv configuration from pyproject.toml.")
-        if include_changelog:
+        with ModifiablePyproject.load() as config:
+            _remove_uv_configuration(config)
             return list(config.changelog)
+    readonly_pyproject = pyproject._document  # noqa: SLF001
+    if "tool" not in readonly_pyproject or "uv" not in readonly_pyproject["tool"]:
+        return []
+    tool_table = pyproject.get_table("tool")
+    tool_table.pop("uv")
+    pyproject.changelog.append("Removed uv configuration from pyproject.toml.")
     return []
 
 
