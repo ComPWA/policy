@@ -31,13 +31,13 @@ def main(session: Session, has_notebooks: bool) -> None:
         repo_url="https://github.com/psf/black",
     )
     _update_precommit_repo(precommit, has_notebooks)
-    session.changelog += vscode.add_extension_recommendation(
+    vscode.add_extension_recommendation(
         session, extension_name="ms-python.black-formatter"
     )
-    session.changelog += vscode.update_settings(
+    vscode.update_settings(
         session, new_settings={"black-formatter.importStrategy": "fromEnvironment"}
     )
-    session.changelog += vscode.update_settings(
+    vscode.update_settings(
         session,
         new_settings={
             "[python]": {

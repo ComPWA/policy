@@ -225,7 +225,7 @@ def describe_main():
         with Session.load(precommit) as session:
             citation.main(session)
             changes = session.collect_changes()
-        assert changes == ["Updated VS Code settings"]
+        assert "Updated VS Code settings" in changes
         assert (vscode_dir / "settings.json").exists()
 
     def removes_zenodo_when_citation_present(

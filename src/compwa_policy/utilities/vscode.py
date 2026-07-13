@@ -143,9 +143,8 @@ def _get_extension_recommendations(key: str) -> set[str]:
     return {ext.lower() for ext in extensions}
 
 
-def remove_settings(session: Session, /, keys: RemovedKeys) -> Changelog:
+def remove_settings(session: Session, /, keys: RemovedKeys) -> None:
     session.get(ModifiableVscodeSettings).remove(keys)
-    return []
 
 
 def _remove_keys(obj: T, keys: RemovedKeys) -> T:
@@ -188,9 +187,8 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     return obj
 
 
-def update_settings(session: Session, /, new_settings: dict) -> Changelog:
+def update_settings(session: Session, /, new_settings: dict) -> None:
     session.get(ModifiableVscodeSettings).update(new_settings)
-    return []
 
 
 def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
@@ -239,14 +237,12 @@ def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     return ["Updated VS Code settings"]
 
 
-def add_extension_recommendation(session: Session, /, extension_name: str) -> Changelog:
+def add_extension_recommendation(session: Session, /, extension_name: str) -> None:
     session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
-    return []
 
 
-def add_unwanted_extension(session: Session, /, extension_name: str) -> Changelog:
+def add_unwanted_extension(session: Session, /, extension_name: str) -> None:
     session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
-    return []
 
 
 def __add_extension(extension_name: str, key: str) -> Changelog:
@@ -278,11 +274,10 @@ def __remove_extension(extension_name: str, key: str) -> Changelog:
 
 def remove_extension_recommendation(
     session: Session, /, extension_name: str, *, unwanted: bool = False
-) -> Changelog:
+) -> None:
     session.get(ModifiableVscodeExtensions).remove_recommendation(
         extension_name, unwanted=unwanted
     )
-    return []
 
 
 def _to_lower(lst: list[str]) -> list[str]:

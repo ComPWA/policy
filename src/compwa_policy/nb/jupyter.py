@@ -7,32 +7,28 @@ from typing import TYPE_CHECKING
 from compwa_policy.utilities import vscode
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def main(session: Session, no_ruff: bool) -> None:
-    session.changelog += _update_dev_requirements(session, no_ruff)
+    _update_dev_requirements(session, no_ruff)
     # cspell:ignore toolsai
-    session.changelog += vscode.add_extension_recommendation(
-        session, "ms-toolsai.jupyter"
-    )
-    session.changelog += vscode.add_extension_recommendation(
-        session, "ms-toolsai.vscode-jupyter-cell-tags"
-    )
-    session.changelog += vscode.remove_extension_recommendation(
+    vscode.add_extension_recommendation(session, "ms-toolsai.jupyter")
+    vscode.add_extension_recommendation(session, "ms-toolsai.vscode-jupyter-cell-tags")
+    vscode.remove_extension_recommendation(
         session,
         "ms-toolsai.vscode-jupyter-slideshow",
         unwanted=True,
     )
 
 
-def _update_dev_requirements(session: Session, /, no_ruff: bool) -> Changelog:
+def _update_dev_requirements(session: Session, /, no_ruff: bool) -> None:
     pyproject = session.pyproject
     if pyproject is None:
-        return []
+        return
     supported_python_versions = pyproject.get_supported_python_versions()
     if "3.6" in supported_python_versions:
-        return []
+        return
     packages = {
         "jupyterlab",
         "jupyterlab-git",
@@ -60,4 +56,3 @@ def _update_dev_requirements(session: Session, /, no_ruff: bool) -> Changelog:
         packages.add("jupyter-ruff")
     for package in sorted(packages):
         pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
-    return []

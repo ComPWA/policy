@@ -12,7 +12,7 @@ import compwa_policy
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.resource import ModifiablePath
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -119,11 +119,10 @@ def write(
         raise TypeError(msg)
 
 
-def remove_configs(session: Session, /, paths: list[str]) -> Changelog:
+def remove_configs(session: Session, /, paths: list[str]) -> None:
     for path in paths:
         resource = _get_path_resource(session, path)
         resource.remove(f"Removed {path}")
-    return []
 
 
 def _get_path_resource(session: Session, /, path: Path | str) -> ModifiablePath:
@@ -131,22 +130,20 @@ def _get_path_resource(session: Session, /, path: Path | str) -> ModifiablePath:
     return session.get_path(normalized)
 
 
-def __remove_file(session: Session, /, path: str) -> Changelog:
+def __remove_file(session: Session, /, path: str) -> None:
     resource = _get_path_resource(session, path)
     resource.remove(f"Removed {path}")
-    return []
 
 
-def rename_file(session: Session, /, old: str, new: str) -> Changelog:
+def rename_file(session: Session, /, old: str, new: str) -> None:
     source = _get_path_resource(session, old)
     if not source.exists:
-        return []
+        return
     content = source.read_text()
     message = f"File {old} has been renamed to {new}"
     target = _get_path_resource(session, new)
     target.write_text(content, message)
     source.remove()
-    return []
 
 
 def remove_lines(
@@ -155,10 +152,10 @@ def remove_lines(
     file: Path,
     pattern: str,
     flags: re.RegexFlag = re.IGNORECASE,
-) -> Changelog:
+) -> None:
     resource = _get_path_resource(session, file)
     if not resource.exists:
-        return []
+        return
     lines = resource.read_text().splitlines(True)
     filtered_lines = [s for s in lines if not re.match(pattern, s.strip(), flags)]
     if not any(line.strip() for line in filtered_lines):
@@ -166,12 +163,11 @@ def remove_lines(
             f"Removed {pattern!r} from {file} and removed file because it was empty."
         )
         resource.remove(message)
-        return []
+        return
     if len(filtered_lines) == len(lines):
-        return []
+        return
     message = f"Removed {pattern!r} from {file}"
     resource.write_text("".join(filtered_lines), message)
-    return []
 
 
 def natural_sorting(text: str) -> list[float | str]:
@@ -187,7 +183,7 @@ def update_file(
     /,
     relative_path: Path,
     in_template_folder: bool = False,
-) -> Changelog:
+) -> None:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
     else:
@@ -198,13 +194,12 @@ def update_file(
     if not resource.exists:
         message = f"{relative_path} is missing, so created a new one. Please commit it."
         resource.write_text(expected_content, message)
-        return []
+        return
     existing_content = resource.read_text()
     if expected_content != existing_content:
         message = f"{relative_path} has been updated."
         resource.write_text(expected_content, message)
-        return []
-    return []
+        return
 
 
 def __attempt_number_cast(text: str) -> float | str:

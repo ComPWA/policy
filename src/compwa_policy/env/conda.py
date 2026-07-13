@@ -28,18 +28,18 @@ def main(
     package_manager: PackageManagerChoice,
 ) -> None:
     if package_manager == "conda":
-        session.changelog += update_conda_environment(session, python_version)
+        update_conda_environment(session, python_version)
     else:
-        session.changelog += _remove_conda_configuration(session)
+        _remove_conda_configuration(session)
 
 
 def update_conda_environment(
     session: Session,
     /,
     python_version: PythonVersion,
-) -> Changelog:
+) -> None:
     if not has_pyproject_package_name(session):
-        return []
+        return
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
@@ -55,8 +55,7 @@ def update_conda_environment(
     if updated:
         yaml.dump(conda_env, CONFIG_PATH.conda)
         msg = f"Updated Conda environment for Python {python_version}"
-        return [msg]
-    return []
+        session.changelog.append(msg)
 
 
 def __create_conda_environment(
@@ -120,13 +119,11 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration(session: Session, /) -> Changelog:
-    changes: Changelog = []
-    changes += __remove_environment_yml()
+def _remove_conda_configuration(session: Session, /) -> None:
+    session.changelog += __remove_environment_yml()
     # cspell:ignore condaenv
-    changes += remove_lines(session, CONFIG_PATH.gitignore, r".*condaenv.*")
-    changes += remove_lines(session, CONFIG_PATH.gitignore, r".*environment\.yml.*")
-    return changes
+    remove_lines(session, CONFIG_PATH.gitignore, r".*condaenv.*")
+    remove_lines(session, CONFIG_PATH.gitignore, r".*environment\.yml.*")
 
 
 def __remove_environment_yml() -> Changelog:

@@ -53,7 +53,8 @@ def describe_update_conda_environment():
         _write_pyproject(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT)
         with Session() as session:
-            changes = conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, "3.12")
+            changes = session.collect_changes()
         assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()
         assert "python==3.12.*" in result
@@ -73,7 +74,8 @@ def describe_update_conda_environment():
         (constraints / "py3.12.txt").write_text("numpy==1.0\n")
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT.replace("3.10", "3.12"))
         with Session() as session:
-            changes = conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, "3.12")
+            changes = session.collect_changes()
         assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()
         assert "-c .constraints/py3.12.txt -e .[dev]" in result

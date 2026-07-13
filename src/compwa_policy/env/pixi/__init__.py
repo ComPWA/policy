@@ -26,11 +26,11 @@ def main(
     dev_python_version: PythonVersion,
 ) -> None:
     if "pixi" in package_manager:
-        session.changelog += update_pixi_configuration(
+        update_pixi_configuration(
             session,
             is_python_package,
             dev_python_version,
             package_manager,
         )
     else:
-        session.changelog += remove_pixi_configuration(session)
+        remove_pixi_configuration(session)

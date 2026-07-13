@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def main(
@@ -35,9 +35,7 @@ def main(
     _deny_ini_options(config)
     _update_codecov_settings(config, branch_coverage)
     _update_settings(config)
-    session.changelog += _update_vscode_settings(
-        session, coverage_gutters, single_threaded
-    )
+    _update_vscode_settings(session, coverage_gutters, single_threaded)
     if single_threaded:
         config.remove_dependency("pytest-xdist")
     else:
@@ -172,39 +170,38 @@ def _update_vscode_settings(
     /,
     coverage_gutters: bool,
     single_threaded: bool,
-) -> Changelog:
-    changes: Changelog = []
+) -> None:
     # cspell:ignore ryanluker
     if coverage_gutters:
-        changes += vscode.add_extension_recommendation(
+        vscode.add_extension_recommendation(
             session,
             "ryanluker.vscode-coverage-gutters",
         )
     else:
-        changes += vscode.remove_extension_recommendation(
+        vscode.remove_extension_recommendation(
             session,
             extension_name="ryanluker.vscode-coverage-gutters",
             unwanted=True,
         )
-    changes += vscode.update_settings(
+    vscode.update_settings(
         session,
         {
             "testing.coverageToolbarEnabled": True,
             "testing.showCoverageInExplorer": True,
         },
     )
-    changes += vscode.remove_settings(
+    vscode.remove_settings(
         session, {"python.testing.pytestArgs": ["--color=no", "--no-cov"]}
     )
     pyproject = session.pyproject
     package_name = pyproject.get_package_name() if pyproject is not None else None
     if package_name is not None:
         module_name = package_name.replace("-", "_")
-        changes += vscode.remove_settings(
+        vscode.remove_settings(
             session, {"python.testing.pytestArgs": [f"--cov={module_name}"]}
         )
     if single_threaded:
-        changes += vscode.remove_settings(
+        vscode.remove_settings(
             session,
             {
                 "python.testing.pytestArgs": [
@@ -216,10 +213,10 @@ def _update_vscode_settings(
             },
         )
     else:
-        changes += vscode.update_settings(
+        vscode.update_settings(
             session, {"python.testing.pytestArgs": ["--numprocesses=auto"]}
         )
-        changes += vscode.remove_settings(
+        vscode.remove_settings(
             session,
             {
                 "python.testing.pytestArgs": [
@@ -230,7 +227,7 @@ def _update_vscode_settings(
             },
         )
     if not coverage_gutters:
-        changes += vscode.remove_settings(
+        vscode.remove_settings(
             session,
             [
                 "coverage-gutters.coverageFileNames",
@@ -239,4 +236,3 @@ def _update_vscode_settings(
                 "coverage-gutters.showLineCoverage",
             ],
         )
-    return changes

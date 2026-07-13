@@ -54,7 +54,8 @@ def describe_remove_configuration():
         (tmp_path / ".prettierrc.json").write_text("{}")
         (tmp_path / ".prettierrc").write_text("{}")
         with Session() as session:
-            changes = _remove_configuration(session)
+            _remove_configuration(session)
+            changes = session.collect_changes()
         assert any("Removed redundant configuration files" in m for m in changes)
         assert not (tmp_path / ".prettierrc.json").exists()
         assert not (tmp_path / ".prettierrc").exists()

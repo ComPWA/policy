@@ -33,10 +33,8 @@ def main(session: Session) -> None:
         if not just_converted:
             check_citation_keys()
         add_json_schema_precommit(session.precommit)
-        session.changelog += vscode.add_extension_recommendation(
-            session, "redhat.vscode-yaml"
-        )
-        session.changelog += update_vscode_settings(session)
+        vscode.add_extension_recommendation(session, "redhat.vscode-yaml")
+        update_vscode_settings(session)
 
 
 def convert_zenodo_json() -> Changelog:
@@ -215,8 +213,8 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append(msg)
 
 
-def update_vscode_settings(session: Session, /) -> Changelog:
-    return vscode.update_settings(
+def update_vscode_settings(session: Session, /) -> None:
+    vscode.update_settings(
         session,
         {
             "yaml.schemas": {

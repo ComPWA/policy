@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> None:
     if not use_gitpod:
         session.changelog += remove_gitpod_config()
-        session.changelog += remove_badge(
+        remove_badge(
             session,
             r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod",
         )
@@ -44,7 +44,7 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         if pyproject is None:
             return
         repo_url = pyproject.get_repo_url()
-        session.changelog += add_badge(
+        add_badge(
             session,
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})",
         )

@@ -16,11 +16,11 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject import ModifiablePyproject
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def main(session: Session, active: bool) -> None:
-    session.changelog += _update_vscode_settings(session, active)
+    _update_vscode_settings(session, active)
     config = session.pyproject
     if config is None:
         return
@@ -28,14 +28,14 @@ def main(session: Session, active: bool) -> None:
         config.add_dependency("mypy", dependency_group=["style", "dev"])
         _merge_mypy_into_pyproject(config)
         _update_precommit_config(session.precommit)
-        session.changelog += remove_badge(session, r"http://(www\.)?mypy\-lang\.org/")
-        session.changelog += add_badge(
+        remove_badge(session, r"http://(www\.)?mypy\-lang\.org/")
+        add_badge(
             session,
             badge="[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
         )
     else:
-        session.changelog += _remove_mypy(session)
-        session.changelog += remove_lines(session, CONFIG_PATH.gitignore, ".*mypy.*")
+        _remove_mypy(session)
+        remove_lines(session, CONFIG_PATH.gitignore, ".*mypy.*")
 
 
 def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -53,17 +53,17 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(msg)
 
 
-def _remove_mypy(session: Session, /) -> Changelog:
+def _remove_mypy(session: Session, /) -> None:
     precommit = session.precommit
     pyproject = session.pyproject
     if pyproject is None:
-        return []
+        return
     if pyproject.has_table("tool.mypy"):
         del pyproject._document["tool"]["mypy"]  # noqa: SLF001
         pyproject.changelog.append("Removed mypy configuration table")
     pyproject.remove_dependency("mypy")
     precommit.remove_hook("mypy")
-    return remove_badge(
+    remove_badge(
         session,
         badge_pattern=r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?",
     )
@@ -84,10 +84,9 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_vscode_settings(session: Session, /, mypy: bool) -> Changelog:
-    changes: Changelog = []
+def _update_vscode_settings(session: Session, /, mypy: bool) -> None:
     if mypy:
-        changes += vscode.add_extension_recommendation(
+        vscode.add_extension_recommendation(
             session, extension_name="ms-python.mypy-type-checker"
         )
         settings = {
@@ -95,15 +94,14 @@ def _update_vscode_settings(session: Session, /, mypy: bool) -> Changelog:
                 f"--config-file=${{workspaceFolder}}/{CONFIG_PATH.pyproject}"
             ],
         }
-        changes += vscode.update_settings(session, settings)
+        vscode.update_settings(session, settings)
     else:
-        changes += vscode.remove_extension_recommendation(
+        vscode.remove_extension_recommendation(
             session,
             "ms-python.mypy-type-checker",
             unwanted=True,
         )
-        changes += vscode.remove_settings(
+        vscode.remove_settings(
             session,
             ["mypy-type-checker.args", "mypy-type-checker.importStrategy"],
         )
-    return changes

@@ -35,29 +35,27 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
 
 def main(session: Session, no_cspell_update: bool) -> None:
     precommit = session.precommit
-    session.changelog += rename_file(session, "cspell.json", str(CONFIG_PATH.cspell))
+    rename_file(session, "cspell.json", str(CONFIG_PATH.cspell))
     _update_cspell_repo_url(precommit)
     has_cspell_hook = False
     if CONFIG_PATH.cspell.exists():
         has_cspell_hook = precommit.find_repo(__REPO_URL) is not None
     if not has_cspell_hook:
-        session.changelog += _remove_configuration(session)
+        _remove_configuration(session)
     else:
         _update_precommit_repo(precommit)
         if not no_cspell_update:
             session.changelog += _update_config_content()
         session.changelog += _sort_config_entries()
-        session.changelog += add_badge(
+        add_badge(
             session,
             "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)",
         )
-        session.changelog += remove_badge(
+        remove_badge(
             session,
             r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*master.*cspell\)\n?",
         )
-        session.changelog += vscode.add_extension_recommendation(
-            session, __VSCODE_EXTENSION_NAME
-        )
+        vscode.add_extension_recommendation(session, __VSCODE_EXTENSION_NAME)
 
 
 def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
@@ -73,13 +71,12 @@ def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
         precommit.changelog.append(msg)
 
 
-def _remove_configuration(session: Session, /) -> Changelog:
-    changes: Changelog = []
+def _remove_configuration(session: Session, /) -> None:
     if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)
         msg = f'"{CONFIG_PATH.cspell}" is no longer required and has been removed'
-        changes.append(msg)
-        return changes
+        session.changelog.append(msg)
+        return
     if CONFIG_PATH.editorconfig.exists():
         with open(CONFIG_PATH.editorconfig) as stream:
             prettier_ignore_content = stream.readlines()
@@ -92,14 +89,13 @@ def _remove_configuration(session: Session, /) -> Changelog:
                 f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editorconfig} is no longer'
                 " required and has been removed"
             )
-            changes.append(msg)
-            return changes
-    changes += remove_badge(
+            session.changelog.append(msg)
+            return
+    remove_badge(
         session,
         r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?",
     )
-    changes += vscode.remove_extension_recommendation(session, __VSCODE_EXTENSION_NAME)
-    return changes
+    vscode.remove_extension_recommendation(session, __VSCODE_EXTENSION_NAME)
 
 
 def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:

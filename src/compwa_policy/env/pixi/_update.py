@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def update_pixi_configuration(
@@ -31,14 +31,13 @@ def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-) -> Changelog:
+) -> None:
     if "pixi" not in package_manager:
-        return []
+        return
     config = __get_pixi_config(session, package_manager)
-    extra: Changelog = []
     if config is None:
-        return extra
-    extra += add_badge(
+        return
+    add_badge(
         session,
         "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
     )
@@ -56,14 +55,13 @@ def update_pixi_configuration(
         _update_docnb_and_doclive(config, "tasks")
         _update_docnb_and_doclive(config, "feature.dev.tasks")
     _clean_up_task_env(config)
-    extra += vscode.update_settings(
+    vscode.update_settings(
         session,
         {"files.associations": {"**/pixi.lock": "yaml"}},
     )
     if has_pixi_config(session):
-        config.changelog.extend(__update_gitattributes(session))
-        config.changelog.extend(__update_gitignore(session))
-    return extra
+        __update_gitattributes(session)
+        __update_gitignore(session)
 
 
 def __get_pixi_config(
@@ -254,20 +252,18 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes(session: Session, /) -> Changelog:
+def __update_gitattributes(session: Session, /) -> None:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
     if append_safe(session, expected_line, CONFIG_PATH.gitattributes):
-        return [
+        session.changelog += [
             f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
         ]
-    return []
 
 
-def __update_gitignore(session: Session, /) -> Changelog:
+def __update_gitignore(session: Session, /) -> None:
     ignore_path = ".pixi/"
     if append_safe(session, ignore_path, CONFIG_PATH.gitignore):
-        return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]
-    return []
+        session.changelog.append(f"Added {ignore_path} under {CONFIG_PATH.gitignore}")
 
 
 def _update_dev_environment(config: ModifiablePyproject) -> None:

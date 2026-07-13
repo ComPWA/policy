@@ -124,7 +124,8 @@ def describe_update_tomlsort_config():
             _update_tomlsort_config(session)
         assert "sort_first" not in (tmp_path / "pyproject.toml").read_text()
         with Session() as session:
-            assert _update_tomlsort_config(session) == []
+            _update_tomlsort_config(session)
+            assert session.collect_changes() == []
 
 
 def describe_update_taplo_config():
@@ -136,7 +137,8 @@ def describe_update_taplo_config():
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            changes = _update_taplo_config(session)
+            _update_taplo_config(session)
+            changes = session.collect_changes()
         assert any(".taplo.toml" in m for m in changes)
         assert (tmp_path / ".taplo.toml").exists()
 
@@ -148,10 +150,12 @@ def describe_update_taplo_config():
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            assert _update_taplo_config(session)
+            _update_taplo_config(session)
+            assert session.collect_changes()
         before = (tmp_path / ".taplo.toml").read_text()
         with Session() as session:
-            assert _update_taplo_config(session) == []
+            _update_taplo_config(session)
+            assert session.collect_changes() == []
         assert (tmp_path / ".taplo.toml").read_text() == before
 
 

@@ -30,7 +30,7 @@ def main(
                 f"Removed {', '.join(str(p) for p in paths_to_remove)}"
             )
         return
-    session.changelog += update_file(session, CONFIG_PATH.release_drafter_workflow)
+    update_file(session, CONFIG_PATH.release_drafter_workflow)
     session.changelog += _update_draft(repo_name, repo_title, organization)
 
 

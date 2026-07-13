@@ -93,7 +93,8 @@ def describe_update_python_version_file():
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
         with Session() as session:
-            changes = _update_python_version_file(session, "3.12")
+            _update_python_version_file(session, "3.12")
+            changes = session.collect_changes()
         assert any("Updated .python-version" in m for m in changes)
         assert (tmp_path / ".python-version").read_text().strip() == "3.12"
 
@@ -104,7 +105,8 @@ def describe_update_python_version_file():
         )
         (tmp_path / ".python-version").write_text("3.12\n")
         with Session() as session:
-            changes = _update_python_version_file(session, "3.12")
+            _update_python_version_file(session, "3.12")
+            changes = session.collect_changes()
         assert any("Removed .python-version" in m for m in changes)
         assert not (tmp_path / ".python-version").exists()
 
@@ -143,7 +145,8 @@ def describe_update_contributing_file():
         )
         (tmp_path / "CONTRIBUTING.md").write_text("outdated\n")
         with Session() as session:
-            changes = _update_contributing_file(session, "ComPWA", "policy")
+            _update_contributing_file(session, "ComPWA", "policy")
+            changes = session.collect_changes()
         assert any("Updated CONTRIBUTING.md" in m for m in changes)
         result = (tmp_path / "CONTRIBUTING.md").read_text()
         assert "policy" in result

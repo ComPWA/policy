@@ -50,7 +50,8 @@ def describe_remove_configuration():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
         with Session() as session:
-            changes = _remove_configuration(session)
+            _remove_configuration(session)
+            changes = session.collect_changes()
         assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()
 
@@ -58,7 +59,8 @@ def describe_remove_configuration():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".editorconfig").write_text(".cspell.json\nother-entry\n")
         with Session() as session:
-            changes = _remove_configuration(session)
+            _remove_configuration(session)
+            changes = session.collect_changes()
         assert any("no longer" in m for m in changes)
         assert ".cspell.json" not in (tmp_path / ".editorconfig").read_text()
 

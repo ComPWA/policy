@@ -28,7 +28,7 @@ def main(
     apt_packages: list[str],
 ) -> None:
     session.changelog += _update_apt_txt(apt_packages)
-    session.changelog += _update_post_build(session, package_manager)
+    _update_post_build(session, package_manager)
     session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
     session.changelog += _update_runtime_txt(python_version)
 
@@ -52,7 +52,7 @@ def _update_post_build(
     session: Session,
     /,
     package_manager: PackageManagerChoice,
-) -> Changelog:
+) -> None:
     if package_manager == "pixi+uv":
         expected_content = __get_post_builder_for_pixi_with_uv(session)
     elif package_manager == "uv":
@@ -60,8 +60,8 @@ def _update_post_build(
     else:
         msg = f"Package manager {package_manager} is not supported."
         raise NotImplementedError(msg)
-    return __update_file(
-        expected_content.strip() + "\n",
+    session.changelog += __update_file(
+        expected_content=expected_content.strip() + "\n",
         path=CONFIG_PATH.binder / "postBuild",
     )
 

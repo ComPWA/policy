@@ -51,10 +51,8 @@ def main(
     if no_cd:
         session.changelog += remove_workflow("cd.yml")
     else:
-        session.changelog += _update_cd_workflow(
-            session, no_milestones, no_pypi, no_version_branches
-        )
-    session.changelog += _update_ci_workflow(
+        _update_cd_workflow(session, no_milestones, no_pypi, no_version_branches)
+    _update_ci_workflow(
         session,
         allow_deprecated,
         doc_apt_packages,
@@ -67,7 +65,7 @@ def main(
     )
     if not keep_pr_linting:
         session.changelog += _update_pr_linting()
-    session.changelog += _recommend_vscode_extension(session)
+    _recommend_vscode_extension(session)
 
 
 def _update_cd_workflow(  # noqa: C901
@@ -76,7 +74,7 @@ def _update_cd_workflow(  # noqa: C901
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
-) -> Changelog:
+) -> None:
     def update() -> Changelog:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
@@ -108,10 +106,8 @@ def _update_cd_workflow(  # noqa: C901
             return update_workflow(yaml, expected_data, workflow_path)
         return []
 
-    changes: Changelog = []
-    changes += update()
-    changes += remove_workflow("milestone.yml")
-    return changes
+    session.changelog += update()
+    session.changelog += remove_workflow("milestone.yml")
 
 
 def _update_pr_linting() -> Changelog:
@@ -137,7 +133,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-) -> Changelog:
+) -> None:
     def update() -> Changelog:
         precommit = session.precommit
         yaml, expected_data = _get_ci_workflow(
@@ -164,16 +160,14 @@ def _update_ci_workflow(  # noqa: PLR0917
                 return update_workflow(yaml, expected_data, workflow_path)
         return []
 
-    changes: Changelog = []
-    changes += update()
+    session.changelog += update()
     if not allow_deprecated:
-        changes += remove_workflow("ci-docs.yml")
-        changes += remove_workflow("ci-style.yml")
-        changes += remove_workflow("ci-tests.yml")
-        changes += remove_workflow("linkcheck.yml")
-    changes += _copy_workflow_file(session, "clean-caches.yml")
-    changes += remove_workflow("clean-cache.yml")
-    return changes
+        session.changelog += remove_workflow("ci-docs.yml")
+        session.changelog += remove_workflow("ci-style.yml")
+        session.changelog += remove_workflow("ci-tests.yml")
+        session.changelog += remove_workflow("linkcheck.yml")
+    _copy_workflow_file(session, "clean-caches.yml")
+    session.changelog += remove_workflow("clean-cache.yml")
 
 
 def _get_ci_workflow(  # noqa: PLR0917
@@ -296,7 +290,7 @@ def __get_coverage_python_version() -> PythonVersion:
     return DEFAULT_DEV_PYTHON_VERSION
 
 
-def _copy_workflow_file(session: Session, /, filename: str) -> Changelog:
+def _copy_workflow_file(session: Session, /, filename: str) -> None:
     expected_workflow_path = (
         COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     )
@@ -309,15 +303,15 @@ def _copy_workflow_file(session: Session, /, filename: str) -> Changelog:
     if not os.path.exists(workflow_path):
         write(expected_content, target=workflow_path, session=session)
         msg = f"Created {workflow_path} workflow"
-        return [msg]
+        session.changelog.append(msg)
+        return
 
     with open(workflow_path) as stream:
         existing_content = stream.read()
     if existing_content != expected_content:
         write(expected_content, target=workflow_path, session=session)
         msg = f"Updated {workflow_path} workflow"
-        return [msg]
-    return []
+        session.changelog.append(msg)
 
 
 def __remove_constraint_pinning(content: str) -> str:
@@ -334,24 +328,18 @@ def __remove_constraint_pinning(content: str) -> str:
     )
 
 
-def _recommend_vscode_extension(session: Session, /) -> Changelog:
+def _recommend_vscode_extension(session: Session, /) -> None:
     if not CONFIG_PATH.github_workflow_dir.exists():
-        return []
+        return
     # cspell:ignore cschleiden
-    changes: Changelog = []
-    changes += vscode.remove_extension_recommendation(
-        session, "cschleiden.vscode-github-actions"
-    )
-    changes += vscode.add_extension_recommendation(
-        session, "github.vscode-github-actions"
-    )
+    vscode.remove_extension_recommendation(session, "cschleiden.vscode-github-actions")
+    vscode.add_extension_recommendation(session, "github.vscode-github-actions")
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
             "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
         }
-        changes += vscode.update_settings(session, action_settings)
-    return changes
+        vscode.update_settings(session, action_settings)
 
 
 def remove_workflow(filename: str) -> Changelog:
