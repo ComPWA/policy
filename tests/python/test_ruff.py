@@ -158,13 +158,12 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.10"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with (
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-            Session() as session,
-        ):
-            _update_lint_dependencies(pyproject, session=session)
-        assert pyproject.changelog  # something changed
-        assert "ruff" in pyproject.dumps()
+        with Session() as session:
+            pyproject = session.pyproject
+            _update_lint_dependencies(session=session)
+            assert pyproject is not None
+            assert pyproject.changelog  # something changed
+            assert "ruff" in pyproject.dumps()
 
     def pins_python_version_for_legacy_python(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -176,25 +175,17 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.6"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with (
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-            Session() as session,
-        ):
-            _update_lint_dependencies(pyproject, session=session)
-        assert pyproject.changelog  # something changed
-        result = pyproject.dumps()
+        with Session() as session:
+            pyproject = session.pyproject
+            _update_lint_dependencies(session=session)
+            assert pyproject is not None
+            assert pyproject.changelog  # something changed
+            result = pyproject.dumps()
         assert "python_version" in result
         assert "3.7.0" in result
 
     def is_noop_without_package_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.foo]\nx = 1\n")
-        config = dedent("""
-            [project]
-            classifiers = ["Programming Language :: Python :: 3.10"]
-        """).lstrip()
-        with (
-            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
-            Session() as session,
-        ):
-            _update_lint_dependencies(pyproject, session=session)
+        with Session() as session:
+            _update_lint_dependencies(session=session)

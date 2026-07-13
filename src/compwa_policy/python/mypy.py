@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
 
 def main(session: Session, active: bool) -> None:
-    precommit = session.precommit
     session.changelog += _update_vscode_settings(active, session=session)
     config = session.pyproject
     if config is None:
@@ -28,7 +27,7 @@ def main(session: Session, active: bool) -> None:
     if active:
         config.add_dependency("mypy", dependency_group=["style", "dev"])
         _merge_mypy_into_pyproject(config)
-        _update_precommit_config(precommit)
+        _update_precommit_config(session.precommit)
         session.changelog += remove_badge(
             r"http://(www\.)?mypy\-lang\.org/", session=session
         )
@@ -37,7 +36,7 @@ def main(session: Session, active: bool) -> None:
             session=session,
         )
     else:
-        session.changelog += _remove_mypy(precommit, config, session=session)
+        session.changelog += _remove_mypy(session=session)
         session.changelog += remove_lines(
             CONFIG_PATH.gitignore, ".*mypy.*", session=session
         )
@@ -58,12 +57,11 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     pyproject.changelog.append(msg)
 
 
-def _remove_mypy(
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject,
-    *,
-    session: Session,
-) -> Changelog:
+def _remove_mypy(*, session: Session) -> Changelog:
+    precommit = session.precommit
+    pyproject = session.pyproject
+    if pyproject is None:
+        return []
     if pyproject.has_table("tool.mypy"):
         del pyproject._document["tool"]["mypy"]  # noqa: SLF001
         pyproject.changelog.append("Removed mypy configuration table")

@@ -12,7 +12,7 @@ import tomlkit
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -39,17 +39,13 @@ def main(session: Session) -> None:
     session.changelog += _update_taplo_config(session=session)
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    session.changelog += _update_tomlsort_config(session.pyproject, session=session)
+    session.changelog += _update_tomlsort_config(session=session)
     _update_tomlsort_hook(precommit)
     session.changelog += _update_vscode_extensions(session=session)
 
 
-def _update_tomlsort_config(
-    pyproject: ModifiablePyproject | None = None,
-    *,
-    session: Session,
-) -> Changelog:
-    if pyproject is None and not CONFIG_PATH.pyproject.exists():
+def _update_tomlsort_config(*, session: Session) -> Changelog:
+    if not CONFIG_PATH.pyproject.exists():
         return []
     sort_first = [
         "build-system",
@@ -58,8 +54,10 @@ def _update_tomlsort_config(
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
-    readonly_pyproject = pyproject or Pyproject.load(session=session)
-    sort_first = [table for table in sort_first if readonly_pyproject.has_table(table)]
+    pyproject = session.pyproject
+    if pyproject is None:
+        return []
+    sort_first = [table for table in sort_first if pyproject.has_table(table)]
     expected_config = dict(
         all=False,
         ignore_case=True,
@@ -70,12 +68,6 @@ def _update_tomlsort_config(
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    if pyproject is None:
-        if not CONFIG_PATH.pyproject.exists():
-            return []
-        with ModifiablePyproject.load() as config:
-            _update_tomlsort_config(config, session=session)
-            return list(config.changelog)
     tool_table = pyproject.get_table("tool", create=True)
     if tool_table.get("tomlsort") == expected_config:
         return []

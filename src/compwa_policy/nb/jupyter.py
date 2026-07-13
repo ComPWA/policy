@@ -4,17 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from compwa_policy.utilities import CONFIG_PATH, vscode
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities import vscode
 
 if TYPE_CHECKING:
     from compwa_policy.utilities.session import Changelog, Session
 
 
 def main(session: Session, no_ruff: bool) -> None:
-    session.changelog += _update_dev_requirements(
-        no_ruff, session.pyproject, session=session
-    )
+    session.changelog += _update_dev_requirements(no_ruff, session=session)
     # cspell:ignore toolsai
     session.changelog += vscode.add_extension_recommendation(
         "ms-toolsai.jupyter", session=session
@@ -31,16 +28,12 @@ def main(session: Session, no_ruff: bool) -> None:
 
 def _update_dev_requirements(
     no_ruff: bool,
-    pyproject: ModifiablePyproject | None = None,
     *,
     session: Session,
 ) -> Changelog:
+    pyproject = session.pyproject
     if pyproject is None:
-        if not CONFIG_PATH.pyproject.exists():
-            return []
-        with ModifiablePyproject.load() as config:
-            _update_dev_requirements(no_ruff, config, session=session)
-            return list(config.changelog)
+        return []
     supported_python_versions = pyproject.get_supported_python_versions()
     if "3.6" in supported_python_versions:
         return []

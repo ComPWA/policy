@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -8,7 +7,6 @@ import yaml
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.pyproject import (
-    ModifiablePixi,
     ModifiablePyproject,
     Pyproject,
     complies_with_subset,
@@ -31,54 +29,43 @@ def update_pixi_configuration(
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-    pyproject: ModifiablePyproject | None = None,
-    pixi: ModifiablePixi | None = None,
     *,
     session: Session,
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
-    session_owned = False
     if package_manager == "pixi":
-        if pyproject is None:
-            config_context = ModifiablePyproject.load(CONFIG_PATH.pyproject)
-        else:
-            config_context = nullcontext(pyproject)
-            session_owned = True
-    elif pixi is None:
-        config_context = ModifiablePixi.load()
+        config = session.pyproject
     else:
-        config_context = nullcontext(pixi)
-        session_owned = True
+        config = session.pixi
     extra: Changelog = []
-    with config_context as config:
-        extra += add_badge(
-            "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
-            session=session,
-        )
-        _rename_workspace_table(config)
-        _define_minimal_project(config, session=session)
-        _import_conda_dependencies(config)
-        _import_conda_environment(config)
-        if package_manager == "pixi+uv":
-            _define_combined_ci_job(config)
-        else:
-            if is_python_package:
-                _install_package_editable(config)
-            _set_dev_python_version(config, dev_python_version)
-            _update_dev_environment(config)
-            _update_docnb_and_doclive(config, "tasks")
-            _update_docnb_and_doclive(config, "feature.dev.tasks")
-        _clean_up_task_env(config)
-        extra += vscode.update_settings(
-            {"files.associations": {"**/pixi.lock": "yaml"}},
-            session=session,
-        )
-        if has_pixi_config(config):
-            config.changelog.extend(__update_gitattributes(session=session))
-            config.changelog.extend(__update_gitignore(session=session))
-        if not session_owned:
-            return list(config.changelog) + extra
+    if config is None:
+        return extra
+    extra += add_badge(
+        "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
+        session=session,
+    )
+    _rename_workspace_table(config)
+    _define_minimal_project(config, session=session)
+    _import_conda_dependencies(config)
+    _import_conda_environment(config)
+    if package_manager == "pixi+uv":
+        _define_combined_ci_job(config)
+    else:
+        if is_python_package:
+            _install_package_editable(config)
+        _set_dev_python_version(config, dev_python_version)
+        _update_dev_environment(config)
+        _update_docnb_and_doclive(config, "tasks")
+        _update_docnb_and_doclive(config, "feature.dev.tasks")
+    _clean_up_task_env(config)
+    extra += vscode.update_settings(
+        {"files.associations": {"**/pixi.lock": "yaml"}},
+        session=session,
+    )
+    if has_pixi_config(config):
+        config.changelog.extend(__update_gitattributes(session=session))
+        config.changelog.extend(__update_gitignore(session=session))
     return extra
 
 

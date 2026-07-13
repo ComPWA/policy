@@ -18,18 +18,17 @@ if TYPE_CHECKING:
 
 
 def main(session: Session, active: bool) -> None:
-    precommit = session.precommit
     session.changelog += _update_vscode_settings(active, session=session)
     config = session.pyproject
     if config is None:
         return
     if active:
         _merge_config_into_pyproject(config)
-        _update_precommit(precommit)
+        _update_precommit(session.precommit)
         _remove_excludes(config)
         _update_settings(config)
     else:
-        session.changelog += _remove_pyright(precommit, config, session=session)
+        session.changelog += _remove_pyright(session=session)
 
 
 def _merge_config_into_pyproject(
@@ -125,12 +124,11 @@ def _update_vscode_settings(
     return changes
 
 
-def _remove_pyright(
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject,
-    *,
-    session: Session,
-) -> Changelog:
+def _remove_pyright(*, session: Session) -> Changelog:
+    precommit = session.precommit
+    pyproject = session.pyproject
+    if pyproject is None:
+        return []
     pyright_config = Path("pyrightconfig.json")
     if pyright_config.exists():
         os.remove(pyright_config)

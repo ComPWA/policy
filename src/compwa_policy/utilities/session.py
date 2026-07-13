@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import ModifiablePixi, ModifiablePyproject
 from compwa_policy.utilities.resource import (
     Changelog,
     ModifiablePath,
@@ -118,6 +118,11 @@ class Session(AbstractContextManager):
         ):
             return None
         return self.get(ModifiablePyproject)
+
+    @property
+    def pixi(self) -> ModifiablePixi:
+        """The managed :code:`pixi.toml` file."""
+        return self.get(ModifiablePixi)
 
     def collect_changes(self) -> Changelog:
         """Aggregate every reported change.

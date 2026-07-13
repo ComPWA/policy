@@ -54,7 +54,7 @@ def main(session: Session, has_notebooks: bool, imports_on_top: bool) -> None:
     _update_ruff_config(precommit, config, has_notebooks)
     _update_precommit_hook(precommit, has_notebooks)
     if not has_dependency(config, "ruff"):
-        _update_lint_dependencies(config, session=session)
+        _update_lint_dependencies(session=session)
     session.changelog += _update_vscode_settings(session=session)
 
 
@@ -695,12 +695,11 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_lint_dependencies(
-    pyproject: ModifiablePyproject,
-    *,
-    session: Session,
-) -> None:
+def _update_lint_dependencies(*, session: Session) -> None:
     if not has_pyproject_package_name(session=session):
+        return
+    pyproject = session.pyproject
+    if pyproject is None:
         return
     python_versions = pyproject.get_supported_python_versions()
     if "3.6" in python_versions:

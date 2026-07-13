@@ -196,9 +196,9 @@ def describe_remove_pyright():
         with (
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
-            Session() as session,
+            Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_pyright(precommit, pyproject, session=session)
+            _remove_pyright(session=session)
         assert not (tmp_path / "pyrightconfig.json").exists()
         assert "tool.pyright" not in pyproject.dumps()
         assert "id: pyright" not in precommit.dumps()

@@ -77,9 +77,9 @@ def describe_remove_mypy():
         with (
             ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit,
             ModifiablePyproject.load(io.StringIO(pyproject_config)) as pyproject,
-            Session() as session,
+            Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_mypy(precommit, pyproject, session=session)
+            _remove_mypy(session=session)
         assert "mypy" not in precommit.dumps()
         assert "tool.mypy" not in pyproject.dumps()
 
@@ -87,9 +87,9 @@ def describe_remove_mypy():
         with (
             ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
             ModifiablePyproject.load(io.StringIO("")) as pyproject,
-            Session() as session,
+            Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_mypy(precommit, pyproject, session=session)
+            _remove_mypy(session=session)
 
 
 def describe_update_vscode_settings():

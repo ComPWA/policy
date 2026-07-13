@@ -225,9 +225,9 @@ def describe_remove_ty():
         with (
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
-            Session() as session,
+            Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_ty(precommit, pyproject, session=session)
+            _remove_ty(session=session)
         assert not (tmp_path / "ty.toml").exists()
         assert "tool.ty" not in pyproject.dumps()
         assert "id: ty" not in precommit.dumps()

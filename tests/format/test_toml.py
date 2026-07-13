@@ -108,7 +108,8 @@ def describe_update_tomlsort_config():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
         with Session() as session:
-            changes = _update_tomlsort_config(session=session)
+            _update_tomlsort_config(session=session)
+            changes = session.collect_changes()
         assert any("toml-sort" in m for m in changes)
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.tomlsort]" in result

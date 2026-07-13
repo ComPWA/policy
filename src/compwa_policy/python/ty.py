@@ -21,7 +21,6 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 
 
 def main(session: Session, type_checkers: set[TypeChecker]) -> None:
-    precommit = session.precommit
     session.changelog += _update_vscode_settings(type_checkers, session=session)
     config = session.pyproject
     if config is None:
@@ -29,13 +28,13 @@ def main(session: Session, type_checkers: set[TypeChecker]) -> None:
     if "ty" in type_checkers:
         _update_configuration(config)
         config.add_dependency("ty", dependency_group=["style", "dev"])
-        _update_precommit_config(precommit, config)
+        _update_precommit_config(session.precommit, config)
         session.changelog += add_badge(
             "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
             session=session,
         )
     else:
-        session.changelog += _remove_ty(precommit, config, session=session)
+        session.changelog += _remove_ty(session=session)
 
 
 def _update_vscode_settings(
@@ -117,12 +116,11 @@ def _select_dependency_group(pyproject: ModifiablePyproject) -> str | None:
     return None
 
 
-def _remove_ty(
-    precommit: ModifiablePrecommit,
-    pyproject: ModifiablePyproject,
-    *,
-    session: Session,
-) -> Changelog:
+def _remove_ty(*, session: Session) -> Changelog:
+    precommit = session.precommit
+    pyproject = session.pyproject
+    if pyproject is None:
+        return []
     config_path = Path("ty.toml")
     if config_path.exists():
         config_path.unlink()
