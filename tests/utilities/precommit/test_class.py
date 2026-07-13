@@ -1,5 +1,6 @@
 import io
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -18,6 +19,54 @@ def example_config(this_dir: Path) -> str:
 
 
 def describe_modifiable_precommit():
+    def normalizes_spacing_between_and_within_repos(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        input_yaml = dedent("""
+          repos:
+              - repo: first
+
+              # Keep this comment.
+                rev: "1"
+                hooks:
+
+                  - id: first
+
+                  - id: second
+
+
+              # Keep this repo comment.
+              - repo: second
+                hooks:
+                  - id: third
+              - repo: third
+                hooks:
+                  - id: fourth
+        """).lstrip()
+        expected = dedent("""
+          repos:
+            - repo: first
+              # Keep this comment.
+              rev: "1"
+              hooks:
+                - id: first
+                - id: second
+
+              # Keep this repo comment.
+            - repo: second
+              hooks:
+                - id: third
+
+            - repo: third
+              hooks:
+                - id: fourth
+        """).lstrip()
+        source.write_text(input_yaml)
+
+        precommit = ModifiablePrecommit.load(source)
+        precommit.dump(source)
+
+        assert source.read_text() == expected
+
     def rejects_changes_outside_context_manager(example_config: str):
         precommit = ModifiablePrecommit.load(example_config)
         precommit.document["fail_fast"] = True
