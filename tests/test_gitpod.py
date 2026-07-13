@@ -5,7 +5,7 @@ from compwa_policy.utilities.session import Session
 def describe_generate_gitpod_config():
     def builds_expected_sections():
         with Session() as session:
-            gitpod_content = _generate_gitpod_config(session, "3.8")
+            gitpod_content = _generate_gitpod_config(session, python_version="3.8")
         assert set(gitpod_content) == {
             "github",
             "tasks",

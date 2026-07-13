@@ -73,7 +73,7 @@ class Session(AbstractContextManager):
         """Create a lazy session, optionally with an injected pre-commit resource."""
         return cls(precommit=precommit)
 
-    def get(self, resource: type[R]) -> R:
+    def get(self, resource: type[R], /) -> R:
         """Return the one session-owned instance of *resource*, loading it lazily."""
         key = (resource,)
         loaded = self._loaded.get(key)
@@ -85,7 +85,7 @@ class Session(AbstractContextManager):
             self._entered.add(key)
         return cast("R", loaded)
 
-    def get_path(self, path: Path | str) -> ModifiablePath:
+    def get_path(self, path: Path | str, /) -> ModifiablePath:
         """Return the session-owned generic resource for one working-tree path."""
         normalized = Path(path)
         key = (ModifiablePath, normalized)

@@ -78,7 +78,7 @@ def describe_update_precommit_config():
         )
         precommit = ModifiablePrecommit.load(config)
         pyproject = ModifiablePyproject.load(pyproject_path)
-        with Session(precommit=precommit, pyproject=pyproject) as session:
+        with Session(precommit, pyproject) as session:
             _update_precommit_config(session)
         result = precommit.dumps()
         assert "https://github.com/astral-sh/ty-pre-commit" in result
@@ -106,7 +106,7 @@ def describe_update_precommit_config():
         )
         precommit = ModifiablePrecommit.load(config)
         pyproject = ModifiablePyproject.load(pyproject_path)
-        with Session(precommit=precommit, pyproject=pyproject) as session:
+        with Session(precommit, pyproject) as session:
             _update_precommit_config(session)
         assert "args: [--no-default-groups, --group=types]" in precommit.dumps()
 
@@ -123,7 +123,7 @@ def describe_update_precommit_config():
         pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
         precommit = ModifiablePrecommit.load(config)
         pyproject = ModifiablePyproject.load(pyproject_path)
-        with Session(precommit=precommit, pyproject=pyproject) as session:
+        with Session(precommit, pyproject) as session:
             _update_precommit_config(session)
         assert "args:" not in precommit.dumps()
 
@@ -153,7 +153,7 @@ def describe_update_precommit_config():
         )
         precommit = ModifiablePrecommit.load(config)
         pyproject = ModifiablePyproject.load(pyproject_path)
-        with Session(precommit=precommit, pyproject=pyproject) as session:
+        with Session(precommit, pyproject) as session:
             _update_precommit_config(session)
         result = precommit.dumps()
         assert "repo: local" not in result
@@ -170,7 +170,7 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(session, {"ty"})
+            _update_vscode_settings(session, type_checkers={"ty"})
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
 
@@ -184,7 +184,7 @@ def describe_update_vscode_settings():
             json.dumps({"recommendations": ["astral-sh.ty"]})
         )
         with Session() as session:
-            _update_vscode_settings(session, {"mypy"})
+            _update_vscode_settings(session, type_checkers={"mypy"})
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "astral-sh.ty" not in extensions.get("recommendations", [])
 
@@ -221,7 +221,7 @@ def describe_remove_ty():
         with (
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
-            Session(precommit=precommit, pyproject=pyproject) as session,
+            Session(precommit, pyproject) as session,
         ):
             _remove_ty(session)
         assert not (tmp_path / "ty.toml").exists()

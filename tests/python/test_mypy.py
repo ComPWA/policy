@@ -77,7 +77,7 @@ def describe_remove_mypy():
         with (
             ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY)) as precommit,
             ModifiablePyproject.load(io.StringIO(pyproject_config)) as pyproject,
-            Session(precommit=precommit, pyproject=pyproject) as session,
+            Session(precommit, pyproject) as session,
         ):
             _remove_mypy(session)
         assert "mypy" not in precommit.dumps()
@@ -87,7 +87,7 @@ def describe_remove_mypy():
         with (
             ModifiablePrecommit.load(io.StringIO("repos: []\n")) as precommit,
             ModifiablePyproject.load(io.StringIO("")) as pyproject,
-            Session(precommit=precommit, pyproject=pyproject) as session,
+            Session(precommit, pyproject) as session,
         ):
             _remove_mypy(session)
 
