@@ -60,14 +60,14 @@ def remove_gitpod_config() -> Changelog:
     return []
 
 
-def _extract_extensions(*, session: Session | None = None) -> list[str]:
+def _extract_extensions(*, session: Session) -> list[str]:
     return sorted(vscode.get_recommended_extensions(session=session))
 
 
 def _generate_gitpod_config(
     python_version: PythonVersion,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> dict:
     with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)

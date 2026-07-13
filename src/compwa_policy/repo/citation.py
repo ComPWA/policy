@@ -215,7 +215,7 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
     precommit.changelog.append(msg)
 
 
-def update_vscode_settings(*, session: Session | None = None) -> Changelog:
+def update_vscode_settings(*, session: Session) -> Changelog:
     return vscode.update_settings(
         {
             "yaml.schemas": {

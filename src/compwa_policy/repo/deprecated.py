@@ -21,7 +21,7 @@ def remove_deprecated_tools(session: Session, keep_issue_templates: bool) -> Non
         _remove_relink_references(directory)
 
 
-def _remove_github_issue_templates(*, session: Session | None = None) -> Changelog:
+def _remove_github_issue_templates(*, session: Session) -> Changelog:
     return remove_configs(
         [
             ".github/ISSUE_TEMPLATE",
@@ -34,7 +34,7 @@ def _remove_github_issue_templates(*, session: Session | None = None) -> Changel
 def _remove_markdownlint(
     precommit: ModifiablePrecommit,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     changes += remove_configs(

@@ -95,7 +95,7 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
 def _update_vscode_settings(
     active: bool,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     if active:
@@ -129,7 +129,7 @@ def _remove_pyright(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     pyright_config = Path("pyrightconfig.json")
     if pyright_config.exists():

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 def remove_pixi_configuration(
     pyproject: ModifiablePyproject | None = None,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes = remove_lines(CONFIG_PATH.gitattributes, "pixi", session=session)
     changes += remove_lines(CONFIG_PATH.gitignore, ".*pixi.*", session=session)
@@ -25,7 +25,7 @@ def remove_pixi_configuration(
     )
     if pyproject is None and CONFIG_PATH.pyproject.exists():
         with ModifiablePyproject.load() as config:
-            remove_pixi_configuration(config)
+            remove_pixi_configuration(config, session=session)
             changes += list(config.changelog)
     elif pyproject is not None and pyproject.has_table("tool.pixi"):
         del pyproject._document["tool"]["pixi"]  # noqa: SLF001

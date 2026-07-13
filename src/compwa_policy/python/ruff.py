@@ -62,7 +62,7 @@ def _remove_black(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     changes += vscode.remove_extension_recommendation(
@@ -88,7 +88,7 @@ def _remove_flake8(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     changes += remove_configs([".flake8"], session=session)
@@ -110,7 +110,7 @@ def _remove_isort(
     pyproject: ModifiablePyproject,
     imports_on_top: bool,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     __remove_nbqa_option(pyproject, "black")
@@ -156,7 +156,7 @@ def _remove_pydocstyle(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes = remove_configs(
         [
@@ -175,7 +175,7 @@ def _remove_pylint(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     changes += remove_configs([".pylintrc"], session=session)  # cspell:ignore pylintrc
@@ -698,7 +698,7 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
 def _update_lint_dependencies(
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> None:
     if not has_pyproject_package_name(session=session):
         return
@@ -711,7 +711,7 @@ def _update_lint_dependencies(
     pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 
-def _update_vscode_settings(*, session: Session | None = None) -> Changelog:
+def _update_vscode_settings(*, session: Session) -> Changelog:
     # cspell:ignore charliermarsh
     changes: Changelog = []
     changes += vscode.add_extension_recommendation(

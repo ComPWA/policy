@@ -25,7 +25,7 @@ def main(
     )
 
 
-def _update_extensions(*, session: Session | None = None) -> Changelog:
+def _update_extensions(*, session: Session) -> Changelog:
     changes = vscode.add_extension_recommendation(
         "eamodio.gitlens", session=session
     )  # cspell:ignore eamodio
@@ -61,7 +61,7 @@ def _update_settings(
     is_python_repo: bool,
     package_manager: PackageManagerChoice,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes = vscode.update_settings(
         {
@@ -115,7 +115,7 @@ def _update_settings(
     return changes
 
 
-def _remove_outdated_settings(*, session: Session | None = None) -> Changelog:
+def _remove_outdated_settings(*, session: Session) -> Changelog:
     outdated_settings = [
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
@@ -136,7 +136,7 @@ def _remove_outdated_settings(*, session: Session | None = None) -> Changelog:
     return vscode.remove_settings(outdated_settings, session=session)
 
 
-def _update_doc_settings(*, session: Session | None = None) -> Changelog:
+def _update_doc_settings(*, session: Session) -> Changelog:
     if not os.path.exists("docs/"):
         return []
     changes = vscode.update_settings(
@@ -152,7 +152,7 @@ def _update_doc_settings(*, session: Session | None = None) -> Changelog:
     return changes
 
 
-def _update_notebook_settings(*, session: Session | None = None) -> Changelog:
+def _update_notebook_settings(*, session: Session) -> Changelog:
     """https://code.visualstudio.com/updates/v1_83#_go-to-symbol-in-notebooks."""
     if not os.path.exists("docs/"):
         return []
@@ -161,7 +161,7 @@ def _update_notebook_settings(*, session: Session | None = None) -> Changelog:
     )
 
 
-def _update_pytest_settings(*, session: Session | None = None) -> Changelog:
+def _update_pytest_settings(*, session: Session) -> Changelog:
     if not os.path.exists("tests/"):
         return []
     return vscode.update_settings(

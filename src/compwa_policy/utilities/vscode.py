@@ -128,16 +128,12 @@ class ModifiableVscodeExtensions(_ModifiableJsonResource):
         )
 
 
-def get_recommended_extensions(*, session: Session | None = None) -> set[str]:
-    if session is not None:
-        return session.get(ModifiableVscodeExtensions).get_recommended()
-    return _get_extension_recommendations("recommendations")
+def get_recommended_extensions(*, session: Session) -> set[str]:
+    return session.get(ModifiableVscodeExtensions).get_recommended()
 
 
-def get_unwanted_extensions(*, session: Session | None = None) -> set[str]:
-    if session is not None:
-        return session.get(ModifiableVscodeExtensions).get_unwanted()
-    return _get_extension_recommendations("unwantedRecommendations")
+def get_unwanted_extensions(*, session: Session) -> set[str]:
+    return session.get(ModifiableVscodeExtensions).get_unwanted()
 
 
 @cache
@@ -150,15 +146,10 @@ def _get_extension_recommendations(key: str) -> set[str]:
 def remove_settings(
     keys: RemovedKeys,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableVscodeSettings).remove(keys)
-        return []
-    resource = ModifiableVscodeSettings.load()
-    resource.remove(keys)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableVscodeSettings).remove(keys)
+    return []
 
 
 def _remove_keys(obj: T, keys: RemovedKeys) -> T:
@@ -204,15 +195,10 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
 def update_settings(
     new_settings: dict,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableVscodeSettings).update(new_settings)
-        return []
-    resource = ModifiableVscodeSettings.load()
-    resource.update(new_settings)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableVscodeSettings).update(new_settings)
+    return []
 
 
 def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
@@ -264,29 +250,19 @@ def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
 def add_extension_recommendation(
     extension_name: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
-        return []
-    resource = ModifiableVscodeExtensions.load()
-    resource.add_recommendation(extension_name)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
+    return []
 
 
 def add_unwanted_extension(
     extension_name: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
-        return []
-    resource = ModifiableVscodeExtensions.load()
-    resource.add_unwanted(extension_name)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
+    return []
 
 
 def __add_extension(extension_name: str, key: str) -> Changelog:
@@ -320,17 +296,12 @@ def remove_extension_recommendation(
     extension_name: str,
     *,
     unwanted: bool = False,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableVscodeExtensions).remove_recommendation(
-            extension_name, unwanted=unwanted
-        )
-        return []
-    resource = ModifiableVscodeExtensions.load()
-    resource.remove_recommendation(extension_name, unwanted=unwanted)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableVscodeExtensions).remove_recommendation(
+        extension_name, unwanted=unwanted
+    )
+    return []
 
 
 def _to_lower(lst: list[str]) -> list[str]:

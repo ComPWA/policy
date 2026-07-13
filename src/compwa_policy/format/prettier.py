@@ -38,7 +38,7 @@ def main(session: Session) -> None:
     session.changelog += _update_prettier_ignore()
 
 
-def _remove_configuration(*, session: Session | None = None) -> Changelog:
+def _remove_configuration(*, session: Session) -> Changelog:
     old_config_files = [
         ".prettierrc.json",
         ".prettierrc.json5",

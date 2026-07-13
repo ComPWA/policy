@@ -34,7 +34,7 @@ def update_pixi_configuration(
     pyproject: ModifiablePyproject | None = None,
     pixi: ModifiablePixi | None = None,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
@@ -121,7 +121,7 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
 def _define_minimal_project(
     config: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
     table_name = "workspace"
@@ -259,7 +259,7 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes(*, session: Session | None = None) -> Changelog:
+def __update_gitattributes(*, session: Session) -> Changelog:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
     if append_safe(expected_line, CONFIG_PATH.gitattributes, session=session):
         return [
@@ -268,7 +268,7 @@ def __update_gitattributes(*, session: Session | None = None) -> Changelog:
     return []
 
 
-def __update_gitignore(*, session: Session | None = None) -> Changelog:
+def __update_gitignore(*, session: Session) -> Changelog:
     ignore_path = ".pixi/"
     if append_safe(ignore_path, CONFIG_PATH.gitignore, session=session):
         return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]

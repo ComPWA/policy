@@ -75,7 +75,7 @@ def _update_cspell_repo_url(precommit: ModifiablePrecommit) -> None:
         precommit.changelog.append(msg)
 
 
-def _remove_configuration(*, session: Session | None = None) -> Changelog:
+def _remove_configuration(*, session: Session) -> Changelog:
     changes: Changelog = []
     if CONFIG_PATH.cspell.exists():
         os.remove(CONFIG_PATH.cspell)

@@ -62,7 +62,7 @@ def _remove_mypy(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if pyproject.has_table("tool.mypy"):
         del pyproject._document["tool"]["mypy"]  # noqa: SLF001
@@ -93,7 +93,7 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
 def _update_vscode_settings(
     mypy: bool,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     if mypy:

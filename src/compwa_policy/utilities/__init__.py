@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 import compwa_policy
-from compwa_policy.utilities.resource import ModifiablePath
 
 if TYPE_CHECKING:
+    from compwa_policy.utilities.resource import ModifiablePath
     from compwa_policy.utilities.session import Changelog, Session
 
 
@@ -48,9 +48,7 @@ CONFIG_PATH = _ConfigFilePaths()
 COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()
 
 
-def append_safe(
-    expected_line: str, path: Path, *, session: Session | None = None
-) -> bool:
+def append_safe(expected_line: str, path: Path, *, session: Session) -> bool:
     """Add a line to a file if it is not already present."""
     resource = _get_path_resource(path, session=session)
     lines = resource.read_text().splitlines() if resource.exists else []
@@ -58,7 +56,6 @@ def append_safe(
         return False
     content = resource.read_text() if resource.exists else ""
     resource.write_text(content + expected_line + "\n")
-    _dump_without_session(resource, session=session)
     return True
 
 
@@ -122,49 +119,29 @@ def write(
         raise TypeError(msg)
 
 
-def remove_configs(paths: list[str], *, session: Session | None = None) -> Changelog:
-    changes: Changelog = []
+def remove_configs(paths: list[str], *, session: Session) -> Changelog:
     for path in paths:
         resource = _get_path_resource(path, session=session)
-        message = f"Removed {path}"
-        if resource.remove(message):
-            changes.append(message)
-            _dump_without_session(resource, session=session)
-    return [] if session is not None else changes
+        resource.remove(f"Removed {path}")
+    return []
 
 
 def _get_path_resource(
     path: Path | str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> ModifiablePath:
     normalized = Path(path)
-    if session is not None:
-        return session.get_path(normalized)
-    return ModifiablePath.load_path(normalized)
+    return session.get_path(normalized)
 
 
-def _dump_without_session(
-    resource: ModifiablePath,
-    *,
-    session: Session | None = None,
-) -> None:
-    if session is None and resource.changed:
-        resource.dump()
-
-
-def __remove_file(path: str, *, session: Session | None = None) -> Changelog:
+def __remove_file(path: str, *, session: Session) -> Changelog:
     resource = _get_path_resource(path, session=session)
-    message = f"Removed {path}"
-    if not resource.remove(message):
-        return []
-    _dump_without_session(resource, session=session)
-    if session is not None:
-        return []
-    return [message]
+    resource.remove(f"Removed {path}")
+    return []
 
 
-def rename_file(old: str, new: str, *, session: Session | None = None) -> Changelog:
+def rename_file(old: str, new: str, *, session: Session) -> Changelog:
     source = _get_path_resource(old, session=session)
     if not source.exists:
         return []
@@ -173,9 +150,7 @@ def rename_file(old: str, new: str, *, session: Session | None = None) -> Change
     target = _get_path_resource(new, session=session)
     target.write_text(content, message)
     source.remove()
-    _dump_without_session(target, session=session)
-    _dump_without_session(source, session=session)
-    return [] if session is not None else [message]
+    return []
 
 
 def remove_lines(
@@ -183,7 +158,7 @@ def remove_lines(
     pattern: str,
     flags: re.RegexFlag = re.IGNORECASE,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     resource = _get_path_resource(file, session=session)
     if not resource.exists:
@@ -195,14 +170,12 @@ def remove_lines(
             f"Removed {pattern!r} from {file} and removed file because it was empty."
         )
         resource.remove(message)
-        _dump_without_session(resource, session=session)
-        return [] if session is not None else [message]
+        return []
     if len(filtered_lines) == len(lines):
         return []
     message = f"Removed {pattern!r} from {file}"
     resource.write_text("".join(filtered_lines), message)
-    _dump_without_session(resource, session=session)
-    return [] if session is not None else [message]
+    return []
 
 
 def natural_sorting(text: str) -> list[float | str]:
@@ -217,7 +190,7 @@ def update_file(
     relative_path: Path,
     in_template_folder: bool = False,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
@@ -229,14 +202,12 @@ def update_file(
     if not resource.exists:
         message = f"{relative_path} is missing, so created a new one. Please commit it."
         resource.write_text(expected_content, message)
-        _dump_without_session(resource, session=session)
-        return [] if session is not None else [message]
+        return []
     existing_content = resource.read_text()
     if expected_content != existing_content:
         message = f"{relative_path} has been updated."
         resource.write_text(expected_content, message)
-        _dump_without_session(resource, session=session)
-        return [] if session is not None else [message]
+        return []
     return []
 
 

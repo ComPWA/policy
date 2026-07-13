@@ -13,6 +13,7 @@ from compwa_policy.env.pixi._update import (
     update_pixi_configuration,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.session import Session
 
 _ENVIRONMENT_YML = dedent("""
     dependencies:
@@ -65,11 +66,13 @@ def describe_update_docnb_and_doclive():
 def describe_update_pixi_configuration():
     def skips_non_pixi(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        update_pixi_configuration(
-            is_python_package=True,
-            dev_python_version="3.12",
-            package_manager="uv",  # not a pixi manager -> no-op
-        )
+        with Session() as session:
+            update_pixi_configuration(
+                is_python_package=True,
+                dev_python_version="3.12",
+                package_manager="uv",  # not a pixi manager -> no-op
+                session=session,
+            )
         assert not (tmp_path / "pixi.toml").exists()
 
     def configures_pyproject(
@@ -93,11 +96,13 @@ def describe_update_pixi_configuration():
             cmd = "outdated"
             """).lstrip()
         )
-        update_pixi_configuration(
-            is_python_package=True,
-            dev_python_version="3.12",
-            package_manager="pixi",
-        )
+        with Session() as session:
+            update_pixi_configuration(
+                is_python_package=True,
+                dev_python_version="3.12",
+                package_manager="pixi",
+                session=session,
+            )
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.pixi.workspace]" in pyproject  # project table renamed
@@ -124,11 +129,13 @@ def describe_update_pixi_configuration():
             cmd = "build docs"
             """).lstrip()
         )
-        update_pixi_configuration(
-            is_python_package=True,
-            dev_python_version="3.12",
-            package_manager="pixi+uv",
-        )
+        with Session() as session:
+            update_pixi_configuration(
+                is_python_package=True,
+                dev_python_version="3.12",
+                package_manager="pixi+uv",
+                session=session,
+            )
 
         pixi = (tmp_path / "pixi.toml").read_text()
         assert "[feature.dev.tasks.ci]" in pixi  # combined CI job defined

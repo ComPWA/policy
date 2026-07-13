@@ -158,8 +158,11 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.10"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
-            _update_lint_dependencies(pyproject)
+        with (
+            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            Session() as session,
+        ):
+            _update_lint_dependencies(pyproject, session=session)
         assert pyproject.changelog  # something changed
         assert "ruff" in pyproject.dumps()
 
@@ -173,8 +176,11 @@ def describe_update_lint_dependencies():
             classifiers = ["Programming Language :: Python :: 3.6"]
         """).lstrip()
         (tmp_path / "pyproject.toml").write_text(config)
-        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
-            _update_lint_dependencies(pyproject)
+        with (
+            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            Session() as session,
+        ):
+            _update_lint_dependencies(pyproject, session=session)
         assert pyproject.changelog  # something changed
         result = pyproject.dumps()
         assert "python_version" in result
@@ -187,5 +193,8 @@ def describe_update_lint_dependencies():
             [project]
             classifiers = ["Programming Language :: Python :: 3.10"]
         """).lstrip()
-        with ModifiablePyproject.load(io.StringIO(config)) as pyproject:
-            _update_lint_dependencies(pyproject)  # no package name -> no-op
+        with (
+            ModifiablePyproject.load(io.StringIO(config)) as pyproject,
+            Session() as session,
+        ):
+            _update_lint_dependencies(pyproject, session=session)

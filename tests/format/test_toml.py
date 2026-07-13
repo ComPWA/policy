@@ -107,7 +107,8 @@ def describe_update_tomlsort_config():
     def configures_sort_first(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        changes = _update_tomlsort_config()
+        with Session() as session:
+            changes = _update_tomlsort_config(session=session)
         assert any("toml-sort" in m for m in changes)
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.tomlsort]" in result
@@ -118,9 +119,11 @@ def describe_update_tomlsort_config():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.other]\nkey = 1\n")
-        _update_tomlsort_config()
+        with Session() as session:
+            _update_tomlsort_config(session=session)
         assert "sort_first" not in (tmp_path / "pyproject.toml").read_text()
-        assert _update_tomlsort_config() == []
+        with Session() as session:
+            assert _update_tomlsort_config(session=session) == []
 
 
 def describe_update_taplo_config():
@@ -131,7 +134,8 @@ def describe_update_taplo_config():
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
-        changes = _update_taplo_config()
+        with Session() as session:
+            changes = _update_taplo_config(session=session)
         assert any(".taplo.toml" in m for m in changes)
         assert (tmp_path / ".taplo.toml").exists()
 
@@ -142,9 +146,11 @@ def describe_update_taplo_config():
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
-        assert _update_taplo_config()
+        with Session() as session:
+            assert _update_taplo_config(session=session)
         before = (tmp_path / ".taplo.toml").read_text()
-        assert _update_taplo_config() == []
+        with Session() as session:
+            assert _update_taplo_config(session=session) == []
         assert (tmp_path / ".taplo.toml").read_text() == before
 
 
@@ -152,8 +158,8 @@ def describe_update_vscode_extensions():
     def recommends_even_better_toml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         # cspell:ignore tamasfe
         monkeypatch.chdir(tmp_path)
-        changes = _update_vscode_extensions()
-        assert changes
+        with Session() as session:
+            _update_vscode_extensions(session=session)
         extensions = (tmp_path / ".vscode" / "extensions.json").read_text()
         assert "tamasfe.even-better-toml" in extensions
 

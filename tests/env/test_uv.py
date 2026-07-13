@@ -90,7 +90,8 @@ def describe_update_python_version_file():
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
-        changes = _update_python_version_file("3.12")
+        with Session() as session:
+            changes = _update_python_version_file("3.12", session=session)
         assert any("Updated .python-version" in m for m in changes)
         assert (tmp_path / ".python-version").read_text().strip() == "3.12"
 
@@ -100,7 +101,8 @@ def describe_update_python_version_file():
             '[project]\nname = "x"\nrequires-python = "==3.12.*"\n'
         )
         (tmp_path / ".python-version").write_text("3.12\n")
-        changes = _update_python_version_file("3.12")
+        with Session() as session:
+            changes = _update_python_version_file("3.12", session=session)
         assert any("Removed .python-version" in m for m in changes)
         assert not (tmp_path / ".python-version").exists()
 
@@ -110,7 +112,8 @@ def describe_update_python_version_file():
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
         (tmp_path / ".python-version").write_text("3.12\n")
-        _update_python_version_file("3.12")  # already up to date -> no error
+        with Session() as session:
+            _update_python_version_file("3.12", session=session)
 
 
 def describe_update_editor_config():
@@ -137,7 +140,8 @@ def describe_update_contributing_file():
             '[tool.poe.tasks.style]\ncmd = "check"\n'
         )
         (tmp_path / "CONTRIBUTING.md").write_text("outdated\n")
-        changes = _update_contributing_file("ComPWA", "policy")
+        with Session() as session:
+            changes = _update_contributing_file("ComPWA", "policy", session=session)
         assert any("Updated CONTRIBUTING.md" in m for m in changes)
         result = (tmp_path / "CONTRIBUTING.md").read_text()
         assert "policy" in result

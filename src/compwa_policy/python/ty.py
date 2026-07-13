@@ -41,7 +41,7 @@ def main(session: Session, type_checkers: set[TypeChecker]) -> None:
 def _update_vscode_settings(
     type_checkers: set[TypeChecker],
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     settings = {
         "ty.completions.autoImport": False,
@@ -121,7 +121,7 @@ def _remove_ty(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     config_path = Path("ty.toml")
     if config_path.exists():

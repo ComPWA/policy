@@ -148,7 +148,8 @@ def describe_remove_excludes():
 def describe_update_vscode_settings():
     def recommends_pylance_when_active(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        _update_vscode_settings(active=True)
+        with Session() as session:
+            _update_vscode_settings(active=True, session=session)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
 
@@ -159,7 +160,8 @@ def describe_update_vscode_settings():
         (vscode_dir / "extensions.json").write_text(
             json.dumps({"recommendations": ["ms-python.vscode-pylance"]})
         )
-        _update_vscode_settings(active=False)
+        with Session() as session:
+            _update_vscode_settings(active=False, session=session)
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" not in extensions.get("recommendations", [])
 
@@ -194,8 +196,9 @@ def describe_remove_pyright():
         with (
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
+            Session() as session,
         ):
-            _remove_pyright(precommit, pyproject)
+            _remove_pyright(precommit, pyproject, session=session)
         assert not (tmp_path / "pyrightconfig.json").exists()
         assert "tool.pyright" not in pyproject.dumps()
         assert "id: pyright" not in precommit.dumps()

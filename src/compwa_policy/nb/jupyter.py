@@ -33,13 +33,13 @@ def _update_dev_requirements(
     no_ruff: bool,
     pyproject: ModifiablePyproject | None = None,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if pyproject is None:
         if not CONFIG_PATH.pyproject.exists():
             return []
         with ModifiablePyproject.load() as config:
-            _update_dev_requirements(no_ruff, config)
+            _update_dev_requirements(no_ruff, config, session=session)
             return list(config.changelog)
     supported_python_versions = pyproject.get_supported_python_versions()
     if "3.6" in supported_python_versions:

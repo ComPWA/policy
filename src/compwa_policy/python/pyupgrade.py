@@ -27,7 +27,7 @@ def main(session: Session, no_ruff: bool) -> None:
 def _update_precommit_repo(
     precommit: ModifiablePrecommit,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> None:
     expected_hook = Repo(
         repo="https://github.com/asottile/pyupgrade",
@@ -45,7 +45,7 @@ def _update_precommit_repo(
 def _update_precommit_nbqa_hook(
     precommit: ModifiablePrecommit,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> None:
     precommit.update_hook(
         repo_url="https://github.com/nbQA-dev/nbQA",
@@ -58,11 +58,13 @@ def _update_precommit_nbqa_hook(
 
 def __get_pyupgrade_version_argument(
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> CommentedSeq:
     """Get the --py3x-plus argument for pyupgrade.
 
-    >>> __get_pyupgrade_version_argument()
+    >>> from compwa_policy.utilities.session import Session
+    >>> with Session() as session:
+    ...     __get_pyupgrade_version_argument(session=session)
     ['--py310-plus']
     """
     supported_python_versions = Pyproject.load(

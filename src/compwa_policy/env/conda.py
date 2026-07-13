@@ -37,7 +37,7 @@ def main(
 def update_conda_environment(
     python_version: PythonVersion,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if not has_pyproject_package_name(session=session):
         return []
@@ -63,7 +63,7 @@ def update_conda_environment(
 def __create_conda_environment(
     python_version: PythonVersion,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> CommentedMap:
     package_name = Pyproject.load(session=session).get_package_name()
     return CommentedMap({
@@ -120,7 +120,7 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration(*, session: Session | None = None) -> Changelog:
+def _remove_conda_configuration(*, session: Session) -> Changelog:
     changes: Changelog = []
     changes += __remove_environment_yml()
     # cspell:ignore condaenv

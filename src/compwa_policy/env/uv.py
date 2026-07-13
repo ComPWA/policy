@@ -130,7 +130,7 @@ def _update_editor_config() -> Changelog:
 def _update_python_version_file(
     dev_python_version: PythonVersion,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if not CONFIG_PATH.pyproject.exists():
         return []
@@ -173,7 +173,7 @@ def _update_contributing_file(
     organization: str,
     repo_name: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
@@ -200,7 +200,7 @@ def _update_contributing_file(
     return []
 
 
-def __get_runner_instructions(*, session: Session | None = None) -> str:
+def __get_runner_instructions(*, session: Session) -> str:
     poe_instructions = dedent("""
     [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. Install it globally (within your home folder) with `uv`:
 

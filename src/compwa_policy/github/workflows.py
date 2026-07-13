@@ -76,7 +76,7 @@ def _update_cd_workflow(  # noqa: C901
     no_pypi: bool,
     no_version_branches: bool,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     def update() -> Changelog:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
@@ -138,7 +138,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     single_threaded: bool,
     skip_tests: list[str],
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     def update() -> Changelog:
         yaml, expected_data = _get_ci_workflow(
@@ -300,7 +300,7 @@ def __get_coverage_python_version() -> PythonVersion:
 def _copy_workflow_file(
     filename: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     expected_workflow_path = (
         COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
@@ -339,7 +339,7 @@ def __remove_constraint_pinning(content: str) -> str:
     )
 
 
-def _recommend_vscode_extension(*, session: Session | None = None) -> Changelog:
+def _recommend_vscode_extension(*, session: Session) -> Changelog:
     if not CONFIG_PATH.github_workflow_dir.exists():
         return []
     # cspell:ignore cschleiden

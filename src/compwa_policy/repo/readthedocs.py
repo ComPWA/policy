@@ -208,7 +208,7 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
 def _update_build_step_for_pixi(
     config: ReadTheDocs,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> None:
     new_command = __get_pixi_install_statement() + "\n"
     pyproject = Pyproject.load(session=session)

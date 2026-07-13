@@ -76,25 +76,15 @@ class ModifiableReadme(ModifiableResource):
         )
 
 
-def add_badge(badge: str, *, session: Session | None = None) -> Changelog:
-    if session is not None:
-        session.get(ModifiableReadme).add_badge(badge)
-        return []
-    resource = ModifiableReadme.load()
-    resource.add_badge(badge)
-    resource.dump()
-    return resource.changelog
+def add_badge(badge: str, *, session: Session) -> Changelog:
+    session.get(ModifiableReadme).add_badge(badge)
+    return []
 
 
 def remove_badge(
     badge_pattern: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
-    if session is not None:
-        session.get(ModifiableReadme).remove_badge(badge_pattern)
-        return []
-    resource = ModifiableReadme.load()
-    resource.remove_badge(badge_pattern)
-    resource.dump()
-    return resource.changelog
+    session.get(ModifiableReadme).remove_badge(badge_pattern)
+    return []

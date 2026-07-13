@@ -46,7 +46,7 @@ def main(
     session.changelog += _update_envrc(statements)
 
 
-def __get_pixi_direnv(*, session: Session | None = None) -> str:
+def __get_pixi_direnv(*, session: Session) -> str:
     environment_flag = ""
     dev_environment = __determine_pixi_dev_environment(session=session)
     if dev_environment is not None:
@@ -67,7 +67,7 @@ def __get_uv_direnv(variables: dict[str, str]) -> str:
     return script.strip()
 
 
-def __determine_pixi_dev_environment(*, session: Session | None = None) -> str | None:
+def __determine_pixi_dev_environment(*, session: Session) -> str | None:
     search_terms = ["dev"]
     if CONFIG_PATH.pyproject.exists():
         pyproject = Pyproject.load(session=session)
@@ -81,7 +81,7 @@ def __determine_pixi_dev_environment(*, session: Session | None = None) -> str |
     return None
 
 
-def __get_pixi_environment_names(*, session: Session | None = None) -> set[str]:
+def __get_pixi_environment_names(*, session: Session) -> set[str]:
     if CONFIG_PATH.pixi_toml.exists():
         pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
         return set(pixi_config.get("environments", set()))

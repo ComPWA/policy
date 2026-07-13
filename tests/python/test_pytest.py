@@ -179,7 +179,13 @@ def describe_update_vscode_settings():
     def enables_coverage_gutters(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         pyproject = Pyproject.load(io.StringIO('[project]\nname = "my-package"\n'))
-        _update_vscode_settings(pyproject, coverage_gutters=True, single_threaded=False)
+        with Session() as session:
+            _update_vscode_settings(
+                pyproject,
+                coverage_gutters=True,
+                single_threaded=False,
+                session=session,
+            )
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert settings["testing.showCoverageInExplorer"] is True
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())

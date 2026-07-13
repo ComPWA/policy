@@ -314,7 +314,7 @@ def _complies_minimally(obj: Any, other: Any) -> bool:
     return obj == other
 
 
-def has_pyproject_package_name(*, session: Session | None = None) -> bool:
+def has_pyproject_package_name(*, session: Session) -> bool:
     if not CONFIG_PATH.pyproject.exists():
         return False
     pyproject = Pyproject.load(session=session)

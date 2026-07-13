@@ -177,7 +177,7 @@ def _update_vscode_settings(
     coverage_gutters: bool,
     single_threaded: bool,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     changes: Changelog = []
     # cspell:ignore ryanluker

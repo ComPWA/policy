@@ -173,7 +173,8 @@ def describe_update_vscode_settings():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):
         monkeypatch.chdir(tmp_path)
-        _update_vscode_settings({"ty"})
+        with Session() as session:
+            _update_vscode_settings({"ty"}, session=session)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
 
@@ -186,7 +187,8 @@ def describe_update_vscode_settings():
         (vscode_dir / "extensions.json").write_text(
             json.dumps({"recommendations": ["astral-sh.ty"]})
         )
-        _update_vscode_settings({"mypy"})
+        with Session() as session:
+            _update_vscode_settings({"mypy"}, session=session)
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "astral-sh.ty" not in extensions.get("recommendations", [])
 
@@ -223,8 +225,9 @@ def describe_remove_ty():
         with (
             ModifiablePrecommit.load(precommit_path) as precommit,
             ModifiablePyproject.load(pyproject_path) as pyproject,
+            Session() as session,
         ):
-            _remove_ty(precommit, pyproject)
+            _remove_ty(precommit, pyproject, session=session)
         assert not (tmp_path / "ty.toml").exists()
         assert "tool.ty" not in pyproject.dumps()
         assert "id: ty" not in precommit.dumps()

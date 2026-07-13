@@ -47,7 +47,7 @@ def main(session: Session) -> None:
 def _update_tomlsort_config(
     pyproject: ModifiablePyproject | None = None,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if pyproject is None and not CONFIG_PATH.pyproject.exists():
         return []
@@ -74,7 +74,7 @@ def _update_tomlsort_config(
         if not CONFIG_PATH.pyproject.exists():
             return []
         with ModifiablePyproject.load() as config:
-            _update_tomlsort_config(config)
+            _update_tomlsort_config(config, session=session)
             return list(config.changelog)
     tool_table = pyproject.get_table("tool", create=True)
     if tool_table.get("tomlsort") == expected_config:
@@ -114,7 +114,7 @@ def _rename_taplo_config() -> Changelog:
     return []
 
 
-def _update_taplo_config(*, session: Session | None = None) -> Changelog:
+def _update_taplo_config(*, session: Session) -> Changelog:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     with open(template_path) as f:
         expected = tomlkit.load(f)
@@ -199,7 +199,7 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions(*, session: Session | None = None) -> Changelog:
+def _update_vscode_extensions(*, session: Session) -> Changelog:
     # cspell:ignore bungcip tamasfe
     changes: Changelog = []
     changes += vscode.add_extension_recommendation(

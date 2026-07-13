@@ -53,7 +53,8 @@ def describe_remove_configuration():
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".prettierrc.json").write_text("{}")
         (tmp_path / ".prettierrc").write_text("{}")
-        changes = _remove_configuration()
+        with Session() as session:
+            changes = _remove_configuration(session=session)
         assert any("Removed redundant configuration files" in m for m in changes)
         assert not (tmp_path / ".prettierrc.json").exists()
         assert not (tmp_path / ".prettierrc").exists()
@@ -61,7 +62,8 @@ def describe_remove_configuration():
     def is_noop_without_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
-        _remove_configuration()  # no config files and no badge to remove
+        with Session() as session:
+            _remove_configuration(session=session)
 
 
 def describe_update_prettier_ignore():

@@ -52,7 +52,7 @@ def _update_apt_txt(apt_packages: list[str]) -> Changelog:
 def _update_post_build(
     package_manager: PackageManagerChoice,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Changelog:
     if package_manager == "pixi+uv":
         expected_content = __get_post_builder_for_pixi_with_uv(session=session)
@@ -69,7 +69,7 @@ def _update_post_build(
 
 def __get_post_builder_for_pixi_with_uv(
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> str:
     expected_content = dedent("""
         #!/bin/bash
@@ -123,7 +123,7 @@ def ___get_pixi_activation() -> PixiActivation:
     )
 
 
-def __get_post_builder_for_uv(*, session: Session | None = None) -> str:
+def __get_post_builder_for_uv(*, session: Session) -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
@@ -145,7 +145,7 @@ def __get_post_builder_for_uv(*, session: Session | None = None) -> str:
     return expected_content
 
 
-def __get_notebook_groups(*, session: Session | None = None) -> list[str]:
+def __get_notebook_groups(*, session: Session) -> list[str]:
     dependency_groups = ___safe_get_table("dependency-groups", session=session)
     allowed_groups = {"jupyter", "notebooks"}
     return sorted(allowed_groups & set(dependency_groups))
@@ -154,7 +154,7 @@ def __get_notebook_groups(*, session: Session | None = None) -> list[str]:
 def ___safe_get_table(
     dotted_header: str,
     *,
-    session: Session | None = None,
+    session: Session,
 ) -> Mapping[str, Any]:
     if not CONFIG_PATH.pyproject.exists():
         return {}
