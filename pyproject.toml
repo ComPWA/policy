@@ -290,10 +290,10 @@ ref = "test"
 help = "Run all continuous integration (CI) tasks locally"
 ignore_fail = "return_non_zero"
 sequence = [
+    "style",
     "cov",
     "doc",
     "linkcheck",
-    "style",
     "test-all",
 ]
 

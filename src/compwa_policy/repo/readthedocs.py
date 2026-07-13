@@ -13,11 +13,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarStri
 
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.match import git_ls_files
-from compwa_policy.utilities.pyproject import (
-    Pyproject,
-    get_constraints_file,
-    has_dependency,
-)
+from compwa_policy.utilities.pyproject import get_constraints_file, has_dependency
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -45,8 +41,10 @@ def main(
     _update_os(rtd)
     _update_python_version(rtd, python_version)
     if package_manager == "pixi+uv":
+        pyproject = session.pyproject
+        has_poe = pyproject is not None and has_dependency(pyproject, "poethepoet")
         _remove_redundant_settings(rtd)
-        _update_build_step_for_pixi(rtd)
+        _update_build_step_for_pixi(rtd, has_poe)
     elif package_manager == "uv":
         apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
         pixi_packages = apt_packages & {"graphviz"}
@@ -205,11 +203,10 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
     return True
 
 
-def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
+def _update_build_step_for_pixi(config: ReadTheDocs, has_poe: bool) -> None:
     new_command = __get_pixi_install_statement() + "\n"
-    pyproject = Pyproject.load()
     docs_dir = _determine_docs_dir()
-    if has_dependency(pyproject, "poethepoet"):
+    if has_poe:
         new_command += dedent(Rf"""
             export UV_LINK_MODE=copy
             pixi run poe doc

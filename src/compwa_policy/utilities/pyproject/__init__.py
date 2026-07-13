@@ -5,9 +5,18 @@ from __future__ import annotations
 import io
 import sys
 from collections import abc
-from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    TypeVar,
+    cast,
+    final,
+    overload,
+)
 
 import rtoml
 import tomlkit
@@ -28,6 +37,7 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
     split_dependency_definition,
 )
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -42,7 +52,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
-    from compwa_policy.utilities.session import Changelog
+    from compwa_policy.utilities.session import Session
 
 T = TypeVar("T", bound="Pyproject")
 _NO_FALLBACK: Final = object()
@@ -56,8 +66,17 @@ class Pyproject:
     _source: IO | Path | None = field(default=None)
 
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pyproject,
+        *,
+        session: Session | None = None,
+    ) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        if cls is Pyproject and source == CONFIG_PATH.pyproject and session is not None:
+            managed = session.pyproject
+            if managed is not None:
+                return cast("Self", managed)
         document = load_pyproject_toml(source, modifiable=False)
         if isinstance(source, str):
             return cls(document)
@@ -114,7 +133,7 @@ class Pyproject:
 
 
 @frozen(slots=False)
-class ModifiablePyproject(Pyproject, AbstractContextManager):
+class ModifiablePyproject(Pyproject, ModifiableResource):
     """Stateful representation of a :code:`pyproject.toml` file.
 
     Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
@@ -126,8 +145,14 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
 
     @override
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pyproject,
+        *,
+        session: Session | None = None,
+    ) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        _ = session
         if isinstance(source, io.IOBase):
             current_position = source.tell()
             source.seek(0)
@@ -164,7 +189,11 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         return False
 
     def dump(self, target: IO | Path | str | None = None) -> None:
-        if target is None and self._source is None:
+        if target is None:
+            target = self._source
+        if target is None and CONFIG_PATH.pyproject.exists():
+            target = CONFIG_PATH.pyproject
+        if target is None:
             msg = "Target required when source is not a file or I/O stream"
             raise ValueError(msg)
         if isinstance(target, io.IOBase):
@@ -192,6 +221,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
     def add_dependency(
         self,
         package: str,
+        /,
         dependency_group: str | Sequence[str] | None = None,
         optional_key: str | Sequence[str] | None = None,
     ) -> None:
@@ -204,7 +234,7 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
             self._changelog.append(msg)
 
     def remove_dependency(
-        self, package: str, ignored_sections: Iterable[str] | None = None
+        self, package: str, /, ignored_sections: Iterable[str] | None = None
     ) -> None:
         self.__assert_is_in_context()
         updated = remove_dependency(self._document, package, ignored_sections)
@@ -223,19 +253,21 @@ class ModifiablePyproject(Pyproject, AbstractContextManager):
         return self._changelog
 
 
-@contextmanager
-def use_modifiable_pyproject(
-    pyproject: ModifiablePyproject | None = None,
-    *,
-    load: bool = True,
-) -> abc.Iterator[tuple[ModifiablePyproject | None, bool]]:
-    if pyproject is not None:
-        yield pyproject, False
-    elif load and CONFIG_PATH.pyproject.exists():
-        with ModifiablePyproject.load() as local_pyproject:
-            yield local_pyproject, True
-    else:
-        yield None, False
+class ModifiablePixi(ModifiablePyproject):
+    """Session-owned representation of :file:`pixi.toml`."""
+
+    @override
+    @classmethod
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pixi_toml,
+        *,
+        session: Session | None = None,
+    ) -> Self:
+        _ = session
+        if source == CONFIG_PATH.pixi_toml and not CONFIG_PATH.pixi_toml.exists():
+            return cls(tomlkit.document(), CONFIG_PATH.pixi_toml)  # ty:ignore[invalid-argument-type]
+        return super().load(source)
 
 
 def complies_with_subset(
@@ -283,10 +315,10 @@ def _complies_minimally(obj: Any, other: Any) -> bool:
     return obj == other
 
 
-def has_pyproject_package_name() -> bool:
-    if not CONFIG_PATH.pyproject.exists():
+def has_pyproject_package_name(session: Session, /) -> bool:
+    pyproject = session.pyproject
+    if pyproject is None:
         return False
-    pyproject = Pyproject.load()
     return pyproject.get_package_name() is not None
 
 

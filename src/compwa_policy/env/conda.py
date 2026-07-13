@@ -9,7 +9,6 @@ from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.pyproject import (
-    Pyproject,
     PythonVersion,
     get_constraints_file,
     has_pyproject_package_name,
@@ -29,20 +28,24 @@ def main(
     package_manager: PackageManagerChoice,
 ) -> None:
     if package_manager == "conda":
-        session.changelog += update_conda_environment(python_version)
+        update_conda_environment(session, python_version)
     else:
-        session.changelog += _remove_conda_configuration()
+        _remove_conda_configuration(session)
 
 
-def update_conda_environment(python_version: PythonVersion) -> Changelog:
-    if not has_pyproject_package_name():
-        return []
+def update_conda_environment(
+    session: Session,
+    /,
+    python_version: PythonVersion,
+) -> None:
+    if not has_pyproject_package_name(session):
+        return
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
         conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)
     else:
-        conda_env = __create_conda_environment(python_version)
+        conda_env = __create_conda_environment(session, python_version)
         updated = True
     if "dependencies" not in conda_env:
         conda_env["dependencies"] = CommentedSeq()
@@ -52,13 +55,18 @@ def update_conda_environment(python_version: PythonVersion) -> Changelog:
     if updated:
         yaml.dump(conda_env, CONFIG_PATH.conda)
         msg = f"Updated Conda environment for Python {python_version}"
-        return [msg]
-    return []
+        session.changelog.append(msg)
 
 
-def __create_conda_environment(python_version: PythonVersion) -> CommentedMap:
+def __create_conda_environment(
+    session: Session,
+    /,
+    python_version: PythonVersion,
+) -> CommentedMap:
+    pyproject = session.pyproject
+    package_name = pyproject.get_package_name() if pyproject is not None else None
     return CommentedMap({
-        "name": Pyproject.load().get_package_name(),
+        "name": str(package_name) if package_name is not None else None,
         "channels": ["defaults"],
         "dependencies": [
             f"python=={python_version}.*",
@@ -111,13 +119,11 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration() -> Changelog:
-    changes: Changelog = []
-    changes += __remove_environment_yml()
+def _remove_conda_configuration(session: Session, /) -> None:
+    session.changelog += __remove_environment_yml()
     # cspell:ignore condaenv
-    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*")
-    changes += remove_lines(CONFIG_PATH.gitignore, r".*environment\.yml.*")
-    return changes
+    remove_lines(session, CONFIG_PATH.gitignore, r".*condaenv.*")
+    remove_lines(session, CONFIG_PATH.gitignore, r".*environment\.yml.*")
 
 
 def __remove_environment_yml() -> Changelog:

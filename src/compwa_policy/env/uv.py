@@ -12,16 +12,12 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    use_modifiable_pyproject,
-)
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -36,19 +32,22 @@ def main(  # noqa: PLR0917
 ) -> None:
     precommit_config = session.precommit
     if "uv" in package_manager:
-        session.changelog += readme.add_badge(
+        readme.add_badge(
+            session,
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
         )
         session.changelog += _update_editor_config()
-        session.changelog += _update_python_version_file(dev_python_version)
+        _update_python_version_file(session, dev_python_version)
         _update_uv_lock_hook(precommit_config)
         if not keep_contributing_md:
-            session.changelog += _update_contributing_file(organization, repo_name)
+            _update_contributing_file(session, organization, repo_name)
         session.changelog += _remove_pip_constraint_files()
-        session.changelog += vscode.remove_settings(
+        vscode.remove_settings(
+            session,
             {"files.associations": ["**/.constraints/py*.txt"]},
         )
-        session.changelog += vscode.remove_settings(
+        vscode.remove_settings(
+            session,
             {
                 "search.exclude": [
                     "**/.constraints/py*.txt",
@@ -57,15 +56,14 @@ def main(  # noqa: PLR0917
             },
         )
     else:
-        session.changelog += _remove_uv_configuration(session.pyproject)
+        _remove_uv_configuration(session.pyproject)
         session.changelog += _remove_uv_lock()
         precommit_config.remove_hook("uv-lock")
-        session.changelog += readme.remove_badge(
+        readme.remove_badge(
+            session,
             r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
         )
-        session.changelog += vscode.remove_settings({
-            "search.exclude": ["uv.lock", "**/uv.lock"]
-        })
+        vscode.remove_settings(session, {"search.exclude": ["uv.lock", "**/uv.lock"]})
 
 
 def _remove_pip_constraint_files() -> Changelog:
@@ -81,21 +79,15 @@ def _remove_pip_constraint_files() -> Changelog:
     return [msg]
 
 
-def _remove_uv_configuration(pyproject: ModifiablePyproject | None = None) -> Changelog:
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
-        if config is None:
-            return []
-        readonly_pyproject = config._document  # noqa: SLF001
-        if "tool" not in readonly_pyproject:
-            return []
-        if "uv" not in readonly_pyproject["tool"]:
-            return []
-        tool_table = config.get_table("tool")
-        tool_table.pop("uv")
-        config.changelog.append("Removed uv configuration from pyproject.toml.")
-        if include_changelog:
-            return list(config.changelog)
-    return []
+def _remove_uv_configuration(pyproject: ModifiablePyproject | None) -> None:
+    if pyproject is None:
+        return
+    readonly_pyproject = pyproject._document  # noqa: SLF001
+    if "tool" not in readonly_pyproject or "uv" not in readonly_pyproject["tool"]:
+        return
+    tool_table = pyproject.get_table("tool")
+    tool_table.pop("uv")
+    pyproject.changelog.append("Removed uv configuration from pyproject.toml.")
 
 
 def _remove_uv_lock() -> Changelog:
@@ -124,10 +116,14 @@ def _update_editor_config() -> Changelog:
     return [f"Updated {CONFIG_PATH.editorconfig} for uv.lock"]
 
 
-def _update_python_version_file(dev_python_version: PythonVersion) -> Changelog:
-    if not CONFIG_PATH.pyproject.exists():
-        return []
-    pyproject = Pyproject.load()
+def _update_python_version_file(
+    session: Session,
+    /,
+    dev_python_version: PythonVersion,
+) -> None:
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
         requires_python = pyproject.get_table("project").get("requires-python", "")
@@ -135,19 +131,20 @@ def _update_python_version_file(dev_python_version: PythonVersion) -> Changelog:
             if python_version_file.exists():
                 python_version_file.unlink()
                 msg = f"Removed {python_version_file} file because requires-python already pins the Python version"
-                return [msg]
-            return []
+                session.changelog.append(msg)
+                return
+            return
 
     existing_python_version = ""
     if python_version_file.exists():
         with open(python_version_file) as stream:
             existing_python_version = stream.read().strip()
     if existing_python_version == dev_python_version:
-        return []
+        return
     with open(".python-version", "w") as stream:
         stream.write(dev_python_version + "\n")
     msg = f"Updated {python_version_file} to {dev_python_version}"
-    return [msg]
+    session.changelog.append(msg)
 
 
 def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
@@ -162,10 +159,15 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
         precommit.remove_hook("uv-lock")
 
 
-def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
+def _update_contributing_file(
+    session: Session,
+    /,
+    organization: str,
+    repo_name: str,
+) -> None:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
-        return []
+        return
     template_dir = COMPWA_POLICY_DIR / ".template"
     env = Environment(
         autoescape=True,
@@ -175,7 +177,7 @@ def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
     context = {
         "ORGANIZATION": organization,
         "REPO_NAME": repo_name,
-        "RUNNER": __get_runner_instructions().strip(),
+        "RUNNER": __get_runner_instructions(session).strip(),
     }
     expected_content = template.render(context).strip() + "\n"
     existing_content = ""
@@ -184,11 +186,10 @@ def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
     if expected_content != existing_content:
         contributing_file.write_text(expected_content)
         msg = f"Updated {contributing_file} to latest template"
-        return [msg]
-    return []
+        session.changelog.append(msg)
 
 
-def __get_runner_instructions() -> str:
+def __get_runner_instructions(session: Session, /) -> str:
     poe_instructions = dedent("""
     [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. Install it globally (within your home folder) with `uv`:
 
@@ -221,8 +222,8 @@ def __get_runner_instructions() -> str:
     pixi run style
     ```
     """)
-    if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+    pyproject = session.pyproject
+    if pyproject is not None:
         if pyproject.has_table("tool.poe.tasks"):
             return poe_instructions
         if pyproject.has_table("tool.pixi.tasks"):

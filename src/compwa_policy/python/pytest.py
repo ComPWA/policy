@@ -10,13 +10,7 @@ from ini2toml.api import Translator
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    has_dependency,
-    use_modifiable_pyproject,
-)
-from compwa_policy.utilities.pyproject.getters import get_package_name
+from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
@@ -24,7 +18,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def main(
@@ -33,23 +27,19 @@ def main(
     single_threaded: bool,
     branch_coverage: bool = True,
 ) -> None:
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if not has_dependency(config, "pytest"):
-            return
-        _merge_coverage_into_pyproject(config)
-        _merge_pytest_into_pyproject(config)
-        _deny_ini_options(config)
-        _update_codecov_settings(config, branch_coverage)
-        _update_settings(config)
-        session.changelog += _update_vscode_settings(
-            config, coverage_gutters, single_threaded
-        )
-        if single_threaded:
-            config.remove_dependency("pytest-xdist")
-        else:
-            config.add_dependency("pytest-xdist", ["test", "dev"])
+    config = session.pyproject
+    if config is None or not has_dependency(config, "pytest"):
+        return
+    _merge_coverage_into_pyproject(config)
+    _merge_pytest_into_pyproject(config)
+    _deny_ini_options(config)
+    _update_codecov_settings(config, branch_coverage)
+    _update_settings(config)
+    _update_vscode_settings(session, coverage_gutters, single_threaded)
+    if single_threaded:
+        config.remove_dependency("pytest-xdist")
+    else:
+        config.add_dependency("pytest-xdist", ["test", "dev"])
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
@@ -176,57 +166,73 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
 
 
 def _update_vscode_settings(
-    pyproject: Pyproject, coverage_gutters: bool, single_threaded: bool
-) -> Changelog:
-    changes: Changelog = []
+    session: Session,
+    /,
+    coverage_gutters: bool,
+    single_threaded: bool,
+) -> None:
     # cspell:ignore ryanluker
     if coverage_gutters:
-        changes += vscode.add_extension_recommendation(
+        vscode.add_extension_recommendation(
+            session,
             "ryanluker.vscode-coverage-gutters",
         )
     else:
-        changes += vscode.remove_extension_recommendation(
+        vscode.remove_extension_recommendation(
+            session,
             extension_name="ryanluker.vscode-coverage-gutters",
             unwanted=True,
         )
-    changes += vscode.update_settings({
-        "testing.coverageToolbarEnabled": True,
-        "testing.showCoverageInExplorer": True,
-    })
-    changes += vscode.remove_settings({
-        "python.testing.pytestArgs": ["--color=no", "--no-cov"]
-    })
-    package_name = get_package_name(pyproject._document)  # noqa: SLF001
+    vscode.update_settings(
+        session,
+        {
+            "testing.coverageToolbarEnabled": True,
+            "testing.showCoverageInExplorer": True,
+        },
+    )
+    vscode.remove_settings(
+        session, {"python.testing.pytestArgs": ["--color=no", "--no-cov"]}
+    )
+    pyproject = session.pyproject
+    package_name = pyproject.get_package_name() if pyproject is not None else None
     if package_name is not None:
         module_name = package_name.replace("-", "_")
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [f"--cov={module_name}"]
-        })
+        vscode.remove_settings(
+            session, {"python.testing.pytestArgs": [f"--cov={module_name}"]}
+        )
     if single_threaded:
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [
-                "--numprocesses auto",
-                "--numprocesses=auto",
-                "-n auto",
-                "-nauto",  # cspell:ignore nauto
-            ]
-        })
+        vscode.remove_settings(
+            session,
+            {
+                "python.testing.pytestArgs": [
+                    "--numprocesses auto",
+                    "--numprocesses=auto",
+                    "-n auto",
+                    "-nauto",  # cspell:ignore nauto
+                ]
+            },
+        )
     else:
-        changes += vscode.update_settings({
-            "python.testing.pytestArgs": ["--numprocesses=auto"]
-        })
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [
-                "--numprocesses auto",
-                "-n auto",
-                "-nauto",
-            ]
-        })
+        vscode.update_settings(
+            session, {"python.testing.pytestArgs": ["--numprocesses=auto"]}
+        )
+        vscode.remove_settings(
+            session,
+            {
+                "python.testing.pytestArgs": [
+                    "--numprocesses auto",
+                    "-n auto",
+                    "-nauto",
+                ]
+            },
+        )
     if not coverage_gutters:
-        changes += vscode.remove_settings([
-            "coverage-gutters.coverageFileNames",
-            "coverage-gutters.coverageReportFileName",
-            "coverage-gutters.showGutterCoverage",
-            "coverage-gutters.showLineCoverage",
-        ])
-    return changes
+        vscode.remove_settings(
+            session,
+            [
+                "coverage-gutters.coverageFileNames",
+                "coverage-gutters.coverageReportFileName",
+                "coverage-gutters.showGutterCoverage",
+                "coverage-gutters.showLineCoverage",
+            ],
+        )

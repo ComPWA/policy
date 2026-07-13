@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, cast
 
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import use_modifiable_pyproject
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
@@ -27,10 +26,9 @@ def main(session: Session, has_notebooks: bool) -> None:
     _update_precommit_ci_skip(precommit)
     _update_notebook_hooks(precommit, has_notebooks)
     _update_repo_urls(precommit)
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is not None:
-            config.remove_dependency("pre-commit")
-            config.remove_dependency("pre-commit-uv")
+    if session.pyproject is not None:
+        session.pyproject.remove_dependency("pre-commit")
+        session.pyproject.remove_dependency("pre-commit-uv")
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

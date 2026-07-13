@@ -49,14 +49,18 @@ def describe_remove_configuration():
     def removes_config_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
-        changes = _remove_configuration()
+        with Session() as session:
+            _remove_configuration(session)
+            changes = session.collect_changes()
         assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()
 
     def cleans_editorconfig(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".editorconfig").write_text(".cspell.json\nother-entry\n")
-        changes = _remove_configuration()
+        with Session() as session:
+            _remove_configuration(session)
+            changes = session.collect_changes()
         assert any("no longer" in m for m in changes)
         assert ".cspell.json" not in (tmp_path / ".editorconfig").read_text()
 

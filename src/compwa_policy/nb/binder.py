@@ -11,7 +11,6 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -29,7 +28,7 @@ def main(
     apt_packages: list[str],
 ) -> None:
     session.changelog += _update_apt_txt(apt_packages)
-    session.changelog += _update_post_build(package_manager)
+    _update_post_build(session, package_manager)
     session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
     session.changelog += _update_runtime_txt(python_version)
 
@@ -49,21 +48,25 @@ def _update_apt_txt(apt_packages: list[str]) -> Changelog:
     )
 
 
-def _update_post_build(package_manager: PackageManagerChoice) -> Changelog:
+def _update_post_build(
+    session: Session,
+    /,
+    package_manager: PackageManagerChoice,
+) -> None:
     if package_manager == "pixi+uv":
-        expected_content = __get_post_builder_for_pixi_with_uv()
+        expected_content = __get_post_builder_for_pixi_with_uv(session)
     elif package_manager == "uv":
-        expected_content = __get_post_builder_for_uv()
+        expected_content = __get_post_builder_for_uv(session)
     else:
         msg = f"Package manager {package_manager} is not supported."
         raise NotImplementedError(msg)
-    return __update_file(
-        expected_content.strip() + "\n",
+    session.changelog += __update_file(
+        expected_content=expected_content.strip() + "\n",
         path=CONFIG_PATH.binder / "postBuild",
     )
 
 
-def __get_post_builder_for_pixi_with_uv() -> str:
+def __get_post_builder_for_pixi_with_uv(session: Session, /) -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
@@ -75,7 +78,7 @@ def __get_post_builder_for_pixi_with_uv() -> str:
           pixi global install $pixi_packages
         fi
     """).strip()
-    activation = ___get_pixi_activation()
+    activation = ___get_pixi_activation(session)
     if activation.environment:
         for key, value in activation.environment.items():
             expected_content += f'\nexport {key}="{value}"'
@@ -84,7 +87,7 @@ def __get_post_builder_for_pixi_with_uv() -> str:
             expected_content += "\nbash " + script
     expected_content += "\npixi clean cache --yes\n"
     expected_content += "\nuv export \\"
-    for groups in __get_notebook_groups():
+    for groups in __get_notebook_groups(session):
         expected_content += f"\n  --group {groups} \\"
     expected_content += dedent(R"""
           --no-dev \
@@ -103,10 +106,10 @@ class PixiActivation:
     environment: dict[str, str] | None = None
 
 
-def ___get_pixi_activation() -> PixiActivation:
+def ___get_pixi_activation(session: Session, /) -> PixiActivation:
     if not CONFIG_PATH.pixi_toml.exists():
         return PixiActivation()
-    pixi = Pyproject.load(CONFIG_PATH.pixi_toml)
+    pixi = session.pixi
     if not pixi.has_table("activation"):
         return PixiActivation()
     activation = pixi.get_table("activation")
@@ -116,7 +119,7 @@ def ___get_pixi_activation() -> PixiActivation:
     )
 
 
-def __get_post_builder_for_uv() -> str:
+def __get_post_builder_for_uv(session: Session, /) -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
@@ -124,7 +127,7 @@ def __get_post_builder_for_uv() -> str:
         source $HOME/.cargo/env
     """).strip()
     expected_content += "\nuv export \\"
-    for group in __get_notebook_groups():
+    for group in __get_notebook_groups(session):
         expected_content += f"\n  --group {group} \\"
     expected_content += dedent(R"""
           --no-dev \
@@ -138,16 +141,16 @@ def __get_post_builder_for_uv() -> str:
     return expected_content
 
 
-def __get_notebook_groups() -> list[str]:
-    dependency_groups = ___safe_get_table("dependency-groups")
+def __get_notebook_groups(session: Session, /) -> list[str]:
+    dependency_groups = ___safe_get_table(session, "dependency-groups")
     allowed_groups = {"jupyter", "notebooks"}
     return sorted(allowed_groups & set(dependency_groups))
 
 
-def ___safe_get_table(dotted_header: str) -> Mapping[str, Any]:
-    if not CONFIG_PATH.pyproject.exists():
+def ___safe_get_table(session: Session, /, dotted_header: str) -> Mapping[str, Any]:
+    pyproject = session.pyproject
+    if pyproject is None:
         return {}
-    pyproject = Pyproject.load()
     if not pyproject.has_table(dotted_header):
         return {}
     return pyproject.get_table(dotted_header)

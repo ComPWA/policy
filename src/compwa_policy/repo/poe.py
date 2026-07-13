@@ -18,7 +18,6 @@ from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
     has_dependency,
-    use_modifiable_pyproject,
 )
 from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 
@@ -46,37 +45,37 @@ def main(
     has_notebooks: bool,
     package_manager: PackageManagerChoice,
 ) -> None:
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        if config.has_table("tool.tox"):
-            del config._document["tool"]["tox"]  # noqa: SLF001
-            msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
-            config.changelog.append(msg)
-        if config.has_table("tool.poe"):
-            _check_expected_sections(config, has_notebooks)
-            if package_manager == "uv":
-                _configure_uv_executor(config)
-                _migrate_tasks_to_groups(config)
-                _set_doc_group(config)
-                _set_test_group(config)
-                _set_notebook_group(config, has_notebooks)
-                _check_no_uv_run(config)
-                if config.has_table("tool.poe.tasks"):
-                    _set_all_task(config)
-                if has_dependency(config, "jupyterlab"):
-                    _set_jupyter_lab_task(config)
-                if has_notebooks:
-                    config.remove_dependency("nbmake")  # cspell:ignore nbmake
-                    _set_nb_task(config)
-                _set_test_all_task(config)
-                _update_doclive(config)
+    config = session.pyproject
+    if config is None:
+        return
+    if config.has_table("tool.tox"):
+        del config._document["tool"]["tox"]  # noqa: SLF001
+        msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
+        config.changelog.append(msg)
+    if config.has_table("tool.poe"):
+        _check_expected_sections(config, has_notebooks)
+        if package_manager == "uv":
+            _configure_uv_executor(config)
+            _migrate_tasks_to_groups(config)
+            _set_doc_group(config)
+            _set_test_group(config)
+            _set_notebook_group(config, has_notebooks)
+            _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
-                _set_upgrade_task(config, package_manager)
-        session.changelog += remove_lines(CONFIG_PATH.gitignore, r"\.tox/?")
-        config.remove_dependency("poethepoet")
-        config.remove_dependency("tox")
-        config.remove_dependency("tox-uv")
+                _set_all_task(config)
+            if has_dependency(config, "jupyterlab"):
+                _set_jupyter_lab_task(config)
+            if has_notebooks:
+                config.remove_dependency("nbmake")  # cspell:ignore nbmake
+                _set_nb_task(config)
+            _set_test_all_task(config)
+            _update_doclive(config)
+        if config.has_table("tool.poe.tasks"):
+            _set_upgrade_task(config, package_manager)
+    remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
+    config.remove_dependency("poethepoet")
+    config.remove_dependency("tox")
+    config.remove_dependency("tox-uv")
 
 
 def _get_all_poe_tasks(poe_table: Mapping) -> set[str]:
@@ -110,7 +109,7 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
         raise PolicyError(msg)
 
 
-def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
+def _configure_uv_executor(pyproject: ModifiablePyproject, /) -> None:
     poe_table = pyproject.get_table("tool.poe")
     executor_table = poe_table.get("executor")
     if executor_table is None or isinstance(executor_table, str):
@@ -143,7 +142,7 @@ def _get_or_create_group_tasks(
     return group["tasks"]
 
 
-def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
+def _migrate_tasks_to_groups(pyproject: ModifiablePyproject, /) -> None:
     """Move any doc/test tasks from tool.poe.tasks into their group sub-tables."""
     if not pyproject.has_table("tool.poe.tasks"):
         return
@@ -170,7 +169,7 @@ def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_doc_group(pyproject: ModifiablePyproject) -> None:
+def _set_doc_group(pyproject: ModifiablePyproject, /) -> None:
     if not has_documentation():
         return
     doc_group = pyproject.get_table("tool.poe.groups.doc", create=True)
@@ -179,7 +178,7 @@ def _set_doc_group(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_test_group(pyproject: ModifiablePyproject) -> None:
+def _set_test_group(pyproject: ModifiablePyproject, /) -> None:
     if not Path("tests").exists():
         return
     test_group = pyproject.get_table("tool.poe.groups.test", create=True)
@@ -188,7 +187,7 @@ def _set_test_group(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_notebook_group(pyproject: ModifiablePyproject, has_notebooks: bool) -> None:
+def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) -> None:
     if not has_notebooks and not has_dependency(pyproject, "jupyterlab"):
         return
     notebook_group = pyproject.get_table("tool.poe.groups.notebook", create=True)
@@ -237,7 +236,7 @@ def __has_uv_run(cmd: str | Sequence) -> bool:
     return False
 
 
-def _set_all_task(pyproject: ModifiablePyproject) -> None:
+def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
     task_table = pyproject.get_table("tool.poe.tasks")
     if "all" not in task_table:
         return
@@ -252,7 +251,7 @@ def _set_all_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
+def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Mapping", tasks.get("lab", {}))
     expected = {
@@ -270,7 +269,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_nb_task(pyproject: ModifiablePyproject) -> None:
+def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Table", tasks.get("nb", {}))
     expected = {
@@ -314,7 +313,7 @@ def __get_notebook_path() -> str:
     return os.path.commonpath(os.path.dirname(p) for p in notebooks)
 
 
-def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
+def _set_test_all_task(pyproject: ModifiablePyproject, /) -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if len(supported_python_versions) <= 1:
         return
@@ -394,7 +393,7 @@ def _set_upgrade_task(
         pyproject.changelog.append(msg)
 
 
-def _update_doclive(pyproject: ModifiablePyproject) -> None:
+def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     def combine(key: str, value: str) -> str | Array:
         existing_value = executor.get(key)
         if existing_value is None or existing_value == value:

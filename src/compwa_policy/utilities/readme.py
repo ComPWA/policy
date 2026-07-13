@@ -2,57 +2,83 @@
 
 from __future__ import annotations
 
-import os.path
 import re
 from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PolicyError
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.session import Changelog
+    from pathlib import Path
 
-__README_PATH = "README.md"
+    from compwa_policy.utilities.session import Session
+
+__README_PATH = str(CONFIG_PATH.readme)
 
 
-def add_badge(badge: str) -> Changelog:
-    if not os.path.exists(__README_PATH):
-        return []
-    with open(__README_PATH) as stream:
-        lines = stream.readlines()
-    stripped_lines = {s.strip("\n") for s in lines}
-    stripped_lines = {s.strip("<br>") for s in stripped_lines}
-    stripped_lines = {s.strip("<br />") for s in stripped_lines}
-    if badge not in stripped_lines:
-        error_message = f"{__README_PATH} is missing a badge:\n"
-        error_message += f"  {badge}\n"
-        insert_position = 0
-        for insert_position, line in enumerate(lines):  # noqa: B007
-            if line.startswith("#"):  # find first Markdown section
-                break
-        if len(lines) == 0:
-            error_message += f"{__README_PATH} contains no title, so cannot add badge"
+class ModifiableReadme(ModifiableResource):
+    """In-memory representation of :file:`README.md`."""
+
+    def __init__(self, lines: list[str], source: Path, *, exists: bool) -> None:
+        self._lines = lines
+        self._source = source
+        self._exists = exists
+        self._changelog: Changelog = []
+
+    @classmethod
+    def load(cls, source: Path = CONFIG_PATH.readme) -> ModifiableReadme:
+        if not source.exists():
+            return cls([], source, exists=False)
+        with source.open() as stream:
+            return cls(stream.readlines(), source, exists=True)
+
+    @property
+    def changelog(self) -> Changelog:
+        return self._changelog
+
+    def dump(self) -> None:
+        if not self._changelog:
+            return
+        with self._source.open("w") as stream:
+            stream.writelines(self._lines)
+
+    def add_badge(self, badge: str) -> None:
+        if not self._exists:
+            return
+        stripped_lines = {line.strip("\n") for line in self._lines}
+        stripped_lines = {line.strip("<br>") for line in stripped_lines}
+        stripped_lines = {line.strip("<br />") for line in stripped_lines}
+        if badge in stripped_lines:
+            return
+        error_message = f"{self._source} is missing a badge:\n  {badge}\n"
+        if not self._lines:
+            error_message += f"{self._source} contains no title, so cannot add badge"
             raise PolicyError(error_message)
-        lines.insert(insert_position + 1, f"\n{badge}")
-        with open(__README_PATH, "w") as stream:
-            stream.writelines(lines)
-        error_message += "Problem has been fixed."
-        return [error_message]
-    return []
+        insert_position = 0
+        for insert_position, line in enumerate(self._lines):  # noqa: B007
+            if line.startswith("#"):
+                break
+        self._lines.insert(insert_position + 1, f"\n{badge}")
+        self._changelog.append(error_message + "Problem has been fixed.")
+
+    def remove_badge(self, badge_pattern: str) -> None:
+        if not self._exists:
+            return
+        badge_line = next(
+            (line for line in self._lines if re.match(badge_pattern, line)), None
+        )
+        if badge_line is None:
+            return
+        self._lines.remove(badge_line)
+        self._changelog.append(
+            f"A badge has been removed from {self._source}:\n\n  {badge_line}"
+        )
 
 
-def remove_badge(badge_pattern: str) -> Changelog:
-    if not os.path.exists(__README_PATH):
-        return []
-    with open(__README_PATH) as stream:
-        lines = stream.readlines()
-    badge_line = None
-    for line in lines:
-        if re.match(badge_pattern, line):
-            badge_line = line
-            break
-    if badge_line is None:
-        return []
-    lines.remove(badge_line)
-    with open(__README_PATH, "w") as stream:
-        stream.writelines(lines)
-    return [f"A badge has been removed from {__README_PATH}:\n\n  {badge_line}"]
+def add_badge(session: Session, /, badge: str) -> None:
+    session.get(ModifiableReadme).add_badge(badge)
+
+
+def remove_badge(session: Session, /, badge_pattern: str) -> None:
+    session.get(ModifiableReadme).remove_badge(badge_pattern)

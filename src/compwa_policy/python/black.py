@@ -6,11 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from compwa_policy.utilities import vscode
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    complies_with_subset,
-    use_modifiable_pyproject,
-)
+from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
@@ -21,33 +17,28 @@ if TYPE_CHECKING:
 
 def main(session: Session, has_notebooks: bool) -> None:
     precommit = session.precommit
-    with use_modifiable_pyproject(session.pyproject) as (config, _):
-        if config is None:
-            return
-        _remove_outdated_settings(config)
-        _update_black_settings(config)
-        precommit.remove_hook(
-            hook_id="black",
-            repo_url="https://github.com/psf/black",
-        )
-        precommit.remove_hook(
-            hook_id="black-jupyter",
-            repo_url="https://github.com/psf/black",
-        )
-        _update_precommit_repo(precommit, has_notebooks)
-        session.changelog += vscode.add_extension_recommendation(
-            "ms-python.black-formatter"
-        )
-        session.changelog += vscode.update_settings({
-            "black-formatter.importStrategy": "fromEnvironment"
-        })
-        session.changelog += vscode.update_settings({
+    config = session.pyproject
+    if config is None:
+        return
+    _remove_outdated_settings(config)
+    _update_black_settings(config)
+    precommit.remove_hook("black", repo_url="https://github.com/psf/black")
+    precommit.remove_hook("black-jupyter", repo_url="https://github.com/psf/black")
+    _update_precommit_repo(precommit, has_notebooks)
+    vscode.add_extension_recommendation(session, "ms-python.black-formatter")
+    vscode.update_settings(
+        session, {"black-formatter.importStrategy": "fromEnvironment"}
+    )
+    vscode.update_settings(
+        session,
+        {
             "[python]": {
                 "editor.defaultFormatter": "ms-python.black-formatter",
                 "editor.rulers": [88],
             },
-        })
-        precommit.remove_hook("nbqa-black")
+        },
+    )
+    precommit.remove_hook("nbqa-black")
 
 
 def _remove_outdated_settings(pyproject: ModifiablePyproject) -> None:

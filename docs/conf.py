@@ -33,6 +33,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Sequence": "typing.Sequence",
     "T": "typing.TypeVar",
     "Table": "tomlkit.items.Table",
+    "Token": "contextvars.Token",
     "TOMLDocument": "tomlkit.TOMLDocument",
     "ty.TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
     "TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
@@ -115,6 +116,7 @@ myst_enable_extensions = [
 ]
 nitpick_ignore = [
     ("py:class", "CommentedMap"),
+    ("py:class", "compwa_policy.utilities.vscode._ModifiableJsonResource"),
     ("py:class", "ProjectURLs"),
 ]
 nitpick_ignore_regex = [

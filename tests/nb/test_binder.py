@@ -63,8 +63,11 @@ def describe_update_apt_txt():
 def describe_update_post_build():
     def raises_for_unsupported_manager(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        with pytest.raises(NotImplementedError, match=r"conda is not supported"):
-            binder._update_post_build("conda")
+        with (
+            pytest.raises(NotImplementedError, match=r"conda is not supported"),
+            Session() as session,
+        ):
+            binder._update_post_build(session, package_manager="conda")
 
 
 def describe_make_executable():

@@ -15,6 +15,7 @@ from compwa_policy.env.uv import (
     main,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.session import Session
 
 
@@ -33,7 +34,8 @@ def describe_remove_uv_configuration():
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[tool.uv]\nmanaged = true\n'
         )
-        _remove_uv_configuration()
+        with ModifiablePyproject.load() as pyproject:
+            _remove_uv_configuration(pyproject)
         assert "[tool.uv]" not in (tmp_path / "pyproject.toml").read_text()
 
 
@@ -90,7 +92,9 @@ def describe_update_python_version_file():
         (tmp_path / "pyproject.toml").write_text(
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
-        changes = _update_python_version_file("3.12")
+        with Session() as session:
+            _update_python_version_file(session, dev_python_version="3.12")
+            changes = session.collect_changes()
         assert any("Updated .python-version" in m for m in changes)
         assert (tmp_path / ".python-version").read_text().strip() == "3.12"
 
@@ -100,7 +104,9 @@ def describe_update_python_version_file():
             '[project]\nname = "x"\nrequires-python = "==3.12.*"\n'
         )
         (tmp_path / ".python-version").write_text("3.12\n")
-        changes = _update_python_version_file("3.12")
+        with Session() as session:
+            _update_python_version_file(session, dev_python_version="3.12")
+            changes = session.collect_changes()
         assert any("Removed .python-version" in m for m in changes)
         assert not (tmp_path / ".python-version").exists()
 
@@ -110,7 +116,8 @@ def describe_update_python_version_file():
             '[project]\nname = "x"\nrequires-python = ">=3.10"\n'
         )
         (tmp_path / ".python-version").write_text("3.12\n")
-        _update_python_version_file("3.12")  # already up to date -> no error
+        with Session() as session:
+            _update_python_version_file(session, dev_python_version="3.12")
 
 
 def describe_update_editor_config():
@@ -137,7 +144,9 @@ def describe_update_contributing_file():
             '[tool.poe.tasks.style]\ncmd = "check"\n'
         )
         (tmp_path / "CONTRIBUTING.md").write_text("outdated\n")
-        changes = _update_contributing_file("ComPWA", "policy")
+        with Session() as session:
+            _update_contributing_file(session, "ComPWA", "policy")
+            changes = session.collect_changes()
         assert any("Updated CONTRIBUTING.md" in m for m in changes)
         result = (tmp_path / "CONTRIBUTING.md").read_text()
         assert "policy" in result

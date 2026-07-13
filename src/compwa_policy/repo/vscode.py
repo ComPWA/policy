@@ -10,7 +10,7 @@ from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.utilities.session import Changelog, Session
+    from compwa_policy.utilities.session import Session
 
 
 def main(
@@ -19,84 +19,89 @@ def main(
     is_python_repo: bool,
     package_manager: PackageManagerChoice,
 ) -> None:
-    session.changelog += _update_extensions()
-    session.changelog += _update_settings(
-        has_notebooks, is_python_repo, package_manager
-    )
+    _update_extensions(session)
+    _update_settings(session, has_notebooks, is_python_repo, package_manager)
 
 
-def _update_extensions() -> Changelog:
-    changes = vscode.add_extension_recommendation(
-        "eamodio.gitlens"
-    )  # cspell:ignore eamodio
-    changes += vscode.add_extension_recommendation(
-        "mhutchie.git-graph"
-    )  # cspell:ignore mhutchie
-    changes += vscode.add_extension_recommendation(
-        "soulcode.vscode-unwanted-extensions"
-    )  # cspell:ignore Soulcode
-    changes += vscode.add_extension_recommendation("stkb.rewrap")  # cspell:ignore stkb
-    changes += vscode.remove_extension_recommendation(
-        "garaioag.garaio-vscode-unwanted-recommendations",  # cspell:ignore garaio garaioag
+def _update_extensions(session: Session, /) -> None:
+    # cspell:disable
+    vscode.add_extension_recommendation(session, "eamodio.gitlens")
+    vscode.add_extension_recommendation(session, "mhutchie.git-graph")
+    vscode.add_extension_recommendation(session, "soulcode.vscode-unwanted-extensions")
+    vscode.add_extension_recommendation(session, "stkb.rewrap")
+    vscode.remove_extension_recommendation(
+        session,
+        "garaioag.garaio-vscode-unwanted-recommendations",
         unwanted=True,
     )
-    changes += vscode.remove_extension_recommendation(
-        "travisillig.vscode-json-stable-stringify",  # cspell:ignore travisillig
+    vscode.remove_extension_recommendation(
+        session,
+        "travisillig.vscode-json-stable-stringify",
         unwanted=True,
     )
-    changes += vscode.remove_extension_recommendation(
-        "tyriar.sort-lines",  # cspell:ignore tyriar
-        unwanted=True,
-    )
-    return changes
+    vscode.remove_extension_recommendation(session, "tyriar.sort-lines", unwanted=True)
+    # cspell:enable
 
 
 def _update_settings(
-    has_notebooks: bool, is_python_repo: bool, package_manager: PackageManagerChoice
-) -> Changelog:
-    changes = vscode.update_settings({
-        "diffEditor.experimental.showMoves": True,
-        "editor.formatOnSave": True,
-        "gitlens.telemetry.enabled": False,
-        "multiDiffEditor.experimental.enabled": True,
-        "redhat.telemetry.enabled": False,
-        "telemetry.telemetryLevel": "off",
-    })
-    changes += vscode.update_settings({
-        "[git-commit]": {
-            "editor.rulers": [72],
-            "rewrap.wrappingColumn": 72,
+    session: Session,
+    /,
+    has_notebooks: bool,
+    is_python_repo: bool,
+    package_manager: PackageManagerChoice,
+) -> None:
+    vscode.update_settings(
+        session,
+        {
+            "diffEditor.experimental.showMoves": True,
+            "editor.formatOnSave": True,
+            "gitlens.telemetry.enabled": False,
+            "multiDiffEditor.experimental.enabled": True,
+            "redhat.telemetry.enabled": False,
+            "telemetry.telemetryLevel": "off",
         },
-        "[json]": {
-            "editor.wordWrap": "on",
+    )
+    vscode.update_settings(
+        session,
+        {
+            "[git-commit]": {
+                "editor.rulers": [72],
+                "rewrap.wrappingColumn": 72,
+            },
+            "[json]": {
+                "editor.wordWrap": "on",
+            },
         },
-    })
-    changes += _remove_outdated_settings()
-    changes += _update_doc_settings()
+    )
+    _remove_outdated_settings(session)
+    _update_doc_settings(session)
     if has_notebooks:
-        changes += _update_notebook_settings()
-    changes += _update_pytest_settings()
+        _update_notebook_settings(session)
+    _update_pytest_settings(session)
     if has_constraint_files():
-        changes += vscode.update_settings({
-            "files.associations": {"**/.constraints/py*.txt": "pip-requirements"}
-        })
+        vscode.update_settings(
+            session,
+            {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
+        )
     if is_python_repo:
         if package_manager == "pixi":
             python_path = ".pixi/envs/default/bin/python"
         else:
             python_path = ".venv/bin/python"
-        changes += vscode.update_settings({
-            "python.defaultInterpreterPath": python_path,
-            "rewrap.wrappingColumn": 88,
-        })
+        vscode.update_settings(
+            session,
+            {
+                "python.defaultInterpreterPath": python_path,
+                "rewrap.wrappingColumn": 88,
+            },
+        )
         if CONFIG_PATH.envrc.exists():
-            changes += vscode.update_settings({
-                "python.terminal.activateEnvironment": False
-            })
-    return changes
+            vscode.update_settings(
+                session, {"python.terminal.activateEnvironment": False}
+            )
 
 
-def _remove_outdated_settings() -> Changelog:
+def _remove_outdated_settings(session: Session, /) -> None:
     outdated_settings = [
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
@@ -114,34 +119,36 @@ def _remove_outdated_settings() -> Changelog:
         "telemetry.enableCrashReporter",
         "telemetry.enableTelemetry",
     ]
-    return vscode.remove_settings(outdated_settings)
+    vscode.remove_settings(session, outdated_settings)
 
 
-def _update_doc_settings() -> Changelog:
+def _update_doc_settings(session: Session, /) -> None:
     if not os.path.exists("docs/"):
-        return []
-    changes = vscode.update_settings({
-        "livePreview.defaultPreviewPath": "docs/_build/html"
-    })
-    changes += vscode.add_extension_recommendation("ms-vscode.live-server")
+        return
+    vscode.update_settings(
+        session, {"livePreview.defaultPreviewPath": "docs/_build/html"}
+    )
+    vscode.add_extension_recommendation(session, "ms-vscode.live-server")
     # cspell:ignore executablebookproject
     myst_extension = "executablebookproject.myst-highlight"
-    if myst_extension not in vscode.get_unwanted_extensions():
-        changes += vscode.add_extension_recommendation(myst_extension)
-    return changes
+    if myst_extension not in vscode.get_unwanted_extensions(session):
+        vscode.add_extension_recommendation(session, myst_extension)
 
 
-def _update_notebook_settings() -> Changelog:
+def _update_notebook_settings(session: Session, /) -> None:
     """https://code.visualstudio.com/updates/v1_83#_go-to-symbol-in-notebooks."""
     if not os.path.exists("docs/"):
-        return []
-    return vscode.update_settings({"notebook.gotoSymbols.showAllSymbols": True})
+        return
+    vscode.update_settings(session, {"notebook.gotoSymbols.showAllSymbols": True})
 
 
-def _update_pytest_settings() -> Changelog:
+def _update_pytest_settings(session: Session, /) -> None:
     if not os.path.exists("tests/"):
-        return []
-    return vscode.update_settings({
-        "python.testing.pytestEnabled": True,
-        "python.testing.unittestEnabled": False,
-    })
+        return
+    vscode.update_settings(
+        session,
+        {
+            "python.testing.pytestEnabled": True,
+            "python.testing.unittestEnabled": False,
+        },
+    )

@@ -12,11 +12,6 @@ import tomlkit
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import (
-    ModifiablePyproject,
-    Pyproject,
-    use_modifiable_pyproject,
-)
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -40,17 +35,17 @@ def main(session: Session) -> None:
         return
     precommit = session.precommit
     session.changelog += _rename_taplo_config()
-    session.changelog += _update_taplo_config()
+    _update_taplo_config(session)
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    session.changelog += _update_tomlsort_config(session.pyproject)
+    _update_tomlsort_config(session)
     _update_tomlsort_hook(precommit)
-    session.changelog += _update_vscode_extensions()
+    _update_vscode_extensions(session)
 
 
-def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Changelog:
-    if pyproject is None and not CONFIG_PATH.pyproject.exists():
-        return []
+def _update_tomlsort_config(session: Session, /) -> None:
+    if not CONFIG_PATH.pyproject.exists():
+        return
     sort_first = [
         "build-system",
         "project",
@@ -58,8 +53,10 @@ def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Cha
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
-    readonly_pyproject = pyproject or Pyproject.load()
-    sort_first = [table for table in sort_first if readonly_pyproject.has_table(table)]
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    sort_first = [table for table in sort_first if pyproject.has_table(table)]
     expected_config = dict(
         all=False,
         ignore_case=True,
@@ -70,17 +67,11 @@ def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Cha
     )
     if not sort_first:
         expected_config.pop("sort_first")
-    with use_modifiable_pyproject(pyproject) as (config, include_changelog):
-        if config is None:
-            return []
-        tool_table = config.get_table("tool", create=True)
-        if tool_table.get("tomlsort") == expected_config:
-            return []
-        tool_table["tomlsort"] = expected_config
-        config.changelog.append("Updated toml-sort configuration")
-        if include_changelog:
-            return list(config.changelog)
-    return []
+    tool_table = pyproject.get_table("tool", create=True)
+    if tool_table.get("tomlsort") == expected_config:
+        return
+    tool_table["tomlsort"] = expected_config
+    pyproject.changelog.append("Updated toml-sort configuration")
 
 
 def _update_tomlsort_hook(precommit: ModifiablePrecommit) -> None:
@@ -113,7 +104,7 @@ def _rename_taplo_config() -> Changelog:
     return []
 
 
-def _update_taplo_config() -> Changelog:
+def _update_taplo_config(session: Session, /) -> None:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     with open(template_path) as f:
         expected = tomlkit.load(f)
@@ -131,8 +122,8 @@ def _update_taplo_config() -> Changelog:
             pixi_config = rtoml.load(stream)
         if has_sub_table(pixi_config, "tasks"):
             rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, ["tasks"]))
-    if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+    pyproject = session.pyproject
+    if pyproject is not None:
         keys = [
             key
             for key in ["tool.pixi.tasks", "tool.poe.groups", "tool.poe.tasks"]
@@ -148,7 +139,8 @@ def _update_taplo_config() -> Changelog:
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
-        return [msg]
+        session.changelog.append(msg)
+        return
     with open(CONFIG_PATH.taplo) as f:
         existing = tomlkit.load(f)
     existing_str = tomlkit.dumps(existing, sort_keys=True)
@@ -156,8 +148,7 @@ def _update_taplo_config() -> Changelog:
         with open(CONFIG_PATH.taplo, "w") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
-        return [msg]
-    return []
+        session.changelog.append(msg)
 
 
 def __taplo_rule(toml_path: Path | str, keys: list[str]) -> dict:
@@ -198,14 +189,12 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions() -> Changelog:
+def _update_vscode_extensions(session: Session, /) -> None:
     # cspell:ignore bungcip tamasfe
-    changes: Changelog = []
-    changes += vscode.add_extension_recommendation("tamasfe.even-better-toml")
-    changes += vscode.remove_extension_recommendation(
-        "bungcip.better-toml", unwanted=True
+    vscode.add_extension_recommendation(session, "tamasfe.even-better-toml")
+    vscode.remove_extension_recommendation(
+        session, "bungcip.better-toml", unwanted=True
     )
-    return changes
 
 
 def _to_regex(glob: str) -> str:

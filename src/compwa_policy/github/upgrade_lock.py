@@ -17,7 +17,7 @@ from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
 Frequency = Literal[
@@ -39,7 +39,7 @@ def main(session: Session, frequency: Frequency, keep_workflow: set[str]) -> Non
     _update_precommit_schedule(precommit, frequency)
     session.changelog += _remove_script("pin_requirements.py")
     session.changelog += _remove_script("upgrade.sh")
-    session.changelog += _update_lock_workflow(precommit, frequency, keep_workflow)
+    _update_lock_workflow(session, frequency, keep_workflow)
 
 
 def _remove_script(script_name: str) -> Changelog:
@@ -52,9 +52,11 @@ def _remove_script(script_name: str) -> Changelog:
 
 
 def _update_lock_workflow(
-    precommit: Precommit, frequency: Frequency, keep_workflow: set[str]
-) -> Changelog:
-    def overwrite_workflow(workflow_file: str) -> Changelog:
+    session: Session, /, frequency: Frequency, keep_workflow: set[str]
+) -> None:
+    precommit = session.precommit
+
+    def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
         )
@@ -78,23 +80,21 @@ def _update_lock_workflow(
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
         workflow_path = CONFIG_PATH.github_workflow_dir / workflow_file
         if not workflow_path.exists():
-            return update_workflow(yaml, expected_data, workflow_path)
+            session.changelog += update_workflow(yaml, expected_data, workflow_path)
+            return
         existing_data = yaml.load(workflow_path)
         if existing_data != expected_data:
-            return update_workflow(yaml, expected_data, workflow_path)
-        return []
+            session.changelog += update_workflow(yaml, expected_data, workflow_path)
 
-    changes: Changelog = []
     if "lock.yml" not in keep_workflow:
-        changes += overwrite_workflow("lock.yml")
+        overwrite_workflow("lock.yml")
     for workflow in (
         "requirements.yml",
         "requirements-cron.yml",
         "requirements-pr.yml",
     ):
         if workflow not in keep_workflow:
-            changes += remove_workflow(workflow)
-    return changes
+            session.changelog += remove_workflow(workflow)
 
 
 def _to_cron_schedule(frequency: Frequency) -> str:

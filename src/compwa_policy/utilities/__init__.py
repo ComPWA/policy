@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import io
-import os
 import re
-import shutil
 from pathlib import Path
-from shutil import copyfile
 from typing import TYPE_CHECKING, NamedTuple
 
 import compwa_policy
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.session import Changelog
+    from compwa_policy.utilities.resource import ModifiablePath
+    from compwa_policy.utilities.session import Session
 
 
 class _ConfigFilePaths(NamedTuple):
@@ -50,12 +48,14 @@ CONFIG_PATH = _ConfigFilePaths()
 COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()
 
 
-def append_safe(expected_line: str, path: Path) -> bool:
+def append_safe(session: Session, /, expected_line: str, path: Path) -> bool:
     """Add a line to a file if it is not already present."""
-    if path.exists() and contains_line(path, expected_line):
+    resource = _get_path_resource(session, path)
+    lines = resource.read_text().splitlines() if resource.exists else []
+    if expected_line in {line.strip() for line in lines}:
         return False
-    with path.open("a") as stream:
-        stream.write(expected_line + "\n")
+    content = resource.read_text() if resource.exists else ""
+    resource.write_text(content + expected_line + "\n")
     return True
 
 
@@ -81,8 +81,14 @@ def hash_file(path: Path | str) -> str:
     return sha256.hexdigest()
 
 
-def read(input: Path | io.TextIOBase | str) -> str:  # noqa: A002
+def read(
+    input: Path | io.TextIOBase | str,  # noqa: A002
+    *,
+    session: Session | None = None,
+) -> str:
     if isinstance(input, (Path, str)):
+        if session is not None:
+            return _get_path_resource(session, input).read_text()
         with open(input) as input_stream:
             return input_stream.read()
     if isinstance(input, io.TextIOBase):
@@ -91,10 +97,18 @@ def read(input: Path | io.TextIOBase | str) -> str:  # noqa: A002
     raise TypeError(msg)
 
 
-def write(content: str, target: Path | io.TextIOBase | str) -> None:
+def write(
+    content: str,
+    target: Path | io.TextIOBase | str,
+    *,
+    session: Session | None = None,
+) -> None:
     if isinstance(target, str):
         target = Path(target)
     if isinstance(target, Path):
+        if session is not None:
+            _get_path_resource(session, target).write_text(content)
+            return
         target.parent.mkdir(exist_ok=True)
         with open(target, "w") as output_stream:
             output_stream.write(content)
@@ -105,48 +119,55 @@ def write(content: str, target: Path | io.TextIOBase | str) -> None:
         raise TypeError(msg)
 
 
-def remove_configs(paths: list[str]) -> Changelog:
-    changes: Changelog = []
+def remove_configs(session: Session, /, paths: list[str]) -> None:
     for path in paths:
-        changes += __remove_file(path)
-    return changes
+        resource = _get_path_resource(session, path)
+        resource.remove(f"Removed {path}")
 
 
-def __remove_file(path: str) -> Changelog:
-    if not os.path.exists(path):
-        return []
-    if os.path.isdir(path):
-        shutil.rmtree(path)
-    else:
-        os.remove(path)
-    return [f"Removed {path}"]
+def _get_path_resource(session: Session, /, path: Path | str) -> ModifiablePath:
+    normalized = Path(path)
+    return session.get_path(normalized)
 
 
-def rename_file(old: str, new: str) -> Changelog:
-    if os.path.exists(old):
-        os.rename(old, new)
-        return [f"File {old} has been renamed to {new}"]
-    return []
+def __remove_file(session: Session, /, path: str) -> None:
+    resource = _get_path_resource(session, path)
+    resource.remove(f"Removed {path}")
+
+
+def rename_file(session: Session, /, old: str, new: str) -> None:
+    source = _get_path_resource(session, old)
+    if not source.exists:
+        return
+    content = source.read_text()
+    message = f"File {old} has been renamed to {new}"
+    target = _get_path_resource(session, new)
+    target.write_text(content, message)
+    source.remove()
 
 
 def remove_lines(
-    file: Path, pattern: str, flags: re.RegexFlag = re.IGNORECASE
-) -> Changelog:
-    if not file.exists():
-        return []
-    with open(file) as stream:
-        lines = stream.readlines()
+    session: Session,
+    /,
+    file: Path,
+    pattern: str,
+    flags: re.RegexFlag = re.IGNORECASE,
+) -> None:
+    resource = _get_path_resource(session, file)
+    if not resource.exists:
+        return
+    lines = resource.read_text().splitlines(True)
     filtered_lines = [s for s in lines if not re.match(pattern, s.strip(), flags)]
     if not any(line.strip() for line in filtered_lines):
-        file.unlink()
-        return [
+        message = (
             f"Removed {pattern!r} from {file} and removed file because it was empty."
-        ]
+        )
+        resource.remove(message)
+        return
     if len(filtered_lines) == len(lines):
-        return []
-    with open(file, "w") as stream:
-        stream.writelines(filtered_lines)
-    return [f"Removed {pattern!r} from {file}"]
+        return
+    message = f"Removed {pattern!r} from {file}"
+    resource.write_text("".join(filtered_lines), message)
 
 
 def natural_sorting(text: str) -> list[float | str]:
@@ -157,23 +178,28 @@ def natural_sorting(text: str) -> list[float | str]:
     ]
 
 
-def update_file(relative_path: Path, in_template_folder: bool = False) -> Changelog:
+def update_file(
+    session: Session,
+    /,
+    relative_path: Path,
+    in_template_folder: bool = False,
+) -> None:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
     else:
         template_dir = COMPWA_POLICY_DIR
     template_path = template_dir / relative_path
-    if not os.path.exists(relative_path):
-        copyfile(template_path, relative_path)
-        return [f"{relative_path} is missing, so created a new one. Please commit it."]
-    with open(template_path) as f:
-        expected_content = f.read()
-    with open(relative_path) as f:
-        existing_content = f.read()
+    expected_content = template_path.read_text()
+    resource = _get_path_resource(session, relative_path)
+    if not resource.exists:
+        message = f"{relative_path} is missing, so created a new one. Please commit it."
+        resource.write_text(expected_content, message)
+        return
+    existing_content = resource.read_text()
     if expected_content != existing_content:
-        copyfile(template_path, relative_path)
-        return [f"{relative_path} has been updated."]
-    return []
+        message = f"{relative_path} has been updated."
+        resource.write_text(expected_content, message)
+        return
 
 
 def __attempt_number_cast(text: str) -> float | str:

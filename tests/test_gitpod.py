@@ -1,9 +1,11 @@
 from compwa_policy.repo.gitpod import _extract_extensions, _generate_gitpod_config
+from compwa_policy.utilities.session import Session
 
 
 def describe_generate_gitpod_config():
     def builds_expected_sections():
-        gitpod_content = _generate_gitpod_config("3.8")
+        with Session() as session:
+            gitpod_content = _generate_gitpod_config(session, python_version="3.8")
         assert set(gitpod_content) == {
             "github",
             "tasks",
@@ -24,4 +26,7 @@ def describe_generate_gitpod_config():
             {"init": "pyenv local 3.8"},
             {"init": "pip install -e .[dev]"},
         ]
-        assert gitpod_content["vscode"]["extensions"] == _extract_extensions()
+        with Session() as session:
+            assert gitpod_content["vscode"]["extensions"] == _extract_extensions(
+                session
+            )

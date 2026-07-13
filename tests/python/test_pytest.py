@@ -15,7 +15,7 @@ from compwa_policy.python.pytest import (
     _update_vscode_settings,
     main,
 )
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.session import Session
 
 # cspell:ignore minversion ryanluker xdist
@@ -178,8 +178,15 @@ def describe_update_codecov_settings():
 def describe_update_vscode_settings():
     def enables_coverage_gutters(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
-        pyproject = Pyproject.load(io.StringIO('[project]\nname = "my-package"\n'))
-        _update_vscode_settings(pyproject, coverage_gutters=True, single_threaded=False)
+        pyproject = ModifiablePyproject.load(
+            io.StringIO('[project]\nname = "my-package"\n')
+        )
+        with Session(pyproject=pyproject) as session:
+            _update_vscode_settings(
+                session,
+                coverage_gutters=True,
+                single_threaded=False,
+            )
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert settings["testing.showCoverageInExplorer"] is True
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
