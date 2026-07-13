@@ -10,6 +10,7 @@ from typing import IO, TYPE_CHECKING, TypeVar
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark
+from ruamel.yaml.scalarstring import FoldedScalarString, LiteralScalarString
 from ruamel.yaml.tokens import CommentToken
 
 from compwa_policy.utilities import CONFIG_PATH
@@ -165,39 +166,85 @@ def _normalize_repo_spacing(config: PrecommitConfig) -> None:
     repos = config.get("repos")
     if not isinstance(repos, CommentedSeq):
         return
+    for index, repo in enumerate(repos):
+        repos[index] = _ensure_round_trip_collections(repo)
     _remove_blank_lines(repos)
     for repo in repos[:-1]:
         _append_repo_separator(repo)
+
+
+def _ensure_round_trip_collections(node: object) -> object:
+    if isinstance(node, dict):
+        if not isinstance(node, CommentedMap):
+            node = CommentedMap(node)
+        for key, value in node.items():
+            node[key] = _ensure_round_trip_collections(value)
+    elif isinstance(node, list):
+        if not isinstance(node, CommentedSeq):
+            node = CommentedSeq(node)
+        for index, value in enumerate(node):
+            node[index] = _ensure_round_trip_collections(value)
+    return node
 
 
 def _append_repo_separator(node: object) -> None:
     if isinstance(node, CommentedSeq) and node:
         last_index = len(node) - 1
         last_value = node[last_index]
-        if isinstance(last_value, (CommentedMap, CommentedSeq)) and last_value:
+        if (
+            isinstance(last_value, (CommentedMap, CommentedSeq))
+            and last_value
+            and not last_value.fa.flow_style()
+        ):
             _append_repo_separator(last_value)
             return
         item_comments = node.ca.items.setdefault(
             last_index,
             [None, None, None, None],
         )
-        _add_blank_line(item_comments, _SEQUENCE_ITEM_COMMENT_INDEX)
+        _add_blank_line(
+            item_comments,
+            _SEQUENCE_ITEM_COMMENT_INDEX,
+            follows_block_scalar=isinstance(
+                last_value,
+                (FoldedScalarString, LiteralScalarString),
+            ),
+        )
         return
     if not isinstance(node, CommentedMap) or not node:
         return
     last_key = next(reversed(node))
     last_value = node[last_key]
-    if isinstance(last_value, (CommentedMap, CommentedSeq)) and last_value:
+    if (
+        isinstance(last_value, (CommentedMap, CommentedSeq))
+        and last_value
+        and not last_value.fa.flow_style()
+    ):
         _append_repo_separator(last_value)
         return
     item_comments = node.ca.items.setdefault(last_key, [None, None, None, None])
-    _add_blank_line(item_comments, _POST_VALUE_COMMENT_INDEX)
+    _add_blank_line(
+        item_comments,
+        _POST_VALUE_COMMENT_INDEX,
+        follows_block_scalar=isinstance(
+            last_value,
+            (FoldedScalarString, LiteralScalarString),
+        ),
+    )
 
 
-def _add_blank_line(item_comments: list, comment_index: int) -> None:
+def _add_blank_line(
+    item_comments: list,
+    comment_index: int,
+    *,
+    follows_block_scalar: bool,
+) -> None:
     comment = item_comments[comment_index]
     if not isinstance(comment, CommentToken):
-        item_comments[comment_index] = CommentToken("\n\n", CommentMark(0))
+        value = "\n" if follows_block_scalar else "\n\n"
+        item_comments[comment_index] = CommentToken(value, CommentMark(0))
+    elif follows_block_scalar:
+        comment.value = comment.value or "\n"
     elif comment.value.startswith("\n"):
         comment.value = f"\n{comment.value}"
     else:

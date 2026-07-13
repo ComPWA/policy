@@ -5,6 +5,7 @@ from textwrap import dedent
 import pytest
 
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.precommit.struct import Repo
 
 
 @pytest.fixture
@@ -19,46 +20,101 @@ def example_config(this_dir: Path) -> str:
 
 
 def describe_modifiable_precommit():
+    def normalizes_spacing_in_new_repo_with_plain_nested_collections(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        source.write_text(
+            """repos:
+  - repo: first
+    rev: "1"
+    hooks:
+      - id: first
+
+  - repo: third
+    rev: "1"
+    hooks:
+      - id: third
+"""
+        )
+
+        with ModifiablePrecommit.load(source) as precommit:
+            precommit.update_single_hook_repo(
+                Repo(
+                    repo="second",
+                    rev="1",
+                    hooks=[{"id": "second"}],
+                )
+            )
+
+        assert (
+            source.read_text()
+            == """repos:
+  - repo: first
+    rev: "1"
+    hooks:
+      - id: first
+
+  - repo: second
+    rev: '1'
+    hooks:
+      - id: second
+
+  - repo: third
+    rev: "1"
+    hooks:
+      - id: third
+"""
+        )
+
     def normalizes_spacing_between_and_within_repos(tmp_path: Path):
         source = tmp_path / ".pre-commit-config.yaml"
         input_yaml = dedent("""
-          repos:
+            repos:
               - repo: first
 
-              # Keep this comment.
+                # Keep this comment.
                 rev: "1"
                 hooks:
 
                   - id: first
 
                   - id: second
+                    args:
+                      - |-
+                        alpha
+                        beta
 
 
               # Keep this repo comment.
               - repo: second
                 hooks:
                   - id: third
+                    types_or: [python, jupyter]
               - repo: third
                 hooks:
                   - id: fourth
         """).lstrip()
         expected = dedent("""
-          repos:
-            - repo: first
-              # Keep this comment.
-              rev: "1"
-              hooks:
-                - id: first
-                - id: second
+            repos:
+              - repo: first
+                # Keep this comment.
+                rev: "1"
+                hooks:
+                  - id: first
+                  - id: second
+                    args:
+                      - |-
+                        alpha
+                        beta
 
               # Keep this repo comment.
-            - repo: second
-              hooks:
-                - id: third
+              - repo: second
+                hooks:
+                  - id: third
+                    types_or: [python, jupyter]
 
-            - repo: third
-              hooks:
-                - id: fourth
+              - repo: third
+                hooks:
+                  - id: fourth
         """).lstrip()
         source.write_text(input_yaml)
 
