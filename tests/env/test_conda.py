@@ -46,14 +46,14 @@ def describe_update_conda_environment():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[project]\nversion = '0.1'\n")
         with Session() as session:
-            conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, python_version="3.12")
 
     def updates_python_version(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT)
         with Session() as session:
-            conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, python_version="3.12")
             changes = session.collect_changes()
         assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()
@@ -64,7 +64,7 @@ def describe_update_conda_environment():
         _write_pyproject(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT.replace("3.10", "3.12"))
         with Session() as session:
-            conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, python_version="3.12")
 
     def uses_constraints_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
@@ -74,7 +74,7 @@ def describe_update_conda_environment():
         (constraints / "py3.12.txt").write_text("numpy==1.0\n")
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT.replace("3.10", "3.12"))
         with Session() as session:
-            conda.update_conda_environment(session, "3.12")
+            conda.update_conda_environment(session, python_version="3.12")
             changes = session.collect_changes()
         assert any("Updated Conda environment" in m for m in changes)
         result = (tmp_path / "environment.yml").read_text()

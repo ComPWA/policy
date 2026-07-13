@@ -49,11 +49,11 @@ def main(session: Session, no_cspell_update: bool) -> None:
         session.changelog += _sort_config_entries()
         add_badge(
             session,
-            "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)",
+            badge="[![Spelling checked](https://img.shields.io/badge/cspell-checked-brightgreen.svg)](https://github.com/streetsidesoftware/cspell/tree/main/packages/cspell)",
         )
         remove_badge(
             session,
-            r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*master.*cspell\)\n?",
+            badge_pattern=r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*master.*cspell\)\n?",
         )
         vscode.add_extension_recommendation(session, __VSCODE_EXTENSION_NAME)
 
@@ -91,10 +91,7 @@ def _remove_configuration(session: Session, /) -> None:
             )
             session.changelog.append(msg)
             return
-    remove_badge(
-        session,
-        r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?",
-    )
+    remove_badge(session, r"\[\!\[[Ss]pelling.*\]\(.*cspell.*\)\]\(.*cspell.*\)\n?")
     vscode.remove_extension_recommendation(session, __VSCODE_EXTENSION_NAME)
 
 

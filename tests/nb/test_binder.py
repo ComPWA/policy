@@ -67,7 +67,7 @@ def describe_update_post_build():
             pytest.raises(NotImplementedError, match=r"conda is not supported"),
             Session() as session,
         ):
-            binder._update_post_build(session, "conda")
+            binder._update_post_build(session, package_manager="conda")
 
 
 def describe_make_executable():

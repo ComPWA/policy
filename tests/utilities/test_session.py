@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from compwa_policy.repo.gitpod import _extract_extensions
 from compwa_policy.utilities import (
@@ -15,6 +15,11 @@ from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
 from compwa_policy.utilities.session import Session
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    import pytest
 
 
 class CountingResource(ModifiableResource):
@@ -37,8 +42,8 @@ class CountingResource(ModifiableResource):
         type(self).dumps += 1
 
 
-def describe_session():
-    def loads_resources_once_and_dumps_them_once_on_flush():
+def describe_session() -> None:
+    def loads_resources_once_and_dumps_them_once_on_flush() -> None:
         CountingResource.loads = 0
         CountingResource.dumps = 0
         with Session() as session:
@@ -51,7 +56,9 @@ def describe_session():
         assert CountingResource.loads == 1
         assert CountingResource.dumps == 1
 
-    def defers_file_helper_changes_until_flush(tmp_path, monkeypatch):
+    def defers_file_helper_changes_until_flush(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         vscode_dir = tmp_path / ".vscode"
         vscode_dir.mkdir()
@@ -84,7 +91,9 @@ def describe_session():
         assert "[![Badge](badge.svg)](example.org)" in readme_path.read_text()
         assert not obsolete_path.exists()
 
-    def distinguishes_resources_by_path(tmp_path, monkeypatch):
+    def distinguishes_resources_by_path(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         with Session() as session:
             first = session.get_path(tmp_path / "first.txt")
@@ -93,7 +102,9 @@ def describe_session():
             assert first is same
             assert first is not other
 
-    def shares_deferred_state_between_file_operations(tmp_path, monkeypatch):
+    def shares_deferred_state_between_file_operations(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         source = tmp_path / "source.txt"
         source.write_text("keep\nremove\n")
@@ -110,16 +121,18 @@ def describe_session():
         assert renamed.read_text() == "keep\nadded\n"
 
 
-def describe_pyproject_load():
-    def uses_session_identity(tmp_path, monkeypatch):
+def describe_pyproject_load() -> None:
+    def uses_session_identity(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "example"\n')
         with Session() as session:
             assert Pyproject.load(session=session) is session.pyproject
 
 
-def describe_extract_extensions():
-    def reads_in_memory_vscode_extensions(tmp_path, monkeypatch):
+def describe_extract_extensions() -> None:
+    def reads_in_memory_vscode_extensions(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         vscode_dir = tmp_path / ".vscode"
         vscode_dir.mkdir()
