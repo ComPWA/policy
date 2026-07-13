@@ -3,7 +3,15 @@ from __future__ import annotations
 import json
 from typing import ClassVar
 
-from compwa_policy.utilities import remove_configs, vscode
+from compwa_policy.repo.gitpod import _extract_extensions
+from compwa_policy.utilities import (
+    append_safe,
+    remove_configs,
+    remove_lines,
+    rename_file,
+    vscode,
+)
+from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.readme import add_badge
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
 from compwa_policy.utilities.session import Session
@@ -75,3 +83,47 @@ def test_file_helpers_defer_changes_until_session_flush(tmp_path, monkeypatch) -
     }
     assert "[![Badge](badge.svg)](example.org)" in readme_path.read_text()
     assert not obsolete_path.exists()
+
+
+def test_path_identity_distinguishes_files(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    with Session() as session:
+        first = session.get_path(tmp_path / "first.txt")
+        same = session.get_path(tmp_path / "first.txt")
+        other = session.get_path(tmp_path / "other.txt")
+        assert first is same
+        assert first is not other
+
+
+def test_generic_file_operations_share_deferred_state(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    source = tmp_path / "source.txt"
+    source.write_text("keep\nremove\n")
+    renamed = tmp_path / "renamed.txt"
+
+    with Session():
+        remove_lines(source, "remove")
+        assert append_safe("added", source)
+        rename_file(str(source), str(renamed))
+        assert source.read_text() == "keep\nremove\n"
+        assert not renamed.exists()
+
+    assert not source.exists()
+    assert renamed.read_text() == "keep\nadded\n"
+
+
+def test_readonly_pyproject_load_uses_active_identity(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "example"\n')
+    with Session() as session:
+        assert Pyproject.load() is session.pyproject
+
+
+def test_gitpod_reads_in_memory_vscode_extensions(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    vscode_dir = tmp_path / ".vscode"
+    vscode_dir.mkdir()
+    (vscode_dir / "extensions.json").write_text('{"recommendations": []}\n')
+    with Session():
+        vscode.add_extension_recommendation("Example.Extension")
+        assert _extract_extensions() == ["example.extension"]

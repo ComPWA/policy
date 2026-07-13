@@ -36,7 +36,7 @@ def get_package_name(doc: PyprojectTOML, raise_on_missing: bool = False):
     package_name = project.get("name")
     if package_name is None:
         return None
-    return package_name
+    return str(package_name)
 
 
 def get_project_urls(pyproject: PyprojectTOML) -> ProjectURLs:
@@ -62,7 +62,7 @@ def get_source_url(pyproject: PyprojectTOML) -> str:
     if source_url is None:
         msg = '[project.urls] in pyproject.toml does not contain a "Source" URL'
         raise PolicyError(msg)
-    return source_url
+    return str(source_url)
 
 
 def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersion]:

@@ -6,7 +6,17 @@ import io
 import sys
 from collections import abc
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Final, Literal, TypeVar, final, overload
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    TypeVar,
+    cast,
+    final,
+    overload,
+)
 
 import rtoml
 import tomlkit
@@ -27,7 +37,11 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
     split_dependency_definition,
 )
-from compwa_policy.utilities.resource import Changelog, ModifiableResource
+from compwa_policy.utilities.resource import (
+    Changelog,
+    ModifiableResource,
+    get_active_session,
+)
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -57,6 +71,11 @@ class Pyproject:
     @classmethod
     def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        session = get_active_session()
+        if cls is Pyproject and source == CONFIG_PATH.pyproject and session is not None:
+            managed = session.pyproject
+            if managed is not None:
+                return cast("Self", managed)
         document = load_pyproject_toml(source, modifiable=False)
         if isinstance(source, str):
             return cls(document)
@@ -224,6 +243,17 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
     def changelog(self) -> Changelog:
         self.__assert_is_in_context()
         return self._changelog
+
+
+class ModifiablePixi(ModifiablePyproject):
+    """Session-owned representation of :file:`pixi.toml`."""
+
+    @override
+    @classmethod
+    def load(cls, source: IO | Path | str = CONFIG_PATH.pixi_toml) -> Self:
+        if source == CONFIG_PATH.pixi_toml and not CONFIG_PATH.pixi_toml.exists():
+            return cls(tomlkit.document(), CONFIG_PATH.pixi_toml)  # ty:ignore[invalid-argument-type]
+        return super().load(source)
 
 
 def complies_with_subset(

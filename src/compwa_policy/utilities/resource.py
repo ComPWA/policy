@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 import sys
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from contextvars import ContextVar, Token
+from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
 if sys.version_info >= (3, 11):
@@ -58,6 +58,11 @@ class ModifiableResource(AbstractContextManager, ABC):
     def dump(self) -> None:
         """Write the in-memory representation to the working tree."""
 
+    @property
+    def changed(self) -> bool:
+        """Whether the resource needs to be flushed."""
+        return bool(self.changelog)
+
     def __enter__(self) -> Self:
         return self
 
@@ -70,31 +75,85 @@ class ModifiableResource(AbstractContextManager, ABC):
         return False
 
 
-class ModifiableConfigFiles(ModifiableResource):
-    """A deferred set of standalone config paths to remove on flush."""
+class ModifiablePath(ModifiableResource):
+    """Deferred in-memory state for one arbitrary working-tree path."""
 
-    def __init__(self) -> None:
-        self._paths: list[str] = []
+    def __init__(
+        self,
+        path: Path,
+        content: bytes | None,
+        *,
+        is_directory: bool = False,
+    ) -> None:
+        self.path = path
+        self._original_content = content
+        self._content = content
+        self._is_directory = is_directory
+        self._original_is_directory = is_directory
         self._changelog: Changelog = []
 
     @classmethod
     def load(cls) -> Self:
-        return cls()
+        msg = "ModifiablePath requires a path identity"
+        raise TypeError(msg)
+
+    @classmethod
+    def load_path(cls, path: Path | str) -> Self:
+        path = Path(path)
+        if path.is_dir():
+            return cls(path, None, is_directory=True)
+        if path.exists():
+            return cls(path, path.read_bytes())
+        return cls(path, None)
 
     @property
     def changelog(self) -> Changelog:
         return self._changelog
 
-    def remove(self, paths: list[str]) -> None:
-        for path in paths:
-            if path in self._paths or not os.path.exists(path):
-                continue
-            self._paths.append(path)
-            self._changelog.append(f"Removed {path}")
+    @property
+    def changed(self) -> bool:
+        return (
+            self._content != self._original_content
+            or self._is_directory != self._original_is_directory
+        )
+
+    @property
+    def exists(self) -> bool:
+        return self._is_directory or self._content is not None
+
+    def read_text(self) -> str:
+        if self._content is None:
+            msg = f"{self.path} does not exist or is a directory"
+            raise FileNotFoundError(msg)
+        return self._content.decode()
+
+    def write_text(self, content: str, message: str | None = None) -> bool:
+        encoded = content.encode()
+        if not self._is_directory and self._content == encoded:
+            return False
+        self._content = encoded
+        self._is_directory = False
+        if message is not None:
+            self._changelog.append(message)
+        return True
+
+    def remove(self, message: str | None = None) -> bool:
+        if not self.exists:
+            return False
+        self._content = None
+        self._is_directory = False
+        if message is not None:
+            self._changelog.append(message)
+        return True
 
     def dump(self) -> None:
-        for path in self._paths:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            elif os.path.exists(path):
-                os.remove(path)
+        if not self.exists:
+            if self.path.is_dir():
+                shutil.rmtree(self.path)
+            else:
+                self.path.unlink(missing_ok=True)
+            return
+        if not self.changed:
+            return
+        self.path.parent.mkdir(exist_ok=True, parents=True)
+        self.path.write_bytes(self._content or b"")

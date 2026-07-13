@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import io
 from typing import TYPE_CHECKING, Any
 
 import yaml
 from ruamel.yaml import YAML
+
+from compwa_policy.utilities import write
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,11 +48,12 @@ def read_preserved_yaml(src: str) -> Any:
 
 def write_yaml(definition: dict, output_path: Path | str) -> None:
     """Write a `dict` to disk with standardized YAML formatting."""
-    with open(output_path, "w") as stream:
-        yaml.dump(
-            definition,
-            stream,
-            sort_keys=False,
-            Dumper=_IncreasedYamlIndent,
-            default_flow_style=False,
-        )
+    stream = io.StringIO()
+    yaml.dump(
+        definition,
+        stream,
+        sort_keys=False,
+        Dumper=_IncreasedYamlIndent,
+        default_flow_style=False,
+    )
+    write(stream.getvalue(), output_path)

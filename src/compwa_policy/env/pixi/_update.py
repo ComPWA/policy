@@ -8,6 +8,7 @@ import yaml
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.pyproject import (
+    ModifiablePixi,
     ModifiablePyproject,
     Pyproject,
     complies_with_subset,
@@ -31,6 +32,7 @@ def update_pixi_configuration(
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
     pyproject: ModifiablePyproject | None = None,
+    pixi: ModifiablePixi | None = None,
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
@@ -41,9 +43,11 @@ def update_pixi_configuration(
         else:
             config_context = nullcontext(pyproject)
             session_owned = True
+    elif pixi is None:
+        config_context = ModifiablePixi.load()
     else:
-        CONFIG_PATH.pixi_toml.touch()
-        config_context = ModifiablePyproject.load(CONFIG_PATH.pixi_toml)
+        config_context = nullcontext(pixi)
+        session_owned = True
     extra: Changelog = []
     with config_context as config:
         extra += add_badge(

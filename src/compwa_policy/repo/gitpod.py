@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import json
 import os
 from typing import TYPE_CHECKING
 
 import yaml
 
 from compwa_policy.errors import PolicyError
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
+from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.pyproject import (
     Pyproject,
     PythonVersion,
@@ -59,11 +58,8 @@ def remove_gitpod_config() -> Changelog:
     return []
 
 
-def _extract_extensions() -> dict:
-    if CONFIG_PATH.vscode_extensions.exists():
-        with open(CONFIG_PATH.vscode_extensions) as stream:
-            return json.load(stream)["recommendations"]
-    return {}
+def _extract_extensions() -> list[str]:
+    return sorted(vscode.get_recommended_extensions())
 
 
 def _generate_gitpod_config(python_version: PythonVersion) -> dict:

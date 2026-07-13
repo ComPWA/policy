@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import sys
 from contextlib import AbstractContextManager
+from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from compwa_policy.utilities import CONFIG_PATH
@@ -24,6 +25,7 @@ from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.resource import (
     Changelog,
+    ModifiablePath,
     ModifiableResource,
     activate_session,
     deactivate_session,
@@ -35,6 +37,7 @@ else:
     from typing_extensions import Self
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
     from contextvars import Token
     from types import TracebackType
 
@@ -55,13 +58,15 @@ class Session(AbstractContextManager):
         precommit: ModifiablePrecommit | None = None,
         pyproject: ModifiablePyproject | None = None,
     ) -> None:
-        self._loaded: dict[type[ModifiableResource], ModifiableResource] = {}
+        self._loaded: dict[tuple[Hashable, ...], ModifiableResource] = {}
         if precommit is not None:
-            self._loaded[type(precommit)] = precommit
+            key = (type(precommit),)
+            self._loaded[key] = precommit
         if pyproject is not None:
-            self._loaded[type(pyproject)] = pyproject
-        self._entered: set[type[ModifiableResource]] = set()
-        self._flushed: set[type[ModifiableResource]] = set()
+            key = (type(pyproject),)
+            self._loaded[key] = pyproject
+        self._entered: set[tuple[Hashable, ...]] = set()
+        self._flushed: set[tuple[Hashable, ...]] = set()
         self._is_in_context = False
         self._active_token: Token[Session | None] | None = None
         self.changelog: Changelog = []
@@ -74,21 +79,35 @@ class Session(AbstractContextManager):
 
     def get(self, resource: type[R]) -> R:
         """Return the one session-owned instance of *resource*, loading it lazily."""
-        loaded = self._loaded.get(resource)
+        key = (resource,)
+        loaded = self._loaded.get(key)
         if loaded is None:
             loaded = resource.load()
-            self._loaded[resource] = loaded
-        if self._is_in_context and resource not in self._entered:
+            self._loaded[key] = loaded
+        if self._is_in_context and key not in self._entered:
             loaded.__enter__()  # noqa: PLC2801
-            self._entered.add(resource)
+            self._entered.add(key)
         return cast("R", loaded)
+
+    def get_path(self, path: Path | str) -> ModifiablePath:
+        """Return the session-owned generic resource for one working-tree path."""
+        normalized = Path(path)
+        key = (ModifiablePath, normalized)
+        loaded = self._loaded.get(key)
+        if loaded is None:
+            loaded = ModifiablePath.load_path(normalized)
+            self._loaded[key] = loaded
+        if self._is_in_context and key not in self._entered:
+            loaded.__enter__()  # noqa: PLC2801
+            self._entered.add(key)
+        return cast("ModifiablePath", loaded)
 
     @property
     def precommit(self) -> ModifiablePrecommit:
         """The managed :code:`.pre-commit-config.yaml` file."""
         if (
             not CONFIG_PATH.precommit.exists()
-            and ModifiablePrecommit not in self._loaded
+            and (ModifiablePrecommit,) not in self._loaded
         ):
             msg = "This session has no .pre-commit-config.yaml loaded"
             raise ValueError(msg)
@@ -99,7 +118,7 @@ class Session(AbstractContextManager):
         """The managed :code:`pyproject.toml` file, if the repository has one."""
         if (
             not CONFIG_PATH.pyproject.exists()
-            and ModifiablePyproject not in self._loaded
+            and (ModifiablePyproject,) not in self._loaded
         ):
             return None
         return self.get(ModifiablePyproject)
@@ -120,7 +139,7 @@ class Session(AbstractContextManager):
         """Write each changed resource at most once and return the run changelog."""
         messages = self.collect_changes()
         for resource_type, resource in self._loaded.items():
-            if resource_type not in self._flushed and resource.changelog:
+            if resource_type not in self._flushed and resource.changed:
                 resource.dump()
                 self._flushed.add(resource_type)
         return messages
