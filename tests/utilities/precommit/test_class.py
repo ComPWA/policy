@@ -22,19 +22,36 @@ def example_config(this_dir: Path) -> str:
 def describe_modifiable_precommit():
     def normalizes_spacing_in_new_repo_with_plain_nested_collections(tmp_path: Path):
         source = tmp_path / ".pre-commit-config.yaml"
-        source.write_text(
-            """repos:
-  - repo: first
-    rev: "1"
-    hooks:
-      - id: first
+        input_yaml = dedent("""
+            repos:
+              - repo: first
+                rev: "1"
+                hooks:
+                  - id: first
 
-  - repo: third
-    rev: "1"
-    hooks:
-      - id: third
-"""
-        )
+              - repo: third
+                rev: "1"
+                hooks:
+                  - id: third
+        """).lstrip()
+        expected = dedent("""
+            repos:
+              - repo: first
+                rev: "1"
+                hooks:
+                  - id: first
+
+              - repo: second
+                rev: '1'
+                hooks:
+                  - id: second
+
+              - repo: third
+                rev: "1"
+                hooks:
+                  - id: third
+        """).lstrip()
+        source.write_text(input_yaml)
 
         with ModifiablePrecommit.load(source) as precommit:
             precommit.update_single_hook_repo(
@@ -46,25 +63,7 @@ def describe_modifiable_precommit():
             )
             precommit.document["repos"] = list(precommit.document["repos"])
 
-        assert (
-            source.read_text()
-            == """repos:
-  - repo: first
-    rev: "1"
-    hooks:
-      - id: first
-
-  - repo: second
-    rev: '1'
-    hooks:
-      - id: second
-
-  - repo: third
-    rev: "1"
-    hooks:
-      - id: third
-"""
-        )
+        assert source.read_text() == expected
 
     def normalizes_spacing_between_and_within_repos(tmp_path: Path):
         source = tmp_path / ".pre-commit-config.yaml"
