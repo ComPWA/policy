@@ -9,15 +9,26 @@ import rtoml
 
 from compwa_policy.env.pixi import has_pixi_config
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 
 if TYPE_CHECKING:
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    session: Session, package_manager: PackageManagerChoice, variables: dict[str, str]
-) -> None:
+@check_hook(
+    group="env",
+    paths=[
+        CONFIG_PATH.envrc,
+        CONFIG_PATH.conda,
+        CONFIG_PATH.pixi_toml,
+        CONFIG_PATH.pyproject,
+    ],
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
+    package_manager = args.package_manager
+    variables = ctx.environment_variables
     if package_manager == "none":
         return
     if package_manager == "uv":

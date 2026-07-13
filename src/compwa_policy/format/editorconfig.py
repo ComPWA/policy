@@ -13,15 +13,19 @@ from typing import TYPE_CHECKING
 from ruamel.yaml.scalarstring import FoldedScalarString
 
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session) -> None:
+@check_hook(group="format", paths=[CONFIG_PATH.editorconfig, CONFIG_PATH.precommit])
+def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     if CONFIG_PATH.editorconfig.exists():
         _update_precommit_config(session.precommit)
 

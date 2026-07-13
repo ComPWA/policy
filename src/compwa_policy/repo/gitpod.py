@@ -9,16 +9,29 @@ import yaml
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import PythonVersion, get_constraints_file
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> None:
-    if not use_gitpod:
+@check_hook(
+    group="repo",
+    paths=[
+        CONFIG_PATH.gitpod,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+    ],
+    directories=(CONFIG_PATH.pip_constraints,),
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    if not args.gitpod:
         session.changelog += remove_gitpod_config()
         remove_badge(
             session,
@@ -26,7 +39,7 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         )
         return
     error_message = ""
-    expected_config = _generate_gitpod_config(session, python_version)
+    expected_config = _generate_gitpod_config(session, args.dev_python_version)
     if CONFIG_PATH.gitpod.exists():
         with open(CONFIG_PATH.gitpod) as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)

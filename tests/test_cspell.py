@@ -11,7 +11,7 @@ from compwa_policy.format.cspell import (
     _update_config_content,
     _update_cspell_repo_url,
     _update_precommit_repo,
-    main,
+    check,
 )
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -133,6 +133,7 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
@@ -150,19 +151,21 @@ def describe_main():
         )
         precommit = ModifiablePrecommit.load(config)
         with Session.load(precommit) as session:
-            main(session, no_cspell_update=True)
+            run_check(check, session, no_cspell_update=True)
             changes = session.collect_changes()
         assert changes or precommit.changelog  # something changed
         result = json.loads((tmp_path / ".cspell.json").read_text())
         assert result["words"] == ["apple", "zebra"]
 
-    def removes_config_without_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def removes_config_without_hook(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".cspell.json").write_text("{}")
         config = _write_precommit(tmp_path, "repos: []\n")
         precommit = ModifiablePrecommit.load(config)
         with Session.load(precommit) as session:
-            main(session, no_cspell_update=False)
+            run_check(check, session, no_cspell_update=False)
             changes = session.collect_changes()
         assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()

@@ -11,15 +11,24 @@ from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Session
 
 __LABELS_CONFIG_FILE = "labels.toml"
 
 
-def main(session: Session) -> None:
+@check_hook(
+    group="github",
+    paths=[__LABELS_CONFIG_FILE],
+    patterns=("(.*/)?requirements.*\\.(in|txt)",),
+    enabled=lambda args, _ctx: not args.allow_labels,
+)
+def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     if os.path.exists(__LABELS_CONFIG_FILE):
         os.remove(__LABELS_CONFIG_FILE)
         session.changelog.append(

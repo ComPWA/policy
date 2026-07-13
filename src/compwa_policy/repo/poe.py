@@ -13,6 +13,7 @@ import tomlkit
 from compwa_policy._characterization import has_documentation
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files, is_committed
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -24,8 +25,11 @@ from compwa_policy.utilities.toml import to_inline_table, to_toml_array
 if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
+    from compwa_policy import Arguments
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
+
 
 _DOC_TASKS = frozenset({
     "doc",
@@ -40,11 +44,12 @@ _TEST_TASKS = frozenset({"benchmark", "cov", "test", "test-all"})
 _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
 
 
-def main(
-    session: Session,
-    has_notebooks: bool,
-    package_manager: PackageManagerChoice,
-) -> None:
+@check_hook(
+    group="repo",
+    paths=[CONFIG_PATH.pyproject, CONFIG_PATH.gitignore, CONFIG_PATH.precommit],
+    patterns=("(.*/)?_quarto\\.yml",),
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     config = session.pyproject
     if config is None:
         return
@@ -53,25 +58,25 @@ def main(
         msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
         config.changelog.append(msg)
     if config.has_table("tool.poe"):
-        _check_expected_sections(config, has_notebooks)
-        if package_manager == "uv":
+        _check_expected_sections(config, ctx.has_notebooks)
+        if args.package_manager == "uv":
             _configure_uv_executor(config)
             _migrate_tasks_to_groups(config)
             _set_doc_group(config)
             _set_test_group(config)
-            _set_notebook_group(config, has_notebooks)
+            _set_notebook_group(config, ctx.has_notebooks)
             _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
                 _set_all_task(config)
             if has_dependency(config, "jupyterlab"):
                 _set_jupyter_lab_task(config)
-            if has_notebooks:
+            if ctx.has_notebooks:
                 config.remove_dependency("nbmake")  # cspell:ignore nbmake
                 _set_nb_task(config)
             _set_test_all_task(config)
             _update_doclive(config)
         if config.has_table("tool.poe.tasks"):
-            _set_upgrade_task(config, package_manager)
+            _set_upgrade_task(config, args.package_manager)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")

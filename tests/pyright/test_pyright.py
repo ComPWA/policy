@@ -12,7 +12,7 @@ from compwa_policy.python.pyright import (
     _update_precommit,
     _update_settings,
     _update_vscode_settings,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -149,7 +149,7 @@ def describe_update_vscode_settings():
     def recommends_pylance_when_active(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(session, active=True)
+            _update_vscode_settings(session, activate=True)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
 
@@ -161,7 +161,7 @@ def describe_update_vscode_settings():
             json.dumps({"recommendations": ["ms-python.vscode-pylance"]})
         )
         with Session() as session:
-            _update_vscode_settings(session, active=False)
+            _update_vscode_settings(session, activate=False)
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" not in extensions.get("recommendations", [])
 
@@ -206,21 +206,25 @@ def describe_remove_pyright():
 
 def describe_main():
     def configures_everything_when_active(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
         precommit = ModifiablePrecommit.load(precommit_path)
         with Session.load(precommit) as session:
-            main(session, active=True)
+            run_check(check, session, type_checker={"pyright"})
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "typeCheckingMode" in pyproject_text
         assert "id: pyright" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.vscode-pylance" in extensions["recommendations"]
 
-    def removes_pyright_when_inactive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def removes_pyright_when_inactive(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(
             tmp_path,
@@ -238,6 +242,6 @@ def describe_main():
         )
         precommit = ModifiablePrecommit.load(precommit_path)
         with Session.load(precommit) as session:
-            main(session, active=False)
+            run_check(check, session, type_checker=set())
         assert "tool.pyright" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: pyright" not in precommit.dumps()

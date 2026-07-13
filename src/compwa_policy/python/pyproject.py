@@ -6,6 +6,8 @@ import os
 import re
 from typing import TYPE_CHECKING
 
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject.getters import (
     _get_allowed_versions,
     _get_requires_python,
@@ -13,12 +15,19 @@ from compwa_policy.utilities.pyproject.getters import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
     from compwa_policy.config import PythonVersion
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, excluded_python_versions: set[PythonVersion]) -> None:
+@check_hook(
+    group="python",
+    paths=[CONFIG_PATH.pyproject],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     config = session.pyproject
     if config is None:
         return
@@ -26,7 +35,7 @@ def main(session: Session, excluded_python_versions: set[PythonVersion]) -> None
     _convert_to_dependency_groups(config)
     _rename_sty_to_style(config)
     _update_requires_python(config)
-    _update_python_version_classifiers(config, excluded_python_versions)
+    _update_python_version_classifiers(config, args.excluded_python_versions)
 
 
 def _update_pypi_link_names(pyproject: ModifiablePyproject) -> None:

@@ -10,37 +10,47 @@ import rtoml
 from jinja2 import Environment, FileSystemLoader
 
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(  # noqa: PLR0917
-    session: Session,
-    dev_python_version: PythonVersion,
-    keep_contributing_md: bool,
-    package_manager: PackageManagerChoice,
-    organization: str,
-    repo_name: str,
-) -> None:
+@check_hook(
+    group="env",
+    paths=[
+        CONFIG_PATH.editorconfig,
+        CONFIG_PATH.pixi_toml,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_settings,
+        ".python-version",
+        "CONTRIBUTING.md",
+        "uv.lock",
+    ],
+    directories=[CONFIG_PATH.pip_constraints],
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     precommit_config = session.precommit
-    if "uv" in package_manager:
+    if "uv" in args.package_manager:
         readme.add_badge(
             session,
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
         )
         session.changelog += _update_editor_config()
-        _update_python_version_file(session, dev_python_version)
+        _update_python_version_file(session, args.dev_python_version)
         _update_uv_lock_hook(precommit_config)
-        if not keep_contributing_md:
-            _update_contributing_file(session, organization, repo_name)
+        if not args.keep_contributing_md:
+            _update_contributing_file(session, args.repo_organization, args.repo_name)
         session.changelog += _remove_pip_constraint_files()
         vscode.remove_settings(
             session,

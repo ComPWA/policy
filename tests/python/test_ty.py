@@ -9,7 +9,7 @@ from compwa_policy.python.ty import (
     _update_configuration,
     _update_precommit_config,
     _update_vscode_settings,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -231,21 +231,25 @@ def describe_remove_ty():
 
 def describe_main():
     def configures_everything_when_selected(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path, '[project]\nname = "x"\n')
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
         precommit = ModifiablePrecommit.load(precommit_path)
         with Session.load(precommit) as session:
-            main(session, {"ty"})
+            run_check(check, session, type_checker={"ty"})
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
         assert "id: ty" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
 
-    def removes_ty_when_not_selected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def removes_ty_when_not_selected(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(
             tmp_path,
@@ -265,6 +269,6 @@ def describe_main():
         )
         precommit = ModifiablePrecommit.load(precommit_path)
         with Session.load(precommit) as session:
-            main(session, type_checkers=set())
+            run_check(check, session, type_checker=set())
         assert "tool.ty" not in (tmp_path / "pyproject.toml").read_text()
         assert "id: ty" not in precommit.dumps()

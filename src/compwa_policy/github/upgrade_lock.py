@@ -13,12 +13,16 @@ from compwa_policy.errors import PolicyError
 from compwa_policy.github.dependabot import get_dependabot_ecosystems
 from compwa_policy.github.workflows import remove_workflow, update_workflow
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
+
 
 Frequency = Literal[
     "monthly",
@@ -34,12 +38,19 @@ __CRON_SCHEDULES: dict[Frequency, str] = {
 __TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 
-def main(session: Session, frequency: Frequency, keep_workflow: set[str]) -> None:
+@check_hook(
+    group="github",
+    paths=[CONFIG_PATH.precommit],
+    directories=(CONFIG_PATH.github_workflow_dir.parent, CONFIG_PATH.pip_constraints),
+    enabled=lambda args, _ctx: args.upgrade_frequency != "no",
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    frequency = args.upgrade_frequency
     precommit = session.precommit
     _update_precommit_schedule(precommit, frequency)
     session.changelog += _remove_script("pin_requirements.py")
     session.changelog += _remove_script("upgrade.sh")
-    _update_lock_workflow(session, frequency, keep_workflow)
+    _update_lock_workflow(session, frequency, args.keep_workflow)
 
 
 def _remove_script(script_name: str) -> Changelog:

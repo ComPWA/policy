@@ -12,7 +12,7 @@ from compwa_policy.env.uv import (
     _update_editor_config,
     _update_python_version_file,
     _update_uv_lock_hook,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -158,6 +158,7 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
@@ -167,12 +168,13 @@ def describe_main():
         )
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            main(
+            run_check(
+                check,
                 session,
                 dev_python_version="3.12",
                 keep_contributing_md=True,
                 package_manager="uv",
-                organization="ComPWA",
+                repo_organization="ComPWA",
                 repo_name="policy",
             )
             changes = session.collect_changes()
@@ -183,6 +185,7 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
@@ -193,12 +196,13 @@ def describe_main():
         (tmp_path / "uv.lock").write_text("# lock\n")
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            main(
+            run_check(
+                check,
                 session,
                 dev_python_version="3.12",
                 keep_contributing_md=True,
                 package_manager="pixi",
-                organization="ComPWA",
+                repo_organization="ComPWA",
                 repo_name="policy",
             )
         assert not (tmp_path / "uv.lock").exists()

@@ -5,13 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Session
 
@@ -19,12 +22,24 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 """The type of type checkers supported."""
 
 
-def main(session: Session, type_checkers: set[TypeChecker]) -> None:
-    _update_vscode_settings(session, type_checkers)
+@check_hook(
+    group="python",
+    paths=[
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+        CONFIG_PATH.vscode_settings,
+        "ty.toml",
+    ],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    _update_vscode_settings(session, args.type_checker)
     config = session.pyproject
     if config is None:
         return
-    if "ty" in type_checkers:
+    if "ty" in args.type_checker:
         _update_configuration(config)
         config.add_dependency("ty", dependency_group=["style", "dev"])
         _update_precommit_config(session)

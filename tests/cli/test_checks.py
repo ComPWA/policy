@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
@@ -8,6 +9,8 @@ import typer
 from compwa_policy import _characterization
 from compwa_policy.cli._checks import (
     ALL_GROUPS,
+    CHECK_DEV_FILES_PATTERN,
+    CHECK_HOOKS,
     check_dev_python_version,
     compute_context,
     dispatch,
@@ -100,6 +103,25 @@ def describe_all_groups():
         assert (
             frozenset({"python", "github", "env", "nb", "format", "repo"}) == ALL_GROUPS
         )
+
+
+def describe_check_hooks():
+    def declare_at_least_one_relevant_path():
+        for hook in CHECK_HOOKS:
+            assert hook.files.paths or hook.files.directories or hook.files.patterns
+
+    def aggregate_exact_paths_and_directories_into_the_trigger_pattern():
+        trigger = re.compile(CHECK_DEV_FILES_PATTERN)
+        for hook in CHECK_HOOKS:
+            for path in hook.files.paths:
+                assert trigger.search(path.as_posix()) or trigger.search(
+                    (path / "example").as_posix()
+                )
+            for directory in hook.files.directories:
+                assert trigger.search((directory / "example").as_posix())
+
+    def excludes_ordinary_python_source_files():
+        assert re.search(CHECK_DEV_FILES_PATTERN, "src/package/module.py") is None
 
 
 def _runnable_repo(directory: Path, git_commit: Callable[[Path], None]) -> None:

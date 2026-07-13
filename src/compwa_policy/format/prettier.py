@@ -6,11 +6,14 @@ import os
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -25,7 +28,18 @@ __GENERATED_LOCK_FILES = [
 ]
 
 
-def main(session: Session) -> None:
+@check_hook(
+    group="format",
+    paths=[
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.prettier_ignore,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+        CONFIG_PATH.pixi_lock,
+    ],
+)
+def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     precommit = session.precommit
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
         _remove_configuration(session)

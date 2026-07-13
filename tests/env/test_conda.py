@@ -23,21 +23,35 @@ def _write_pyproject(directory: Path) -> None:
 
 
 def describe_main():
-    def creates_environment_for_conda(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def creates_environment_for_conda(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         _write_pyproject(tmp_path)
         with Session() as session:
-            conda.main(session, "3.12", "conda")
+            run_check(
+                conda.check,
+                session,
+                dev_python_version="3.12",
+                package_manager="conda",
+            )
         result = (tmp_path / "environment.yml").read_text()
         assert "python==3.12.*" in result
 
     def removes_environment_for_other_manager(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "environment.yml").write_text(_ENVIRONMENT)
         with Session() as session:
-            conda.main(session, "3.12", "uv")
+            run_check(
+                conda.check,
+                session,
+                dev_python_version="3.12",
+                package_manager="uv",
+            )
         assert not (tmp_path / "environment.yml").exists()
 
 

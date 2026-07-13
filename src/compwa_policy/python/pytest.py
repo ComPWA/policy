@@ -10,6 +10,7 @@ from ini2toml.api import Translator
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.cfg import open_config
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
 from compwa_policy.utilities.toml import to_toml_array
 
@@ -18,25 +19,34 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Session
 
 
-def main(
-    session: Session,
-    coverage_gutters: bool,
-    single_threaded: bool,
-    branch_coverage: bool = True,
-) -> None:
+@check_hook(
+    group="python",
+    paths=[
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.pytest_ini,
+        CONFIG_PATH.vscode_settings,
+    ],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     config = session.pyproject
     if config is None or not has_dependency(config, "pytest"):
         return
     _merge_coverage_into_pyproject(config)
     _merge_pytest_into_pyproject(config)
     _deny_ini_options(config)
-    _update_codecov_settings(config, branch_coverage)
+    _update_codecov_settings(config, args.branch_coverage)
     _update_settings(config)
-    _update_vscode_settings(session, coverage_gutters, single_threaded)
-    if single_threaded:
+    _update_vscode_settings(
+        session, args.allow_vscode_coverage_gutters, args.pytest_single_threaded
+    )
+    if args.pytest_single_threaded:
         config.remove_dependency("pytest-xdist")
     else:
         config.add_dependency("pytest-xdist", ["test", "dev"])

@@ -8,6 +8,7 @@ from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import (
     PythonVersion,
     get_constraints_file,
@@ -16,19 +17,22 @@ from compwa_policy.utilities.pyproject import (
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers you want to develop the project with."""
 
 
-def main(
-    session: Session,
-    python_version: PythonVersion,
-    package_manager: PackageManagerChoice,
-) -> None:
-    if package_manager == "conda":
-        update_conda_environment(session, python_version)
+@check_hook(
+    group="env",
+    paths=[CONFIG_PATH.conda, CONFIG_PATH.gitignore, CONFIG_PATH.pyproject],
+    directories=[CONFIG_PATH.pip_constraints],
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    if args.package_manager == "conda":
+        update_conda_environment(session, args.dev_python_version)
     else:
         _remove_conda_configuration(session)
 

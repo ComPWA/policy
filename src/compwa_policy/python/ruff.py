@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any
 from ruamel.yaml import YAML
 from setuptools import find_packages
 
-from compwa_policy.utilities import natural_sorting, remove_configs, vscode
+from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -27,11 +28,31 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Array
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, has_notebooks: bool, imports_on_top: bool) -> None:
+@check_hook(
+    group="python",
+    paths=[
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+        CONFIG_PATH.vscode_settings,
+        ".flake8",
+        ".pydocstyle",
+        ".pylintrc",
+        "docs/.pydocstyle",
+        "tests/.pydocstyle",
+    ],
+    enabled=lambda args, ctx: ctx.is_python_repo and (not args.no_ruff),
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
+    has_notebooks = ctx.has_notebooks
+    imports_on_top = args.imports_on_top
     precommit = session.precommit
     config = session.pyproject
     if config is None:

@@ -4,14 +4,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, no_ruff: bool) -> None:
-    _update_dev_requirements(session, no_ruff)
+@check_hook(
+    group="nb",
+    paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject, CONFIG_PATH.vscode_extensions],
+    enabled=lambda _args, ctx: ctx.has_notebooks,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    _update_dev_requirements(session, args.no_ruff)
     # cspell:ignore toolsai
     vscode.add_extension_recommendation(session, "ms-toolsai.jupyter")
     vscode.add_extension_recommendation(session, "ms-toolsai.vscode-jupyter-cell-tags")

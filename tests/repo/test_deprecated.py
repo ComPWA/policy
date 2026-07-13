@@ -5,10 +5,7 @@ from textwrap import dedent
 import pytest
 
 from compwa_policy.errors import PolicyError
-from compwa_policy.repo.deprecated import (
-    _remove_relink_references,
-    remove_deprecated_tools,
-)
+from compwa_policy.repo.deprecated import _remove_relink_references, check
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
 
@@ -27,8 +24,10 @@ def describe_remove_relink_references():
             _remove_relink_references("docs")
 
 
-def describe_remove_deprecated_tools():
-    def removes_markdownlint(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def describe_check():
+    def removes_markdownlint(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         config = dedent("""
             repos:
@@ -39,20 +38,22 @@ def describe_remove_deprecated_tools():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            remove_deprecated_tools(session, keep_issue_templates=True)
+            run_check(check, session, keep_issue_templates=True)
             changes = session.collect_changes()
         assert any("markdownlint" in m for m in changes) or any(
             "markdownlint" in m for m in precommit.changelog
         )
 
-    def removes_issue_templates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def removes_issue_templates(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         template_dir = tmp_path / ".github" / "ISSUE_TEMPLATE"
         template_dir.mkdir(parents=True)
         (template_dir / "bug_report.md").touch()
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            remove_deprecated_tools(session, keep_issue_templates=False)
+            run_check(check, session, keep_issue_templates=False)
             changes = session.collect_changes()
         assert any("ISSUE_TEMPLATE" in m for m in changes)
         assert not template_dir.exists()

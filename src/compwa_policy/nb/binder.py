@@ -11,26 +11,30 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
     from pathlib import Path
 
+    from compwa_policy import Arguments
     from compwa_policy.config import PythonVersion
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    session: Session,
-    package_manager: PackageManagerChoice,
-    python_version: PythonVersion,
-    apt_packages: list[str],
-) -> None:
-    session.changelog += _update_apt_txt(apt_packages)
-    _update_post_build(session, package_manager)
+@check_hook(
+    group="nb",
+    paths=[CONFIG_PATH.pixi_toml, CONFIG_PATH.pyproject],
+    directories=(CONFIG_PATH.binder,),
+    enabled=lambda args, ctx: ctx.has_notebooks and (not args.no_binder),
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
+    session.changelog += _update_apt_txt(ctx.doc_apt_packages)
+    _update_post_build(session, args.package_manager)
     session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
-    session.changelog += _update_runtime_txt(python_version)
+    session.changelog += _update_runtime_txt(args.dev_python_version)
 
 
 def _update_apt_txt(apt_packages: list[str]) -> Changelog:

@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, rename_file, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
@@ -19,6 +20,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
     from pathlib import Path
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -33,7 +36,19 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
-def main(session: Session, no_cspell_update: bool) -> None:
+@check_hook(
+    group="format",
+    paths=[
+        CONFIG_PATH.cspell,
+        CONFIG_PATH.editorconfig,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+        "cspell.json",
+    ],
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     precommit = session.precommit
     rename_file(session, "cspell.json", str(CONFIG_PATH.cspell))
     _update_cspell_repo_url(precommit)
@@ -44,7 +59,7 @@ def main(session: Session, no_cspell_update: bool) -> None:
         _remove_configuration(session)
     else:
         _update_precommit_repo(precommit)
-        if not no_cspell_update:
+        if not args.no_cspell_update:
             session.changelog += _update_config_content()
         session.changelog += _sort_config_entries()
         add_badge(

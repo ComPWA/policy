@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from compwa_policy.github.workflows import main, remove_workflow
+from compwa_policy.github.workflows import check, remove_workflow
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import PythonVersion
 from compwa_policy.utilities.session import Session
@@ -36,6 +36,7 @@ def workflows_repo(
 
 
 def _run_main(
+    run_check,
     *,
     doc_apt_packages: list[str] | None = None,
     environment_variables: dict[str, str] | None = None,
@@ -51,9 +52,10 @@ def _run_main(
     skip_tests: list[str] | None = None,
 ) -> list[str]:
     with Session.load(_precommit(precommit_content)) as session:
-        main(
+        run_check(
+            check,
             session,
-            allow_deprecated=False,
+            allow_deprecated_workflows=False,
             doc_apt_packages=doc_apt_packages or [],
             environment_variables=environment_variables or {},
             github_pages=github_pages,
@@ -63,24 +65,25 @@ def _run_main(
             no_milestones=no_milestones,
             no_pypi=no_pypi,
             no_version_branches=no_version_branches,
-            python_version=python_version,
-            single_threaded=single_threaded,
-            skip_tests=skip_tests or [],
+            dev_python_version=python_version,
+            pytest_single_threaded=single_threaded,
+            ci_skipped_tests=",".join(skip_tests or []),
         )
         return session.collect_changes()
 
 
 def describe_main():
-    def creates_workflows(workflows_repo: Path):
-        changes = _run_main()
+    def creates_workflows(workflows_repo: Path, run_check):
+        changes = _run_main(run_check)
         assert changes
         assert (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
         assert (workflows_repo / _WORKFLOW_DIR / "ci.yml").exists()
         assert (workflows_repo / _WORKFLOW_DIR / "pr-linting.yml").exists()
         assert (workflows_repo / _WORKFLOW_DIR / "clean-caches.yml").exists()
 
-    def applies_options(workflows_repo: Path):
+    def applies_options(workflows_repo: Path, run_check):
         changes = _run_main(
+            run_check,
             doc_apt_packages=["graphviz"],
             environment_variables={"PYTHONHASHSEED": "0"},
             github_pages=True,
@@ -94,29 +97,29 @@ def describe_main():
         assert "graphviz" in ci
         assert "PYTHONHASHSEED" in ci
 
-    def skips_cd_workflow(workflows_repo: Path):
-        changes = _run_main(no_cd=True)
+    def skips_cd_workflow(workflows_repo: Path, run_check):
+        changes = _run_main(run_check, no_cd=True)
         assert changes
         assert not (workflows_repo / _WORKFLOW_DIR / "cd.yml").exists()
 
-    def bans_cd_jobs(workflows_repo: Path):
-        _run_main(no_pypi=True, no_milestones=True, no_version_branches=True)
+    def bans_cd_jobs(workflows_repo: Path, run_check):
+        _run_main(run_check, no_pypi=True, no_milestones=True, no_version_branches=True)
         cd_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
         if cd_path.exists():
             assert "pypi" not in cd_path.read_text()
 
-    def configures_codecov(workflows_repo: Path):
+    def configures_codecov(workflows_repo: Path, run_check):
         (workflows_repo / "codecov.yml").touch()
         (workflows_repo / ".python-version").write_text("3.11\n")
-        changes = _run_main()
+        changes = _run_main(run_check)
         assert changes
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "CODECOV_TOKEN" in ci
         assert "3.11" in ci  # coverage python version from .python-version
 
-    def removes_style_job_when_outsourced(workflows_repo: Path):
+    def removes_style_job_when_outsourced(workflows_repo: Path, run_check):
         precommit = "ci:\n  autofix_prs: true\nrepos: []\n"
-        changes = _run_main(precommit_content=precommit)
+        changes = _run_main(run_check, precommit_content=precommit)
         assert changes
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "style:" not in ci  # style job outsourced to pre-commit.ci
@@ -126,12 +129,13 @@ def describe_main():
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
         git_add: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
         git_add(tmp_path)
         monkeypatch.chdir(tmp_path)
-        changes = _run_main()
+        changes = _run_main(run_check)
         assert changes
         ci = (tmp_path / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "doc:" not in ci  # no documentation -> doc job removed

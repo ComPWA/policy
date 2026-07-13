@@ -12,6 +12,7 @@ from typing import IO, TYPE_CHECKING, cast
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files
 from compwa_policy.utilities.pyproject import get_constraints_file, has_dependency
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -21,17 +22,23 @@ if TYPE_CHECKING:
 
     from ruamel.yaml.comments import CommentedMap
 
+    from compwa_policy import Arguments
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    session: Session,
-    package_manager: PackageManagerChoice,
-    python_version: PythonVersion,
-    source: IO | Path | str = CONFIG_PATH.readthedocs,
-) -> None:
+@check_hook(
+    group="repo",
+    paths=[CONFIG_PATH.readthedocs, CONFIG_PATH.pyproject, "docs/conf.py"],
+    directories=(CONFIG_PATH.pip_constraints,),
+    patterns=("(.*/)?_quarto\\.yml",),
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    package_manager = args.package_manager
+    python_version = args.dev_python_version
+    source = CONFIG_PATH.readthedocs
     if isinstance(source, str):
         source = Path(source)
     if isinstance(source, Path) and not source.exists():

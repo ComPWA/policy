@@ -4,7 +4,7 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.python.pyupgrade import _remove_pyupgrade, main
+from compwa_policy.python.pyupgrade import _remove_pyupgrade, check
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
 
@@ -26,7 +26,7 @@ def _project_with_classifiers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
 
 def describe_main():
     @pytest.mark.usefixtures("_project_with_classifiers")
-    def installs_pyupgrade():
+    def installs_pyupgrade(run_check):
         config = dedent("""
             repos:
               - repo: https://github.com/nbQA-dev/nbQA
@@ -36,7 +36,7 @@ def describe_main():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            main(session, no_ruff=True)
+            run_check(check, session, no_ruff=True)
 
         assert precommit.changelog  # something changed
         result = precommit.dumps()
@@ -44,7 +44,7 @@ def describe_main():
         assert "--py310-plus" in result
         assert "nbqa-pyupgrade" in result
 
-    def removes_pyupgrade_when_ruff_is_used():
+    def removes_pyupgrade_when_ruff_is_used(run_check):
         config = dedent("""
             repos:
               - repo: https://github.com/asottile/pyupgrade
@@ -55,7 +55,7 @@ def describe_main():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            main(session, no_ruff=False)
+            run_check(check, session, no_ruff=False)
 
         assert any("pyupgrade" in m for m in precommit.changelog)
         assert "pyupgrade" not in precommit.dumps()

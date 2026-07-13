@@ -13,7 +13,7 @@ from compwa_policy.python.pytest import (
     _update_codecov_settings,
     _update_settings,
     _update_vscode_settings,
-    main,
+    check,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.session import Session
@@ -194,7 +194,9 @@ def describe_update_vscode_settings():
 
 
 def describe_main():
-    def writes_coverage_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def writes_coverage_config(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(
             dedent("""
@@ -209,11 +211,18 @@ def describe_main():
             """).lstrip()
         )
         with Session.load() as session:
-            main(session, coverage_gutters=False, single_threaded=True)
+            run_check(
+                check,
+                session,
+                allow_vscode_coverage_gutters=False,
+                pytest_single_threaded=True,
+            )
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.coverage.run]" in result
 
-    def adds_xdist_when_multithreaded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def adds_xdist_when_multithreaded(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(
             dedent("""
@@ -228,11 +237,23 @@ def describe_main():
             """).lstrip()
         )
         with Session.load() as session:
-            main(session, coverage_gutters=True, single_threaded=False)
+            run_check(
+                check,
+                session,
+                allow_vscode_coverage_gutters=True,
+                pytest_single_threaded=False,
+            )
         assert "pytest-xdist" in (tmp_path / "pyproject.toml").read_text()
 
-    def is_noop_without_pytest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def is_noop_without_pytest(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
         with Session.load() as session:
-            main(session, coverage_gutters=False, single_threaded=True)  # no pytest dep
+            run_check(  # no pytest dep
+                check,
+                session,
+                allow_vscode_coverage_gutters=False,
+                pytest_single_threaded=True,
+            )
