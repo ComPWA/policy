@@ -44,6 +44,7 @@ def describe_modifiable_precommit():
                     hooks=[{"id": "second"}],
                 )
             )
+            precommit.document["repos"] = list(precommit.document["repos"])
 
         assert (
             source.read_text()

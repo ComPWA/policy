@@ -36,8 +36,6 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit.struct import Hook, PrecommitConfig, Repo
 
 T = TypeVar("T", bound="Precommit")
-_POST_VALUE_COMMENT_INDEX = 2
-_SEQUENCE_ITEM_COMMENT_INDEX = 0
 
 
 class Precommit:
@@ -163,9 +161,10 @@ def _load_roundtrip_precommit_config(
 
 
 def _normalize_repo_spacing(config: PrecommitConfig) -> None:
-    repos = config.get("repos")
+    repos = _ensure_round_trip_collections(config.get("repos"))
     if not isinstance(repos, CommentedSeq):
         return
+    config["repos"] = repos
     for index, repo in enumerate(repos):
         repos[index] = _ensure_round_trip_collections(repo)
     _remove_blank_lines(repos)
@@ -198,13 +197,9 @@ def _append_repo_separator(node: object) -> None:
         ):
             _append_repo_separator(last_value)
             return
-        item_comments = node.ca.items.setdefault(
-            last_index,
-            [None, None, None, None],
-        )
         _add_blank_line(
-            item_comments,
-            _SEQUENCE_ITEM_COMMENT_INDEX,
+            node,
+            last_index,
             follows_block_scalar=isinstance(
                 last_value,
                 (FoldedScalarString, LiteralScalarString),
@@ -222,10 +217,9 @@ def _append_repo_separator(node: object) -> None:
     ):
         _append_repo_separator(last_value)
         return
-    item_comments = node.ca.items.setdefault(last_key, [None, None, None, None])
     _add_blank_line(
-        item_comments,
-        _POST_VALUE_COMMENT_INDEX,
+        node,
+        last_key,
         follows_block_scalar=isinstance(
             last_value,
             (FoldedScalarString, LiteralScalarString),
@@ -234,15 +228,15 @@ def _append_repo_separator(node: object) -> None:
 
 
 def _add_blank_line(
-    item_comments: list,
-    comment_index: int,
+    node: CommentedMap | CommentedSeq,
+    key: object,
     *,
     follows_block_scalar: bool,
 ) -> None:
-    comment = item_comments[comment_index]
+    comment = _get_trailing_comment(node, key)
     if not isinstance(comment, CommentToken):
         value = "\n" if follows_block_scalar else "\n\n"
-        item_comments[comment_index] = CommentToken(value, CommentMark(0))
+        _set_trailing_comment(node, key, CommentToken(value, CommentMark(0)))
     elif follows_block_scalar:
         comment.value = comment.value or "\n"
     elif comment.value.startswith("\n"):
@@ -252,28 +246,46 @@ def _add_blank_line(
 
 
 def _remove_blank_lines(node: object) -> None:
+    if not isinstance(node, (CommentedMap, CommentedSeq)):
+        return
+    node.ca.comment = _normalize_comments(node.ca.comment)
+    node.ca.end = _normalize_comments(node.ca.end) or []
+    for key, item_comments in node.ca.items.items():
+        trailing_comment = _get_trailing_comment(node, key)
+        for index, comment in enumerate(item_comments):
+            item_comments[index] = _normalize_comments(comment)
+        _set_trailing_comment(
+            node,
+            key,
+            _normalize_comments(trailing_comment, keep_line_break=True),
+        )
+    children = node.values() if isinstance(node, CommentedMap) else node
+    for child in children:
+        _remove_blank_lines(child)
+
+
+def _get_trailing_comment(
+    node: CommentedMap | CommentedSeq,
+    key: object,
+) -> object:
+    item_comments = node.ca.items.get(key)
+    if item_comments is None:
+        return None
     if isinstance(node, CommentedMap):
-        node.ca.comment = _normalize_comments(node.ca.comment)
-        node.ca.end = _normalize_comments(node.ca.end) or []
-        for item_comments in node.ca.items.values():
-            for index, comment in enumerate(item_comments):
-                item_comments[index] = _normalize_comments(
-                    comment,
-                    keep_line_break=index == _POST_VALUE_COMMENT_INDEX,
-                )
-        for value in node.values():
-            _remove_blank_lines(value)
-    elif isinstance(node, CommentedSeq):
-        node.ca.comment = _normalize_comments(node.ca.comment)
-        node.ca.end = _normalize_comments(node.ca.end) or []
-        for item_comments in node.ca.items.values():
-            for index, comment in enumerate(item_comments):
-                item_comments[index] = _normalize_comments(
-                    comment,
-                    keep_line_break=index == _SEQUENCE_ITEM_COMMENT_INDEX,
-                )
-        for value in node:
-            _remove_blank_lines(value)
+        return item_comments[2]
+    return item_comments[0]
+
+
+def _set_trailing_comment(
+    node: CommentedMap | CommentedSeq,
+    key: object,
+    comment: object,
+) -> None:
+    item_comments = node.ca.items.setdefault(key, [None, None, None, None])
+    if isinstance(node, CommentedMap):
+        item_comments[2] = comment
+    else:
+        item_comments[0] = comment
 
 
 def _normalize_comments(comments: object, *, keep_line_break: bool = False) -> object:
