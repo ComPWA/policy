@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def main(session: Session, active: bool) -> None:
     precommit = session.precommit
-    session.changelog += _update_vscode_settings(active)
+    session.changelog += _update_vscode_settings(active, session=session)
     config = session.pyproject
     if config is None:
         return
@@ -29,7 +29,7 @@ def main(session: Session, active: bool) -> None:
         _remove_excludes(config)
         _update_settings(config)
     else:
-        session.changelog += _remove_pyright(precommit, config)
+        session.changelog += _remove_pyright(precommit, config, session=session)
 
 
 def _merge_config_into_pyproject(
@@ -92,22 +92,35 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _update_vscode_settings(active: bool) -> Changelog:
+def _update_vscode_settings(
+    active: bool,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     changes: Changelog = []
     if active:
-        changes += vscode.add_extension_recommendation("ms-python.vscode-pylance")
-        changes += vscode.update_settings({
-            "python.analysis.autoImportCompletions": False,
-            "python.analysis.inlayHints.pytestParameters": True,
-        })
+        changes += vscode.add_extension_recommendation(
+            "ms-python.vscode-pylance", session=session
+        )
+        changes += vscode.update_settings(
+            {
+                "python.analysis.autoImportCompletions": False,
+                "python.analysis.inlayHints.pytestParameters": True,
+            },
+            session=session,
+        )
     else:
-        changes += vscode.remove_settings([
-            "python.analysis.autoImportCompletions",
-            "python.analysis.inlayHints.pytestParameters",
-        ])
+        changes += vscode.remove_settings(
+            [
+                "python.analysis.autoImportCompletions",
+                "python.analysis.inlayHints.pytestParameters",
+            ],
+            session=session,
+        )
         changes += vscode.remove_extension_recommendation(
             "ms-python.vscode-pylance",
             unwanted=True,
+            session=session,
         )
     return changes
 
@@ -115,6 +128,8 @@ def _update_vscode_settings(active: bool) -> Changelog:
 def _remove_pyright(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     pyright_config = Path("pyrightconfig.json")
     if pyright_config.exists():
@@ -127,4 +142,4 @@ def _remove_pyright(
         pyproject.changelog.append(msg)
     pyproject.remove_dependency("pyright")
     precommit.remove_hook("pyright")
-    return remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json")
+    return remove_lines(CONFIG_PATH.gitignore, ".*pyrightconfig.json", session=session)

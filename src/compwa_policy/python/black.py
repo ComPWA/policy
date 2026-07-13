@@ -32,17 +32,20 @@ def main(session: Session, has_notebooks: bool) -> None:
     )
     _update_precommit_repo(precommit, has_notebooks)
     session.changelog += vscode.add_extension_recommendation(
-        "ms-python.black-formatter"
+        "ms-python.black-formatter", session=session
     )
-    session.changelog += vscode.update_settings({
-        "black-formatter.importStrategy": "fromEnvironment"
-    })
-    session.changelog += vscode.update_settings({
-        "[python]": {
-            "editor.defaultFormatter": "ms-python.black-formatter",
-            "editor.rulers": [88],
+    session.changelog += vscode.update_settings(
+        {"black-formatter.importStrategy": "fromEnvironment"}, session=session
+    )
+    session.changelog += vscode.update_settings(
+        {
+            "[python]": {
+                "editor.defaultFormatter": "ms-python.black-formatter",
+                "editor.rulers": [88],
+            },
         },
-    })
+        session=session,
+    )
     precommit.remove_hook("nbqa-black")
 
 

@@ -36,15 +36,19 @@ def main(session: Session) -> None:
         return
     precommit = session.precommit
     session.changelog += _rename_taplo_config()
-    session.changelog += _update_taplo_config()
+    session.changelog += _update_taplo_config(session=session)
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    session.changelog += _update_tomlsort_config(session.pyproject)
+    session.changelog += _update_tomlsort_config(session.pyproject, session=session)
     _update_tomlsort_hook(precommit)
-    session.changelog += _update_vscode_extensions()
+    session.changelog += _update_vscode_extensions(session=session)
 
 
-def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Changelog:
+def _update_tomlsort_config(
+    pyproject: ModifiablePyproject | None = None,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if pyproject is None and not CONFIG_PATH.pyproject.exists():
         return []
     sort_first = [
@@ -54,7 +58,7 @@ def _update_tomlsort_config(pyproject: ModifiablePyproject | None = None) -> Cha
         "tool.setuptools_scm",
         "tool.tox.env_run_base",
     ]
-    readonly_pyproject = pyproject or Pyproject.load()
+    readonly_pyproject = pyproject or Pyproject.load(session=session)
     sort_first = [table for table in sort_first if readonly_pyproject.has_table(table)]
     expected_config = dict(
         all=False,
@@ -110,7 +114,7 @@ def _rename_taplo_config() -> Changelog:
     return []
 
 
-def _update_taplo_config() -> Changelog:
+def _update_taplo_config(*, session: Session | None = None) -> Changelog:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     with open(template_path) as f:
         expected = tomlkit.load(f)
@@ -129,7 +133,7 @@ def _update_taplo_config() -> Changelog:
         if has_sub_table(pixi_config, "tasks"):
             rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, ["tasks"]))
     if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+        pyproject = Pyproject.load(session=session)
         keys = [
             key
             for key in ["tool.pixi.tasks", "tool.poe.groups", "tool.poe.tasks"]
@@ -195,12 +199,14 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions() -> Changelog:
+def _update_vscode_extensions(*, session: Session | None = None) -> Changelog:
     # cspell:ignore bungcip tamasfe
     changes: Changelog = []
-    changes += vscode.add_extension_recommendation("tamasfe.even-better-toml")
+    changes += vscode.add_extension_recommendation(
+        "tamasfe.even-better-toml", session=session
+    )
     changes += vscode.remove_extension_recommendation(
-        "bungcip.better-toml", unwanted=True
+        "bungcip.better-toml", unwanted=True, session=session
     )
     return changes
 

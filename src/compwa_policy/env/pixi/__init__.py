@@ -33,6 +33,9 @@ def main(
             package_manager,
             session.pyproject,
             session.get(ModifiablePixi) if package_manager == "pixi+uv" else None,
+            session=session,
         )
     else:
-        session.changelog += remove_pixi_configuration(session.pyproject)
+        session.changelog += remove_pixi_configuration(
+            session.pyproject, session=session
+        )

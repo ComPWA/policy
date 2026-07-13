@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
-    from compwa_policy.utilities.session import Changelog
+    from compwa_policy.utilities.session import Changelog, Session
 
 
 def update_pixi_configuration(
@@ -33,6 +33,8 @@ def update_pixi_configuration(
     package_manager: PackageManagerChoice,
     pyproject: ModifiablePyproject | None = None,
     pixi: ModifiablePixi | None = None,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
@@ -52,9 +54,10 @@ def update_pixi_configuration(
     with config_context as config:
         extra += add_badge(
             "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
+            session=session,
         )
         _rename_workspace_table(config)
-        _define_minimal_project(config)
+        _define_minimal_project(config, session=session)
         _import_conda_dependencies(config)
         _import_conda_environment(config)
         if package_manager == "pixi+uv":
@@ -69,10 +72,11 @@ def update_pixi_configuration(
         _clean_up_task_env(config)
         extra += vscode.update_settings(
             {"files.associations": {"**/pixi.lock": "yaml"}},
+            session=session,
         )
         if has_pixi_config(config):
-            config.changelog.extend(__update_gitattributes())
-            config.changelog.extend(__update_gitignore())
+            config.changelog.extend(__update_gitattributes(session=session))
+            config.changelog.extend(__update_gitignore(session=session))
         if not session_owned:
             return list(config.changelog) + extra
     return extra
@@ -114,7 +118,11 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     config.changelog.append(msg)
 
 
-def _define_minimal_project(config: ModifiablePyproject) -> None:
+def _define_minimal_project(
+    config: ModifiablePyproject,
+    *,
+    session: Session | None = None,
+) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
     table_name = "workspace"
     settings = __get_table(config, table_name, create=True)
@@ -123,7 +131,7 @@ def _define_minimal_project(config: ModifiablePyproject) -> None:
         platforms=["linux-64"],
     )
     if config._source == CONFIG_PATH.pixi_toml and CONFIG_PATH.pyproject.exists():  # noqa: SLF001
-        pyproject = Pyproject.load()
+        pyproject = Pyproject.load(session=session)
         package_name = pyproject.get_package_name()
         if package_name is not None:
             minimal_settings["name"] = package_name
@@ -251,18 +259,18 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes() -> Changelog:
+def __update_gitattributes(*, session: Session | None = None) -> Changelog:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
-    if append_safe(expected_line, CONFIG_PATH.gitattributes):
+    if append_safe(expected_line, CONFIG_PATH.gitattributes, session=session):
         return [
             f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
         ]
     return []
 
 
-def __update_gitignore() -> Changelog:
+def __update_gitignore(*, session: Session | None = None) -> Changelog:
     ignore_path = ".pixi/"
-    if append_safe(ignore_path, CONFIG_PATH.gitignore):
+    if append_safe(ignore_path, CONFIG_PATH.gitignore, session=session):
         return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]
     return []
 

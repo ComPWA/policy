@@ -28,15 +28,17 @@ __GENERATED_LOCK_FILES = [
 def main(session: Session) -> None:
     precommit = session.precommit
     if precommit.find_repo(r".*/(mirrors-)?prettier(-pre-commit)?$") is None:
-        session.changelog += _remove_configuration()
+        session.changelog += _remove_configuration(session=session)
         return
-    session.changelog += add_badge(__BADGE)
-    session.changelog += vscode.add_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    session.changelog += add_badge(__BADGE, session=session)
+    session.changelog += vscode.add_extension_recommendation(
+        __VSCODE_EXTENSION_NAME, session=session
+    )
     _update_prettier_hook(precommit)
     session.changelog += _update_prettier_ignore()
 
 
-def _remove_configuration() -> Changelog:
+def _remove_configuration(*, session: Session | None = None) -> Changelog:
     old_config_files = [
         ".prettierrc.json",
         ".prettierrc.json5",
@@ -55,8 +57,10 @@ def _remove_configuration() -> Changelog:
         msg = f"Removed redundant configuration files: {removed_paths_str}"
         return [msg]
     changes: Changelog = []
-    changes += remove_badge(__BADGE_PATTERN)
-    changes += vscode.remove_extension_recommendation(__VSCODE_EXTENSION_NAME)
+    changes += remove_badge(__BADGE_PATTERN, session=session)
+    changes += vscode.remove_extension_recommendation(
+        __VSCODE_EXTENSION_NAME, session=session
+    )
     return changes
 
 

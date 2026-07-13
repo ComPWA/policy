@@ -65,11 +65,11 @@ def test_file_helpers_defer_changes_until_session_flush(tmp_path, monkeypatch) -
     obsolete_path.touch()
 
     with Session() as session:
-        vscode.remove_settings(["remove"])
-        vscode.update_settings({"added": True})
-        vscode.add_extension_recommendation("Example.Extension")
-        add_badge("[![Badge](badge.svg)](example.org)")
-        remove_configs([str(obsolete_path)])
+        vscode.remove_settings(["remove"], session=session)
+        vscode.update_settings({"added": True}, session=session)
+        vscode.add_extension_recommendation("Example.Extension", session=session)
+        add_badge("[![Badge](badge.svg)](example.org)", session=session)
+        remove_configs([str(obsolete_path)], session=session)
 
         assert json.loads(settings_path.read_text()) == {"remove": True}
         assert json.loads(extensions_path.read_text()) == {"recommendations": []}
@@ -101,10 +101,10 @@ def test_generic_file_operations_share_deferred_state(tmp_path, monkeypatch) -> 
     source.write_text("keep\nremove\n")
     renamed = tmp_path / "renamed.txt"
 
-    with Session():
-        remove_lines(source, "remove")
-        assert append_safe("added", source)
-        rename_file(str(source), str(renamed))
+    with Session() as session:
+        remove_lines(source, "remove", session=session)
+        assert append_safe("added", source, session=session)
+        rename_file(str(source), str(renamed), session=session)
         assert source.read_text() == "keep\nremove\n"
         assert not renamed.exists()
 
@@ -112,11 +112,11 @@ def test_generic_file_operations_share_deferred_state(tmp_path, monkeypatch) -> 
     assert renamed.read_text() == "keep\nadded\n"
 
 
-def test_readonly_pyproject_load_uses_active_identity(tmp_path, monkeypatch) -> None:
+def test_readonly_pyproject_load_uses_session_identity(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "example"\n')
     with Session() as session:
-        assert Pyproject.load() is session.pyproject
+        assert Pyproject.load(session=session) is session.pyproject
 
 
 def test_gitpod_reads_in_memory_vscode_extensions(tmp_path, monkeypatch) -> None:
@@ -124,6 +124,6 @@ def test_gitpod_reads_in_memory_vscode_extensions(tmp_path, monkeypatch) -> None
     vscode_dir = tmp_path / ".vscode"
     vscode_dir.mkdir()
     (vscode_dir / "extensions.json").write_text('{"recommendations": []}\n')
-    with Session():
-        vscode.add_extension_recommendation("Example.Extension")
-        assert _extract_extensions() == ["example.extension"]
+    with Session() as session:
+        vscode.add_extension_recommendation("Example.Extension", session=session)
+        assert _extract_extensions(session=session) == ["example.extension"]

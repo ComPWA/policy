@@ -29,7 +29,7 @@ def main(
     apt_packages: list[str],
 ) -> None:
     session.changelog += _update_apt_txt(apt_packages)
-    session.changelog += _update_post_build(package_manager)
+    session.changelog += _update_post_build(package_manager, session=session)
     session.changelog += _make_executable(CONFIG_PATH.binder / "postBuild")
     session.changelog += _update_runtime_txt(python_version)
 
@@ -49,11 +49,15 @@ def _update_apt_txt(apt_packages: list[str]) -> Changelog:
     )
 
 
-def _update_post_build(package_manager: PackageManagerChoice) -> Changelog:
+def _update_post_build(
+    package_manager: PackageManagerChoice,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if package_manager == "pixi+uv":
-        expected_content = __get_post_builder_for_pixi_with_uv()
+        expected_content = __get_post_builder_for_pixi_with_uv(session=session)
     elif package_manager == "uv":
-        expected_content = __get_post_builder_for_uv()
+        expected_content = __get_post_builder_for_uv(session=session)
     else:
         msg = f"Package manager {package_manager} is not supported."
         raise NotImplementedError(msg)
@@ -63,7 +67,10 @@ def _update_post_build(package_manager: PackageManagerChoice) -> Changelog:
     )
 
 
-def __get_post_builder_for_pixi_with_uv() -> str:
+def __get_post_builder_for_pixi_with_uv(
+    *,
+    session: Session | None = None,
+) -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
@@ -84,7 +91,7 @@ def __get_post_builder_for_pixi_with_uv() -> str:
             expected_content += "\nbash " + script
     expected_content += "\npixi clean cache --yes\n"
     expected_content += "\nuv export \\"
-    for groups in __get_notebook_groups():
+    for groups in __get_notebook_groups(session=session):
         expected_content += f"\n  --group {groups} \\"
     expected_content += dedent(R"""
           --no-dev \
@@ -116,7 +123,7 @@ def ___get_pixi_activation() -> PixiActivation:
     )
 
 
-def __get_post_builder_for_uv() -> str:
+def __get_post_builder_for_uv(*, session: Session | None = None) -> str:
     expected_content = dedent("""
         #!/bin/bash
         set -ex
@@ -124,7 +131,7 @@ def __get_post_builder_for_uv() -> str:
         source $HOME/.cargo/env
     """).strip()
     expected_content += "\nuv export \\"
-    for group in __get_notebook_groups():
+    for group in __get_notebook_groups(session=session):
         expected_content += f"\n  --group {group} \\"
     expected_content += dedent(R"""
           --no-dev \
@@ -138,16 +145,20 @@ def __get_post_builder_for_uv() -> str:
     return expected_content
 
 
-def __get_notebook_groups() -> list[str]:
-    dependency_groups = ___safe_get_table("dependency-groups")
+def __get_notebook_groups(*, session: Session | None = None) -> list[str]:
+    dependency_groups = ___safe_get_table("dependency-groups", session=session)
     allowed_groups = {"jupyter", "notebooks"}
     return sorted(allowed_groups & set(dependency_groups))
 
 
-def ___safe_get_table(dotted_header: str) -> Mapping[str, Any]:
+def ___safe_get_table(
+    dotted_header: str,
+    *,
+    session: Session | None = None,
+) -> Mapping[str, Any]:
     if not CONFIG_PATH.pyproject.exists():
         return {}
-    pyproject = Pyproject.load()
+    pyproject = Pyproject.load(session=session)
     if not pyproject.has_table(dotted_header):
         return {}
     return pyproject.get_table(dotted_header)

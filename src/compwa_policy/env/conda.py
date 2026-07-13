@@ -29,20 +29,24 @@ def main(
     package_manager: PackageManagerChoice,
 ) -> None:
     if package_manager == "conda":
-        session.changelog += update_conda_environment(python_version)
+        session.changelog += update_conda_environment(python_version, session=session)
     else:
-        session.changelog += _remove_conda_configuration()
+        session.changelog += _remove_conda_configuration(session=session)
 
 
-def update_conda_environment(python_version: PythonVersion) -> Changelog:
-    if not has_pyproject_package_name():
+def update_conda_environment(
+    python_version: PythonVersion,
+    *,
+    session: Session | None = None,
+) -> Changelog:
+    if not has_pyproject_package_name(session=session):
         return []
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
         conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)
     else:
-        conda_env = __create_conda_environment(python_version)
+        conda_env = __create_conda_environment(python_version, session=session)
         updated = True
     if "dependencies" not in conda_env:
         conda_env["dependencies"] = CommentedSeq()
@@ -56,9 +60,14 @@ def update_conda_environment(python_version: PythonVersion) -> Changelog:
     return []
 
 
-def __create_conda_environment(python_version: PythonVersion) -> CommentedMap:
+def __create_conda_environment(
+    python_version: PythonVersion,
+    *,
+    session: Session | None = None,
+) -> CommentedMap:
+    package_name = Pyproject.load(session=session).get_package_name()
     return CommentedMap({
-        "name": Pyproject.load().get_package_name(),
+        "name": str(package_name) if package_name is not None else None,
         "channels": ["defaults"],
         "dependencies": [
             f"python=={python_version}.*",
@@ -111,12 +120,14 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration() -> Changelog:
+def _remove_conda_configuration(*, session: Session | None = None) -> Changelog:
     changes: Changelog = []
     changes += __remove_environment_yml()
     # cspell:ignore condaenv
-    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*")
-    changes += remove_lines(CONFIG_PATH.gitignore, r".*environment\.yml.*")
+    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*", session=session)
+    changes += remove_lines(
+        CONFIG_PATH.gitignore, r".*environment\.yml.*", session=session
+    )
     return changes
 
 

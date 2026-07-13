@@ -7,14 +7,12 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.resource import (
-    Changelog,
-    ModifiableResource,
-    get_active_session,
-)
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from compwa_policy.utilities.session import Session
 
 __README_PATH = str(CONFIG_PATH.readme)
 
@@ -78,8 +76,7 @@ class ModifiableReadme(ModifiableResource):
         )
 
 
-def add_badge(badge: str) -> Changelog:
-    session = get_active_session()
+def add_badge(badge: str, *, session: Session | None = None) -> Changelog:
     if session is not None:
         session.get(ModifiableReadme).add_badge(badge)
         return []
@@ -89,8 +86,11 @@ def add_badge(badge: str) -> Changelog:
     return resource.changelog
 
 
-def remove_badge(badge_pattern: str) -> Changelog:
-    session = get_active_session()
+def remove_badge(
+    badge_pattern: str,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if session is not None:
         session.get(ModifiableReadme).remove_badge(badge_pattern)
         return []

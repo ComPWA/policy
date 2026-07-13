@@ -46,7 +46,7 @@ def main(
     _update_python_version(rtd, python_version)
     if package_manager == "pixi+uv":
         _remove_redundant_settings(rtd)
-        _update_build_step_for_pixi(rtd)
+        _update_build_step_for_pixi(rtd, session=session)
     elif package_manager == "uv":
         apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
         pixi_packages = apt_packages & {"graphviz"}
@@ -205,9 +205,13 @@ def __remove_nested_key(dct: dict, dotted_key: str) -> bool:
     return True
 
 
-def _update_build_step_for_pixi(config: ReadTheDocs) -> None:
+def _update_build_step_for_pixi(
+    config: ReadTheDocs,
+    *,
+    session: Session | None = None,
+) -> None:
     new_command = __get_pixi_install_statement() + "\n"
-    pyproject = Pyproject.load()
+    pyproject = Pyproject.load(session=session)
     docs_dir = _determine_docs_dir()
     if has_dependency(pyproject, "poethepoet"):
         new_command += dedent(Rf"""

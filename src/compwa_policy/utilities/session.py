@@ -27,8 +27,6 @@ from compwa_policy.utilities.resource import (
     Changelog,
     ModifiablePath,
     ModifiableResource,
-    activate_session,
-    deactivate_session,
 )
 
 if sys.version_info >= (3, 11):
@@ -38,7 +36,6 @@ else:
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
-    from contextvars import Token
     from types import TracebackType
 
 
@@ -68,7 +65,6 @@ class Session(AbstractContextManager):
         self._entered: set[tuple[Hashable, ...]] = set()
         self._flushed: set[tuple[Hashable, ...]] = set()
         self._is_in_context = False
-        self._active_token: Token[Session | None] | None = None
         self.changelog: Changelog = []
         """Change messages that do not belong to one of the managed containers."""
 
@@ -146,7 +142,6 @@ class Session(AbstractContextManager):
 
     def __enter__(self) -> Self:
         self._is_in_context = True
-        self._active_token = activate_session(self)
         for resource_type, resource in self._loaded.items():
             resource.__enter__()
             self._entered.add(resource_type)
@@ -163,7 +158,4 @@ class Session(AbstractContextManager):
                 self.flush()
         finally:
             self._is_in_context = False
-            if self._active_token is not None:
-                deactivate_session(self._active_token)
-                self._active_token = None
         return False

@@ -37,11 +37,7 @@ from compwa_policy.utilities.pyproject.setters import (
     remove_dependency,
     split_dependency_definition,
 )
-from compwa_policy.utilities.resource import (
-    Changelog,
-    ModifiableResource,
-    get_active_session,
-)
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -56,6 +52,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
+    from compwa_policy.utilities.session import Session
 
 T = TypeVar("T", bound="Pyproject")
 _NO_FALLBACK: Final = object()
@@ -69,9 +66,13 @@ class Pyproject:
     _source: IO | Path | None = field(default=None)
 
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pyproject,
+        *,
+        session: Session | None = None,
+    ) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
-        session = get_active_session()
         if cls is Pyproject and source == CONFIG_PATH.pyproject and session is not None:
             managed = session.pyproject
             if managed is not None:
@@ -144,8 +145,14 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
 
     @override
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pyproject) -> Self:
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pyproject,
+        *,
+        session: Session | None = None,
+    ) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        _ = session
         if isinstance(source, io.IOBase):
             current_position = source.tell()
             source.seek(0)
@@ -250,7 +257,13 @@ class ModifiablePixi(ModifiablePyproject):
 
     @override
     @classmethod
-    def load(cls, source: IO | Path | str = CONFIG_PATH.pixi_toml) -> Self:
+    def load(
+        cls,
+        source: IO | Path | str = CONFIG_PATH.pixi_toml,
+        *,
+        session: Session | None = None,
+    ) -> Self:
+        _ = session
         if source == CONFIG_PATH.pixi_toml and not CONFIG_PATH.pixi_toml.exists():
             return cls(tomlkit.document(), CONFIG_PATH.pixi_toml)  # ty:ignore[invalid-argument-type]
         return super().load(source)
@@ -301,10 +314,10 @@ def _complies_minimally(obj: Any, other: Any) -> bool:
     return obj == other
 
 
-def has_pyproject_package_name() -> bool:
+def has_pyproject_package_name(*, session: Session | None = None) -> bool:
     if not CONFIG_PATH.pyproject.exists():
         return False
-    pyproject = Pyproject.load()
+    pyproject = Pyproject.load(session=session)
     return pyproject.get_package_name() is not None
 
 

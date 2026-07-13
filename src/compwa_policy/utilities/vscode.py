@@ -10,14 +10,12 @@ from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from compwa_policy.utilities import CONFIG_PATH
-from compwa_policy.utilities.resource import (
-    Changelog,
-    ModifiableResource,
-    get_active_session,
-)
+from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from compwa_policy.utilities.session import Session
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
@@ -130,15 +128,13 @@ class ModifiableVscodeExtensions(_ModifiableJsonResource):
         )
 
 
-def get_recommended_extensions() -> set[str]:
-    session = get_active_session()
+def get_recommended_extensions(*, session: Session | None = None) -> set[str]:
     if session is not None:
         return session.get(ModifiableVscodeExtensions).get_recommended()
     return _get_extension_recommendations("recommendations")
 
 
-def get_unwanted_extensions() -> set[str]:
-    session = get_active_session()
+def get_unwanted_extensions(*, session: Session | None = None) -> set[str]:
     if session is not None:
         return session.get(ModifiableVscodeExtensions).get_unwanted()
     return _get_extension_recommendations("unwantedRecommendations")
@@ -151,8 +147,11 @@ def _get_extension_recommendations(key: str) -> set[str]:
     return {ext.lower() for ext in extensions}
 
 
-def remove_settings(keys: RemovedKeys) -> Changelog:
-    session = get_active_session()
+def remove_settings(
+    keys: RemovedKeys,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if session is not None:
         session.get(ModifiableVscodeSettings).remove(keys)
         return []
@@ -202,8 +201,11 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     return obj
 
 
-def update_settings(new_settings: dict) -> Changelog:
-    session = get_active_session()
+def update_settings(
+    new_settings: dict,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if session is not None:
         session.get(ModifiableVscodeSettings).update(new_settings)
         return []
@@ -259,8 +261,11 @@ def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     return ["Updated VS Code settings"]
 
 
-def add_extension_recommendation(extension_name: str) -> Changelog:
-    session = get_active_session()
+def add_extension_recommendation(
+    extension_name: str,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if session is not None:
         session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
         return []
@@ -270,8 +275,11 @@ def add_extension_recommendation(extension_name: str) -> Changelog:
     return resource.changelog
 
 
-def add_unwanted_extension(extension_name: str) -> Changelog:
-    session = get_active_session()
+def add_unwanted_extension(
+    extension_name: str,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if session is not None:
         session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
         return []
@@ -309,9 +317,11 @@ def __remove_extension(extension_name: str, key: str) -> Changelog:
 
 
 def remove_extension_recommendation(
-    extension_name: str, *, unwanted: bool = False
+    extension_name: str,
+    *,
+    unwanted: bool = False,
+    session: Session | None = None,
 ) -> Changelog:
-    session = get_active_session()
     if session is not None:
         session.get(ModifiableVscodeExtensions).remove_recommendation(
             extension_name, unwanted=unwanted

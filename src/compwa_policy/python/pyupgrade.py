@@ -18,43 +18,56 @@ if TYPE_CHECKING:
 def main(session: Session, no_ruff: bool) -> None:
     precommit = session.precommit
     if no_ruff:
-        _update_precommit_repo(precommit)
-        _update_precommit_nbqa_hook(precommit)
+        _update_precommit_repo(precommit, session=session)
+        _update_precommit_nbqa_hook(precommit, session=session)
     else:
         _remove_pyupgrade(precommit)
 
 
-def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
+def _update_precommit_repo(
+    precommit: ModifiablePrecommit,
+    *,
+    session: Session | None = None,
+) -> None:
     expected_hook = Repo(
         repo="https://github.com/asottile/pyupgrade",
         rev="",
         hooks=[
             Hook(
                 id="pyupgrade",
-                args=__get_pyupgrade_version_argument(),
+                args=__get_pyupgrade_version_argument(session=session),
             )
         ],
     )
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_precommit_nbqa_hook(precommit: ModifiablePrecommit) -> None:
+def _update_precommit_nbqa_hook(
+    precommit: ModifiablePrecommit,
+    *,
+    session: Session | None = None,
+) -> None:
     precommit.update_hook(
         repo_url="https://github.com/nbQA-dev/nbQA",
         expected_hook=Hook(
             id="nbqa-pyupgrade",
-            args=__get_pyupgrade_version_argument(),
+            args=__get_pyupgrade_version_argument(session=session),
         ),
     )
 
 
-def __get_pyupgrade_version_argument() -> CommentedSeq:
+def __get_pyupgrade_version_argument(
+    *,
+    session: Session | None = None,
+) -> CommentedSeq:
     """Get the --py3x-plus argument for pyupgrade.
 
     >>> __get_pyupgrade_version_argument()
     ['--py310-plus']
     """
-    supported_python_versions = Pyproject.load().get_supported_python_versions()
+    supported_python_versions = Pyproject.load(
+        session=session
+    ).get_supported_python_versions()
     lowest_version = supported_python_versions[0]
     version_repr = lowest_version.replace(".", "")
     return read_preserved_yaml(f"[--py{version_repr}-plus]")

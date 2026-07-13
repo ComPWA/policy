@@ -38,58 +38,70 @@ def main(session: Session, has_notebooks: bool, imports_on_top: bool) -> None:
         return
     session.changelog += add_badge(
         "[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)",
+        session=session,
     )
     config.remove_dependency("radon")
-    session.changelog += _remove_black(precommit, config)
-    session.changelog += _remove_flake8(precommit, config)
-    session.changelog += _remove_isort(precommit, config, imports_on_top)
-    session.changelog += _remove_pydocstyle(precommit, config)
-    session.changelog += _remove_pylint(precommit, config)
+    session.changelog += _remove_black(precommit, config, session=session)
+    session.changelog += _remove_flake8(precommit, config, session=session)
+    session.changelog += _remove_isort(
+        precommit, config, imports_on_top, session=session
+    )
+    session.changelog += _remove_pydocstyle(precommit, config, session=session)
+    session.changelog += _remove_pylint(precommit, config, session=session)
     _move_ruff_lint_config(config)
     if has_notebooks and imports_on_top:
         _sort_imports_on_top(precommit, config)
     _update_ruff_config(precommit, config, has_notebooks)
     _update_precommit_hook(precommit, has_notebooks)
     if not has_dependency(config, "ruff"):
-        _update_lint_dependencies(config)
-    session.changelog += _update_vscode_settings()
+        _update_lint_dependencies(config, session=session)
+    session.changelog += _update_vscode_settings(session=session)
 
 
 def _remove_black(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     changes: Changelog = []
     changes += vscode.remove_extension_recommendation(
         "ms-python.black-formatter",
         unwanted=True,
+        session=session,
     )
     __remove_tool_table(pyproject, "black")
     pyproject.remove_dependency(
         package="black",
         ignored_sections=["doc", "notebooks", "test"],
     )
-    changes += remove_badge(r".*https://github\.com/psf.*/black.*")
+    changes += remove_badge(r".*https://github\.com/psf.*/black.*", session=session)
     precommit.remove_hook("black-jupyter")
     precommit.remove_hook("blacken-docs")
-    changes += vscode.remove_settings(["black-formatter.importStrategy"])
+    changes += vscode.remove_settings(
+        ["black-formatter.importStrategy"], session=session
+    )
     return changes
 
 
 def _remove_flake8(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     changes: Changelog = []
-    changes += remove_configs([".flake8"])
+    changes += remove_configs([".flake8"], session=session)
     __remove_nbqa_option(pyproject, "flake8")
     pyproject.remove_dependency("flake8")
     pyproject.remove_dependency("pep8-naming")
-    changes += vscode.remove_extension_recommendation("ms-python.flake8", unwanted=True)
+    changes += vscode.remove_extension_recommendation(
+        "ms-python.flake8", unwanted=True, session=session
+    )
     precommit.remove_hook("autoflake")  # cspell:ignore autoflake
     precommit.remove_hook("flake8")
     precommit.remove_hook("nbqa-flake8")
-    changes += vscode.remove_settings(["flake8.importStrategy"])
+    changes += vscode.remove_settings(["flake8.importStrategy"], session=session)
     return changes
 
 
@@ -97,17 +109,25 @@ def _remove_isort(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
     imports_on_top: bool,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     changes: Changelog = []
     __remove_nbqa_option(pyproject, "black")
-    changes += vscode.remove_extension_recommendation("ms-python.isort", unwanted=True)
+    changes += vscode.remove_extension_recommendation(
+        "ms-python.isort", unwanted=True, session=session
+    )
     precommit.remove_hook("isort")
     if not imports_on_top:
         __remove_tool_table(pyproject, "isort")
         __remove_nbqa_option(pyproject, "isort")
         precommit.remove_hook("nbqa-isort")
-    changes += vscode.remove_settings(["isort.check", "isort.importStrategy"])
-    changes += remove_badge(r".*https://img\.shields\.io/badge/%20imports\-isort")
+    changes += vscode.remove_settings(
+        ["isort.check", "isort.importStrategy"], session=session
+    )
+    changes += remove_badge(
+        r".*https://img\.shields\.io/badge/%20imports\-isort", session=session
+    )
     return changes
 
 
@@ -135,12 +155,17 @@ def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None
 def _remove_pydocstyle(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
-    changes = remove_configs([
-        ".pydocstyle",
-        "docs/.pydocstyle",
-        "tests/.pydocstyle",
-    ])
+    changes = remove_configs(
+        [
+            ".pydocstyle",
+            "docs/.pydocstyle",
+            "tests/.pydocstyle",
+        ],
+        session=session,
+    )
     pyproject.remove_dependency("pydocstyle")
     precommit.remove_hook("pydocstyle")
     return changes
@@ -149,14 +174,18 @@ def _remove_pydocstyle(
 def _remove_pylint(
     precommit: ModifiablePrecommit,
     pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     changes: Changelog = []
-    changes += remove_configs([".pylintrc"])  # cspell:ignore pylintrc
+    changes += remove_configs([".pylintrc"], session=session)  # cspell:ignore pylintrc
     pyproject.remove_dependency("pylint")
-    changes += vscode.remove_extension_recommendation("ms-python.pylint", unwanted=True)
+    changes += vscode.remove_extension_recommendation(
+        "ms-python.pylint", unwanted=True, session=session
+    )
     precommit.remove_hook("pylint")
     precommit.remove_hook("nbqa-pylint")
-    changes += vscode.remove_settings(["pylint.importStrategy"])
+    changes += vscode.remove_settings(["pylint.importStrategy"], session=session)
     return changes
 
 
@@ -666,8 +695,12 @@ def __add_nbqa_isort_pre_commit(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
-    if not has_pyproject_package_name():
+def _update_lint_dependencies(
+    pyproject: ModifiablePyproject,
+    *,
+    session: Session | None = None,
+) -> None:
+    if not has_pyproject_package_name(session=session):
         return
     python_versions = pyproject.get_supported_python_versions()
     if "3.6" in python_versions:
@@ -678,21 +711,28 @@ def _update_lint_dependencies(pyproject: ModifiablePyproject) -> None:
     pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 
-def _update_vscode_settings() -> Changelog:
+def _update_vscode_settings(*, session: Session | None = None) -> Changelog:
     # cspell:ignore charliermarsh
     changes: Changelog = []
-    changes += vscode.add_extension_recommendation("charliermarsh.ruff")
-    changes += vscode.update_settings({
-        "notebook.codeActionsOnSave": {"notebook.source.organizeImports": "explicit"},
-        "notebook.formatOnSave.enabled": True,
-        "[python]": {
-            "editor.codeActionsOnSave": {
-                "source.organizeImports": "explicit",
+    changes += vscode.add_extension_recommendation(
+        "charliermarsh.ruff", session=session
+    )
+    changes += vscode.update_settings(
+        {
+            "notebook.codeActionsOnSave": {
+                "notebook.source.organizeImports": "explicit"
             },
-            "editor.defaultFormatter": "charliermarsh.ruff",
+            "notebook.formatOnSave.enabled": True,
+            "[python]": {
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "explicit",
+                },
+                "editor.defaultFormatter": "charliermarsh.ruff",
+            },
+            "ruff.enable": True,
+            "ruff.importStrategy": "fromEnvironment",
+            "ruff.organizeImports": True,
         },
-        "ruff.enable": True,
-        "ruff.importStrategy": "fromEnvironment",
-        "ruff.organizeImports": True,
-    })
+        session=session,
+    )
     return changes

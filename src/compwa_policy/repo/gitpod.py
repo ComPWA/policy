@@ -25,11 +25,12 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
     if not use_gitpod:
         session.changelog += remove_gitpod_config()
         session.changelog += remove_badge(
-            r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod"
+            r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod",
+            session=session,
         )
         return
     error_message = ""
-    expected_config = _generate_gitpod_config(python_version)
+    expected_config = _generate_gitpod_config(python_version, session=session)
     if CONFIG_PATH.gitpod.exists():
         with open(CONFIG_PATH.gitpod) as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)
@@ -43,9 +44,10 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         session.changelog.append(error_message)
         return
     try:
-        repo_url = Pyproject.load().get_repo_url()
+        repo_url = Pyproject.load(session=session).get_repo_url()
         session.changelog += add_badge(
-            f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})"
+            f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})",
+            session=session,
         )
     except PolicyError:
         return
@@ -58,11 +60,15 @@ def remove_gitpod_config() -> Changelog:
     return []
 
 
-def _extract_extensions() -> list[str]:
-    return sorted(vscode.get_recommended_extensions())
+def _extract_extensions(*, session: Session | None = None) -> list[str]:
+    return sorted(vscode.get_recommended_extensions(session=session))
 
 
-def _generate_gitpod_config(python_version: PythonVersion) -> dict:
+def _generate_gitpod_config(
+    python_version: PythonVersion,
+    *,
+    session: Session | None = None,
+) -> dict:
     with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
@@ -72,7 +78,7 @@ def _generate_gitpod_config(python_version: PythonVersion) -> dict:
         tasks[1]["init"] = "pip install -e .[dev]"
     else:
         tasks[1]["init"] = f"pip install -c {constraints_file} -e .[dev]"
-    extensions = _extract_extensions()
+    extensions = _extract_extensions(session=session)
     if extensions:
         gitpod_config["vscode"] = {"extensions": extensions}
     return gitpod_config

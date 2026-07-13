@@ -6,7 +6,6 @@ import shutil
 import sys
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
-from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
@@ -17,28 +16,11 @@ else:
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from compwa_policy.utilities.session import Session
-
-
 ChangelogItem: TypeAlias = str
 """A user-facing message that describes one policy change."""
 
 Changelog: TypeAlias = list[ChangelogItem]
 """Messages reported by a policy check."""
-
-_ACTIVE_SESSION: ContextVar[Session | None] = ContextVar("active_session", default=None)
-
-
-def get_active_session() -> Session | None:
-    return _ACTIVE_SESSION.get()
-
-
-def activate_session(session: Session) -> Token[Session | None]:
-    return _ACTIVE_SESSION.set(session)
-
-
-def deactivate_session(token: Token[Session | None]) -> None:
-    _ACTIVE_SESSION.reset(token)
 
 
 class ModifiableResource(AbstractContextManager, ABC):

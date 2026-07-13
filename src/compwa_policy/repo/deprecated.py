@@ -15,27 +15,39 @@ if TYPE_CHECKING:
 
 def remove_deprecated_tools(session: Session, keep_issue_templates: bool) -> None:
     if not keep_issue_templates:
-        session.changelog += _remove_github_issue_templates()
-    session.changelog += _remove_markdownlint(session.precommit)
+        session.changelog += _remove_github_issue_templates(session=session)
+    session.changelog += _remove_markdownlint(session.precommit, session=session)
     for directory in ["docs", "doc"]:
         _remove_relink_references(directory)
 
 
-def _remove_github_issue_templates() -> Changelog:
-    return remove_configs([
-        ".github/ISSUE_TEMPLATE",
-        ".github/pull_request_template.md",
-    ])
+def _remove_github_issue_templates(*, session: Session | None = None) -> Changelog:
+    return remove_configs(
+        [
+            ".github/ISSUE_TEMPLATE",
+            ".github/pull_request_template.md",
+        ],
+        session=session,
+    )
 
 
-def _remove_markdownlint(precommit: ModifiablePrecommit) -> Changelog:
+def _remove_markdownlint(
+    precommit: ModifiablePrecommit,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     changes: Changelog = []
-    changes += remove_configs([".markdownlint.json", ".markdownlint.yaml"])
-    changes += remove_lines(CONFIG_PATH.gitignore, r"\.markdownlint\.json")
+    changes += remove_configs(
+        [".markdownlint.json", ".markdownlint.yaml"], session=session
+    )
+    changes += remove_lines(
+        CONFIG_PATH.gitignore, r"\.markdownlint\.json", session=session
+    )
     changes += vscode.remove_extension_recommendation(
         # cspell:ignore davidanson markdownlint
         extension_name="davidanson.vscode-markdownlint",
         unwanted=True,
+        session=session,
     )
     precommit.remove_hook("markdownlint")
     return changes

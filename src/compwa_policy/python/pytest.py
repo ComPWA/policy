@@ -41,7 +41,7 @@ def main(
     _update_codecov_settings(config, branch_coverage)
     _update_settings(config)
     session.changelog += _update_vscode_settings(
-        config, coverage_gutters, single_threaded
+        config, coverage_gutters, single_threaded, session=session
     )
     if single_threaded:
         config.remove_dependency("pytest-xdist")
@@ -173,57 +173,75 @@ def __update_settings(config: MutableMapping, **expected: Any) -> bool:
 
 
 def _update_vscode_settings(
-    pyproject: Pyproject, coverage_gutters: bool, single_threaded: bool
+    pyproject: Pyproject,
+    coverage_gutters: bool,
+    single_threaded: bool,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     changes: Changelog = []
     # cspell:ignore ryanluker
     if coverage_gutters:
         changes += vscode.add_extension_recommendation(
             "ryanluker.vscode-coverage-gutters",
+            session=session,
         )
     else:
         changes += vscode.remove_extension_recommendation(
             extension_name="ryanluker.vscode-coverage-gutters",
             unwanted=True,
+            session=session,
         )
-    changes += vscode.update_settings({
-        "testing.coverageToolbarEnabled": True,
-        "testing.showCoverageInExplorer": True,
-    })
-    changes += vscode.remove_settings({
-        "python.testing.pytestArgs": ["--color=no", "--no-cov"]
-    })
+    changes += vscode.update_settings(
+        {
+            "testing.coverageToolbarEnabled": True,
+            "testing.showCoverageInExplorer": True,
+        },
+        session=session,
+    )
+    changes += vscode.remove_settings(
+        {"python.testing.pytestArgs": ["--color=no", "--no-cov"]}, session=session
+    )
     package_name = get_package_name(pyproject._document)  # noqa: SLF001
     if package_name is not None:
         module_name = package_name.replace("-", "_")
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [f"--cov={module_name}"]
-        })
+        changes += vscode.remove_settings(
+            {"python.testing.pytestArgs": [f"--cov={module_name}"]}, session=session
+        )
     if single_threaded:
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [
-                "--numprocesses auto",
-                "--numprocesses=auto",
-                "-n auto",
-                "-nauto",  # cspell:ignore nauto
-            ]
-        })
+        changes += vscode.remove_settings(
+            {
+                "python.testing.pytestArgs": [
+                    "--numprocesses auto",
+                    "--numprocesses=auto",
+                    "-n auto",
+                    "-nauto",  # cspell:ignore nauto
+                ]
+            },
+            session=session,
+        )
     else:
-        changes += vscode.update_settings({
-            "python.testing.pytestArgs": ["--numprocesses=auto"]
-        })
-        changes += vscode.remove_settings({
-            "python.testing.pytestArgs": [
-                "--numprocesses auto",
-                "-n auto",
-                "-nauto",
-            ]
-        })
+        changes += vscode.update_settings(
+            {"python.testing.pytestArgs": ["--numprocesses=auto"]}, session=session
+        )
+        changes += vscode.remove_settings(
+            {
+                "python.testing.pytestArgs": [
+                    "--numprocesses auto",
+                    "-n auto",
+                    "-nauto",
+                ]
+            },
+            session=session,
+        )
     if not coverage_gutters:
-        changes += vscode.remove_settings([
-            "coverage-gutters.coverageFileNames",
-            "coverage-gutters.coverageReportFileName",
-            "coverage-gutters.showGutterCoverage",
-            "coverage-gutters.showLineCoverage",
-        ])
+        changes += vscode.remove_settings(
+            [
+                "coverage-gutters.coverageFileNames",
+                "coverage-gutters.coverageReportFileName",
+                "coverage-gutters.showGutterCoverage",
+                "coverage-gutters.showLineCoverage",
+            ],
+            session=session,
+        )
     return changes

@@ -26,29 +26,29 @@ def main(
         session.changelog += __update_envrc_content(script)
         return
     if package_manager == "pixi+uv":
-        script = __get_pixi_direnv() + "\n"
+        script = __get_pixi_direnv(session=session) + "\n"
         script += __get_uv_direnv(variables) + "\n"
         session.changelog += __update_envrc_content(script)
         return
     if package_manager == "pixi":
-        script = __get_pixi_direnv() + "\n"
+        script = __get_pixi_direnv(session=session) + "\n"
         session.changelog += __update_envrc_content(script)
         return
     statements: list[tuple[str | None, str]] = [
         (".venv", "source .venv/bin/activate"),
         ("venv", "source venv/bin/activate"),
     ]
-    if has_pixi_config():
-        script = __get_pixi_direnv()
+    if has_pixi_config(session.pyproject):
+        script = __get_pixi_direnv(session=session)
         statements.append((".pixi", script))
     if CONFIG_PATH.conda.exists():
         statements.append((None, "layout anaconda"))
     session.changelog += _update_envrc(statements)
 
 
-def __get_pixi_direnv() -> str:
+def __get_pixi_direnv(*, session: Session | None = None) -> str:
     environment_flag = ""
-    dev_environment = __determine_pixi_dev_environment()
+    dev_environment = __determine_pixi_dev_environment(session=session)
     if dev_environment is not None:
         environment_flag = f" --environment {dev_environment}"
     return dedent(f"""
@@ -67,26 +67,26 @@ def __get_uv_direnv(variables: dict[str, str]) -> str:
     return script.strip()
 
 
-def __determine_pixi_dev_environment() -> str | None:
+def __determine_pixi_dev_environment(*, session: Session | None = None) -> str | None:
     search_terms = ["dev"]
     if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+        pyproject = Pyproject.load(session=session)
         package_name = pyproject.get_package_name()
         if package_name is not None:
             search_terms.append(package_name)
-    available_environments = __get_pixi_environment_names()
+    available_environments = __get_pixi_environment_names(session=session)
     for candidate in search_terms:
         if candidate in available_environments:
             return candidate
     return None
 
 
-def __get_pixi_environment_names() -> set[str]:
+def __get_pixi_environment_names(*, session: Session | None = None) -> set[str]:
     if CONFIG_PATH.pixi_toml.exists():
         pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
         return set(pixi_config.get("environments", set()))
     if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+        pyproject = Pyproject.load(session=session)
         if pyproject.has_table("tool.pixi.environments"):
             return set(pyproject.get_table("tool.pixi.environments"))
     return set()

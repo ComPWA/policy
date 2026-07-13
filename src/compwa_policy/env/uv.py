@@ -34,15 +34,21 @@ def main(  # noqa: PLR0917
     if "uv" in package_manager:
         session.changelog += readme.add_badge(
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
+            session=session,
         )
         session.changelog += _update_editor_config()
-        session.changelog += _update_python_version_file(dev_python_version)
+        session.changelog += _update_python_version_file(
+            dev_python_version, session=session
+        )
         _update_uv_lock_hook(precommit_config)
         if not keep_contributing_md:
-            session.changelog += _update_contributing_file(organization, repo_name)
+            session.changelog += _update_contributing_file(
+                organization, repo_name, session=session
+            )
         session.changelog += _remove_pip_constraint_files()
         session.changelog += vscode.remove_settings(
             {"files.associations": ["**/.constraints/py*.txt"]},
+            session=session,
         )
         session.changelog += vscode.remove_settings(
             {
@@ -51,6 +57,7 @@ def main(  # noqa: PLR0917
                     ".constraints/*.txt",
                 ]
             },
+            session=session,
         )
     else:
         session.changelog += _remove_uv_configuration(session.pyproject)
@@ -58,10 +65,11 @@ def main(  # noqa: PLR0917
         precommit_config.remove_hook("uv-lock")
         session.changelog += readme.remove_badge(
             r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
+            session=session,
         )
-        session.changelog += vscode.remove_settings({
-            "search.exclude": ["uv.lock", "**/uv.lock"]
-        })
+        session.changelog += vscode.remove_settings(
+            {"search.exclude": ["uv.lock", "**/uv.lock"]}, session=session
+        )
 
 
 def _remove_pip_constraint_files() -> Changelog:
@@ -119,10 +127,14 @@ def _update_editor_config() -> Changelog:
     return [f"Updated {CONFIG_PATH.editorconfig} for uv.lock"]
 
 
-def _update_python_version_file(dev_python_version: PythonVersion) -> Changelog:
+def _update_python_version_file(
+    dev_python_version: PythonVersion,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     if not CONFIG_PATH.pyproject.exists():
         return []
-    pyproject = Pyproject.load()
+    pyproject = Pyproject.load(session=session)
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
         requires_python = pyproject.get_table("project").get("requires-python", "")
@@ -157,7 +169,12 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
         precommit.remove_hook("uv-lock")
 
 
-def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
+def _update_contributing_file(
+    organization: str,
+    repo_name: str,
+    *,
+    session: Session | None = None,
+) -> Changelog:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
         return []
@@ -170,7 +187,7 @@ def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
     context = {
         "ORGANIZATION": organization,
         "REPO_NAME": repo_name,
-        "RUNNER": __get_runner_instructions().strip(),
+        "RUNNER": __get_runner_instructions(session=session).strip(),
     }
     expected_content = template.render(context).strip() + "\n"
     existing_content = ""
@@ -183,7 +200,7 @@ def _update_contributing_file(organization: str, repo_name: str) -> Changelog:
     return []
 
 
-def __get_runner_instructions() -> str:
+def __get_runner_instructions(*, session: Session | None = None) -> str:
     poe_instructions = dedent("""
     [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. Install it globally (within your home folder) with `uv`:
 
@@ -217,7 +234,7 @@ def __get_runner_instructions() -> str:
     ```
     """)
     if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load()
+        pyproject = Pyproject.load(session=session)
         if pyproject.has_table("tool.poe.tasks"):
             return poe_instructions
         if pyproject.has_table("tool.pixi.tasks"):

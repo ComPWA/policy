@@ -12,21 +12,28 @@ if TYPE_CHECKING:
 
 
 def main(session: Session, no_ruff: bool) -> None:
-    session.changelog += _update_dev_requirements(no_ruff, session.pyproject)
+    session.changelog += _update_dev_requirements(
+        no_ruff, session.pyproject, session=session
+    )
     # cspell:ignore toolsai
-    session.changelog += vscode.add_extension_recommendation("ms-toolsai.jupyter")
     session.changelog += vscode.add_extension_recommendation(
-        "ms-toolsai.vscode-jupyter-cell-tags"
+        "ms-toolsai.jupyter", session=session
+    )
+    session.changelog += vscode.add_extension_recommendation(
+        "ms-toolsai.vscode-jupyter-cell-tags", session=session
     )
     session.changelog += vscode.remove_extension_recommendation(
         "ms-toolsai.vscode-jupyter-slideshow",
         unwanted=True,
+        session=session,
     )
 
 
 def _update_dev_requirements(
     no_ruff: bool,
     pyproject: ModifiablePyproject | None = None,
+    *,
+    session: Session | None = None,
 ) -> Changelog:
     if pyproject is None:
         if not CONFIG_PATH.pyproject.exists():
@@ -45,7 +52,7 @@ def _update_dev_requirements(
         "python-lsp-server",
     }
     # cspell:ignore executablebookproject
-    recommended_vscode_extensions = vscode.get_recommended_extensions()
+    recommended_vscode_extensions = vscode.get_recommended_extensions(session=session)
     if "executablebookproject.myst-highlight" in recommended_vscode_extensions:
         packages.add("jupyterlab-myst")
     else:
