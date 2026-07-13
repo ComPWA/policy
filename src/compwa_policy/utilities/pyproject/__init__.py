@@ -221,6 +221,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
     def add_dependency(
         self,
         package: str,
+        /,
         dependency_group: str | Sequence[str] | None = None,
         optional_key: str | Sequence[str] | None = None,
     ) -> None:
@@ -233,7 +234,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             self._changelog.append(msg)
 
     def remove_dependency(
-        self, package: str, ignored_sections: Iterable[str] | None = None
+        self, package: str, /, ignored_sections: Iterable[str] | None = None
     ) -> None:
         self.__assert_is_in_context()
         updated = remove_dependency(self._document, package, ignored_sections)

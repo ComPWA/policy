@@ -22,24 +22,16 @@ def main(session: Session, has_notebooks: bool) -> None:
         return
     _remove_outdated_settings(config)
     _update_black_settings(config)
-    precommit.remove_hook(
-        hook_id="black",
-        repo_url="https://github.com/psf/black",
-    )
-    precommit.remove_hook(
-        hook_id="black-jupyter",
-        repo_url="https://github.com/psf/black",
-    )
+    precommit.remove_hook("black", repo_url="https://github.com/psf/black")
+    precommit.remove_hook("black-jupyter", repo_url="https://github.com/psf/black")
     _update_precommit_repo(precommit, has_notebooks)
-    vscode.add_extension_recommendation(
-        session, extension_name="ms-python.black-formatter"
-    )
+    vscode.add_extension_recommendation(session, "ms-python.black-formatter")
     vscode.update_settings(
-        session, new_settings={"black-formatter.importStrategy": "fromEnvironment"}
+        session, {"black-formatter.importStrategy": "fromEnvironment"}
     )
     vscode.update_settings(
         session,
-        new_settings={
+        {
             "[python]": {
                 "editor.defaultFormatter": "ms-python.black-formatter",
                 "editor.rulers": [88],

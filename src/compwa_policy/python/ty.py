@@ -125,5 +125,5 @@ def _remove_ty(session: Session, /) -> None:
     precommit.remove_hook("ty")
     remove_badge(
         session,
-        r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*",
+        badge_pattern=r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*",
     )

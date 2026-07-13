@@ -67,11 +67,8 @@ def _remove_black(session: Session, /) -> None:
         unwanted=True,
     )
     __remove_tool_table(pyproject, "black")
-    pyproject.remove_dependency(
-        package="black",
-        ignored_sections=["doc", "notebooks", "test"],
-    )
-    remove_badge(session, r".*https://github\.com/psf.*/black.*")
+    pyproject.remove_dependency("black", ignored_sections=["doc", "notebooks", "test"])
+    remove_badge(session, badge_pattern=r".*https://github\.com/psf.*/black.*")
     precommit.remove_hook("black-jupyter")
     precommit.remove_hook("blacken-docs")
     vscode.remove_settings(session, ["black-formatter.importStrategy"])
