@@ -1,9 +1,11 @@
 import io
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.precommit.struct import Repo
 
 
 @pytest.fixture
@@ -18,6 +20,109 @@ def example_config(this_dir: Path) -> str:
 
 
 def describe_modifiable_precommit():
+    def normalizes_spacing_in_new_repo_with_plain_nested_collections(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        input_yaml = dedent("""
+            repos:
+              - repo: first
+                rev: "1"
+                hooks:
+                  - id: first
+
+              - repo: third
+                rev: "1"
+                hooks:
+                  - id: third
+        """).lstrip()
+        expected = dedent("""
+            repos:
+              - repo: first
+                rev: "1"
+                hooks:
+                  - id: first
+
+              - repo: second
+                rev: '1'
+                hooks:
+                  - id: second
+
+              - repo: third
+                rev: "1"
+                hooks:
+                  - id: third
+        """).lstrip()
+        source.write_text(input_yaml)
+
+        with ModifiablePrecommit.load(source) as precommit:
+            precommit.update_single_hook_repo(
+                Repo(
+                    repo="second",
+                    rev="1",
+                    hooks=[{"id": "second"}],
+                )
+            )
+            precommit.document["repos"] = list(precommit.document["repos"])
+
+        assert source.read_text() == expected
+
+    def normalizes_spacing_between_and_within_repos(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        input_yaml = dedent("""
+            repos:
+              - repo: first
+
+                # Keep this comment.
+                rev: "1"
+                hooks:
+
+                  - id: first
+
+                  - id: second
+                    args:
+                      - |-
+                        alpha
+                        beta
+
+
+              # Keep this repo comment.
+              - repo: second
+                hooks:
+                  - id: third
+                    types_or: [python, jupyter]
+              - repo: third
+                hooks:
+                  - id: fourth
+        """).lstrip()
+        expected = dedent("""
+            repos:
+              - repo: first
+                # Keep this comment.
+                rev: "1"
+                hooks:
+                  - id: first
+                  - id: second
+                    args:
+                      - |-
+                        alpha
+                        beta
+
+              # Keep this repo comment.
+              - repo: second
+                hooks:
+                  - id: third
+                    types_or: [python, jupyter]
+
+              - repo: third
+                hooks:
+                  - id: fourth
+        """).lstrip()
+        source.write_text(input_yaml)
+
+        precommit = ModifiablePrecommit.load(source)
+        precommit.dump(source)
+
+        assert source.read_text() == expected
+
     def rejects_changes_outside_context_manager(example_config: str):
         precommit = ModifiablePrecommit.load(example_config)
         precommit.document["fail_fast"] = True
