@@ -72,7 +72,7 @@ def main(
             _update_doclive(config)
         if config.has_table("tool.poe.tasks"):
             _set_upgrade_task(config, package_manager)
-    remove_lines(session, CONFIG_PATH.gitignore, r"\.tox/?")
+    remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
     config.remove_dependency("tox-uv")
@@ -109,7 +109,7 @@ def _check_expected_sections(pyproject: Pyproject, has_notebooks: bool) -> None:
         raise PolicyError(msg)
 
 
-def _configure_uv_executor(pyproject: ModifiablePyproject) -> None:
+def _configure_uv_executor(pyproject: ModifiablePyproject, /) -> None:
     poe_table = pyproject.get_table("tool.poe")
     executor_table = poe_table.get("executor")
     if executor_table is None or isinstance(executor_table, str):
@@ -142,7 +142,7 @@ def _get_or_create_group_tasks(
     return group["tasks"]
 
 
-def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
+def _migrate_tasks_to_groups(pyproject: ModifiablePyproject, /) -> None:
     """Move any doc/test tasks from tool.poe.tasks into their group sub-tables."""
     if not pyproject.has_table("tool.poe.tasks"):
         return
@@ -169,7 +169,7 @@ def _migrate_tasks_to_groups(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_doc_group(pyproject: ModifiablePyproject) -> None:
+def _set_doc_group(pyproject: ModifiablePyproject, /) -> None:
     if not has_documentation():
         return
     doc_group = pyproject.get_table("tool.poe.groups.doc", create=True)
@@ -178,7 +178,7 @@ def _set_doc_group(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_test_group(pyproject: ModifiablePyproject) -> None:
+def _set_test_group(pyproject: ModifiablePyproject, /) -> None:
     if not Path("tests").exists():
         return
     test_group = pyproject.get_table("tool.poe.groups.test", create=True)
@@ -187,7 +187,7 @@ def _set_test_group(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_notebook_group(pyproject: ModifiablePyproject, has_notebooks: bool) -> None:
+def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) -> None:
     if not has_notebooks and not has_dependency(pyproject, "jupyterlab"):
         return
     notebook_group = pyproject.get_table("tool.poe.groups.notebook", create=True)
@@ -236,7 +236,7 @@ def __has_uv_run(cmd: str | Sequence) -> bool:
     return False
 
 
-def _set_all_task(pyproject: ModifiablePyproject) -> None:
+def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
     task_table = pyproject.get_table("tool.poe.tasks")
     if "all" not in task_table:
         return
@@ -251,7 +251,7 @@ def _set_all_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
+def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Mapping", tasks.get("lab", {}))
     expected = {
@@ -269,7 +269,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _set_nb_task(pyproject: ModifiablePyproject) -> None:
+def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Table", tasks.get("nb", {}))
     expected = {
@@ -313,7 +313,7 @@ def __get_notebook_path() -> str:
     return os.path.commonpath(os.path.dirname(p) for p in notebooks)
 
 
-def _set_test_all_task(pyproject: ModifiablePyproject) -> None:
+def _set_test_all_task(pyproject: ModifiablePyproject, /) -> None:
     supported_python_versions = pyproject.get_supported_python_versions()
     if len(supported_python_versions) <= 1:
         return
@@ -393,7 +393,7 @@ def _set_upgrade_task(
         pyproject.changelog.append(msg)
 
 
-def _update_doclive(pyproject: ModifiablePyproject) -> None:
+def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     def combine(key: str, value: str) -> str | Array:
         existing_value = executor.get(key)
         if existing_value is None or existing_value == value:

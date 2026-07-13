@@ -22,7 +22,7 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         session.changelog += remove_gitpod_config()
         remove_badge(
             session,
-            r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod",
+            badge_pattern=r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod",
         )
         return
     error_message = ""
@@ -46,7 +46,7 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         repo_url = pyproject.get_repo_url()
         add_badge(
             session,
-            f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})",
+            badge=f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})",
         )
     except PolicyError:
         return

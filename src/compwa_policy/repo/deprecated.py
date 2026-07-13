@@ -32,7 +32,7 @@ def _remove_github_issue_templates(session: Session, /) -> None:
 
 def _remove_markdownlint(session: Session, /) -> None:
     remove_configs(session, [".markdownlint.json", ".markdownlint.yaml"])
-    remove_lines(session, CONFIG_PATH.gitignore, r"\.markdownlint\.json")
+    remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.markdownlint\.json")
     vscode.remove_extension_recommendation(
         session,  # cspell:ignore davidanson markdownlint
         extension_name="davidanson.vscode-markdownlint",

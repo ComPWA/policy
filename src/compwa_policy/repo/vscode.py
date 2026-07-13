@@ -24,31 +24,23 @@ def main(
 
 
 def _update_extensions(session: Session, /) -> None:
-    vscode.add_extension_recommendation(
-        session, "eamodio.gitlens"
-    )  # cspell:ignore eamodio
-    vscode.add_extension_recommendation(
-        session, "mhutchie.git-graph"
-    )  # cspell:ignore mhutchie
-    vscode.add_extension_recommendation(
-        session, "soulcode.vscode-unwanted-extensions"
-    )  # cspell:ignore Soulcode
-    vscode.add_extension_recommendation(session, "stkb.rewrap")  # cspell:ignore stkb
+    # cspell:disable
+    vscode.add_extension_recommendation(session, "eamodio.gitlens")
+    vscode.add_extension_recommendation(session, "mhutchie.git-graph")
+    vscode.add_extension_recommendation(session, "soulcode.vscode-unwanted-extensions")
+    vscode.add_extension_recommendation(session, "stkb.rewrap")
     vscode.remove_extension_recommendation(
         session,
-        "garaioag.garaio-vscode-unwanted-recommendations",  # cspell:ignore garaio garaioag
+        "garaioag.garaio-vscode-unwanted-recommendations",
         unwanted=True,
     )
     vscode.remove_extension_recommendation(
         session,
-        "travisillig.vscode-json-stable-stringify",  # cspell:ignore travisillig
+        "travisillig.vscode-json-stable-stringify",
         unwanted=True,
     )
-    vscode.remove_extension_recommendation(
-        session,
-        "tyriar.sort-lines",  # cspell:ignore tyriar
-        unwanted=True,
-    )
+    vscode.remove_extension_recommendation(session, "tyriar.sort-lines", unwanted=True)
+    # cspell:enable
 
 
 def _update_settings(
