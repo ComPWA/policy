@@ -83,7 +83,7 @@ def describe_update_precommit_config():
         result = precommit.dumps()
         assert "https://github.com/astral-sh/ty-pre-commit" in result
         assert "id: ty" in result
-        assert "args: [--no-default-groups, --group=style]" in result
+        assert "args: [--group=style, --no-default-groups]" in result
 
     def prefers_types_group_over_style(tmp_path: Path):
         config = _write_precommit(
@@ -108,7 +108,7 @@ def describe_update_precommit_config():
         pyproject = ModifiablePyproject.load(pyproject_path)
         with Session(precommit, pyproject) as session:
             _update_precommit_config(session)
-        assert "args: [--no-default-groups, --group=types]" in precommit.dumps()
+        assert "args: [--group=types, --no-default-groups]" in precommit.dumps()
 
     def omits_args_without_matching_group(tmp_path: Path):
         config = _write_precommit(
@@ -161,7 +161,7 @@ def describe_update_precommit_config():
         assert "entry: ty check" not in result
         assert "language: system" not in result
         assert "exclude: docs/.*" in result
-        assert "args: [--no-default-groups, --group=typechecking]" in result
+        assert "args: [--group=typechecking, --no-default-groups]" in result
 
 
 def describe_update_vscode_settings():

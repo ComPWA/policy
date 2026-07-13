@@ -92,7 +92,7 @@ def _update_precommit_config(session: Session, /) -> None:
         hook["exclude"] = exclude
     group = _select_dependency_group(pyproject)
     if group is not None:
-        hook["args"] = read_preserved_yaml(f"[--no-default-groups, --group={group}]")
+        hook["args"] = read_preserved_yaml(f"[--group={group}, --no-default-groups]")
     expected_repo = Repo(
         repo="https://github.com/astral-sh/ty-pre-commit",
         rev="",

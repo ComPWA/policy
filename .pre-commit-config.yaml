@@ -91,4 +91,4 @@ repos:
     rev: v0.0.56
     hooks:
       - id: ty
-        args: [--no-default-groups, --group=types]
+        args: [--group=types, --no-default-groups]
