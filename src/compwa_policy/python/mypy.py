@@ -31,7 +31,7 @@ def main(session: Session, active: bool) -> None:
         session.changelog += remove_badge(session, r"http://(www\.)?mypy\-lang\.org/")
         session.changelog += add_badge(
             session,
-            "[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
+            badge="[![Type-checked with mypy](https://mypy-lang.org/static/mypy_badge.svg)](https://mypy.readthedocs.io)",
         )
     else:
         session.changelog += _remove_mypy(session)
@@ -65,7 +65,7 @@ def _remove_mypy(session: Session, /) -> Changelog:
     precommit.remove_hook("mypy")
     return remove_badge(
         session,
-        r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?",
+        badge_pattern=r"\[\!\[.*[Mm]ypy.*\]\(.*mypy.*\)\]\(.*mypy.*\)\n?",
     )
 
 
@@ -88,7 +88,7 @@ def _update_vscode_settings(session: Session, /, mypy: bool) -> Changelog:
     changes: Changelog = []
     if mypy:
         changes += vscode.add_extension_recommendation(
-            session, "ms-python.mypy-type-checker"
+            session, extension_name="ms-python.mypy-type-checker"
         )
         settings = {
             "mypy-type-checker.args": [
