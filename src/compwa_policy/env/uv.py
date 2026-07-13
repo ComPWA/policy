@@ -12,12 +12,12 @@ from jinja2 import Environment, FileSystemLoader
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 
 if TYPE_CHECKING:
     from compwa_policy.env.conda import PackageManagerChoice
     from compwa_policy.utilities.precommit import ModifiablePrecommit
+    from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -33,42 +33,40 @@ def main(  # noqa: PLR0917
     precommit_config = session.precommit
     if "uv" in package_manager:
         session.changelog += readme.add_badge(
+            session,
             "[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)",
-            session=session,
         )
         session.changelog += _update_editor_config()
-        session.changelog += _update_python_version_file(
-            dev_python_version, session=session
-        )
+        session.changelog += _update_python_version_file(session, dev_python_version)
         _update_uv_lock_hook(precommit_config)
         if not keep_contributing_md:
             session.changelog += _update_contributing_file(
-                organization, repo_name, session=session
+                session, organization, repo_name
             )
         session.changelog += _remove_pip_constraint_files()
         session.changelog += vscode.remove_settings(
+            session,
             {"files.associations": ["**/.constraints/py*.txt"]},
-            session=session,
         )
         session.changelog += vscode.remove_settings(
+            session,
             {
                 "search.exclude": [
                     "**/.constraints/py*.txt",
                     ".constraints/*.txt",
                 ]
             },
-            session=session,
         )
     else:
         session.changelog += _remove_uv_configuration(session.pyproject)
         session.changelog += _remove_uv_lock()
         precommit_config.remove_hook("uv-lock")
         session.changelog += readme.remove_badge(
+            session,
             r"\[\!\[[^\[]+\]\(https://img\.shields\.io/[^\)]+/uv/main/assets/badge/[^\)]+\)\]\(https://github\.com/astral-sh/uv\)",
-            session=session,
         )
         session.changelog += vscode.remove_settings(
-            {"search.exclude": ["uv.lock", "**/uv.lock"]}, session=session
+            session, {"search.exclude": ["uv.lock", "**/uv.lock"]}
         )
 
 
@@ -85,13 +83,9 @@ def _remove_pip_constraint_files() -> Changelog:
     return [msg]
 
 
-def _remove_uv_configuration(pyproject: ModifiablePyproject | None = None) -> Changelog:
+def _remove_uv_configuration(pyproject: ModifiablePyproject | None) -> Changelog:
     if pyproject is None:
-        if not CONFIG_PATH.pyproject.exists():
-            return []
-        with ModifiablePyproject.load() as config:
-            _remove_uv_configuration(config)
-            return list(config.changelog)
+        return []
     readonly_pyproject = pyproject._document  # noqa: SLF001
     if "tool" not in readonly_pyproject or "uv" not in readonly_pyproject["tool"]:
         return []
@@ -128,13 +122,13 @@ def _update_editor_config() -> Changelog:
 
 
 def _update_python_version_file(
-    dev_python_version: PythonVersion,
-    *,
     session: Session,
+    /,
+    dev_python_version: PythonVersion,
 ) -> Changelog:
-    if not CONFIG_PATH.pyproject.exists():
+    pyproject = session.pyproject
+    if pyproject is None:
         return []
-    pyproject = Pyproject.load(session=session)
     python_version_file = Path(".python-version")
     if pyproject.has_table("project"):
         requires_python = pyproject.get_table("project").get("requires-python", "")
@@ -170,10 +164,10 @@ def _update_uv_lock_hook(precommit: ModifiablePrecommit) -> None:
 
 
 def _update_contributing_file(
+    session: Session,
+    /,
     organization: str,
     repo_name: str,
-    *,
-    session: Session,
 ) -> Changelog:
     contributing_file = Path("CONTRIBUTING.md")
     if not contributing_file.exists():
@@ -187,7 +181,7 @@ def _update_contributing_file(
     context = {
         "ORGANIZATION": organization,
         "REPO_NAME": repo_name,
-        "RUNNER": __get_runner_instructions(session=session).strip(),
+        "RUNNER": __get_runner_instructions(session).strip(),
     }
     expected_content = template.render(context).strip() + "\n"
     existing_content = ""
@@ -200,7 +194,7 @@ def _update_contributing_file(
     return []
 
 
-def __get_runner_instructions(*, session: Session) -> str:
+def __get_runner_instructions(session: Session, /) -> str:
     poe_instructions = dedent("""
     [Poe the Poet](https://poethepoet.natn.io) is used as a task runner. Install it globally (within your home folder) with `uv`:
 
@@ -233,8 +227,8 @@ def __get_runner_instructions(*, session: Session) -> str:
     pixi run style
     ```
     """)
-    if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load(session=session)
+    pyproject = session.pyproject
+    if pyproject is not None:
         if pyproject.has_table("tool.poe.tasks"):
             return poe_instructions
         if pyproject.has_table("tool.pixi.tasks"):

@@ -65,11 +65,11 @@ def test_file_helpers_defer_changes_until_session_flush(tmp_path, monkeypatch) -
     obsolete_path.touch()
 
     with Session() as session:
-        vscode.remove_settings(["remove"], session=session)
-        vscode.update_settings({"added": True}, session=session)
-        vscode.add_extension_recommendation("Example.Extension", session=session)
-        add_badge("[![Badge](badge.svg)](example.org)", session=session)
-        remove_configs([str(obsolete_path)], session=session)
+        vscode.remove_settings(session, ["remove"])
+        vscode.update_settings(session, {"added": True})
+        vscode.add_extension_recommendation(session, "Example.Extension")
+        add_badge(session, "[![Badge](badge.svg)](example.org)")
+        remove_configs(session, [str(obsolete_path)])
 
         assert json.loads(settings_path.read_text()) == {"remove": True}
         assert json.loads(extensions_path.read_text()) == {"recommendations": []}
@@ -102,9 +102,9 @@ def test_generic_file_operations_share_deferred_state(tmp_path, monkeypatch) -> 
     renamed = tmp_path / "renamed.txt"
 
     with Session() as session:
-        remove_lines(source, "remove", session=session)
-        assert append_safe("added", source, session=session)
-        rename_file(str(source), str(renamed), session=session)
+        remove_lines(session, source, "remove")
+        assert append_safe(session, "added", source)
+        rename_file(session, str(source), str(renamed))
         assert source.read_text() == "keep\nremove\n"
         assert not renamed.exists()
 
@@ -125,5 +125,5 @@ def test_gitpod_reads_in_memory_vscode_extensions(tmp_path, monkeypatch) -> None
     vscode_dir.mkdir()
     (vscode_dir / "extensions.json").write_text('{"recommendations": []}\n')
     with Session() as session:
-        vscode.add_extension_recommendation("Example.Extension", session=session)
-        assert _extract_extensions(session=session) == ["example.extension"]
+        vscode.add_extension_recommendation(session, "Example.Extension")
+        assert _extract_extensions(session) == ["example.extension"]

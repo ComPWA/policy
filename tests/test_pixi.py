@@ -68,10 +68,10 @@ def describe_update_pixi_configuration():
         monkeypatch.chdir(tmp_path)
         with Session() as session:
             update_pixi_configuration(
+                session,
                 is_python_package=True,
                 dev_python_version="3.12",
                 package_manager="uv",  # not a pixi manager -> no-op
-                session=session,
             )
         assert not (tmp_path / "pixi.toml").exists()
 
@@ -98,10 +98,10 @@ def describe_update_pixi_configuration():
         )
         with Session() as session:
             update_pixi_configuration(
+                session,
                 is_python_package=True,
                 dev_python_version="3.12",
                 package_manager="pixi",
-                session=session,
             )
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
@@ -131,10 +131,10 @@ def describe_update_pixi_configuration():
         )
         with Session() as session:
             update_pixi_configuration(
+                session,
                 is_python_package=True,
                 dev_python_version="3.12",
                 package_manager="pixi+uv",
-                session=session,
             )
 
         pixi = (tmp_path / "pixi.toml").read_text()

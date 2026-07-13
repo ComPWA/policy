@@ -8,15 +8,15 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def remove_pixi_configuration(*, session: Session) -> Changelog:
-    changes = remove_lines(CONFIG_PATH.gitattributes, "pixi", session=session)
-    changes += remove_lines(CONFIG_PATH.gitignore, ".*pixi.*", session=session)
+def remove_pixi_configuration(session: Session, /) -> Changelog:
+    changes = remove_lines(session, CONFIG_PATH.gitattributes, "pixi")
+    changes += remove_lines(session, CONFIG_PATH.gitignore, ".*pixi.*")
     changes += remove_configs(
+        session,
         [str(CONFIG_PATH.pixi_lock), str(CONFIG_PATH.pixi_toml)],
-        session=session,
     )
     changes += vscode.remove_settings(
-        {"files.associations": ["**/pixi.lock", "pixi.lock"]}, session=session
+        session, {"files.associations": ["**/pixi.lock", "pixi.lock"]}
     )
     if CONFIG_PATH.pyproject.exists():
         pyproject = session.pyproject

@@ -72,9 +72,7 @@ def main(
             _update_doclive(config)
         if config.has_table("tool.poe.tasks"):
             _set_upgrade_task(config, package_manager)
-    session.changelog += remove_lines(
-        CONFIG_PATH.gitignore, r"\.tox/?", session=session
-    )
+    session.changelog += remove_lines(session, CONFIG_PATH.gitignore, r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
     config.remove_dependency("tox-uv")

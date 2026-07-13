@@ -9,7 +9,6 @@ from ruamel.yaml.scalarstring import PlainScalarString
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.pyproject import (
-    Pyproject,
     PythonVersion,
     get_constraints_file,
     has_pyproject_package_name,
@@ -29,24 +28,24 @@ def main(
     package_manager: PackageManagerChoice,
 ) -> None:
     if package_manager == "conda":
-        session.changelog += update_conda_environment(python_version, session=session)
+        session.changelog += update_conda_environment(session, python_version)
     else:
-        session.changelog += _remove_conda_configuration(session=session)
+        session.changelog += _remove_conda_configuration(session)
 
 
 def update_conda_environment(
-    python_version: PythonVersion,
-    *,
     session: Session,
+    /,
+    python_version: PythonVersion,
 ) -> Changelog:
-    if not has_pyproject_package_name(session=session):
+    if not has_pyproject_package_name(session):
         return []
     yaml = create_prettier_round_trip_yaml()
     updated = False
     if CONFIG_PATH.conda.exists():
         conda_env: CommentedMap = yaml.load(CONFIG_PATH.conda)
     else:
-        conda_env = __create_conda_environment(python_version, session=session)
+        conda_env = __create_conda_environment(session, python_version)
         updated = True
     if "dependencies" not in conda_env:
         conda_env["dependencies"] = CommentedSeq()
@@ -61,11 +60,12 @@ def update_conda_environment(
 
 
 def __create_conda_environment(
-    python_version: PythonVersion,
-    *,
     session: Session,
+    /,
+    python_version: PythonVersion,
 ) -> CommentedMap:
-    package_name = Pyproject.load(session=session).get_package_name()
+    pyproject = session.pyproject
+    package_name = pyproject.get_package_name() if pyproject is not None else None
     return CommentedMap({
         "name": str(package_name) if package_name is not None else None,
         "channels": ["defaults"],
@@ -120,14 +120,12 @@ def __get_pip_dependencies(dependencies: CommentedSeq) -> CommentedSeq | None:
     return None
 
 
-def _remove_conda_configuration(*, session: Session) -> Changelog:
+def _remove_conda_configuration(session: Session, /) -> Changelog:
     changes: Changelog = []
     changes += __remove_environment_yml()
     # cspell:ignore condaenv
-    changes += remove_lines(CONFIG_PATH.gitignore, r".*condaenv.*", session=session)
-    changes += remove_lines(
-        CONFIG_PATH.gitignore, r".*environment\.yml.*", session=session
-    )
+    changes += remove_lines(session, CONFIG_PATH.gitignore, r".*condaenv.*")
+    changes += remove_lines(session, CONFIG_PATH.gitignore, r".*environment\.yml.*")
     return changes
 
 

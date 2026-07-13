@@ -160,7 +160,7 @@ def describe_update_lint_dependencies():
         (tmp_path / "pyproject.toml").write_text(config)
         with Session() as session:
             pyproject = session.pyproject
-            _update_lint_dependencies(session=session)
+            _update_lint_dependencies(session)
             assert pyproject is not None
             assert pyproject.changelog  # something changed
             assert "ruff" in pyproject.dumps()
@@ -177,7 +177,7 @@ def describe_update_lint_dependencies():
         (tmp_path / "pyproject.toml").write_text(config)
         with Session() as session:
             pyproject = session.pyproject
-            _update_lint_dependencies(session=session)
+            _update_lint_dependencies(session)
             assert pyproject is not None
             assert pyproject.changelog  # something changed
             result = pyproject.dumps()
@@ -188,4 +188,4 @@ def describe_update_lint_dependencies():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.foo]\nx = 1\n")
         with Session() as session:
-            _update_lint_dependencies(session=session)
+            _update_lint_dependencies(session)

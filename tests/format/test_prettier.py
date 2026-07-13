@@ -54,7 +54,7 @@ def describe_remove_configuration():
         (tmp_path / ".prettierrc.json").write_text("{}")
         (tmp_path / ".prettierrc").write_text("{}")
         with Session() as session:
-            changes = _remove_configuration(session=session)
+            changes = _remove_configuration(session)
         assert any("Removed redundant configuration files" in m for m in changes)
         assert not (tmp_path / ".prettierrc.json").exists()
         assert not (tmp_path / ".prettierrc").exists()
@@ -63,7 +63,7 @@ def describe_remove_configuration():
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         with Session() as session:
-            _remove_configuration(session=session)
+            _remove_configuration(session)
 
 
 def describe_update_prettier_ignore():

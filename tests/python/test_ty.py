@@ -76,11 +76,10 @@ def describe_update_precommit_config():
             style = ["ty"]
             """,
         )
-        with (
-            ModifiablePrecommit.load(config) as precommit,
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
-            _update_precommit_config(precommit, pyproject)
+        precommit = ModifiablePrecommit.load(config)
+        pyproject = ModifiablePyproject.load(pyproject_path)
+        with Session(precommit=precommit, pyproject=pyproject) as session:
+            _update_precommit_config(session)
         result = precommit.dumps()
         assert "https://github.com/astral-sh/ty-pre-commit" in result
         assert "id: ty" in result
@@ -105,11 +104,10 @@ def describe_update_precommit_config():
             typechecking = ["ty"]
             """,
         )
-        with (
-            ModifiablePrecommit.load(config) as precommit,
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
-            _update_precommit_config(precommit, pyproject)
+        precommit = ModifiablePrecommit.load(config)
+        pyproject = ModifiablePyproject.load(pyproject_path)
+        with Session(precommit=precommit, pyproject=pyproject) as session:
+            _update_precommit_config(session)
         assert "args: [--no-default-groups, --group=types]" in precommit.dumps()
 
     def omits_args_without_matching_group(tmp_path: Path):
@@ -123,11 +121,10 @@ def describe_update_precommit_config():
             """,
         )
         pyproject_path = _write_pyproject(tmp_path, "[project]\nname = 'x'\n")
-        with (
-            ModifiablePrecommit.load(config) as precommit,
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
-            _update_precommit_config(precommit, pyproject)
+        precommit = ModifiablePrecommit.load(config)
+        pyproject = ModifiablePyproject.load(pyproject_path)
+        with Session(precommit=precommit, pyproject=pyproject) as session:
+            _update_precommit_config(session)
         assert "args:" not in precommit.dumps()
 
     def migrates_local_hook(tmp_path: Path):
@@ -154,11 +151,10 @@ def describe_update_precommit_config():
             typechecking = ["ty"]
             """,
         )
-        with (
-            ModifiablePrecommit.load(config) as precommit,
-            ModifiablePyproject.load(pyproject_path) as pyproject,
-        ):
-            _update_precommit_config(precommit, pyproject)
+        precommit = ModifiablePrecommit.load(config)
+        pyproject = ModifiablePyproject.load(pyproject_path)
+        with Session(precommit=precommit, pyproject=pyproject) as session:
+            _update_precommit_config(session)
         result = precommit.dumps()
         assert "repo: local" not in result
         assert "https://github.com/astral-sh/ty-pre-commit" in result
@@ -174,7 +170,7 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings({"ty"}, session=session)
+            _update_vscode_settings(session, {"ty"})
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]
 
@@ -188,7 +184,7 @@ def describe_update_vscode_settings():
             json.dumps({"recommendations": ["astral-sh.ty"]})
         )
         with Session() as session:
-            _update_vscode_settings({"mypy"}, session=session)
+            _update_vscode_settings(session, {"mypy"})
         extensions = json.loads((vscode_dir / "extensions.json").read_text())
         assert "astral-sh.ty" not in extensions.get("recommendations", [])
 
@@ -227,7 +223,7 @@ def describe_remove_ty():
             ModifiablePyproject.load(pyproject_path) as pyproject,
             Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_ty(session=session)
+            _remove_ty(session)
         assert not (tmp_path / "ty.toml").exists()
         assert "tool.ty" not in pyproject.dumps()
         assert "id: ty" not in precommit.dumps()

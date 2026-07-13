@@ -19,51 +19,52 @@ def main(
     is_python_repo: bool,
     package_manager: PackageManagerChoice,
 ) -> None:
-    session.changelog += _update_extensions(session=session)
+    session.changelog += _update_extensions(session)
     session.changelog += _update_settings(
-        has_notebooks, is_python_repo, package_manager, session=session
+        session, has_notebooks, is_python_repo, package_manager
     )
 
 
-def _update_extensions(*, session: Session) -> Changelog:
+def _update_extensions(session: Session, /) -> Changelog:
     changes = vscode.add_extension_recommendation(
-        "eamodio.gitlens", session=session
+        session, "eamodio.gitlens"
     )  # cspell:ignore eamodio
     changes += vscode.add_extension_recommendation(
-        "mhutchie.git-graph", session=session
+        session, "mhutchie.git-graph"
     )  # cspell:ignore mhutchie
     changes += vscode.add_extension_recommendation(
-        "soulcode.vscode-unwanted-extensions", session=session
+        session, "soulcode.vscode-unwanted-extensions"
     )  # cspell:ignore Soulcode
     changes += vscode.add_extension_recommendation(
-        "stkb.rewrap", session=session
+        session, "stkb.rewrap"
     )  # cspell:ignore stkb
     changes += vscode.remove_extension_recommendation(
+        session,
         "garaioag.garaio-vscode-unwanted-recommendations",  # cspell:ignore garaio garaioag
         unwanted=True,
-        session=session,
     )
     changes += vscode.remove_extension_recommendation(
+        session,
         "travisillig.vscode-json-stable-stringify",  # cspell:ignore travisillig
         unwanted=True,
-        session=session,
     )
     changes += vscode.remove_extension_recommendation(
+        session,
         "tyriar.sort-lines",  # cspell:ignore tyriar
         unwanted=True,
-        session=session,
     )
     return changes
 
 
 def _update_settings(
+    session: Session,
+    /,
     has_notebooks: bool,
     is_python_repo: bool,
     package_manager: PackageManagerChoice,
-    *,
-    session: Session,
 ) -> Changelog:
     changes = vscode.update_settings(
+        session,
         {
             "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
@@ -72,9 +73,9 @@ def _update_settings(
             "redhat.telemetry.enabled": False,
             "telemetry.telemetryLevel": "off",
         },
-        session=session,
     )
     changes += vscode.update_settings(
+        session,
         {
             "[git-commit]": {
                 "editor.rulers": [72],
@@ -84,17 +85,16 @@ def _update_settings(
                 "editor.wordWrap": "on",
             },
         },
-        session=session,
     )
-    changes += _remove_outdated_settings(session=session)
-    changes += _update_doc_settings(session=session)
+    changes += _remove_outdated_settings(session)
+    changes += _update_doc_settings(session)
     if has_notebooks:
-        changes += _update_notebook_settings(session=session)
-    changes += _update_pytest_settings(session=session)
+        changes += _update_notebook_settings(session)
+    changes += _update_pytest_settings(session)
     if has_constraint_files():
         changes += vscode.update_settings(
+            session,
             {"files.associations": {"**/.constraints/py*.txt": "pip-requirements"}},
-            session=session,
         )
     if is_python_repo:
         if package_manager == "pixi":
@@ -102,20 +102,20 @@ def _update_settings(
         else:
             python_path = ".venv/bin/python"
         changes += vscode.update_settings(
+            session,
             {
                 "python.defaultInterpreterPath": python_path,
                 "rewrap.wrappingColumn": 88,
             },
-            session=session,
         )
         if CONFIG_PATH.envrc.exists():
             changes += vscode.update_settings(
-                {"python.terminal.activateEnvironment": False}, session=session
+                session, {"python.terminal.activateEnvironment": False}
             )
     return changes
 
 
-def _remove_outdated_settings(*, session: Session) -> Changelog:
+def _remove_outdated_settings(session: Session, /) -> Changelog:
     outdated_settings = [
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
@@ -133,41 +133,39 @@ def _remove_outdated_settings(*, session: Session) -> Changelog:
         "telemetry.enableCrashReporter",
         "telemetry.enableTelemetry",
     ]
-    return vscode.remove_settings(outdated_settings, session=session)
+    return vscode.remove_settings(session, outdated_settings)
 
 
-def _update_doc_settings(*, session: Session) -> Changelog:
+def _update_doc_settings(session: Session, /) -> Changelog:
     if not os.path.exists("docs/"):
         return []
     changes = vscode.update_settings(
-        {"livePreview.defaultPreviewPath": "docs/_build/html"}, session=session
+        session, {"livePreview.defaultPreviewPath": "docs/_build/html"}
     )
-    changes += vscode.add_extension_recommendation(
-        "ms-vscode.live-server", session=session
-    )
+    changes += vscode.add_extension_recommendation(session, "ms-vscode.live-server")
     # cspell:ignore executablebookproject
     myst_extension = "executablebookproject.myst-highlight"
-    if myst_extension not in vscode.get_unwanted_extensions(session=session):
-        changes += vscode.add_extension_recommendation(myst_extension, session=session)
+    if myst_extension not in vscode.get_unwanted_extensions(session):
+        changes += vscode.add_extension_recommendation(session, myst_extension)
     return changes
 
 
-def _update_notebook_settings(*, session: Session) -> Changelog:
+def _update_notebook_settings(session: Session, /) -> Changelog:
     """https://code.visualstudio.com/updates/v1_83#_go-to-symbol-in-notebooks."""
     if not os.path.exists("docs/"):
         return []
     return vscode.update_settings(
-        {"notebook.gotoSymbols.showAllSymbols": True}, session=session
+        session, {"notebook.gotoSymbols.showAllSymbols": True}
     )
 
 
-def _update_pytest_settings(*, session: Session) -> Changelog:
+def _update_pytest_settings(session: Session, /) -> Changelog:
     if not os.path.exists("tests/"):
         return []
     return vscode.update_settings(
+        session,
         {
             "python.testing.pytestEnabled": True,
             "python.testing.unittestEnabled": False,
         },
-        session=session,
     )

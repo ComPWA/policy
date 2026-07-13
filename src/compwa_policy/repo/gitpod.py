@@ -9,11 +9,7 @@ import yaml
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
-from compwa_policy.utilities.pyproject import (
-    Pyproject,
-    PythonVersion,
-    get_constraints_file,
-)
+from compwa_policy.utilities.pyproject import PythonVersion, get_constraints_file
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import write_yaml
 
@@ -25,12 +21,12 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
     if not use_gitpod:
         session.changelog += remove_gitpod_config()
         session.changelog += remove_badge(
+            session,
             r"\[!\[GitPod\]\(https://img.shields.io/badge/gitpod",
-            session=session,
         )
         return
     error_message = ""
-    expected_config = _generate_gitpod_config(python_version, session=session)
+    expected_config = _generate_gitpod_config(session, python_version)
     if CONFIG_PATH.gitpod.exists():
         with open(CONFIG_PATH.gitpod) as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)
@@ -44,10 +40,13 @@ def main(session: Session, use_gitpod: bool, python_version: PythonVersion) -> N
         session.changelog.append(error_message)
         return
     try:
-        repo_url = Pyproject.load(session=session).get_repo_url()
+        pyproject = session.pyproject
+        if pyproject is None:
+            return
+        repo_url = pyproject.get_repo_url()
         session.changelog += add_badge(
+            session,
             f"[![GitPod](https://img.shields.io/badge/gitpod-open-blue?logo=gitpod)](https://gitpod.io/#{repo_url})",
-            session=session,
         )
     except PolicyError:
         return
@@ -60,15 +59,11 @@ def remove_gitpod_config() -> Changelog:
     return []
 
 
-def _extract_extensions(*, session: Session) -> list[str]:
-    return sorted(vscode.get_recommended_extensions(session=session))
+def _extract_extensions(session: Session, /) -> list[str]:
+    return sorted(vscode.get_recommended_extensions(session))
 
 
-def _generate_gitpod_config(
-    python_version: PythonVersion,
-    *,
-    session: Session,
-) -> dict:
+def _generate_gitpod_config(session: Session, /, python_version: PythonVersion) -> dict:
     with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
@@ -78,7 +73,7 @@ def _generate_gitpod_config(
         tasks[1]["init"] = "pip install -e .[dev]"
     else:
         tasks[1]["init"] = f"pip install -c {constraints_file} -e .[dev]"
-    extensions = _extract_extensions(session=session)
+    extensions = _extract_extensions(session)
     if extensions:
         gitpod_config["vscode"] = {"extensions": extensions}
     return gitpod_config

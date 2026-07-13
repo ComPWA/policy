@@ -26,27 +26,24 @@ if TYPE_CHECKING:
 
 
 def update_pixi_configuration(
+    session: Session,
+    /,
     is_python_package: bool,
     dev_python_version: PythonVersion,
     package_manager: PackageManagerChoice,
-    *,
-    session: Session,
 ) -> Changelog:
     if "pixi" not in package_manager:
         return []
-    if package_manager == "pixi":
-        config = session.pyproject
-    else:
-        config = session.pixi
+    config = __get_pixi_config(session, package_manager)
     extra: Changelog = []
     if config is None:
         return extra
     extra += add_badge(
+        session,
         "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
-        session=session,
     )
     _rename_workspace_table(config)
-    _define_minimal_project(config, session=session)
+    _define_minimal_project(session, package_manager)
     _import_conda_dependencies(config)
     _import_conda_environment(config)
     if package_manager == "pixi+uv":
@@ -60,13 +57,22 @@ def update_pixi_configuration(
         _update_docnb_and_doclive(config, "feature.dev.tasks")
     _clean_up_task_env(config)
     extra += vscode.update_settings(
+        session,
         {"files.associations": {"**/pixi.lock": "yaml"}},
-        session=session,
     )
-    if has_pixi_config(config):
-        config.changelog.extend(__update_gitattributes(session=session))
-        config.changelog.extend(__update_gitignore(session=session))
+    if has_pixi_config(session):
+        config.changelog.extend(__update_gitattributes(session))
+        config.changelog.extend(__update_gitignore(session))
     return extra
+
+
+def __get_pixi_config(
+    session: Session,
+    package_manager: PackageManagerChoice,
+) -> ModifiablePyproject | None:
+    if package_manager == "pixi":
+        return session.pyproject
+    return session.pixi
 
 
 def _define_combined_ci_job(config: ModifiablePyproject) -> None:
@@ -106,22 +112,24 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
 
 
 def _define_minimal_project(
-    config: ModifiablePyproject,
-    *,
     session: Session,
+    package_manager: PackageManagerChoice,
+    /,
 ) -> None:
     """Create a minimal Pixi project definition if it does not exist."""
+    config = __get_pixi_config(session, package_manager)
+    if config is None:
+        return
     table_name = "workspace"
     settings = __get_table(config, table_name, create=True)
     minimal_settings: dict[str, Any] = dict(
         channels=["conda-forge"],
         platforms=["linux-64"],
     )
-    if config._source == CONFIG_PATH.pixi_toml and CONFIG_PATH.pyproject.exists():  # noqa: SLF001
-        pyproject = Pyproject.load(session=session)
-        package_name = pyproject.get_package_name()
-        if package_name is not None:
-            minimal_settings["name"] = package_name
+    if config._source == CONFIG_PATH.pixi_toml:  # noqa: SLF001
+        pyproject = session.pyproject
+        if pyproject is not None:
+            minimal_settings["name"] = pyproject.get_package_name()
     if not complies_with_subset(settings, minimal_settings, exact_value_match=False):
         settings.update(minimal_settings)
         msg = "Defined minimal Pixi project settings"
@@ -246,18 +254,18 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def __update_gitattributes(*, session: Session) -> Changelog:
+def __update_gitattributes(session: Session, /) -> Changelog:
     expected_line = "pixi.lock linguist-language=YAML linguist-generated=true"
-    if append_safe(expected_line, CONFIG_PATH.gitattributes, session=session):
+    if append_safe(session, expected_line, CONFIG_PATH.gitattributes):
         return [
             f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
         ]
     return []
 
 
-def __update_gitignore(*, session: Session) -> Changelog:
+def __update_gitignore(session: Session, /) -> Changelog:
     ignore_path = ".pixi/"
-    if append_safe(ignore_path, CONFIG_PATH.gitignore, session=session):
+    if append_safe(session, ignore_path, CONFIG_PATH.gitignore):
         return [f"Added {ignore_path} under {CONFIG_PATH.gitignore}"]
     return []
 

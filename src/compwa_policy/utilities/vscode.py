@@ -128,11 +128,11 @@ class ModifiableVscodeExtensions(_ModifiableJsonResource):
         )
 
 
-def get_recommended_extensions(*, session: Session) -> set[str]:
+def get_recommended_extensions(session: Session, /) -> set[str]:
     return session.get(ModifiableVscodeExtensions).get_recommended()
 
 
-def get_unwanted_extensions(*, session: Session) -> set[str]:
+def get_unwanted_extensions(session: Session, /) -> set[str]:
     return session.get(ModifiableVscodeExtensions).get_unwanted()
 
 
@@ -143,11 +143,7 @@ def _get_extension_recommendations(key: str) -> set[str]:
     return {ext.lower() for ext in extensions}
 
 
-def remove_settings(
-    keys: RemovedKeys,
-    *,
-    session: Session,
-) -> Changelog:
+def remove_settings(session: Session, /, keys: RemovedKeys) -> Changelog:
     session.get(ModifiableVscodeSettings).remove(keys)
     return []
 
@@ -192,11 +188,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     return obj
 
 
-def update_settings(
-    new_settings: dict,
-    *,
-    session: Session,
-) -> Changelog:
+def update_settings(session: Session, /, new_settings: dict) -> Changelog:
     session.get(ModifiableVscodeSettings).update(new_settings)
     return []
 
@@ -247,20 +239,12 @@ def _update_settings_if_changed(old: dict, new: dict) -> Changelog:
     return ["Updated VS Code settings"]
 
 
-def add_extension_recommendation(
-    extension_name: str,
-    *,
-    session: Session,
-) -> Changelog:
+def add_extension_recommendation(session: Session, /, extension_name: str) -> Changelog:
     session.get(ModifiableVscodeExtensions).add_recommendation(extension_name)
     return []
 
 
-def add_unwanted_extension(
-    extension_name: str,
-    *,
-    session: Session,
-) -> Changelog:
+def add_unwanted_extension(session: Session, /, extension_name: str) -> Changelog:
     session.get(ModifiableVscodeExtensions).add_unwanted(extension_name)
     return []
 
@@ -293,10 +277,7 @@ def __remove_extension(extension_name: str, key: str) -> Changelog:
 
 
 def remove_extension_recommendation(
-    extension_name: str,
-    *,
-    unwanted: bool = False,
-    session: Session,
+    session: Session, /, extension_name: str, *, unwanted: bool = False
 ) -> Changelog:
     session.get(ModifiableVscodeExtensions).remove_recommendation(
         extension_name, unwanted=unwanted

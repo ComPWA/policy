@@ -12,7 +12,6 @@ from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
-    from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -21,26 +20,26 @@ TypeChecker = Literal["mypy", "pyright", "ty"]
 
 
 def main(session: Session, type_checkers: set[TypeChecker]) -> None:
-    session.changelog += _update_vscode_settings(type_checkers, session=session)
+    session.changelog += _update_vscode_settings(session, type_checkers)
     config = session.pyproject
     if config is None:
         return
     if "ty" in type_checkers:
         _update_configuration(config)
         config.add_dependency("ty", dependency_group=["style", "dev"])
-        _update_precommit_config(session.precommit, config)
+        _update_precommit_config(session)
         session.changelog += add_badge(
+            session,
             "[![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)",
-            session=session,
         )
     else:
-        session.changelog += _remove_ty(session=session)
+        session.changelog += _remove_ty(session)
 
 
 def _update_vscode_settings(
-    type_checkers: set[TypeChecker],
-    *,
     session: Session,
+    /,
+    type_checkers: set[TypeChecker],
 ) -> Changelog:
     settings = {
         "ty.completions.autoImport": False,
@@ -50,18 +49,14 @@ def _update_vscode_settings(
     changes: Changelog = []
     if "ty" in type_checkers:
         if "pyright" not in type_checkers:
-            changes += vscode.remove_settings(
-                ["python.languageServer"], session=session
-            )
-        changes += vscode.add_extension_recommendation("astral-sh.ty", session=session)
-        changes += vscode.update_settings(settings, session=session)
+            changes += vscode.remove_settings(session, ["python.languageServer"])
+        changes += vscode.add_extension_recommendation(session, "astral-sh.ty")
+        changes += vscode.update_settings(session, settings)
     else:
         changes += vscode.remove_extension_recommendation(
-            "astral-sh.ty", unwanted=True, session=session
+            session, "astral-sh.ty", unwanted=True
         )
-        changes += vscode.remove_settings(
-            [*settings, "python.languageServer"], session=session
-        )
+        changes += vscode.remove_settings(session, [*settings, "python.languageServer"])
     return changes
 
 
@@ -88,9 +83,11 @@ def _update_configuration(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append("Set tool.ty.terminal.error-on-warning = true")
 
 
-def _update_precommit_config(
-    precommit: ModifiablePrecommit, pyproject: ModifiablePyproject
-) -> None:
+def _update_precommit_config(session: Session, /) -> None:
+    precommit = session.precommit
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
     existing_hook = find_hook(precommit.document, r"^ty$")
     exclude = existing_hook.get("exclude") if existing_hook else None
     precommit.remove_hook("ty", repo_url="local")
@@ -116,7 +113,7 @@ def _select_dependency_group(pyproject: ModifiablePyproject) -> str | None:
     return None
 
 
-def _remove_ty(*, session: Session) -> Changelog:
+def _remove_ty(session: Session, /) -> Changelog:
     precommit = session.precommit
     pyproject = session.pyproject
     if pyproject is None:
@@ -131,6 +128,6 @@ def _remove_ty(*, session: Session) -> Changelog:
     pyproject.remove_dependency("ty")
     precommit.remove_hook("ty")
     return remove_badge(
+        session,
         r".*https://.+\.com/astral\-sh/ty/main/assets/badge/v0\.json.*",
-        session=session,
     )

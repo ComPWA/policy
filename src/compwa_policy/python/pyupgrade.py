@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
@@ -18,58 +17,51 @@ if TYPE_CHECKING:
 def main(session: Session, no_ruff: bool) -> None:
     precommit = session.precommit
     if no_ruff:
-        _update_precommit_repo(precommit, session=session)
-        _update_precommit_nbqa_hook(precommit, session=session)
+        _update_precommit_repo(session)
+        _update_precommit_nbqa_hook(session)
     else:
         _remove_pyupgrade(precommit)
 
 
-def _update_precommit_repo(
-    precommit: ModifiablePrecommit,
-    *,
-    session: Session,
-) -> None:
+def _update_precommit_repo(session: Session, /) -> None:
+    precommit = session.precommit
     expected_hook = Repo(
         repo="https://github.com/asottile/pyupgrade",
         rev="",
         hooks=[
             Hook(
                 id="pyupgrade",
-                args=__get_pyupgrade_version_argument(session=session),
+                args=__get_pyupgrade_version_argument(session),
             )
         ],
     )
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_precommit_nbqa_hook(
-    precommit: ModifiablePrecommit,
-    *,
-    session: Session,
-) -> None:
+def _update_precommit_nbqa_hook(session: Session, /) -> None:
+    precommit = session.precommit
     precommit.update_hook(
         repo_url="https://github.com/nbQA-dev/nbQA",
         expected_hook=Hook(
             id="nbqa-pyupgrade",
-            args=__get_pyupgrade_version_argument(session=session),
+            args=__get_pyupgrade_version_argument(session),
         ),
     )
 
 
-def __get_pyupgrade_version_argument(
-    *,
-    session: Session,
-) -> CommentedSeq:
+def __get_pyupgrade_version_argument(session: Session, /) -> CommentedSeq:
     """Get the --py3x-plus argument for pyupgrade.
 
     >>> from compwa_policy.utilities.session import Session
     >>> with Session() as session:
-    ...     __get_pyupgrade_version_argument(session=session)
+    ...     __get_pyupgrade_version_argument(session)
     ['--py310-plus']
     """
-    supported_python_versions = Pyproject.load(
-        session=session
-    ).get_supported_python_versions()
+    pyproject = session.pyproject
+    if pyproject is None:
+        msg = "Cannot determine pyupgrade target without pyproject.toml"
+        raise ValueError(msg)
+    supported_python_versions = pyproject.get_supported_python_versions()
     lowest_version = supported_python_versions[0]
     version_repr = lowest_version.replace(".", "")
     return read_preserved_yaml(f"[--py{version_repr}-plus]")

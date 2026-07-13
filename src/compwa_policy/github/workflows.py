@@ -52,10 +52,10 @@ def main(
         session.changelog += remove_workflow("cd.yml")
     else:
         session.changelog += _update_cd_workflow(
-            no_milestones, no_pypi, no_version_branches, session=session
+            session, no_milestones, no_pypi, no_version_branches
         )
     session.changelog += _update_ci_workflow(
-        session.precommit,
+        session,
         allow_deprecated,
         doc_apt_packages,
         environment_variables,
@@ -64,19 +64,18 @@ def main(
         python_version,
         single_threaded,
         skip_tests,
-        session=session,
     )
     if not keep_pr_linting:
         session.changelog += _update_pr_linting()
-    session.changelog += _recommend_vscode_extension(session=session)
+    session.changelog += _recommend_vscode_extension(session)
 
 
 def _update_cd_workflow(  # noqa: C901
+    session: Session,
+    /,
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
-    *,
-    session: Session,
 ) -> Changelog:
     def update() -> Changelog:  # noqa: C901
         yaml = create_prettier_round_trip_yaml()
@@ -85,7 +84,7 @@ def _update_cd_workflow(  # noqa: C901
         banned_jobs = set()
         if no_milestones:
             banned_jobs.add("milestone")
-        if no_pypi or not has_pyproject_package_name(session=session):
+        if no_pypi or not has_pyproject_package_name(session):
             banned_jobs.add("package-name")
             banned_jobs.add("pypi")
         if no_version_branches:
@@ -128,7 +127,8 @@ def _update_pr_linting() -> Changelog:
 
 
 def _update_ci_workflow(  # noqa: PLR0917
-    precommit: Precommit,
+    session: Session,
+    /,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
@@ -137,10 +137,9 @@ def _update_ci_workflow(  # noqa: PLR0917
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
-    *,
-    session: Session,
 ) -> Changelog:
     def update() -> Changelog:
+        precommit = session.precommit
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
             precommit,
@@ -172,7 +171,7 @@ def _update_ci_workflow(  # noqa: PLR0917
         changes += remove_workflow("ci-style.yml")
         changes += remove_workflow("ci-tests.yml")
         changes += remove_workflow("linkcheck.yml")
-    changes += _copy_workflow_file("clean-caches.yml", session=session)
+    changes += _copy_workflow_file(session, "clean-caches.yml")
     changes += remove_workflow("clean-cache.yml")
     return changes
 
@@ -297,11 +296,7 @@ def __get_coverage_python_version() -> PythonVersion:
     return DEFAULT_DEV_PYTHON_VERSION
 
 
-def _copy_workflow_file(
-    filename: str,
-    *,
-    session: Session,
-) -> Changelog:
+def _copy_workflow_file(session: Session, /, filename: str) -> Changelog:
     expected_workflow_path = (
         COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     )
@@ -339,23 +334,23 @@ def __remove_constraint_pinning(content: str) -> str:
     )
 
 
-def _recommend_vscode_extension(*, session: Session) -> Changelog:
+def _recommend_vscode_extension(session: Session, /) -> Changelog:
     if not CONFIG_PATH.github_workflow_dir.exists():
         return []
     # cspell:ignore cschleiden
     changes: Changelog = []
     changes += vscode.remove_extension_recommendation(
-        "cschleiden.vscode-github-actions", session=session
+        session, "cschleiden.vscode-github-actions"
     )
     changes += vscode.add_extension_recommendation(
-        "github.vscode-github-actions", session=session
+        session, "github.vscode-github-actions"
     )
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
             "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
         }
-        changes += vscode.update_settings(action_settings, session=session)
+        changes += vscode.update_settings(session, action_settings)
     return changes
 
 

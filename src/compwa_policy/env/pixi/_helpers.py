@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from compwa_policy.utilities import CONFIG_PATH
+from typing import TYPE_CHECKING
+
 from compwa_policy.utilities.match import git_ls_files
-from compwa_policy.utilities.pyproject import Pyproject
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.session import Session
 
 
-def has_pixi_config(pyproject: Pyproject | None = None) -> bool:
+def has_pixi_config(session: Session, /) -> bool:
     if git_ls_files("pixi.lock", "pixi.toml"):
         return True
+    pyproject = session.pyproject
     if pyproject is not None:
         return pyproject.has_table("tool.pixi")
-    return CONFIG_PATH.pyproject.exists() and Pyproject.load().has_table("tool.pixi")
+    return False

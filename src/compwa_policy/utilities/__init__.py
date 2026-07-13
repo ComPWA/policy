@@ -48,9 +48,9 @@ CONFIG_PATH = _ConfigFilePaths()
 COMPWA_POLICY_DIR = Path(compwa_policy.__file__).parent.absolute()
 
 
-def append_safe(expected_line: str, path: Path, *, session: Session) -> bool:
+def append_safe(session: Session, /, expected_line: str, path: Path) -> bool:
     """Add a line to a file if it is not already present."""
-    resource = _get_path_resource(path, session=session)
+    resource = _get_path_resource(session, path)
     lines = resource.read_text().splitlines() if resource.exists else []
     if expected_line in {line.strip() for line in lines}:
         return False
@@ -88,7 +88,7 @@ def read(
 ) -> str:
     if isinstance(input, (Path, str)):
         if session is not None:
-            return _get_path_resource(input, session=session).read_text()
+            return _get_path_resource(session, input).read_text()
         with open(input) as input_stream:
             return input_stream.read()
     if isinstance(input, io.TextIOBase):
@@ -107,7 +107,7 @@ def write(
         target = Path(target)
     if isinstance(target, Path):
         if session is not None:
-            _get_path_resource(target, session=session).write_text(content)
+            _get_path_resource(session, target).write_text(content)
             return
         target.parent.mkdir(exist_ok=True)
         with open(target, "w") as output_stream:
@@ -119,48 +119,44 @@ def write(
         raise TypeError(msg)
 
 
-def remove_configs(paths: list[str], *, session: Session) -> Changelog:
+def remove_configs(session: Session, /, paths: list[str]) -> Changelog:
     for path in paths:
-        resource = _get_path_resource(path, session=session)
+        resource = _get_path_resource(session, path)
         resource.remove(f"Removed {path}")
     return []
 
 
-def _get_path_resource(
-    path: Path | str,
-    *,
-    session: Session,
-) -> ModifiablePath:
+def _get_path_resource(session: Session, /, path: Path | str) -> ModifiablePath:
     normalized = Path(path)
     return session.get_path(normalized)
 
 
-def __remove_file(path: str, *, session: Session) -> Changelog:
-    resource = _get_path_resource(path, session=session)
+def __remove_file(session: Session, /, path: str) -> Changelog:
+    resource = _get_path_resource(session, path)
     resource.remove(f"Removed {path}")
     return []
 
 
-def rename_file(old: str, new: str, *, session: Session) -> Changelog:
-    source = _get_path_resource(old, session=session)
+def rename_file(session: Session, /, old: str, new: str) -> Changelog:
+    source = _get_path_resource(session, old)
     if not source.exists:
         return []
     content = source.read_text()
     message = f"File {old} has been renamed to {new}"
-    target = _get_path_resource(new, session=session)
+    target = _get_path_resource(session, new)
     target.write_text(content, message)
     source.remove()
     return []
 
 
 def remove_lines(
+    session: Session,
+    /,
     file: Path,
     pattern: str,
     flags: re.RegexFlag = re.IGNORECASE,
-    *,
-    session: Session,
 ) -> Changelog:
-    resource = _get_path_resource(file, session=session)
+    resource = _get_path_resource(session, file)
     if not resource.exists:
         return []
     lines = resource.read_text().splitlines(True)
@@ -187,10 +183,10 @@ def natural_sorting(text: str) -> list[float | str]:
 
 
 def update_file(
+    session: Session,
+    /,
     relative_path: Path,
     in_template_folder: bool = False,
-    *,
-    session: Session,
 ) -> Changelog:
     if in_template_folder:
         template_dir = COMPWA_POLICY_DIR / ".template"
@@ -198,7 +194,7 @@ def update_file(
         template_dir = COMPWA_POLICY_DIR
     template_path = template_dir / relative_path
     expected_content = template_path.read_text()
-    resource = _get_path_resource(relative_path, session=session)
+    resource = _get_path_resource(session, relative_path)
     if not resource.exists:
         message = f"{relative_path} is missing, so created a new one. Please commit it."
         resource.write_text(expected_content, message)

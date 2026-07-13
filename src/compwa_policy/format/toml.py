@@ -12,7 +12,6 @@ import tomlkit
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
@@ -36,15 +35,15 @@ def main(session: Session) -> None:
         return
     precommit = session.precommit
     session.changelog += _rename_taplo_config()
-    session.changelog += _update_taplo_config(session=session)
+    session.changelog += _update_taplo_config(session)
     _rename_precommit_url(precommit)
     _update_precommit_repo(precommit)
-    session.changelog += _update_tomlsort_config(session=session)
+    session.changelog += _update_tomlsort_config(session)
     _update_tomlsort_hook(precommit)
-    session.changelog += _update_vscode_extensions(session=session)
+    session.changelog += _update_vscode_extensions(session)
 
 
-def _update_tomlsort_config(*, session: Session) -> Changelog:
+def _update_tomlsort_config(session: Session, /) -> Changelog:
     if not CONFIG_PATH.pyproject.exists():
         return []
     sort_first = [
@@ -106,7 +105,7 @@ def _rename_taplo_config() -> Changelog:
     return []
 
 
-def _update_taplo_config(*, session: Session) -> Changelog:
+def _update_taplo_config(session: Session, /) -> Changelog:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
     with open(template_path) as f:
         expected = tomlkit.load(f)
@@ -124,8 +123,8 @@ def _update_taplo_config(*, session: Session) -> Changelog:
             pixi_config = rtoml.load(stream)
         if has_sub_table(pixi_config, "tasks"):
             rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, ["tasks"]))
-    if CONFIG_PATH.pyproject.exists():
-        pyproject = Pyproject.load(session=session)
+    pyproject = session.pyproject
+    if pyproject is not None:
         keys = [
             key
             for key in ["tool.pixi.tasks", "tool.poe.groups", "tool.poe.tasks"]
@@ -191,14 +190,12 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_hook)
 
 
-def _update_vscode_extensions(*, session: Session) -> Changelog:
+def _update_vscode_extensions(session: Session, /) -> Changelog:
     # cspell:ignore bungcip tamasfe
     changes: Changelog = []
-    changes += vscode.add_extension_recommendation(
-        "tamasfe.even-better-toml", session=session
-    )
+    changes += vscode.add_extension_recommendation(session, "tamasfe.even-better-toml")
     changes += vscode.remove_extension_recommendation(
-        "bungcip.better-toml", unwanted=True, session=session
+        session, "bungcip.better-toml", unwanted=True
     )
     return changes
 

@@ -79,7 +79,7 @@ def describe_remove_mypy():
             ModifiablePyproject.load(io.StringIO(pyproject_config)) as pyproject,
             Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_mypy(session=session)
+            _remove_mypy(session)
         assert "mypy" not in precommit.dumps()
         assert "tool.mypy" not in pyproject.dumps()
 
@@ -89,7 +89,7 @@ def describe_remove_mypy():
             ModifiablePyproject.load(io.StringIO("")) as pyproject,
             Session(precommit=precommit, pyproject=pyproject) as session,
         ):
-            _remove_mypy(session=session)
+            _remove_mypy(session)
 
 
 def describe_update_vscode_settings():
@@ -98,7 +98,7 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(mypy=True, session=session)
+            _update_vscode_settings(session, mypy=True)
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert "mypy-type-checker.args" in settings
 
@@ -107,7 +107,7 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(mypy=False, session=session)
+            _update_vscode_settings(session, mypy=False)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.mypy-type-checker" in extensions["unwantedRecommendations"]
 

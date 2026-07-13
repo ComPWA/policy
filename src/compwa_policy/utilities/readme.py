@@ -76,15 +76,11 @@ class ModifiableReadme(ModifiableResource):
         )
 
 
-def add_badge(badge: str, *, session: Session) -> Changelog:
+def add_badge(session: Session, /, badge: str) -> Changelog:
     session.get(ModifiableReadme).add_badge(badge)
     return []
 
 
-def remove_badge(
-    badge_pattern: str,
-    *,
-    session: Session,
-) -> Changelog:
+def remove_badge(session: Session, /, badge_pattern: str) -> Changelog:
     session.get(ModifiableReadme).remove_badge(badge_pattern)
     return []
