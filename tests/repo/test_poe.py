@@ -44,6 +44,9 @@ _PYPROJECT = dedent("""
     [tool.poe.tasks.test]
     cmd = "pytest"
 
+    [tool.poe.tasks.benchmark]
+    cmd = "pytest benchmarks"
+
     [tool.poe.tasks.nb]
     cmd = "pytest --nbmake"
 
@@ -81,6 +84,7 @@ def describe_main():
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "[tool.poe.executor]" in pyproject  # uv executor configured
         assert "[tool.poe.groups.doc.tasks.doc]" in pyproject  # doc migrated to group
+        assert "[tool.poe.groups.test.tasks.benchmark]" in pyproject
         assert "[tool.poe.groups.test.tasks.test]" in pyproject
         assert "test-py310" in pyproject  # multi-version test-all tasks generated
         assert "test-py311" in pyproject

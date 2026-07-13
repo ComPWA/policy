@@ -36,7 +36,7 @@ _DOC_TASKS = frozenset({
     "linkcheck",
 })
 _NOTEBOOK_TASKS = frozenset({"lab", "nb"})
-_TEST_TASKS = frozenset({"cov", "test", "test-all"})
+_TEST_TASKS = frozenset({"benchmark", "cov", "test", "test-all"})
 _TEST_PY_PATTERN = re.compile(r"^test-py3\d+$")
 
 
