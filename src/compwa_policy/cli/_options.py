@@ -312,7 +312,11 @@ def build_arguments(**overrides: Any) -> Arguments:
     to the ``[tool.compwa.policy]`` table (if present) and then to the same default that
     the ``check-dev-files`` hook uses. See the ``_settings`` for the resolution order.
     """
-    settings = load_settings(**overrides).model_dump()
+    resolved_settings = load_settings(**overrides)
+    settings = resolved_settings.model_dump()
+    settings["toml_formatter_configured"] = (
+        "toml_formatter" in resolved_settings.model_fields_set
+    )
     settings["excluded_python_versions"] = set(
         _to_list(settings["excluded_python_versions"])
     )

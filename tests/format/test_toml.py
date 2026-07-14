@@ -331,11 +331,13 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
         run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        git_add(tmp_path)
         precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
         with Session.load(precommit) as session:
             run_check(check, session)
@@ -347,9 +349,93 @@ def describe_main():
         assert "id: tombi-lint" in result
         assert "[tool.tombi.format.rules]" in (tmp_path / "pyproject.toml").read_text()
 
-    def skips_without_trigger_files(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    def removes_formatters_without_committed_toml(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
     ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/ComPWA/taplo-pre-commit
+                    rev: v0.9.3
+                    hooks:
+                      - id: taplo-format
+                  - repo: https://github.com/tombi-toml/tombi-pre-commit
+                    rev: v0.6.0
+                    hooks:
+                      - id: tombi-format
+                      - id: tombi-lint
+                  - repo: https://github.com/pre-commit/pre-commit-hooks
+                    rev: v6.0.0
+                    hooks:
+                      - id: check-json
+                      - id: check-toml
+            """).lstrip()
+        )
+        git_add(tmp_path)
+
+        with Session() as session:
+            run_check(check, session)
+
+        result = precommit_path.read_text()
+        assert "taplo" not in result
+        assert "tombi" not in result
+        assert "check-toml" not in result
+        assert "check-json" in result
+        assert not (tmp_path / ".taplo.toml").exists()
+
+    def configures_formatter_for_nested_toml(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        nested_toml = tmp_path / "config" / "settings.toml"
+        nested_toml.parent.mkdir()
+        nested_toml.write_text("enabled = true\n")
+        git_add(tmp_path)
+        precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
+
+        with Session.load(precommit) as session:
+            run_check(check, session)
+
+        result = precommit.dumps()
+        assert "id: tombi-format" in result
+        assert "id: tombi-lint" in result
+
+    def keeps_explicit_formatter_without_committed_toml(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".taplo.toml").write_text("include = []\n")
+        precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
+        with Session.load(precommit) as session:
+            run_check(check, session, toml_formatter="tombi")
+
+        result = precommit.dumps()
+        assert "id: tombi-format" in result
+        assert "id: tombi-lint" in result
+
+    def skips_without_trigger_files(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
         with Session.load(precommit) as session:

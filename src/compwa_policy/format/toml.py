@@ -16,7 +16,7 @@ from compwa_policy.utilities import (
     vscode,
 )
 from compwa_policy.utilities.check_hook import check_hook
-from compwa_policy.utilities.match import filter_patterns, git_ls_files
+from compwa_policy.utilities.match import filter_patterns, git_ls_files, is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
@@ -44,17 +44,25 @@ __POLICY_SCHEMA_PATH = "compwa-policy.schema.json"
         *__INCORRECT_TAPLO_CONFIG_PATHS,
         *__TOMBI_CONFIG_PATHS,
     ],
+    patterns=[r".*\.toml"],
 )
 def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
+    precommit = session.precommit
+    has_toml_files = is_committed("*.toml")
+    if not args.toml_formatter_configured and not has_toml_files:
+        precommit.remove_hook("check-toml")
+        _remove_taplo_hook_and_config(session, precommit)
+        _remove_tomlsort_hook_and_config(session, precommit)
+        _remove_tombi_hook_and_config(session, precommit)
+        return
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
         *__TOMBI_CONFIG_PATHS,
     ]
-    if not any(f.exists() for f in trigger_files):
+    if not has_toml_files and not any(f.exists() for f in trigger_files):
         return
-    precommit = session.precommit
     if args.toml_formatter == "taplo":
         session.changelog += _rename_taplo_config()
         _update_taplo_config(session)

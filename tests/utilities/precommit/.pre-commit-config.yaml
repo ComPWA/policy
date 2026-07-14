@@ -22,6 +22,7 @@ repos:
             (.*/)?_quarto\.yml|
             (.*/)?Manifest\.toml|
             (.*/)?requirements.*\.(in|txt)|
+            .*\.toml|
             \.binder/.*|
             \.constraints/.*|
             \.cspell\.json|

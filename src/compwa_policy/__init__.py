@@ -70,6 +70,7 @@ class Arguments:
     repo_title: str
     tombi_errors_on_warnings: bool
     toml_formatter: TomlFormatter
+    toml_formatter_configured: bool
     type_checker: set[TypeChecker]
     upgrade_frequency: UpgradeFrequency
 
