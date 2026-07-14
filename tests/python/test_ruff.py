@@ -97,6 +97,25 @@ def describe_main():
         assert "https://github.com/astral-sh/ruff-pre-commit" in config
         assert "ruff-format" in config
 
+    def does_not_create_empty_per_file_ignores(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "my-package"\nrequires-python = ">=3.10"\n'
+        )
+        (tmp_path / ".pre-commit-config.yaml").write_text(_PRECOMMIT_TO_CLEAN)
+
+        with Session() as session:
+            run_check(check, session, has_notebooks=False, imports_on_top=False)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert "[tool.ruff.lint.per-file-ignores]" not in pyproject
+
     def migrates_legacy_config(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
