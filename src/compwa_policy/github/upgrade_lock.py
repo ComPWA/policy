@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from compwa_policy import config
 from compwa_policy.errors import PolicyError
 from compwa_policy.github.dependabot import get_dependabot_ecosystems
 from compwa_policy.github.workflows import remove_workflow, update_workflow
@@ -20,14 +19,12 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from compwa_policy import Arguments
+    from compwa_policy.config import UpgradeFrequency
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
-
-Frequency = config.UpgradeFrequency
-"""The frequency of updating lock files."""
-__CRON_SCHEDULES: dict[Frequency, str] = {
+__CRON_SCHEDULES: dict[UpgradeFrequency, str] = {
     "monthly": "0 3 7 */1 *",
     "quarterly": "0 3 7 */3 *",
     "semiannually": "0 3 7 */6 *",
@@ -60,7 +57,7 @@ def _remove_script(script_name: str) -> Changelog:
 
 
 def _update_lock_workflow(
-    session: Session, /, frequency: Frequency, keep_workflow: set[str]
+    session: Session, /, frequency: UpgradeFrequency, keep_workflow: set[str]
 ) -> None:
     precommit = session.precommit
 
@@ -105,7 +102,7 @@ def _update_lock_workflow(
             session.changelog += remove_workflow(workflow)
 
 
-def _to_cron_schedule(frequency: Frequency) -> str:
+def _to_cron_schedule(frequency: UpgradeFrequency) -> str:
     if frequency not in __CRON_SCHEDULES:
         msg = f'No cron schedule defined for frequency "{frequency}"'
         raise PolicyError(msg)
@@ -113,7 +110,7 @@ def _to_cron_schedule(frequency: Frequency) -> str:
 
 
 def _update_precommit_schedule(
-    precommit: ModifiablePrecommit, frequency: Frequency
+    precommit: ModifiablePrecommit, frequency: UpgradeFrequency
 ) -> None:
     ci_section = precommit.document.get("ci")
     if ci_section is None:

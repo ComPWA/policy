@@ -21,7 +21,7 @@ from compwa_policy.config import (
     PackageManagerChoice,
     PythonVersion,
 )
-from compwa_policy.github.upgrade_lock import Frequency
+from compwa_policy.config import UpgradeFrequency as Frequency
 
 if TYPE_CHECKING:
     from typing import Any

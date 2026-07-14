@@ -14,7 +14,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
     "Command": "click.Command",
     "ConfigParser": "configparser.ConfigParser",
-    "Frequency": "typing.Literal",
+    "UpgradeFrequency": "typing.Literal",
     "InlineTable": "tomlkit.items.InlineTable",
     "IO": "typing.IO",
     "Iterable": "typing.Iterable",
@@ -35,7 +35,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Token": "contextvars.Token",
     "TOMLDocument": "tomlkit.TOMLDocument",
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
-    "upgrade_lock.Frequency": ("obj", "compwa_policy.github.upgrade_lock.Frequency"),
+    "config.UpgradeFrequency": ("obj", "compwa_policy.config.UpgradeFrequency"),
     "V": "typing.TypeVar",
 }
 author = "Common Partial Wave Analysis"

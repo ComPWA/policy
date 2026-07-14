@@ -16,8 +16,12 @@ from typing import TYPE_CHECKING, Literal
 from attrs import field, frozen
 
 if TYPE_CHECKING:
-    from compwa_policy.config import PackageManagerChoice, PythonVersion, TypeChecker
-    from compwa_policy.github import upgrade_lock
+    from compwa_policy.config import (
+        PackageManagerChoice,
+        PythonVersion,
+        TypeChecker,
+        UpgradeFrequency,
+    )
 
 
 TomlFormatter = Literal["taplo", "tombi"]
@@ -66,7 +70,7 @@ class Arguments:
     repo_title: str
     toml_formatter: TomlFormatter
     type_checker: set[TypeChecker]
-    upgrade_frequency: upgrade_lock.Frequency
+    upgrade_frequency: UpgradeFrequency
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:
