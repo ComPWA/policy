@@ -141,9 +141,9 @@ def _add_tombi_hook_and_config(
             "**/Cargo.toml",
             "**/Manifest.toml",
             "**/Project.toml",
+            "**/uv.lock",
             "labels*.toml",
             "labels/*.toml",
-            "uv.lock",
         ],
         files=git_ls_files(),
     )
