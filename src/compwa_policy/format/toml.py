@@ -28,9 +28,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
-__INCORRECT_TAPLO_CONFIG_PATHS = [
-    Path("taplo.toml"),
-]
+__INCORRECT_TAPLO_CONFIG_PATHS = [Path("taplo.toml")]
 __TOMBI_CONFIG_PATHS = [Path(".tombi.toml"), Path("tombi.toml")]
 
 
