@@ -382,12 +382,12 @@ def _set_upgrade_task(
     tasks = pyproject.get_table("tool.poe.tasks")
     commands = {}
     if is_committed(".pre-commit-config.yaml"):
-        commands["upgrade-precommit"] = "pre-commit autoupdate -j8"
+        commands["_upgrade-precommit"] = "pre-commit autoupdate -j8"
     if "uv" in package_manager:
-        commands["upgrade-uv"] = "uv lock --upgrade"
+        commands["_upgrade-uv"] = "uv lock --upgrade"
     if "pixi" in package_manager:
-        commands["upgrade-pixi"] = "pixi upgrade"
-    helper_names = {"upgrade-precommit", "upgrade-uv", "upgrade-pixi"}
+        commands["_upgrade-pixi"] = "pixi upgrade"
+    helper_names = {"_upgrade-precommit", "_upgrade-uv", "_upgrade-pixi"}
     if not commands:
         removed = {"upgrade", *helper_names} & tasks.keys()
         for task_name in removed:
