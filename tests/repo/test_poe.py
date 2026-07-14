@@ -10,6 +10,7 @@ from compwa_policy.errors import PolicyError
 from compwa_policy.repo.poe import (
     _check_expected_sections,
     _check_no_uv_run,
+    _set_all_task,
     _set_upgrade_task,
     _update_doclive,
     check,
@@ -158,6 +159,29 @@ def describe_check_no_uv_run():
         pyproject = Pyproject.load(io.StringIO(config))
         with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
             _check_no_uv_run(pyproject)
+
+
+def describe_set_all_task():
+    @pytest.mark.parametrize(
+        "sequence",
+        ['["all-fast", "all-slow"]', '[{ ref = "all-fast" }, "all-slow"]'],
+        ids=["named references", "configured reference"],
+    )
+    def preserves_fail_fast_task(sequence: str, tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent(f"""
+            [tool.poe.tasks.all]
+            sequence = {sequence}
+        """).lstrip()
+        )
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_all_task(pyproject)
+
+        all_task = Pyproject.load(config_path).get_table("tool.poe.tasks.all")
+        assert "ignore_fail" not in all_task
+        assert all_task["help"] == "Run all continuous integration (CI) tasks locally"
 
 
 def describe_set_upgrade_task():

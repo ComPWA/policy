@@ -246,11 +246,18 @@ def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
     if "all" not in task_table:
         return
     all_task = cast("Table", task_table["all"])
+    sequence = all_task.get("sequence")
+    delegates_to_tasks = isinstance(sequence, Sequence) and all(
+        isinstance(item, str) or (isinstance(item, Mapping) and "ref" in item)
+        for item in sequence
+    )
     if any([
         __safe_update(
             all_task, "help", "Run all continuous integration (CI) tasks locally"
         ),
-        __safe_update(all_task, "ignore_fail", "return_non_zero"),
+        __safe_update(all_task, "ignore_fail", "return_non_zero")
+        if not delegates_to_tasks
+        else False,
     ]):
         msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
