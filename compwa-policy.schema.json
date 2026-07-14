@@ -24,14 +24,7 @@
     "package-manager": {
       "default": "uv",
       "description": "Package or environment manager used by the repository.",
-      "enum": [
-        "none",
-        "uv",
-        "conda",
-        "pixi+uv",
-        "pixi",
-        "venv"
-      ],
+      "enum": ["none", "uv", "conda", "pixi+uv", "pixi", "venv"],
       "title": "Package Manager",
       "type": "string"
     },
@@ -114,11 +107,7 @@
           "default": [],
           "description": "Type checkers used by the project.",
           "items": {
-            "enum": [
-              "mypy",
-              "pyright",
-              "ty"
-            ],
+            "enum": ["mypy", "pyright", "ty"],
             "type": "string"
           },
           "title": "Type Checker",
@@ -214,11 +203,7 @@
         "upgrade-frequency": {
           "default": "quarterly",
           "description": "Frequency of the workflow that upgrades lock and constraint files.",
-          "enum": [
-            "monthly",
-            "quarterly",
-            "semiannually"
-          ],
+          "enum": ["monthly", "quarterly", "semiannually"],
           "title": "Upgrade Frequency",
           "type": "string"
         }
@@ -261,10 +246,7 @@
         "toml-formatter": {
           "default": "tombi",
           "description": "TOML formatter configured for the repository.",
-          "enum": [
-            "taplo",
-            "tombi"
-          ],
+          "enum": ["taplo", "tombi"],
           "title": "Toml Formatter",
           "type": "string"
         }
