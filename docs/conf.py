@@ -13,8 +13,8 @@ api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
     "Command": "click.Command",
+    "config.UpgradeFrequency": ("obj", "compwa_policy.config.UpgradeFrequency"),
     "ConfigParser": "configparser.ConfigParser",
-    "UpgradeFrequency": "typing.Literal",
     "InlineTable": "tomlkit.items.InlineTable",
     "IO": "typing.IO",
     "Iterable": "typing.Iterable",
@@ -35,7 +35,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Token": "contextvars.Token",
     "TOMLDocument": "tomlkit.TOMLDocument",
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
-    "config.UpgradeFrequency": ("obj", "compwa_policy.config.UpgradeFrequency"),
+    "UpgradeFrequency": "typing.Literal",
     "V": "typing.TypeVar",
 }
 author = "Common Partial Wave Analysis"
