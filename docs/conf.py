@@ -35,8 +35,6 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Table": "tomlkit.items.Table",
     "Token": "contextvars.Token",
     "TOMLDocument": "tomlkit.TOMLDocument",
-    "ty.TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
-    "TypeChecker": ("obj", "compwa_policy.python.ty.TypeChecker"),
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
     "upgrade_lock.Frequency": ("obj", "compwa_policy.github.upgrade_lock.Frequency"),
     "V": "typing.TypeVar",
