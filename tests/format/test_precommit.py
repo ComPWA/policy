@@ -176,12 +176,14 @@ def describe_update_precommit_ci():
                     rev: v1.2.0
                     hooks:
                       - id: tombi-format
+                      - id: tombi-lint
             """) as pc:
             precommit._update_precommit_ci_skip(pc)
         assert any("Updated ci.skip" in m for m in pc.changelog)
         result = pc.dumps()
         assert "my-local-hook" in result
         assert "tombi-format" in result
+        assert "tombi-lint" in result
         assert "ty" in result
 
     def skip_removes_redundant_section():

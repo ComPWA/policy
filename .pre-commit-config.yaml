@@ -6,6 +6,7 @@ ci:
     - check-dev-files
     - self-check
     - tombi-format
+    - tombi-lint
     - ty
 
 repos:
@@ -39,6 +40,12 @@ repos:
         name: Tests should start with test_
         args: ["--django"]
       - id: trailing-whitespace
+
+  - repo: https://github.com/tombi-toml/tombi-pre-commit
+    rev: v1.2.0
+    hooks:
+      - id: tombi-format
+      - id: tombi-lint
 
   - repo: local
     hooks:
@@ -128,11 +135,6 @@ repos:
           (?x)^(
             .*\.py
           )$
-
-  - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: v1.2.0
-    hooks:
-      - id: tombi-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
     rev: v0.0.59

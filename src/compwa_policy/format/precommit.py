@@ -207,6 +207,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "pyright",
         "taplo",
         "tombi-format",
+        "tombi-lint",
         "ty",
         "uv-lock",
     }

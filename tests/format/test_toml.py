@@ -246,6 +246,7 @@ def describe_tombi_configuration():
         assert "toml-sort" not in result
         assert "https://github.com/tombi-toml/tombi-pre-commit" in result
         assert "id: tombi-format" in result
+        assert "id: tombi-lint" in result
         assert not (tmp_path / ".taplo.toml").exists()
         assert "[tool.tomlsort]" not in (tmp_path / "pyproject.toml").read_text()
         pyproject = (tmp_path / "pyproject.toml").read_text()
@@ -292,6 +293,7 @@ def describe_main():
         assert changes or precommit.changelog
         assert "https://github.com/tombi-toml/tombi-pre-commit" in result
         assert "id: tombi-format" in result
+        assert "id: tombi-lint" in result
         assert "[tool.tombi.format.rules]" in (tmp_path / "pyproject.toml").read_text()
 
     def skips_without_trigger_files(

@@ -101,7 +101,8 @@ def _remove_tomlsort_hook_and_config(
 def _remove_tombi_hook_and_config(
     session: Session, precommit: ModifiablePrecommit
 ) -> None:
-    precommit.remove_hook("tombi-format")
+    for hook_id in ["tombi-format", "tombi-lint"]:
+        precommit.remove_hook(hook_id)
     remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
     pyproject = session.pyproject
     if pyproject is None:
@@ -118,7 +119,7 @@ def _add_tombi_hook_and_config(
     expected_hook = Repo(
         repo="https://github.com/tombi-toml/tombi-pre-commit",
         rev="",
-        hooks=[Hook(id="tombi-format")],
+        hooks=[Hook(id="tombi-format"), Hook(id="tombi-lint")],
     )
     precommit.update_single_hook_repo(expected_hook)
     remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
