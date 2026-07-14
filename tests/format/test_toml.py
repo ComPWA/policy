@@ -172,6 +172,10 @@ def describe_update_vscode_extensions():
             _update_vscode_extensions(session)
         extensions = (tmp_path / ".vscode" / "extensions.json").read_text()
         assert "tamasfe.even-better-toml" in extensions
+        settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
+        assert settings["[toml]"]["editor.defaultFormatter"] == (
+            "tamasfe.even-better-toml"
+        )
 
     def recommends_tombi(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
@@ -180,6 +184,8 @@ def describe_update_vscode_extensions():
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "tombi-toml.tombi" in extensions["recommendations"]
         assert "tamasfe.even-better-toml" in extensions["unwantedRecommendations"]
+        settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
+        assert settings["[toml]"]["editor.defaultFormatter"] == "tombi-toml.tombi"
 
 
 def describe_tombi_configuration():
@@ -358,6 +364,11 @@ def describe_main():
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
+        vscode_dir = tmp_path / ".vscode"
+        vscode_dir.mkdir()
+        (vscode_dir / "settings.json").write_text(
+            '{"[toml]": {"editor.defaultFormatter": "tombi-toml.tombi"}}'
+        )
         precommit_path = tmp_path / ".pre-commit-config.yaml"
         precommit_path.write_text(
             dedent("""
@@ -389,6 +400,8 @@ def describe_main():
         assert "check-toml" not in result
         assert "check-json" in result
         assert not (tmp_path / ".taplo.toml").exists()
+        settings = json.loads((vscode_dir / "settings.json").read_text())
+        assert "[toml]" not in settings
 
     def configures_formatter_for_nested_toml(
         tmp_path: Path,
@@ -411,6 +424,8 @@ def describe_main():
         result = precommit.dumps()
         assert "id: tombi-format" in result
         assert "id: tombi-lint" in result
+        settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
+        assert settings["[toml]"]["editor.defaultFormatter"] == "tombi-toml.tombi"
 
     def keeps_explicit_formatter_without_committed_toml(
         tmp_path: Path,

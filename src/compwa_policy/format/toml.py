@@ -54,6 +54,7 @@ def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
         _remove_taplo_hook_and_config(session, precommit)
         _remove_tomlsort_hook_and_config(session, precommit)
         _remove_tombi_hook_and_config(session, precommit)
+        vscode.remove_settings(session, ["[toml]"])
         return
     trigger_files = [
         CONFIG_PATH.pyproject,
@@ -343,12 +344,20 @@ def _update_vscode_extensions(session: Session, /) -> None:
         session, "bungcip.better-toml", unwanted=True
     )
     vscode.remove_extension_recommendation(session, "tombi-toml.tombi")
+    vscode.update_settings(
+        session,
+        {"[toml]": {"editor.defaultFormatter": "tamasfe.even-better-toml"}},
+    )
 
 
 def _update_tombi_vscode_extensions(session: Session, /) -> None:
     vscode.add_extension_recommendation(session, "tombi-toml.tombi")
     vscode.remove_extension_recommendation(
         session, "tamasfe.even-better-toml", unwanted=True
+    )
+    vscode.update_settings(
+        session,
+        {"[toml]": {"editor.defaultFormatter": "tombi-toml.tombi"}},
     )
 
 
