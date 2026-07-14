@@ -208,6 +208,35 @@ def describe_update_precommit_ci():
         assert "tombi-lint" in result
         assert "ty" in result
 
+    def skip_has_no_blank_line_between_ci_keys(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        source.write_text(
+            dedent("""
+            ci:
+              autofix_commit_msg: "MAINT: implement pre-commit autofixes"
+              autoupdate_commit_msg: "MAINT: upgrade lock files"
+              autoupdate_schedule: quarterly
+
+            repos:
+              - repo: https://github.com/tombi-toml/tombi-pre-commit
+                hooks:
+                  - id: tombi-format
+                  - id: tombi-lint
+        """).lstrip()
+        )
+
+        with ModifiablePrecommit.load(source) as pc:
+            precommit._update_precommit_ci_skip(pc)
+
+        assert (
+            "autoupdate_schedule: quarterly\n"
+            "  skip:\n"
+            "    - tombi-format\n"
+            "    - tombi-lint\n"
+            "\n"
+            "repos:"
+        ) in source.read_text()
+
     def skip_removes_redundant_section():
         with _load("""
                 ci:

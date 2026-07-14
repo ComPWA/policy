@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from ruamel.yaml.tokens import CommentToken
+
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.getters import find_repo
@@ -189,6 +191,16 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
         return
     existing_skips = precommit_ci.get("skip")
     if expected_skips and existing_skips != expected_skips:
+        yaml_ci = cast("CommentedMap", precommit_ci)
+        last_ci_key = list(yaml_ci)[-1]
+        item_comments = yaml_ci.ca.items.get(last_ci_key)
+        if item_comments is not None:
+            trailing_comment = item_comments[2]
+            if (
+                isinstance(trailing_comment, CommentToken)
+                and not trailing_comment.value.strip()
+            ):
+                item_comments[2] = None
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast("CommentedMap", precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
