@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -65,14 +64,12 @@ def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
         _update_tomlsort_config(session)
         _update_tomlsort_hook(precommit)
         _update_vscode_extensions(session)
-        _update_toml_editorconfig(session, indent_size=4)
         _remove_tombi_hook_and_config(session, precommit)
     elif args.toml_formatter == "tombi":
         _remove_taplo_hook_and_config(session, precommit)
         _remove_tomlsort_hook_and_config(session, precommit)
         _add_tombi_hook_and_config(session, precommit)
         _update_tombi_vscode_extensions(session)
-        _update_toml_editorconfig(session, indent_size=2)
     else:
         msg = f"Unknown TOML formatter: {args.toml_formatter}"
         raise ValueError(msg)
@@ -311,21 +308,6 @@ def _update_tombi_vscode_extensions(session: Session, /) -> None:
     vscode.remove_extension_recommendation(
         session, "tamasfe.even-better-toml", unwanted=True
     )
-
-
-def _update_toml_editorconfig(session: Session, /, indent_size: int) -> None:
-    config = session.get_path(CONFIG_PATH.editorconfig)
-    if not config.exists:
-        return
-    expected = f"[*.toml]\nindent_size = {indent_size}\n"
-    section_pattern = r"(?ms)^\[\*\.toml\]\n(?:(?!^\[).*(?:\n|$))*"
-    content = config.read_text()
-    if re.search(section_pattern, content):
-        updated = re.sub(section_pattern, expected, content)
-    else:
-        updated = f"{content.rstrip()}\n\n{expected}"
-    if updated != content:
-        config.write_text(updated, "Updated TOML indentation in .editorconfig")
 
 
 def _to_regex(glob: str) -> str:

@@ -15,7 +15,6 @@ from compwa_policy.format.toml import (
     _update_precommit_repo,
     _update_taplo_config,
     _update_tombi_vscode_extensions,
-    _update_toml_editorconfig,
     _update_tomlsort_config,
     _update_tomlsort_hook,
     _update_vscode_extensions,
@@ -246,19 +245,6 @@ def describe_tombi_configuration():
             _add_tombi_hook_and_config(session, session.precommit)
             assert session.collect_changes() == []
         assert pyproject_path.read_text() == before
-
-
-def describe_update_toml_editorconfig():
-    @pytest.mark.parametrize("indent_size", [2, 4])
-    def adds_formatter_specific_override(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, indent_size: int
-    ):
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / ".editorconfig").write_text("[*]\nindent_size = 4\n")
-        with Session() as session:
-            _update_toml_editorconfig(session, indent_size=indent_size)
-        result = (tmp_path / ".editorconfig").read_text()
-        assert f"[*.toml]\nindent_size = {indent_size}" in result
 
 
 def describe_main():
