@@ -73,7 +73,10 @@ doc = [
     "sphinx-copybutton",
     "sphinxcontrib-typer",
 ]
-style = ["ty", { include-group = "types" }]
+style = [
+    "ty",
+    { include-group = "types" },
+]
 test = [
     "pytest",
     "pytest-benchmark",
