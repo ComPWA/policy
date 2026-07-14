@@ -69,6 +69,7 @@ repos:
             \.python\-version|
             \.readthedocs\.yml|
             \.taplo\.toml|
+            \.tombi\.toml|
             \.vscode/.*|
             \.zenodo\.json|
             CITATION\.cff|
@@ -90,6 +91,7 @@ repos:
             README\.md|
             taplo\.toml|
             tests/\.pydocstyle|
+            tombi\.toml|
             ty\.toml|
             uv\.lock
           )$
@@ -109,18 +111,6 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/ComPWA/taplo-pre-commit
-    rev: v0.9.3
-    hooks:
-      - id: taplo-format
-
-  - repo: https://github.com/pappasam/toml-sort
-    rev: v0.24.4
-    hooks:
-      - id: toml-sort
-        args: [--in-place]
-        exclude: (?x)^(labels/.*\.toml)$
-
   - repo: https://github.com/streetsidesoftware/cspell-cli
     rev: v10.0.1
     hooks:
@@ -137,6 +127,11 @@ repos:
           (?x)^(
             .*\.py
           )$
+
+  - repo: https://github.com/tombi-toml/tombi-pre-commit
+    rev: v1.2.0
+    hooks:
+      - id: tombi-format
 
   - repo: https://github.com/astral-sh/ty-pre-commit
     rev: v0.0.59

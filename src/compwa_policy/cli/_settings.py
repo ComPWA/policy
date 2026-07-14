@@ -206,7 +206,7 @@ class Settings(BaseSettings):
     no_binder: bool = False
     allowed_cell_metadata: str = ""
     no_cspell_update: bool = False
-    toml_formatter: str = "taplo"
+    toml_formatter: str = "tombi"
     gitpod: bool = False
     keep_contributing_md: bool = False
     keep_issue_templates: bool = False

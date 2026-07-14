@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -9,7 +10,12 @@ from typing import TYPE_CHECKING
 import rtoml
 import tomlkit
 
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities import (
+    COMPWA_POLICY_DIR,
+    CONFIG_PATH,
+    remove_configs,
+    vscode,
+)
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
@@ -26,6 +32,7 @@ if TYPE_CHECKING:
 __INCORRECT_TAPLO_CONFIG_PATHS = [
     Path("taplo.toml"),
 ]
+__TOMBI_CONFIG_PATHS = [Path(".tombi.toml"), Path("tombi.toml")]
 
 
 @check_hook(
@@ -37,6 +44,7 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
         CONFIG_PATH.taplo,
         CONFIG_PATH.vscode_extensions,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
+        *__TOMBI_CONFIG_PATHS,
     ],
 )
 def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
@@ -44,6 +52,7 @@ def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
+        *__TOMBI_CONFIG_PATHS,
     ]
     if not any(f.exists() for f in trigger_files):
         return
@@ -56,39 +65,90 @@ def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
         _update_tomlsort_config(session)
         _update_tomlsort_hook(precommit)
         _update_vscode_extensions(session)
-        _remove_tombi_hook_and_config(precommit)
+        _update_toml_editorconfig(session, indent_size=4)
+        _remove_tombi_hook_and_config(session, precommit)
     elif args.toml_formatter == "tombi":
-        _remove_taplo_hook_and_config(precommit)
-        _remove_tomlsort_hook_and_config(precommit)
-        _add_tombi_hook_and_config(precommit)
+        _remove_taplo_hook_and_config(session, precommit)
+        _remove_tomlsort_hook_and_config(session, precommit)
+        _add_tombi_hook_and_config(session, precommit)
+        _update_tombi_vscode_extensions(session)
+        _update_toml_editorconfig(session, indent_size=2)
     else:
         msg = f"Unknown TOML formatter: {args.toml_formatter}"
         raise ValueError(msg)
 
 
-def _remove_taplo_hook_and_config(precommit: ModifiablePrecommit) -> None:
-    # Remove taplo pre-commit hook and config file
-    # Remove taplo.toml and taplo-pre-commit repo from precommit config
-    # Implementation stub
-    pass
+def _remove_taplo_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    for hook_id in ["taplo", "taplo-format"]:
+        precommit.remove_hook(hook_id)
+    remove_configs(
+        session,
+        [str(CONFIG_PATH.taplo), *(str(p) for p in __INCORRECT_TAPLO_CONFIG_PATHS)],
+    )
 
 
-def _remove_tomlsort_hook_and_config(precommit: ModifiablePrecommit) -> None:
-    # Remove toml-sort pre-commit hook and config section
-    # Implementation stub
-    pass
+def _remove_tomlsort_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    precommit.remove_hook("toml-sort")
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    tool = pyproject.get_table("tool", fallback={})
+    if "tomlsort" in tool:
+        del tool["tomlsort"]
+        pyproject.changelog.append("Removed toml-sort configuration")
 
 
-def _remove_tombi_hook_and_config(precommit: ModifiablePrecommit) -> None:
-    # Remove tombi pre-commit hook and config file
-    # Implementation stub
-    pass
+def _remove_tombi_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    precommit.remove_hook("tombi-format")
+    remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    tool = pyproject.get_table("tool", fallback={})
+    if "tombi" in tool:
+        del tool["tombi"]
+        pyproject.changelog.append("Removed Tombi configuration")
 
 
-def _add_tombi_hook_and_config(precommit: ModifiablePrecommit) -> None:
-    # Add tombi pre-commit hook and config file/section
-    # Implementation stub
-    pass
+def _add_tombi_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    expected_hook = Repo(
+        repo="https://github.com/tombi-toml/tombi-pre-commit",
+        rev="",
+        hooks=[Hook(id="tombi-format")],
+    )
+    precommit.update_single_hook_repo(expected_hook)
+    remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    excludes = filter_patterns([
+        "**/Cargo.toml",
+        "**/Manifest.toml",
+        "**/Project.toml",
+        "labels*.toml",
+        "labels/*.toml",
+    ])
+    expected = {
+        "files": {},
+        "format": {"rules": {"indent-width": 4, "line-width": 88}},
+    }
+    if excludes:
+        expected["files"]["exclude"] = to_toml_array(
+            sorted(excludes, key=str.lower), multiline=True
+        )
+    tool = pyproject.get_table("tool", create=True)
+    if tool.get("tombi") == expected:
+        return
+    tool["tombi"] = expected
+    pyproject.changelog.append("Updated Tombi configuration")
 
 
 def _update_tomlsort_config(session: Session, /) -> None:
@@ -243,6 +303,29 @@ def _update_vscode_extensions(session: Session, /) -> None:
     vscode.remove_extension_recommendation(
         session, "bungcip.better-toml", unwanted=True
     )
+    vscode.remove_extension_recommendation(session, "tombi-toml.tombi")
+
+
+def _update_tombi_vscode_extensions(session: Session, /) -> None:
+    vscode.add_extension_recommendation(session, "tombi-toml.tombi")
+    vscode.remove_extension_recommendation(
+        session, "tamasfe.even-better-toml", unwanted=True
+    )
+
+
+def _update_toml_editorconfig(session: Session, /, indent_size: int) -> None:
+    config = session.get_path(CONFIG_PATH.editorconfig)
+    if not config.exists:
+        return
+    expected = f"[*.toml]\nindent_size = {indent_size}\n"
+    section_pattern = r"(?ms)^\[\*\.toml\]\n(?:(?!^\[).*(?:\n|$))*"
+    content = config.read_text()
+    if re.search(section_pattern, content):
+        updated = re.sub(section_pattern, expected, content)
+    else:
+        updated = f"{content.rstrip()}\n\n{expected}"
+    if updated != content:
+        config.write_text(updated, "Updated TOML indentation in .editorconfig")
 
 
 def _to_regex(glob: str) -> str:

@@ -265,8 +265,8 @@ TomlFormatterOption = Annotated[
     TomlFormatter | None,
     typer.Option(
         "--toml-formatter",
-        show_default="taplo",
-        help="Choose the TOML formatter: taplo or tombi (mutually exclusive).",
+        show_default="tombi",
+        help="Choose the TOML formatter",
     ),
 ]
 NoCspellUpdate = Annotated[

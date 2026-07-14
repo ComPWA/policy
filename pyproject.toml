@@ -1,12 +1,7 @@
-[build-system]
-build-backend = "setuptools.build_meta"
-requires = [
-    "setuptools>=61.2",
-    "setuptools_scm",
-]
-
 [project]
-authors = [{name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de"}]
+authors = [
+    { name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de" },
+]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -16,45 +11,34 @@ classifiers = [
 ]
 dependencies = [
     "PyYAML",
-    "attrs >=20.1.0", # https://www.attrs.org/changelog.html#id82
+    "attrs >=20.1.0",  # https://www.attrs.org/changelog.html#id82
     "html2text",
     "ini2toml",
     "jinja2",
+    'more-itertools; python_version <"3.10.0"',  # pairwise
     "nbformat",
     "packaging",
     "pathspec",
     "pip-tools",
-    "pydantic >=2",
     "pydantic-settings >=2",
-    "rtoml", # fast, read-only parsing
-    "ruamel.yaml", # better YAML dumping
+    "pydantic >=2",
+    "rtoml",  # fast, read-only parsing
+    "ruamel.yaml",  # better YAML dumping
     "setuptools",
-    "tomlkit", # preserve original TOML formatting
+    "tomlkit",  # preserve original TOML formatting
     "typer >=0.26.0",
-    'more-itertools; python_version <"3.10.0"', # pairwise
-    'typing-extensions; python_version <"3.12.0"', # override
+    'typing-extensions; python_version <"3.12.0"',  # override
 ]
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
 dynamic = ["version"]
-license = {text = "BSD 3-Clause License"}
-maintainers = [{email = "compwa-admin@ep1.rub.de"}]
+license = { text = "BSD 3-Clause License" }
+maintainers = [{ email = "compwa-admin@ep1.rub.de" }]
 name = "compwa-policy"
 requires-python = ">=3.10"
 
-# Register the `policy` command on the `pwa` CLI when it is installed. The `pwa` command
-# discovers this entry point and mounts the returned Click command as a subcommand, so
-# `pwa policy ...` works without either package depending on the other.
-[project.entry-points."pwa.commands"]
-policy = "compwa_policy.cli:get_click_command"
-
 [project.readme]
-content-type = "text/markdown"
 file = "README.md"
-
-[project.scripts]
-check-dev-files = "compwa_policy.cli:main"
-policy = "compwa_policy.cli:main"
-self-check = "compwa_policy.self_check:main"
+content-type = "text/markdown"
 
 [project.urls]
 Changelog = "https://github.com/ComPWA/policy/releases"
@@ -62,13 +46,24 @@ Documentation = "https://compwa.github.io/policy"
 Issues = "https://github.com/ComPWA/policy/issues"
 Source = "https://github.com/ComPWA/policy"
 
+[project.scripts]
+check-dev-files = "compwa_policy.cli:main"
+policy = "compwa_policy.cli:main"
+self-check = "compwa_policy.self_check:main"
+
+# Register the `policy` command on the `pwa` CLI when it is installed. The `pwa` command
+# discovers this entry point and mounts the returned Click command as a subcommand, so
+# `pwa policy ...` works without either package depending on the other.
+[project.entry-points."pwa.commands"]
+policy = "compwa_policy.cli:get_click_command"
+
 [dependency-groups]
 dev = [
     "labels",
     "ruff",
-    {include-group = "doc"},
-    {include-group = "style"},
-    {include-group = "test"},
+    { include-group = "doc" },
+    { include-group = "style" },
+    { include-group = "test" },
 ]
 doc = [
     "myst-parser",
@@ -79,16 +74,8 @@ doc = [
     "sphinx-copybutton",
     "sphinxcontrib-typer",
 ]
-style = [
-    "ty",
-    {include-group = "types"},
-]
-test = [
-    "pytest",
-    "pytest-benchmark",
-    "pytest-cov",
-    "pytest-describe",
-]
+style = ["ty", { include-group = "types" }]
+test = ["pytest", "pytest-benchmark", "pytest-cov", "pytest-describe"]
 types = [
     "pytest",
     "pytest-benchmark",
@@ -97,26 +84,9 @@ types = [
     "types-toml",
 ]
 
-[tool.setuptools]
-include-package-data = false
-license-files = ["LICENSE"]
-package-dir = {"" = "src"}
-
-[tool.setuptools.package-data]
-compwa_policy = [
-    ".github/*",
-    ".github/**/*",
-    ".template/*",
-    ".template/.*",
-    "py.typed",
-]
-
-[tool.setuptools.packages.find]
-namespaces = false
-where = ["src"]
-
-[tool.setuptools_scm]
-write_to = "src/compwa_policy/version.py"
+[build-system]
+requires = ["setuptools>=61.2", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
 
 [tool.compwa.policy]
 pytest-single-threaded = true
@@ -143,7 +113,7 @@ omit = [
     "docs/**/*.ipynb",
     "docs/**/*.py",
     "examples/**/*.py",
-    "tests/**/*.py",
+    "tests/**/*.py"
 ]
 source = ["src"]
 
@@ -165,7 +135,7 @@ sphinx-build \
     docs/ \
     docs/_build/html/
 """
-executor = {group = "doc"}
+executor = { group = "doc" }
 help = "Build the HTML documentation"
 
 [tool.poe.groups.doc.tasks.doclive]
@@ -187,7 +157,7 @@ sphinx-autobuild \
     docs/ \
     docs/_build/html/
 """
-executor = {group = "doc", with = "sphinx-autobuild"}
+executor = { group = "doc", with = "sphinx-autobuild" }
 help = "Set up a server to directly preview changes to the HTML pages"
 
 [tool.poe.groups.doc.tasks.linkcheck]
@@ -198,7 +168,7 @@ sphinx-build \
     docs/ \
     docs/_build/linkcheck/
 """
-executor = {group = "doc"}
+executor = { group = "doc" }
 help = "Check external links in the documentation (requires internet connection)"
 
 [tool.poe.groups.test]
@@ -213,7 +183,7 @@ pytest benchmarks \
     --durations=0 \
     -k benchmark
 """
-executor = {group = "test"}
+executor = { group = "test" }
 help = "Run performance benchmarks"
 
 [[tool.poe.groups.test.tasks.benchmark.args]]
@@ -230,7 +200,7 @@ pytest \
     --cov-report=xml \
     ${paths}
 """
-executor = {group = "test"}
+executor = { group = "test" }
 help = "Compute how much of the source code is covered by tests"
 
 [[tool.poe.groups.test.tasks.cov.args]]
@@ -241,7 +211,7 @@ positional = true
 
 [tool.poe.groups.test.tasks.test]
 cmd = "pytest --no-summary ${paths}"
-executor = {group = "test"}
+executor = { group = "test" }
 help = "Run all unit tests"
 
 [[tool.poe.groups.test.tasks.test.args]]
@@ -253,11 +223,11 @@ positional = true
 [tool.poe.groups.test.tasks.test-all]
 help = "Run all tests on each supported Python version"
 sequence = [
-    {ref = "test-py310 ${paths}"},
-    {ref = "test-py311 ${paths}"},
-    {ref = "test-py312 ${paths}"},
-    {ref = "test-py313 ${paths}"},
-    {ref = "test-py314 ${paths}"},
+    { ref = "test-py310 ${paths}" },
+    { ref = "test-py311 ${paths}" },
+    { ref = "test-py312 ${paths}" },
+    { ref = "test-py313 ${paths}" },
+    { ref = "test-py314 ${paths}" },
 ]
 
 [[tool.poe.groups.test.tasks.test-all.args]]
@@ -267,47 +237,41 @@ name = "paths"
 positional = true
 
 [tool.poe.groups.test.tasks.test-py310]
-env = {UV_PYTHON = "3.10"}
+env = { UV_PYTHON = "3.10" }
 ref = "test"
 
 [tool.poe.groups.test.tasks.test-py311]
-env = {UV_PYTHON = "3.11"}
+env = { UV_PYTHON = "3.11" }
 ref = "test"
 
 [tool.poe.groups.test.tasks.test-py312]
-env = {UV_PYTHON = "3.12"}
+env = { UV_PYTHON = "3.12" }
 ref = "test"
 
 [tool.poe.groups.test.tasks.test-py313]
-env = {UV_PYTHON = "3.13"}
+env = { UV_PYTHON = "3.13" }
 ref = "test"
 
 [tool.poe.groups.test.tasks.test-py314]
-env = {UV_PYTHON = "3.14"}
+env = { UV_PYTHON = "3.14" }
 ref = "test"
 
 [tool.poe.tasks.all]
 help = "Run all continuous integration (CI) tasks locally"
 ignore_fail = "return_non_zero"
-sequence = [
-    "style",
-    "cov",
-    "doc",
-    "linkcheck",
-    "test-all",
-]
+sequence = ["style", "cov", "doc", "linkcheck", "test-all"]
 
 [tool.poe.tasks.style]
 cmd = "pre-commit run --all-files"
-executor = {group = "style"}
+executor = { group = "style" }
 help = "Perform all linting, formatting, and spelling checks"
 
 [tool.poe.tasks.upgrade]
-executor = {type = "simple"}
+executor = { type = "simple" }
 help = "Upgrade lock files"
 parallel = [
-    {cmd = "pre-commit autoupdate -j8"},
-    {cmd = "uv lock --upgrade"},
+    { cmd = "pre-commit autoupdate -j8" },
+    { cmd = "uv lock --upgrade" },
 ]
 
 [tool.pytest]
@@ -326,19 +290,12 @@ filterwarnings = [
     "ignore: The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025.:DeprecationWarning",
 ]
 minversion = "9.0"
-testpaths = [
-    "benchmarks",
-    "src",
-    "tests",
-]
+testpaths = ["benchmarks", "src", "tests"]
 
 [tool.ruff]
 preview = true
 show-fixes = true
-src = [
-    "src",
-    "tests",
-]
+src = ["src", "tests"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -402,13 +359,7 @@ split-on-trailing-comma = false
     "SLF001",
     "T20",
 ]
-"docs/*" = [
-    "E402",
-    "INP001",
-    "S101",
-    "S113",
-    "T201",
-]
+"docs/*" = ["E402", "INP001", "S101", "S113", "T201"]
 "docs/conf.py" = ["D100"]
 "setup.py" = ["D100"]
 "src/compwa_policy/config.py" = ["D100"]
@@ -430,18 +381,35 @@ split-on-trailing-comma = false
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.tomlsort]
-all = false
-ignore_case = true
-in_place = true
-sort_first = [
-    "build-system",
-    "project",
-    "tool.setuptools",
-    "tool.setuptools_scm",
+[tool.setuptools]
+include-package-data = false
+license-files = ["LICENSE"]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+compwa_policy = [
+    ".github/*",
+    ".github/**/*",
+    ".template/*",
+    ".template/.*",
+    "py.typed",
 ]
-spaces_indent_inline_array = 4
-trailing_comma_inline_array = true
+
+[tool.setuptools.packages.find]
+namespaces = false
+where = ["src"]
+
+[tool.setuptools_scm]
+write_to = "src/compwa_policy/version.py"
+
+[tool.tombi.files]
+exclude = [
+    "labels/*.toml",
+]
+
+[tool.tombi.format.rules]
+indent-width = 4
+line-width = 88
 
 [tool.ty.rules]
 division-by-zero = "warn"

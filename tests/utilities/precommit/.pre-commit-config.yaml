@@ -41,6 +41,7 @@ repos:
             \.python\-version|
             \.readthedocs\.yml|
             \.taplo\.toml|
+            \.tombi\.toml|
             \.vscode/.*|
             \.zenodo\.json|
             CITATION\.cff|
@@ -62,6 +63,7 @@ repos:
             README\.md|
             taplo\.toml|
             tests/\.pydocstyle|
+            tombi\.toml|
             ty\.toml|
             uv\.lock
           )$

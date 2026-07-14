@@ -1,4 +1,5 @@
 import io
+import json
 from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
@@ -6,10 +7,15 @@ from textwrap import dedent
 import pytest
 
 from compwa_policy.format.toml import (
+    _add_tombi_hook_and_config,
+    _remove_taplo_hook_and_config,
+    _remove_tomlsort_hook_and_config,
     _rename_precommit_url,
     _rename_taplo_config,
     _update_precommit_repo,
     _update_taplo_config,
+    _update_tombi_vscode_extensions,
+    _update_toml_editorconfig,
     _update_tomlsort_config,
     _update_tomlsort_hook,
     _update_vscode_extensions,
@@ -168,6 +174,92 @@ def describe_update_vscode_extensions():
         extensions = (tmp_path / ".vscode" / "extensions.json").read_text()
         assert "tamasfe.even-better-toml" in extensions
 
+    def recommends_tombi(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        with Session() as session:
+            _update_tombi_vscode_extensions(session)
+        extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
+        assert "tombi-toml.tombi" in extensions["recommendations"]
+        assert "tamasfe.even-better-toml" in extensions["unwantedRecommendations"]
+
+
+def describe_tombi_configuration():
+    def replaces_taplo_and_tomlsort(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".taplo.toml").write_text("[formatting]\ncolumn_width = 88\n")
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\n\n[tool.tomlsort]\nin_place = true\n'
+        )
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/ComPWA/taplo-pre-commit
+                    rev: v0.9.3
+                    hooks:
+                      - id: taplo-format
+                  - repo: https://github.com/pappasam/toml-sort
+                    rev: v0.24.4
+                    hooks:
+                      - id: toml-sort
+                        args: [--in-place]
+            """).lstrip()
+        )
+        with Session() as session:
+            precommit = session.precommit
+            _remove_taplo_hook_and_config(session, precommit)
+            _remove_tomlsort_hook_and_config(session, precommit)
+            _add_tombi_hook_and_config(session, precommit)
+        result = precommit_path.read_text()
+        assert "taplo" not in result
+        assert "toml-sort" not in result
+        assert "https://github.com/tombi-toml/tombi-pre-commit" in result
+        assert "id: tombi-format" in result
+        assert not (tmp_path / ".taplo.toml").exists()
+        assert "[tool.tomlsort]" not in (tmp_path / "pyproject.toml").read_text()
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert "[tool.tombi.format.rules]" in pyproject
+        assert "indent-width = 4" in pyproject
+        assert "line-width = 88" in pyproject
+        assert not (tmp_path / "tombi.toml").exists()
+
+    def is_idempotent(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(_META_ONLY)
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text('[project]\nname = "x"\n')
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+        before = pyproject_path.read_text()
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+            assert session.collect_changes() == []
+        assert pyproject_path.read_text() == before
+
+
+def describe_update_toml_editorconfig():
+    @pytest.mark.parametrize("indent_size", [2, 4])
+    def adds_formatter_specific_override(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, indent_size: int
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".editorconfig").write_text("[*]\nindent_size = 4\n")
+        with Session() as session:
+            _update_toml_editorconfig(session, indent_size=indent_size)
+        result = (tmp_path / ".editorconfig").read_text()
+        assert f"[*.toml]\nindent_size = {indent_size}" in result
+
 
 def describe_main():
     def runs_when_triggered(
@@ -185,8 +277,9 @@ def describe_main():
             changes = session.collect_changes()
         result = precommit.dumps()
         assert changes or precommit.changelog
-        assert "https://github.com/ComPWA/taplo-pre-commit" in result
-        assert "https://github.com/pappasam/toml-sort" in result
+        assert "https://github.com/tombi-toml/tombi-pre-commit" in result
+        assert "id: tombi-format" in result
+        assert "[tool.tombi.format.rules]" in (tmp_path / "pyproject.toml").read_text()
 
     def skips_without_trigger_files(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check

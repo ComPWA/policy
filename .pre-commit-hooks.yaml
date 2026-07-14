@@ -26,6 +26,7 @@
       \.python\-version|
       \.readthedocs\.yml|
       \.taplo\.toml|
+      \.tombi\.toml|
       \.vscode/.*|
       \.zenodo\.json|
       CITATION\.cff|
@@ -47,6 +48,7 @@
       README\.md|
       taplo\.toml|
       tests/\.pydocstyle|
+      tombi\.toml|
       ty\.toml|
       uv\.lock
     )$
