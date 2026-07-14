@@ -6,6 +6,7 @@
   "properties": {
     "dev-python-version": {
       "default": "3.13",
+      "description": "Python version used for the development environment.",
       "enum": [
         "3.6",
         "3.7",
@@ -22,37 +23,51 @@
     },
     "package-manager": {
       "default": "uv",
-      "enum": ["none", "uv", "conda", "pixi+uv", "pixi", "venv"],
+      "description": "Package or environment manager used by the repository.",
+      "enum": [
+        "none",
+        "uv",
+        "conda",
+        "pixi+uv",
+        "pixi",
+        "venv"
+      ],
       "title": "Package Manager",
       "type": "string"
     },
     "repo-name": {
       "default": "",
+      "description": "Repository name, usually as it appears in its hosting URL.",
       "title": "Repo Name",
       "type": "string"
     },
     "repo-organization": {
       "default": "ComPWA",
+      "description": "Organization under which the repository is hosted.",
       "title": "Repo Organization",
       "type": "string"
     },
     "repo-title": {
       "default": "",
+      "description": "Human-readable repository title; defaults to the repository name when empty.",
       "title": "Repo Title",
       "type": "string"
     },
     "no-ruff": {
       "default": false,
+      "description": "Do not enforce Ruff as a linter.",
       "title": "No Ruff",
       "type": "boolean"
     },
     "pytest-single-threaded": {
       "default": false,
+      "description": "Run pytest without the parallel ``-n`` argument.",
       "title": "Pytest Single Threaded",
       "type": "boolean"
     },
     "doc-apt-packages": {
       "default": "",
+      "description": "APT packages required to build the documentation.",
       "title": "Doc Apt Packages",
       "type": "string"
     },
@@ -67,6 +82,7 @@
         },
         "keep-contributing-md": {
           "default": false,
+          "description": "Do not update or remove ``CONTRIBUTING.md``.",
           "title": "Keep Contributing Md",
           "type": "boolean"
         }
@@ -78,23 +94,31 @@
       "properties": {
         "excluded-python-versions": {
           "default": "",
+          "description": "Python versions that the project does not support.",
           "title": "Excluded Python Versions",
           "type": "string"
         },
         "imports-on-top": {
           "default": false,
+          "description": "Move notebook imports to the top of the notebook.",
           "title": "Imports On Top",
           "type": "boolean"
         },
         "branch-coverage": {
           "default": true,
+          "description": "Enable branch coverage in the Coverage.py pytest configuration.",
           "title": "Branch Coverage",
           "type": "boolean"
         },
         "type-checker": {
           "default": [],
+          "description": "Type checkers used by the project.",
           "items": {
-            "enum": ["mypy", "pyright", "ty"],
+            "enum": [
+              "mypy",
+              "pyright",
+              "ty"
+            ],
             "type": "string"
           },
           "title": "Type Checker",
@@ -102,6 +126,7 @@
         },
         "allow-vscode-coverage-gutters": {
           "default": false,
+          "description": "Keep and recommend the VS Code Coverage Gutters extension.",
           "title": "Allow Vscode Coverage Gutters",
           "type": "boolean"
         }
@@ -113,61 +138,73 @@
       "properties": {
         "allow-labels": {
           "default": false,
+          "description": "Do not enforce the shared ``labels.toml`` configuration.",
           "title": "Allow Labels",
           "type": "boolean"
         },
         "allow-deprecated-workflows": {
           "default": false,
+          "description": "Allow deprecated continuous-integration workflows.",
           "title": "Allow Deprecated Workflows",
           "type": "boolean"
         },
         "no-github-actions": {
           "default": false,
+          "description": "Do not add the standard ComPWA GitHub Actions workflows.",
           "title": "No Github Actions",
           "type": "boolean"
         },
         "github-pages": {
           "default": false,
+          "description": "Publish the documentation through GitHub Pages.",
           "title": "Github Pages",
           "type": "boolean"
         },
         "keep-pr-linting": {
           "default": false,
+          "description": "Do not overwrite the pull-request linting workflow.",
           "title": "Keep Pr Linting",
           "type": "boolean"
         },
         "macos-python-version": {
           "default": "3.10",
+          "description": "Python version for the macOS test job; use ``disable`` to omit the job.",
           "title": "Macos Python Version",
           "type": "string"
         },
         "no-cd": {
           "default": false,
+          "description": "Do not add continuous-deployment workflows.",
           "title": "No Cd",
           "type": "boolean"
         },
         "no-milestones": {
           "default": false,
+          "description": "Do not add workflows that manage GitHub milestones.",
           "title": "No Milestones",
           "type": "boolean"
         },
         "no-pypi": {
           "default": false,
+          "description": "Do not publish the package to PyPI.",
           "title": "No Pypi",
           "type": "boolean"
         },
         "no-version-branches": {
           "default": false,
+          "description": "Do not update major and minor version branches when tagging a release.",
           "title": "No Version Branches",
           "type": "boolean"
         },
         "ci-skipped-tests": {
           "default": "",
+          "description": "Python versions for which the CI test job is skipped.",
           "title": "Ci Skipped Tests",
           "type": "string"
         },
         "keep-workflow": {
           "default": [],
+          "description": "GitHub Actions workflow files that policy must not update or remove.",
           "items": {
             "type": "string"
           },
@@ -176,7 +213,12 @@
         },
         "upgrade-frequency": {
           "default": "quarterly",
-          "enum": ["monthly", "quarterly", "semiannually"],
+          "description": "Frequency of the workflow that upgrades lock and constraint files.",
+          "enum": [
+            "monthly",
+            "quarterly",
+            "semiannually"
+          ],
           "title": "Upgrade Frequency",
           "type": "string"
         }
@@ -188,11 +230,13 @@
       "properties": {
         "no-binder": {
           "default": false,
+          "description": "Do not update the Binder configuration.",
           "title": "No Binder",
           "type": "boolean"
         },
         "allowed-cell-metadata": {
           "default": "",
+          "description": "Metadata keys allowed in Jupyter notebook cells.",
           "title": "Allowed Cell Metadata",
           "type": "string"
         }
@@ -204,12 +248,17 @@
       "properties": {
         "no-cspell-update": {
           "default": false,
+          "description": "Do not enforce the shared cSpell configuration.",
           "title": "No Cspell Update",
           "type": "boolean"
         },
         "toml-formatter": {
           "default": "tombi",
-          "enum": ["taplo", "tombi"],
+          "description": "TOML formatter configured for the repository.",
+          "enum": [
+            "taplo",
+            "tombi"
+          ],
           "title": "Toml Formatter",
           "type": "string"
         }
@@ -221,11 +270,13 @@
       "properties": {
         "gitpod": {
           "default": false,
+          "description": "Create and maintain a Gitpod configuration file.",
           "title": "Gitpod",
           "type": "boolean"
         },
         "keep-issue-templates": {
           "default": false,
+          "description": "Do not remove the GitHub issue-template directory.",
           "title": "Keep Issue Templates",
           "type": "boolean"
         }

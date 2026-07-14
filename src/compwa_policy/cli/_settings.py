@@ -179,43 +179,78 @@ class Settings(BaseSettings):
     repository and reviewable.
     """
 
-    model_config = SettingsConfigDict(extra="forbid")
+    model_config = SettingsConfigDict(extra="forbid", use_attribute_docstrings=True)
 
     python: bool | None = None
+    """Whether the repository contains Python code; ``None`` enables auto-detection."""
     dev_python_version: PythonVersion = DEFAULT_DEV_PYTHON_VERSION
+    """Python version used for the development environment."""
     package_manager: PackageManagerChoice = "uv"
+    """Package or environment manager used by the repository."""
     repo_name: str = ""
+    """Repository name, usually as it appears in its hosting URL."""
     repo_organization: str = "ComPWA"
+    """Organization under which the repository is hosted."""
     repo_title: str = ""
+    """Human-readable repository title; defaults to the repository name when empty."""
     environment_variables: str = ""
+    """Environment variables added to the development setup."""
     excluded_python_versions: str = ""
+    """Python versions that the project does not support."""
     no_ruff: bool = False
+    """Do not enforce Ruff as a linter."""
     imports_on_top: bool = False
+    """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
+    """Enable branch coverage in the Coverage.py pytest configuration."""
     type_checker: list[TypeChecker] = []
+    """Type checkers used by the project."""
     pytest_single_threaded: bool = False
+    """Run pytest without the parallel ``-n`` argument."""
     allow_vscode_coverage_gutters: bool = False
+    """Keep and recommend the VS Code Coverage Gutters extension."""
     allow_labels: bool = False
+    """Do not enforce the shared ``labels.toml`` configuration."""
     allow_deprecated_workflows: bool = False
+    """Allow deprecated continuous-integration workflows."""
     no_github_actions: bool = False
+    """Do not add the standard ComPWA GitHub Actions workflows."""
     github_pages: bool = False
+    """Publish the documentation through GitHub Pages."""
     keep_pr_linting: bool = False
+    """Do not overwrite the pull-request linting workflow."""
     macos_python_version: str = "3.10"
+    """Python version for the macOS test job; use ``disable`` to omit the job."""
     no_cd: bool = False
+    """Do not add continuous-deployment workflows."""
     no_milestones: bool = False
+    """Do not add workflows that manage GitHub milestones."""
     no_pypi: bool = False
+    """Do not publish the package to PyPI."""
     no_version_branches: bool = False
+    """Do not update major and minor version branches when tagging a release."""
     ci_skipped_tests: str = ""
+    """Python versions for which the CI test job is skipped."""
     doc_apt_packages: str = ""
+    """APT packages required to build the documentation."""
     keep_workflow: list[str] = []
+    """GitHub Actions workflow files that policy must not update or remove."""
     upgrade_frequency: UpgradeFrequency = "quarterly"
+    """Frequency of the workflow that upgrades lock and constraint files."""
     no_binder: bool = False
+    """Do not update the Binder configuration."""
     allowed_cell_metadata: str = ""
+    """Metadata keys allowed in Jupyter notebook cells."""
     no_cspell_update: bool = False
+    """Do not enforce the shared cSpell configuration."""
     toml_formatter: TomlFormatter = "tombi"
+    """TOML formatter configured for the repository."""
     gitpod: bool = False
+    """Create and maintain a Gitpod configuration file."""
     keep_contributing_md: bool = False
+    """Do not update or remove ``CONTRIBUTING.md``."""
     keep_issue_templates: bool = False
+    """Do not remove the GitHub issue-template directory."""
 
     @classmethod
     def settings_customise_sources(

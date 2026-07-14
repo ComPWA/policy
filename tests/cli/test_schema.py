@@ -11,6 +11,13 @@ def describe_create_policy_schema() -> None:
         assert "python" in properties
         assert properties["python"]["type"] == "object"
         assert "branch-coverage" in properties["python"]["properties"]
+        assert properties["repo-name"]["description"] == (
+            "Repository name, usually as it appears in its hosting URL."
+        )
+        assert (
+            properties["python"]["properties"]["branch-coverage"]["description"]
+            == "Enable branch coverage in the Coverage.py pytest configuration."
+        )
         assert properties["setup"]["properties"]["env"] == {
             "type": "object",
             "additionalProperties": {"type": "string"},
