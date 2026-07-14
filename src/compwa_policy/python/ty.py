@@ -14,12 +14,10 @@ from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from compwa_policy import Arguments
+    from compwa_policy.config import TypeChecker
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Session
-
-TypeChecker = Literal["mypy", "pyright", "ty"]
-"""The type of type checkers supported."""
 
 
 @check_hook(

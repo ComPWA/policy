@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from compwa_policy import Arguments, _to_list
+from compwa_policy import Arguments, TomlFormatter, _to_list
 from compwa_policy.cli._settings import load_settings
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
 from compwa_policy.env.conda import PackageManagerChoice
@@ -34,13 +34,6 @@ class TypeChecker(str, Enum):
     mypy = "mypy"
     pyright = "pyright"
     ty = "ty"
-
-
-class TomlFormatter(str, Enum):
-    """TOML formatters that can be selected with ``--toml-formatter``."""
-
-    taplo = "taplo"
-    tombi = "tombi"
 
 
 # Cross-cutting options -------------------------------------------------------

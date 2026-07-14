@@ -7,8 +7,9 @@ See Also:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
+from compwa_policy import config
 from compwa_policy.errors import PolicyError
 from compwa_policy.github.dependabot import get_dependabot_ecosystems
 from compwa_policy.github.workflows import remove_workflow, update_workflow
@@ -24,11 +25,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.session import Changelog, Session
 
 
-Frequency = Literal[
-    "monthly",
-    "quarterly",
-    "semiannually",
-]
+Frequency = config.UpgradeFrequency
 """The frequency of updating lock files."""
 __CRON_SCHEDULES: dict[Frequency, str] = {
     "monthly": "0 3 7 */1 *",

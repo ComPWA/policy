@@ -46,8 +46,14 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-from compwa_policy import _to_list
-from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
+from compwa_policy import TomlFormatter, _to_list
+from compwa_policy.config import (
+    DEFAULT_DEV_PYTHON_VERSION,
+    PackageManagerChoice,
+    PythonVersion,
+    TypeChecker,
+    UpgradeFrequency,
+)
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
 
@@ -176,8 +182,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(extra="forbid")
 
     python: bool | None = None
-    dev_python_version: str = DEFAULT_DEV_PYTHON_VERSION
-    package_manager: str = "uv"
+    dev_python_version: PythonVersion = DEFAULT_DEV_PYTHON_VERSION
+    package_manager: PackageManagerChoice = "uv"
     repo_name: str = ""
     repo_organization: str = "ComPWA"
     repo_title: str = ""
@@ -186,7 +192,7 @@ class Settings(BaseSettings):
     no_ruff: bool = False
     imports_on_top: bool = False
     branch_coverage: bool = True
-    type_checker: list[str] = []
+    type_checker: list[TypeChecker] = []
     pytest_single_threaded: bool = False
     allow_vscode_coverage_gutters: bool = False
     allow_labels: bool = False
@@ -202,11 +208,11 @@ class Settings(BaseSettings):
     ci_skipped_tests: str = ""
     doc_apt_packages: str = ""
     keep_workflow: list[str] = []
-    upgrade_frequency: str = "quarterly"
+    upgrade_frequency: UpgradeFrequency = "quarterly"
     no_binder: bool = False
     allowed_cell_metadata: str = ""
     no_cspell_update: bool = False
-    toml_formatter: str = "tombi"
+    toml_formatter: TomlFormatter = "tombi"
     gitpod: bool = False
     keep_contributing_md: bool = False
     keep_issue_templates: bool = False
@@ -260,18 +266,6 @@ class Settings(BaseSettings):
         '3.6, 3.7'
         """
         return _join(value)
-
-    @field_validator("toml_formatter", mode="before")
-    @classmethod
-    def _normalize_enum(cls, value: Any) -> str:
-        """Accept the ``TomlFormatter`` CLI enum or a plain string.
-
-        >>> Settings(toml_formatter="tombi").toml_formatter
-        'tombi'
-        """
-        if isinstance(value, Enum):
-            return value.value
-        return value
 
     @field_validator("type_checker", "keep_workflow", mode="before")
     @classmethod

@@ -5,3 +5,12 @@ PythonVersion = Literal[
 ]
 PYTHON_VERSIONS = set(PythonVersion.__args__)
 DEFAULT_DEV_PYTHON_VERSION: PythonVersion = "3.13"
+
+PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
+"""Package managers supported by the policy framework."""
+
+TypeChecker = Literal["mypy", "pyright", "ty"]
+"""Type checkers supported by the policy framework."""
+
+UpgradeFrequency = Literal["monthly", "quarterly", "semiannually"]
+"""Frequencies supported for updating lock files."""
