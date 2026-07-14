@@ -161,9 +161,7 @@ def _add_tombi_hook_and_config(
             }
         ]
     if excludes:
-        expected["files"]["exclude"] = to_toml_array(
-            sorted(excludes, key=str.lower), multiline=True
-        )
+        expected["files"]["exclude"] = to_toml_array(sorted(excludes, key=str.lower))
     tool = pyproject.get_table("tool", create=True)
     if tool.get("tombi") == expected:
         return
