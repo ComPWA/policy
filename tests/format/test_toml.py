@@ -303,6 +303,7 @@ def describe_tombi_configuration():
         assert "line-width = 88" in pyproject
         assert "[tool.tombi.lint.rules]" in pyproject
         assert 'key-empty = "off"' in pyproject
+        assert "[tool.tombi.files]" not in pyproject
         assert not (tmp_path / "tombi.toml").exists()
 
     def is_idempotent(

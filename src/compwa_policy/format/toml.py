@@ -148,7 +148,6 @@ def _add_tombi_hook_and_config(
         files=git_ls_files(),
     )
     expected = {
-        "files": {},
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
         "lint": {"rules": {"key-empty": "off"}},
     }
@@ -162,7 +161,7 @@ def _add_tombi_hook_and_config(
             }
         ]
     if excludes:
-        expected["files"]["exclude"] = to_toml_array(sorted(excludes, key=str.lower))
+        expected["files"] = {"exclude": to_toml_array(sorted(excludes, key=str.lower))}
     tool = pyproject.get_table("tool", create=True)
     if tool.get("tombi") == expected:
         return
