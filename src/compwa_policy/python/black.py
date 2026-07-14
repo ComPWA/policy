@@ -4,18 +4,26 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from compwa_policy.utilities import vscode
+from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, has_notebooks: bool) -> None:
+@check_hook(
+    group="python",
+    paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject, CONFIG_PATH.vscode_settings],
+    enabled=lambda args, ctx: ctx.is_python_repo and args.no_ruff,
+)
+def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit
     config = session.pyproject
     if config is None:
@@ -24,7 +32,7 @@ def main(session: Session, has_notebooks: bool) -> None:
     _update_black_settings(config)
     precommit.remove_hook("black", repo_url="https://github.com/psf/black")
     precommit.remove_hook("black-jupyter", repo_url="https://github.com/psf/black")
-    _update_precommit_repo(precommit, has_notebooks)
+    _update_precommit_repo(precommit, ctx.has_notebooks)
     vscode.add_extension_recommendation(session, "ms-python.black-formatter")
     vscode.update_settings(
         session, {"black-formatter.importStrategy": "fromEnvironment"}

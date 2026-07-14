@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.getters import find_repo
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -13,18 +15,24 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit, PrecommitConfig
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, has_notebooks: bool) -> None:
+@check_hook(
+    group="format",
+    paths=[CONFIG_PATH.precommit, CONFIG_PATH.conda, CONFIG_PATH.pyproject],
+)
+def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
     _update_precommit_ci_autofix_commit_msg(precommit)
     _update_precommit_ci_autoupdate_commit_msg(precommit)
     _update_precommit_ci_skip(precommit)
-    _update_notebook_hooks(precommit, has_notebooks)
+    _update_notebook_hooks(precommit, ctx.has_notebooks)
     _update_repo_urls(precommit)
     if session.pyproject is not None:
         session.pyproject.remove_dependency("pre-commit")

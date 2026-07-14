@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
+from compwa_policy import _to_list
 from compwa_policy._characterization import has_documentation
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.utilities import (
@@ -19,6 +20,7 @@ from compwa_policy.utilities import (
     vscode,
     write,
 )
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
@@ -27,43 +29,46 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.main import YAML
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import Precommit
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    session: Session,
-    *,
-    allow_deprecated: bool,
-    doc_apt_packages: list[str],
-    environment_variables: dict[str, str],
-    github_pages: bool,
-    keep_pr_linting: bool,
-    macos_python_version: PythonVersion | None,
-    no_cd: bool,
-    no_milestones: bool,
-    no_pypi: bool,
-    no_version_branches: bool,
-    python_version: PythonVersion,
-    single_threaded: bool,
-    skip_tests: list[str],
-) -> None:
-    if no_cd:
+@check_hook(
+    group="github",
+    paths=[
+        CONFIG_PATH.codecov,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readthedocs,
+        ".python-version",
+    ],
+    directories=(CONFIG_PATH.github_workflow_dir.parent, CONFIG_PATH.pip_constraints),
+    enabled=lambda args, _ctx: not args.no_github_actions,
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
+    if args.no_cd:
         session.changelog += remove_workflow("cd.yml")
     else:
-        _update_cd_workflow(session, no_milestones, no_pypi, no_version_branches)
+        _update_cd_workflow(
+            session,
+            args.no_milestones,
+            args.no_pypi,
+            args.no_version_branches,
+        )
     _update_ci_workflow(
         session,
-        allow_deprecated,
-        doc_apt_packages,
-        environment_variables,
-        github_pages,
-        macos_python_version,
-        python_version,
-        single_threaded,
-        skip_tests,
+        args.allow_deprecated_workflows,
+        ctx.doc_apt_packages,
+        ctx.environment_variables,
+        args.github_pages,
+        args.macos_python_version,
+        args.dev_python_version,
+        args.pytest_single_threaded,
+        _to_list(args.ci_skipped_tests),
     )
-    if not keep_pr_linting:
+    if not args.keep_pr_linting:
         session.changelog += _update_pr_linting()
     _recommend_vscode_extension(session)
 

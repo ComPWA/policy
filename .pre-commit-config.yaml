@@ -45,13 +45,64 @@ repos:
         name: Check developer config files in the repository
         entry: check-dev-files
         language: python
-        always_run: true
+        files: >-
+          (?x)^(
+            (.*/)?_quarto\.yml|
+            (.*/)?Manifest\.toml|
+            (.*/)?requirements.*\.(in|txt)|
+            \.binder/.*|
+            \.constraints/.*|
+            \.cspell\.json|
+            \.editorconfig|
+            \.envrc|
+            \.flake8|
+            \.gitattributes|
+            \.github/.*|
+            \.gitignore|
+            \.gitpod\.yml|
+            \.markdownlint\.json|
+            \.markdownlint\.yaml|
+            \.pre\-commit\-config\.yaml|
+            \.prettierignore|
+            \.pydocstyle|
+            \.pylintrc|
+            \.python\-version|
+            \.readthedocs\.yml|
+            \.taplo\.toml|
+            \.vscode/.*|
+            \.zenodo\.json|
+            CITATION\.cff|
+            codecov\.yml|
+            commitlint\.config\.js|
+            CONTRIBUTING\.md|
+            cspell\.json|
+            doc/_relink_references\.py|
+            docs/\.pydocstyle|
+            docs/_relink_references\.py|
+            docs/conf\.py|
+            environment\.yml|
+            labels\.toml|
+            pixi\.lock|
+            pixi\.toml|
+            pyproject\.toml|
+            pyrightconfig\.json|
+            pytest\.ini|
+            README\.md|
+            taplo\.toml|
+            tests/\.pydocstyle|
+            ty\.toml|
+            uv\.lock
+          )$
         pass_filenames: false
       - id: self-check
         name: self-check
         entry: self-check
         language: python
-        files: ^\.pre\-commit\-(config|hooks)\.yaml$
+        files: >-
+          (?x)^(
+            \.pre\-commit\-(config|hooks)\.yaml|
+            tests/utilities/precommit/\.pre\-commit\-config\.yaml
+          )$
 
   - repo: https://github.com/ComPWA/prettier-pre-commit
     rev: v3.8.1

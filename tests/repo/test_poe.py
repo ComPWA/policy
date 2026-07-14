@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import io
-from collections.abc import Callable
-from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -11,10 +12,14 @@ from compwa_policy.repo.poe import (
     _check_no_uv_run,
     _set_upgrade_task,
     _update_doclive,
-    main,
+    check,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.session import Session
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 _PYPROJECT = dedent("""
     [project]
@@ -77,9 +82,9 @@ def poe_repo(
 
 
 def describe_main():
-    def configures_groups_and_tasks(poe_repo: Path):
+    def configures_groups_and_tasks(poe_repo: Path, run_check):
         with Session.load() as session:
-            main(session, has_notebooks=True, package_manager="uv")
+            run_check(check, session, has_notebooks=True, package_manager="uv")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "[tool.poe.executor]" in pyproject  # uv executor configured
@@ -90,17 +95,20 @@ def describe_main():
         assert "test-py311" in pyproject
         assert "[tool.poe.tasks.upgrade]" in pyproject  # upgrade task added
 
-    def uses_pixi_upgrade_command(poe_repo: Path):
+    def uses_pixi_upgrade_command(poe_repo: Path, run_check):
         with Session.load() as session:
-            main(session, has_notebooks=True, package_manager="pixi")
+            run_check(check, session, has_notebooks=True, package_manager="pixi")
 
         pyproject = (poe_repo / "pyproject.toml").read_text()
         assert "pixi upgrade" in pyproject  # pixi-specific upgrade command
 
-    def is_noop_without_pyproject(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def is_noop_without_pyproject(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         with Session.load() as session:
-            main(session, has_notebooks=False, package_manager="uv")  # no pyproject
+            # no pyproject
+            run_check(check, session, has_notebooks=False, package_manager="uv")
 
 
 def describe_update_doclive():

@@ -11,10 +11,17 @@ from compwa_policy.utilities.session import Session
 
 
 def describe_main():
-    def configures_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def configures_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            binder.main(session, "uv", "3.12", ["graphviz"])
+            run_check(
+                binder.check,
+                session,
+                package_manager="uv",
+                dev_python_version="3.12",
+                doc_apt_packages=["graphviz"],
+                has_notebooks=True,
+            )
             changes = session.collect_changes()
         assert changes
         assert (tmp_path / ".binder" / "apt.txt").read_text() == "graphviz\n"
@@ -23,7 +30,9 @@ def describe_main():
         assert "astral.sh/uv/install.sh" in post_build
 
     def configures_pixi_with_activation(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pixi.toml").write_text(
@@ -33,7 +42,13 @@ def describe_main():
             '[project]\nname = "x"\n\n[dependency-groups]\njupyter = ["jupyterlab"]\n'
         )
         with Session() as session:
-            binder.main(session, "pixi+uv", "3.12", [])
+            run_check(
+                binder.check,
+                session,
+                package_manager="pixi+uv",
+                dev_python_version="3.12",
+                has_notebooks=True,
+            )
             changes = session.collect_changes()
         assert changes
         post_build = (tmp_path / ".binder" / "postBuild").read_text()

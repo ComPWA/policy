@@ -262,6 +262,7 @@ def describe_main():
     def reports_standalone_pyproject_changes(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("""
@@ -272,12 +273,12 @@ def describe_main():
             dev = ["pre-commit", "pre-commit-uv"]
         """)
         with Session.load(_load("repos: []")) as session:
-            precommit.main(session, has_notebooks=False)
+            run_check(precommit.check, session, has_notebooks=False)
             changes = session.collect_changes()
         assert any("Removed pre-commit from dependencies" in m for m in changes)
         assert any("Removed pre-commit-uv from dependencies" in m for m in changes)
 
-    def sorts_and_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def sorts_and_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[dependency-groups]\ndev = []\n")
         pc = _load("""
@@ -292,6 +293,6 @@ def describe_main():
                       - id: check-hooks-apply
             """)
         with Session.load(pc) as session:
-            precommit.main(session, has_notebooks=False)
+            run_check(precommit.check, session, has_notebooks=False)
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")  # hooks sorted

@@ -1,17 +1,17 @@
 """Canonical check dispatch shared by the run-all hook and the :program:`policy` subcommands.
 
-:func:`run_checks` lists every check exactly once, in the order the original
-``check-dev-files`` hook ran them, with each line guarded by the subcommand *group* it
-belongs to. :func:`run_all` runs every group; a subcommand runs only its own. The
-individual checks themselves live under the `compwa_policy` modules and are unchanged.
+:data:`CHECK_HOOKS` lists every check exactly once, in the order the original
+``check-dev-files`` hook ran them. Each definition carries its subcommand group and the
+file metadata declared by its check module. :func:`run_all` runs every group; a
+subcommand runs only its own. The union of the same definitions produces the pre-commit
+file filter.
 """
 
 from __future__ import annotations
 
-from typing import Literal, get_args
+from typing import get_args
 
 import typer
-from attrs import frozen
 
 from compwa_policy import Arguments, _get_environment_variables, _to_list
 from compwa_policy._characterization import has_python_code
@@ -36,26 +36,24 @@ from compwa_policy.python import (
     ruff,
     ty,
 )
-from compwa_policy.repo import citation, commitlint, gitpod, poe, readthedocs, vscode
-from compwa_policy.repo.deprecated import remove_deprecated_tools
+from compwa_policy.repo import (
+    citation,
+    commitlint,
+    deprecated,
+    gitpod,
+    poe,
+    readthedocs,
+    vscode,
+)
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import CheckContext, FileSet, Group
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.session import Session
 
 
-@frozen
-class Context:
-    """Repository properties that are derived once and shared by every check."""
-
-    is_python_repo: bool
-    has_notebooks: bool
-    doc_apt_packages: list[str]
-    environment_variables: dict[str, str]
-
-
-def compute_context(args: Arguments) -> Context:
-    return Context(
+def compute_context(args: Arguments) -> CheckContext:
+    return CheckContext(
         is_python_repo=has_python_code() if args.python is None else args.python,
         has_notebooks=is_committed("**/*.ipynb"),
         doc_apt_packages=_to_list(args.doc_apt_packages),
@@ -77,8 +75,44 @@ def check_dev_python_version(args: Arguments) -> int:
     return 0
 
 
-Group = Literal["python", "github", "env", "nb", "format", "repo"]
 ALL_GROUPS: frozenset[Group] = frozenset(get_args(Group))
+CHECK_HOOKS = (
+    citation.check,
+    commitlint.check,
+    conda.check,
+    editorconfig.check,
+    labels.check,
+    workflows.check,
+    binder.check,
+    jupyter.check,
+    nbstripout.check,
+    pixi.check,
+    direnv.check,
+    toml.check,
+    poe.check,
+    prettier.check,
+    black.check,
+    release_drafter.check,
+    pyproject.check,
+    mypy.check,
+    pyright.check,
+    ty.check,
+    pytest.check,
+    pyupgrade.check,
+    ruff.check,
+    upgrade_lock.check,
+    dependabot.check,
+    readthedocs.check,
+    deprecated.check,
+    vscode.check,
+    gitpod.check,
+    precommit.check,
+    uv.check,
+    cspell.check,
+)
+CHECK_DEV_FILES_PATTERN = FileSet.union(
+    tuple(hook.files for hook in CHECK_HOOKS)
+).to_regex()
 
 
 def run_all(args: Arguments) -> int:
@@ -108,132 +142,25 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
     return 0
 
 
-def run_checks(  # noqa: C901, PLR0912, PLR0915
+def run_checks(
     session: Session,
     args: Arguments,
-    ctx: Context,
+    ctx: CheckContext,
     *,
     groups: frozenset[Group] = ALL_GROUPS,
 ) -> None:
     """Dispatch the requested check *groups* in the canonical order.
 
-    This is the single source of truth for which checks run and in what order. Running
-    with every group (the default) reproduces the original flat ``check-dev-files``
-    dispatch exactly; a subcommand passes only its own group. Keeping one ordered
-    sequence means a subcommand can never order a shared config file (such as
-    ``.pre-commit-config.yaml``) differently from the full run.
+    :data:`CHECK_HOOKS` is the single source of truth for which checks run and in what
+    order. Running with every group (the default) reproduces the original flat
+    ``check-dev-files`` dispatch exactly; a subcommand passes only its own group.
+    Keeping one ordered sequence means a subcommand can never order a shared config
+    file (such as ``.pre-commit-config.yaml``) differently from the full run.
 
     Each check reports its modifications through the *session*: either by mutating a
     managed container (:attr:`~.Session.pyproject`, :attr:`~.Session.precommit`) or by
     appending to :attr:`~.Session.changelog`. Nothing is returned.
     """
-    if "repo" in groups:
-        citation.main(session)
-        commitlint.main(session)
-    if "env" in groups:
-        conda.main(session, args.dev_python_version, args.package_manager)
-    if "format" in groups:
-        editorconfig.main(session)
-    if "github" in groups and not args.allow_labels:
-        labels.main(session)
-    if "github" in groups and not args.no_github_actions:
-        workflows.main(
-            session,
-            allow_deprecated=args.allow_deprecated_workflows,
-            doc_apt_packages=ctx.doc_apt_packages,
-            environment_variables=ctx.environment_variables,
-            github_pages=args.github_pages,
-            keep_pr_linting=args.keep_pr_linting,
-            macos_python_version=args.macos_python_version,
-            no_cd=args.no_cd,
-            no_milestones=args.no_milestones,
-            no_pypi=args.no_pypi,
-            no_version_branches=args.no_version_branches,
-            python_version=args.dev_python_version,
-            single_threaded=args.pytest_single_threaded,
-            skip_tests=_to_list(args.ci_skipped_tests),
-        )
-    if "nb" in groups and ctx.has_notebooks:
-        if not args.no_binder:
-            binder.main(
-                session,
-                args.package_manager,
-                args.dev_python_version,
-                ctx.doc_apt_packages,
-            )
-        jupyter.main(session, args.no_ruff)
-    if "nb" in groups:
-        nbstripout.main(
-            session,
-            ctx.has_notebooks,
-            _to_list(args.allowed_cell_metadata),
-        )
-    if "env" in groups:
-        pixi.main(
-            session,
-            args.package_manager,
-            ctx.is_python_repo,
-            args.dev_python_version,
-        )
-        direnv.main(session, args.package_manager, ctx.environment_variables)
-    if "format" in groups:
-        toml.main(session)  # has to run before pre-commit
-    if "repo" in groups:
-        poe.main(session, ctx.has_notebooks, args.package_manager)
-    if "format" in groups:
-        prettier.main(session)
-    if "python" in groups and ctx.is_python_repo and args.no_ruff:
-        black.main(session, ctx.has_notebooks)
-    if "github" in groups and ctx.is_python_repo and not args.no_github_actions:
-        release_drafter.main(
-            session,
-            args.no_cd,
-            args.repo_name,
-            args.repo_title,
-            args.repo_organization,
-        )
-    if "python" in groups and ctx.is_python_repo:
-        pyproject.main(session, args.excluded_python_versions)
-        mypy.main(session, "mypy" in args.type_checker)
-        pyright.main(session, "pyright" in args.type_checker)
-        ty.main(session, args.type_checker)
-        pytest.main(
-            session,
-            args.allow_vscode_coverage_gutters,
-            args.pytest_single_threaded,
-            args.branch_coverage,
-        )
-        pyupgrade.main(session, args.no_ruff)
-        if not args.no_ruff:
-            ruff.main(session, ctx.has_notebooks, args.imports_on_top)
-    if "github" in groups and args.upgrade_frequency != "no":
-        upgrade_lock.main(
-            session,
-            frequency=args.upgrade_frequency,
-            keep_workflow=args.keep_workflow,
-        )
-    if "github" in groups:
-        dependabot.main(session, args.upgrade_frequency)
-    if "repo" in groups:
-        readthedocs.main(session, args.package_manager, args.dev_python_version)
-        remove_deprecated_tools(session, args.keep_issue_templates)
-        vscode.main(
-            session,
-            ctx.has_notebooks,
-            ctx.is_python_repo,
-            args.package_manager,
-        )
-        gitpod.main(session, args.gitpod, args.dev_python_version)
-    if "format" in groups:
-        precommit.main(session, ctx.has_notebooks)
-    if "env" in groups:
-        uv.main(
-            session,
-            args.dev_python_version,
-            args.keep_contributing_md,
-            args.package_manager,
-            args.repo_organization,
-            args.repo_name,
-        )
-    if "format" in groups:
-        cspell.main(session, args.no_cspell_update)
+    for hook in CHECK_HOOKS:
+        if hook.group in groups:
+            hook(session, args, ctx)

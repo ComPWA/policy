@@ -4,19 +4,28 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedSeq
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, no_ruff: bool) -> None:
+@check_hook(
+    group="python",
+    paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     precommit = session.precommit
-    if no_ruff:
+    if args.no_ruff:
         _update_precommit_repo(session)
         _update_precommit_nbqa_hook(session)
     else:

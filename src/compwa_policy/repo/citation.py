@@ -14,14 +14,26 @@ from ruamel.yaml.scalarstring import FoldedScalarString, PreservedScalarString
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(session: Session) -> None:
+@check_hook(
+    group="repo",
+    paths=[
+        CONFIG_PATH.citation,
+        CONFIG_PATH.zenodo,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.vscode_settings,
+    ],
+)
+def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     just_converted = False
     if CONFIG_PATH.zenodo.exists():
         if CONFIG_PATH.citation.exists():

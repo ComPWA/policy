@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from textwrap import dedent
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -16,9 +17,23 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.pyproject.getters import PythonVersion
 
 
-def _main(*args, **kwargs) -> list[str]:
-    with Session() as session:
-        readthedocs.main(session, *args, **kwargs)
+def _main(
+    run_check,
+    package_manager: str,
+    python_version: PythonVersion,
+    *,
+    source: Path | None = None,
+) -> list[str]:
+    config_paths = readthedocs.CONFIG_PATH
+    if source is not None:
+        config_paths = config_paths._replace(readthedocs=source)
+    with patch.object(readthedocs, "CONFIG_PATH", config_paths), Session() as session:
+        run_check(
+            readthedocs.check,
+            session,
+            package_manager=package_manager,
+            dev_python_version=python_version,
+        )
         return session.collect_changes()
 
 
@@ -84,9 +99,9 @@ def _good_overwrite(python_version: str) -> str:
     """).lstrip()
 
 
-def _expected_message(python_version: str) -> str:
+def _expected_message(python_version: str, path: Path) -> str:
     return dedent(f"""
-      Updated .readthedocs.yml:
+      Updated {path}:
         - Set build.os to ubuntu-24.04
         - Set build.tools.python to {python_version!r}
         - Updated pip install steps
@@ -100,7 +115,7 @@ def _write_rtd(tmp_path: Path, content: str) -> Path:
 
 
 def describe_main():
-    def updates_extend_style_config(tmp_path: Path):
+    def updates_extend_style_config(tmp_path: Path, run_check):
         bad_config = dedent("""
             version: 2
             build:
@@ -121,12 +136,15 @@ def describe_main():
         """).lstrip()
         config = _write_rtd(tmp_path, bad_config)
         changes = _main(
+            run_check,
             "conda",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=config,
         )
         assert changes
-        assert changes[0].strip() == _expected_message(DEFAULT_DEV_PYTHON_VERSION)
+        assert changes[0].strip() == _expected_message(
+            DEFAULT_DEV_PYTHON_VERSION, config
+        )
         assert config.read_text().strip() == _good_extend().strip()
 
     @pytest.mark.parametrize(
@@ -134,9 +152,10 @@ def describe_main():
         [_good_extend(), _good_overwrite(DEFAULT_DEV_PYTHON_VERSION)],
         ids=["extend", "overwrite"],
     )
-    def leaves_good_config_unchanged(good_config: str, tmp_path: Path):
+    def leaves_good_config_unchanged(good_config: str, tmp_path: Path, run_check):
         config = _write_rtd(tmp_path, good_config)
         _main(
+            run_check,
             "conda",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=config,
@@ -150,22 +169,26 @@ def describe_main():
     )
     @pytest.mark.parametrize("python_version", ["3.9", "3.10"])
     def overwrites_bad_config(
-        python_version: PythonVersion, bad_config: str, tmp_path: Path
+        python_version: PythonVersion,
+        bad_config: str,
+        tmp_path: Path,
+        run_check,
     ):
         config = _write_rtd(tmp_path, bad_config)
-        changes = _main("conda", python_version, source=config)
+        changes = _main(run_check, "conda", python_version, source=config)
         assert changes
-        assert changes[0].strip() == _expected_message(python_version)
+        assert changes[0].strip() == _expected_message(python_version, config)
         assert config.read_text().strip() == _good_overwrite(python_version).strip()
 
-    def returns_early_when_config_missing(tmp_path: Path):
+    def returns_early_when_config_missing(tmp_path: Path, run_check):
         _main(
+            run_check,
             "uv",
             python_version=DEFAULT_DEV_PYTHON_VERSION,
             source=tmp_path / ".readthedocs.yml",
         )
 
-    def configures_uv_build(rtd_repo: Path):
+    def configures_uv_build(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[dependency-groups]\ndoc = ["poethepoet"]\n'
         )
@@ -186,14 +209,14 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        changes = _main("uv", python_version="3.12")
+        changes = _main(run_check, "uv", python_version="3.12")
         assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi global install graphviz uv" in result
         assert "uvx --from poethepoet poe doc" in result
         assert "apt_packages" not in result
 
-    def configures_pixi_build_with_poe(rtd_repo: Path):
+    def configures_pixi_build_with_poe(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text(
             '[project]\nname = "x"\n\n[dependency-groups]\ndoc = ["poethepoet"]\n'
         )
@@ -209,12 +232,12 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        changes = _main("pixi+uv", python_version="3.12")
+        changes = _main(run_check, "pixi+uv", python_version="3.12")
         assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi run poe doc" in result
 
-    def sets_sphinx_configuration_when_missing(rtd_repo: Path):
+    def sets_sphinx_configuration_when_missing(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
         _write_rtd(
             rtd_repo,
@@ -226,12 +249,12 @@ def describe_main():
                 python: "3.12"
             """).lstrip(),
         )
-        changes = _main("conda", python_version="3.12")
+        changes = _main(run_check, "conda", python_version="3.12")
         assert any("Set sphinx.configuration" in m for m in changes)
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "configuration: docs/conf.py" in result
 
-    def reuses_existing_pixi_packages(rtd_repo: Path):
+    def reuses_existing_pixi_packages(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
         _write_rtd(
             rtd_repo,
@@ -250,12 +273,12 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        changes = _main("uv", python_version="3.12")
+        changes = _main(run_check, "uv", python_version="3.12")
         assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi global install graphviz julia uv" in result
 
-    def configures_pixi_build_without_poe(rtd_repo: Path):
+    def configures_pixi_build_without_poe(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
         _write_rtd(
             rtd_repo,
@@ -269,7 +292,7 @@ def describe_main():
               configuration: docs/conf.py
             """).lstrip(),
         )
-        changes = _main("pixi+uv", python_version="3.12")
+        changes = _main(run_check, "pixi+uv", python_version="3.12")
         assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
         assert "pixi run doc" in result

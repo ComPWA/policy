@@ -10,7 +10,7 @@ from compwa_policy.python.mypy import (
     _remove_mypy,
     _update_precommit_config,
     _update_vscode_settings,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -98,7 +98,7 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(session, mypy=True)
+            _update_vscode_settings(session, activate=True)
         settings = json.loads((tmp_path / ".vscode" / "settings.json").read_text())
         assert "mypy-type-checker.args" in settings
 
@@ -107,13 +107,13 @@ def describe_update_vscode_settings():
     ):
         monkeypatch.chdir(tmp_path)
         with Session() as session:
-            _update_vscode_settings(session, mypy=False)
+            _update_vscode_settings(session, activate=False)
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "ms-python.mypy-type-checker" in extensions["unwantedRecommendations"]
 
 
 def describe_main():
-    def activates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def activates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
         (tmp_path / "README.md").write_text("# My Package\n\nSome text.\n")
@@ -125,13 +125,13 @@ def describe_main():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            main(session, active=True)
+            run_check(check, session, type_checker={"mypy"})
         assert "id: mypy" in precommit.dumps()
 
-    def deactivates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def deactivates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text("[tool.mypy]\nstrict = true\n")
         precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_WITH_MYPY))
         with Session.load(precommit) as session:
-            main(session, active=False)
+            run_check(check, session, type_checker=set())
         assert "mypy" not in precommit.dumps()

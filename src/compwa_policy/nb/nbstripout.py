@@ -6,23 +6,25 @@ from typing import TYPE_CHECKING
 
 from ruamel.yaml.scalarstring import LiteralScalarString
 
+from compwa_policy import _to_list
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(
-    session: Session,
-    has_notebooks: bool,
-    allowed_cell_metadata: list[str],
-) -> None:
+@check_hook(group="nb", paths=[CONFIG_PATH.precommit])
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit
-    if not has_notebooks:
+    if not ctx.has_notebooks:
         precommit.remove_hook("nbstripout")
     else:
-        _update_precommit_hook(precommit, allowed_cell_metadata)
+        _update_precommit_hook(precommit, _to_list(args.allowed_cell_metadata))
 
 
 def _update_precommit_hook(

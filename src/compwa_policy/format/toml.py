@@ -10,6 +10,7 @@ import rtoml
 import tomlkit
 
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import filter_patterns
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject.getters import has_sub_table
@@ -17,6 +18,8 @@ from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -25,7 +28,18 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
 ]
 
 
-def main(session: Session) -> None:
+@check_hook(
+    group="format",
+    paths=[
+        CONFIG_PATH.pixi_toml,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.taplo,
+        CONFIG_PATH.vscode_extensions,
+        *__INCORRECT_TAPLO_CONFIG_PATHS,
+    ],
+)
+def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,

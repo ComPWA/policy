@@ -41,6 +41,7 @@
     ".htaccess",
     ".mypy.ini",
     ".pre-commit-config.yaml",
+    ".pre-commit-hooks.yaml",
     ".prettierignore",
     ".readthedocs.yml",
     ".taplo.toml",

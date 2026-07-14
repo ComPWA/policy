@@ -28,6 +28,7 @@
     ".gitignore",
     ".gitpod.*",
     ".pre-commit-config.yaml",
+    ".pre-commit-hooks.yaml",
     ".prettierignore",
     ".taplo.toml",
     ".vscode/*",

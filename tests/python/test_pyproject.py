@@ -10,7 +10,7 @@ from compwa_policy.python.pyproject import (
     _update_pypi_link_names,
     _update_python_version_classifiers,
     _update_requires_python,
-    main,
+    check,
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.session import Session
@@ -151,7 +151,7 @@ def describe_update_python_version_classifiers():
 
 
 def describe_main():
-    def runs_all_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def runs_all_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(
             dedent("""
@@ -162,13 +162,16 @@ def describe_main():
             """).lstrip()
         )
         with Session.load() as session:
-            main(session, excluded_python_versions=set())
+            run_check(check, session, excluded_python_versions=set())
         result = (tmp_path / "pyproject.toml").read_text()
         assert "Python :: 3.12" in result
 
     def returns_early_without_pyproject(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         with Session.load() as session:
-            main(session, excluded_python_versions=set())  # no pyproject.toml -> no-op
+            # no pyproject.toml -> no-op
+            run_check(check, session, excluded_python_versions=set())

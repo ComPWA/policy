@@ -6,21 +6,29 @@ import os
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
     from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Session
 
 
-def main(
-    session: Session,
-    has_notebooks: bool,
-    is_python_repo: bool,
-    package_manager: PackageManagerChoice,
-) -> None:
+@check_hook(
+    group="repo",
+    paths=[CONFIG_PATH.envrc],
+    directories=(CONFIG_PATH.pip_constraints, ".vscode"),
+)
+def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     _update_extensions(session)
-    _update_settings(session, has_notebooks, is_python_repo, package_manager)
+    _update_settings(
+        session,
+        ctx.has_notebooks,
+        ctx.is_python_repo,
+        args.package_manager,
+    )
 
 
 def _update_extensions(session: Session, /) -> None:

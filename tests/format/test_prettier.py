@@ -8,7 +8,7 @@ from compwa_policy.format.prettier import (
     _remove_configuration,
     _update_prettier_hook,
     _update_prettier_ignore,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
@@ -103,25 +103,29 @@ def describe_update_prettier_ignore():
 
 def describe_main():
     def updates_readme_with_prettier_repo(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         precommit = ModifiablePrecommit.load(io.StringIO(_WITH_PRETTIER))
         with Session.load(precommit) as session:
-            main(session)
+            run_check(check, session)
             changes = session.collect_changes()
         assert changes
         assert "prettier" in (tmp_path / "README.md").read_text()
 
     def cleans_up_without_prettier_repo(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
         (tmp_path / ".prettierrc.json").write_text("{}")
         precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
         with Session.load(precommit) as session:
-            main(session)
+            run_check(check, session)
             changes = session.collect_changes()
         assert any("Removed redundant configuration" in m for m in changes)

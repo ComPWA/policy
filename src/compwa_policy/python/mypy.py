@@ -10,21 +10,37 @@ from ini2toml.api import Translator
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.pyproject import ModifiablePyproject
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, active: bool) -> None:
-    _update_vscode_settings(session, active)
+@check_hook(
+    group="python",
+    paths=[
+        CONFIG_PATH.gitignore,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.readme,
+        CONFIG_PATH.vscode_extensions,
+        CONFIG_PATH.vscode_settings,
+    ],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    activate = "mypy" in args.type_checker
+    _update_vscode_settings(session, activate)
     config = session.pyproject
     if config is None:
         return
-    if active:
+    if activate:
         config.add_dependency("mypy", dependency_group=["style", "dev"])
         _merge_mypy_into_pyproject(config)
         _update_precommit_config(session.precommit)
@@ -84,8 +100,8 @@ def _update_precommit_config(precommit: ModifiablePrecommit) -> None:
     precommit.update_single_hook_repo(expected_repo)
 
 
-def _update_vscode_settings(session: Session, /, mypy: bool) -> None:
-    if mypy:
+def _update_vscode_settings(session: Session, /, activate: bool) -> None:
+    if activate:
         vscode.add_extension_recommendation(
             session, extension_name="ms-python.mypy-type-checker"
         )

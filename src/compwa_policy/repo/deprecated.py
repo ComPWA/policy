@@ -7,13 +7,29 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, remove_configs, remove_lines, vscode
+from compwa_policy.utilities.check_hook import check_hook
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Session
 
 
-def remove_deprecated_tools(session: Session, keep_issue_templates: bool) -> None:
-    if not keep_issue_templates:
+@check_hook(
+    group="repo",
+    paths=[
+        CONFIG_PATH.gitignore,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.vscode_extensions,
+        ".markdownlint.json",
+        ".markdownlint.yaml",
+        "doc/_relink_references.py",
+        "docs/_relink_references.py",
+    ],
+    directories=(".github",),
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    if not args.keep_issue_templates:
         _remove_github_issue_templates(session)
     _remove_markdownlint(session)
     for directory in ["docs", "doc"]:

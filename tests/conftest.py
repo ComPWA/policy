@@ -2,15 +2,44 @@ import os
 import subprocess  # noqa: S404
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from compwa_policy import _characterization
+from compwa_policy.cli._options import build_arguments
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
+from compwa_policy.utilities.check_hook import CheckContext, CheckHook
 from compwa_policy.utilities.precommit import getters
+from compwa_policy.utilities.session import Session
 
 GitCommand = Callable[[Path], None]
+
+
+@pytest.fixture
+def run_check() -> Callable[..., None]:
+    def run(
+        check: CheckHook,
+        session: Session,
+        *,
+        is_python_repo: bool = True,
+        has_notebooks: bool = False,
+        doc_apt_packages: list[str] | None = None,
+        environment_variables: dict[str, str] | None = None,
+        **argument_overrides: Any,
+    ) -> None:
+        argument_overrides.setdefault("dev_python_version", "3.12")
+        args = build_arguments(**argument_overrides)
+        context = CheckContext(
+            is_python_repo=is_python_repo,
+            has_notebooks=has_notebooks,
+            doc_apt_packages=doc_apt_packages or [],
+            environment_variables=environment_variables or {},
+        )
+        check(session, args, context)
+
+    return run
 
 
 @pytest.fixture(scope="session")

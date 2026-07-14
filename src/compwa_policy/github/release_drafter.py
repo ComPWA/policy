@@ -6,18 +6,25 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
 
-def main(
-    session: Session, no_cd: bool, repo_name: str, repo_title: str, organization: str
-) -> None:
-    if no_cd:
+@check_hook(
+    group="github",
+    paths=[CONFIG_PATH.readthedocs],
+    directories=(CONFIG_PATH.github_workflow_dir.parent,),
+    enabled=lambda args, ctx: ctx.is_python_repo and (not args.no_github_actions),
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    if args.no_cd:
         paths_to_remove: list[Path] = [
             CONFIG_PATH.release_drafter_workflow,
             CONFIG_PATH.release_drafter_config,
@@ -31,7 +38,9 @@ def main(
             )
         return
     update_file(session, CONFIG_PATH.release_drafter_workflow)
-    session.changelog += _update_draft(repo_name, repo_title, organization)
+    session.changelog += _update_draft(
+        args.repo_name, args.repo_title, args.repo_organization
+    )
 
 
 def _update_draft(repo_name: str, repo_title: str, organization: str) -> Changelog:

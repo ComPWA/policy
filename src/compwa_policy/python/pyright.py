@@ -8,21 +8,37 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, remove_lines, vscode
+from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import ModifiablePyproject, complies_with_subset
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
+    from compwa_policy import Arguments
+    from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 
-def main(session: Session, active: bool) -> None:
-    _update_vscode_settings(session, active)
+@check_hook(
+    group="python",
+    paths=[
+        CONFIG_PATH.gitignore,
+        CONFIG_PATH.precommit,
+        CONFIG_PATH.pyproject,
+        CONFIG_PATH.vscode_extensions,
+        CONFIG_PATH.vscode_settings,
+        "pyrightconfig.json",
+    ],
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+)
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    activate = "pyright" in args.type_checker
+    _update_vscode_settings(session, activate)
     config = session.pyproject
     if config is None:
         return
-    if active:
+    if activate:
         _merge_config_into_pyproject(config)
         _update_precommit(session.precommit)
         _remove_excludes(config)
@@ -91,8 +107,8 @@ def _update_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _update_vscode_settings(session: Session, /, active: bool) -> None:
-    if active:
+def _update_vscode_settings(session: Session, /, activate: bool) -> None:
+    if activate:
         vscode.add_extension_recommendation(session, "ms-python.vscode-pylance")
         vscode.update_settings(
             session,

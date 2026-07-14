@@ -8,7 +8,7 @@ import pytest
 from compwa_policy.python.ruff import (
     _move_ruff_lint_config,
     _update_lint_dependencies,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import ModifiablePyproject
@@ -69,10 +69,10 @@ def ruff_repo(
 
 
 def describe_main():
-    def migrates_config_with_notebooks(ruff_repo: Path):
+    def migrates_config_with_notebooks(ruff_repo: Path, run_check):
         precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
         with Session.load(precommit) as session:
-            main(session, has_notebooks=True, imports_on_top=True)
+            run_check(check, session, has_notebooks=True, imports_on_top=True)
 
         pyproject = (ruff_repo / "pyproject.toml").read_text()
         assert "[tool.black]" not in pyproject  # black settings removed
@@ -85,10 +85,10 @@ def describe_main():
         assert "https://github.com/astral-sh/ruff-pre-commit" in config
 
     @pytest.mark.usefixtures("ruff_repo")
-    def adds_ruff_format_without_notebooks():
+    def adds_ruff_format_without_notebooks(run_check):
         precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
         with Session.load(precommit) as session:
-            main(session, has_notebooks=False, imports_on_top=False)
+            run_check(check, session, has_notebooks=False, imports_on_top=False)
 
         config = precommit.dumps()
         assert "https://github.com/astral-sh/ruff-pre-commit" in config
@@ -98,6 +98,7 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         (tmp_path / "README.md").write_text("# Title\n")
@@ -123,7 +124,7 @@ def describe_main():
         monkeypatch.chdir(tmp_path)
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            main(session, has_notebooks=True, imports_on_top=False)
+            run_check(check, session, has_notebooks=True, imports_on_top=False)
 
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert "target-version" not in pyproject  # dropped for requires-python

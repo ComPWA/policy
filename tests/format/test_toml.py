@@ -13,7 +13,7 @@ from compwa_policy.format.toml import (
     _update_tomlsort_config,
     _update_tomlsort_hook,
     _update_vscode_extensions,
-    main,
+    check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
@@ -174,21 +174,24 @@ def describe_main():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
         precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
         with Session.load(precommit) as session:
-            main(session)
+            run_check(check, session)
             changes = session.collect_changes()
         result = precommit.dumps()
         assert changes or precommit.changelog
         assert "https://github.com/ComPWA/taplo-pre-commit" in result
         assert "https://github.com/pappasam/toml-sort" in result
 
-    def skips_without_trigger_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def skips_without_trigger_files(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         precommit = ModifiablePrecommit.load(io.StringIO(_META_ONLY))
         with Session.load(precommit) as session:
-            main(session)  # no pyproject.toml or taplo config -> no-op
+            run_check(check, session)  # no pyproject.toml or taplo config -> no-op

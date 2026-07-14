@@ -179,26 +179,30 @@ def describe_add_json_schema_precommit():
 
 
 def describe_main():
-    def processes_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def processes_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            citation.main(session)
+            run_check(citation.check, session)
         assert "check-jsonschema" in precommit.dumps()
 
-    def converts_zenodo_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def converts_zenodo_only(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         """Regression test for https://github.com/ComPWA/policy/issues/616."""
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            citation.main(session)
+            run_check(citation.check, session)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()
         assert "check-jsonschema" in precommit.dumps()
 
-    def reports_vscode_settings_update(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    def reports_vscode_settings_update(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
+    ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
         vscode_dir = tmp_path / ".vscode"
@@ -223,19 +227,21 @@ def describe_main():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(precommit_config))
         with Session.load(precommit) as session:
-            citation.main(session)
+            run_check(citation.check, session)
             changes = session.collect_changes()
         assert "Updated VS Code settings" in changes
         assert (vscode_dir / "settings.json").exists()
 
     def removes_zenodo_when_citation_present(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".zenodo.json").write_text(json.dumps(_ZENODO))
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)
         precommit = ModifiablePrecommit.load(io.StringIO("repos: []\n"))
         with Session.load(precommit) as session:
-            citation.main(session)
+            run_check(citation.check, session)
         assert not (tmp_path / ".zenodo.json").exists()
         assert (tmp_path / "CITATION.cff").exists()

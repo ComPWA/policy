@@ -1,13 +1,18 @@
+import re
 from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
+from typing import cast
 
 import pytest
 import typer
+from attrs import evolve
 
 from compwa_policy import _characterization
 from compwa_policy.cli._checks import (
     ALL_GROUPS,
+    CHECK_DEV_FILES_PATTERN,
+    CHECK_HOOKS,
     check_dev_python_version,
     compute_context,
     dispatch,
@@ -17,6 +22,7 @@ from compwa_policy.cli._checks import (
 from compwa_policy.cli._options import build_arguments
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
+from compwa_policy.utilities.check_hook import CheckContext, Group
 from compwa_policy.utilities.session import Session
 
 _PYPROJECT = dedent("""
@@ -28,6 +34,41 @@ _PYPROJECT = dedent("""
         "Programming Language :: Python :: 3.12",
     ]
 """).lstrip()
+
+_EXPECTED_CHECK_HOOKS = (
+    ("citation", "repo"),
+    ("commitlint", "repo"),
+    ("conda", "env"),
+    ("editorconfig", "format"),
+    ("labels", "github"),
+    ("workflows", "github"),
+    ("binder", "nb"),
+    ("jupyter", "nb"),
+    ("nbstripout", "nb"),
+    ("pixi", "env"),
+    ("direnv", "env"),
+    ("toml", "format"),
+    ("poe", "repo"),
+    ("prettier", "format"),
+    ("black", "python"),
+    ("release_drafter", "github"),
+    ("pyproject", "python"),
+    ("mypy", "python"),
+    ("pyright", "python"),
+    ("ty", "python"),
+    ("pytest", "python"),
+    ("pyupgrade", "python"),
+    ("ruff", "python"),
+    ("upgrade_lock", "github"),
+    ("dependabot", "github"),
+    ("readthedocs", "repo"),
+    ("deprecated", "repo"),
+    ("vscode", "repo"),
+    ("gitpod", "repo"),
+    ("precommit", "format"),
+    ("uv", "env"),
+    ("cspell", "format"),
+)
 
 
 def _clear_caches() -> None:
@@ -100,6 +141,58 @@ def describe_all_groups():
         assert (
             frozenset({"python", "github", "env", "nb", "format", "repo"}) == ALL_GROUPS
         )
+
+
+def describe_check_hooks():
+    def preserve_the_original_flat_dispatch_order():
+        actual = tuple(
+            (hook.run.__module__.rsplit(".", maxsplit=1)[-1], hook.group)
+            for hook in CHECK_HOOKS
+        )
+        assert actual == _EXPECTED_CHECK_HOOKS
+
+    @pytest.mark.parametrize("group", sorted(ALL_GROUPS))
+    def dispatch_a_group_as_a_subsequence_of_the_canonical_order(
+        group: Group,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        calls = []
+        hooks = tuple(
+            evolve(
+                hook,
+                run=lambda _session, _args, _ctx, name=name: calls.append(name),
+                enabled=lambda _args, _ctx: True,
+            )
+            for hook, (name, _) in zip(CHECK_HOOKS, _EXPECTED_CHECK_HOOKS, strict=True)
+        )
+        monkeypatch.setattr("compwa_policy.cli._checks.CHECK_HOOKS", hooks)
+        args = build_arguments(dev_python_version="3.12")
+        context = CheckContext(False, False, [], {})
+
+        run_checks(cast("Session", None), args, context, groups=frozenset({group}))
+
+        assert calls == [
+            name
+            for name, expected_group in _EXPECTED_CHECK_HOOKS
+            if expected_group == group
+        ]
+
+    def declare_at_least_one_relevant_path():
+        for hook in CHECK_HOOKS:
+            assert hook.files.paths or hook.files.directories or hook.files.patterns
+
+    def aggregate_exact_paths_and_directories_into_the_trigger_pattern():
+        trigger = re.compile(CHECK_DEV_FILES_PATTERN)
+        for hook in CHECK_HOOKS:
+            for path in hook.files.paths:
+                assert trigger.search(path.as_posix()) or trigger.search(
+                    (path / "example").as_posix()
+                )
+            for directory in hook.files.directories:
+                assert trigger.search((directory / "example").as_posix())
+
+    def excludes_ordinary_python_source_files():
+        assert re.search(CHECK_DEV_FILES_PATTERN, "src/package/module.py") is None
 
 
 def _runnable_repo(directory: Path, git_commit: Callable[[Path], None]) -> None:
