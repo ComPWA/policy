@@ -183,6 +183,29 @@ def describe_update_vscode_extensions():
 
 
 def describe_tombi_configuration():
+    @pytest.mark.parametrize("tracked", [True, False], ids=["tracked", "untracked"])
+    def excludes_only_tracked_manifest_files(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        tracked: bool,
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text('[project]\nname = "x"\n')
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(_META_ONLY)
+        (tmp_path / "Manifest.toml").touch()
+        if tracked:
+            git_add(tmp_path)
+
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+
+        assert ('"**/Manifest.toml"' in pyproject_path.read_text()) is tracked
+
     def optionally_treats_lint_warnings_as_errors(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

@@ -16,7 +16,7 @@ from compwa_policy.utilities import (
     vscode,
 )
 from compwa_policy.utilities.check_hook import check_hook
-from compwa_policy.utilities.match import filter_patterns
+from compwa_policy.utilities.match import filter_patterns, git_ls_files
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
@@ -136,13 +136,16 @@ def _add_tombi_hook_and_config(
     pyproject = session.pyproject
     if pyproject is None:
         return
-    excludes = filter_patterns([
-        "**/Cargo.toml",
-        "**/Manifest.toml",
-        "**/Project.toml",
-        "labels*.toml",
-        "labels/*.toml",
-    ])
+    excludes = filter_patterns(
+        [
+            "**/Cargo.toml",
+            "**/Manifest.toml",
+            "**/Project.toml",
+            "labels*.toml",
+            "labels/*.toml",
+        ],
+        files=git_ls_files(),
+    )
     expected = {
         "files": {},
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
