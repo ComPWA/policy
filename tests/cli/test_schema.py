@@ -28,6 +28,8 @@ def describe_create_policy_schema() -> None:
             "type": "object",
             "additionalProperties": {"type": "string"},
         }
+        assert schema["x-tombi-table-keys-order"] == "ascending"
+        assert properties["format"]["x-tombi-table-keys-order"] == "ascending"
 
     def renders_stable_pretty_json() -> None:
         rendered = render_policy_schema()

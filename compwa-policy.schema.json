@@ -3,6 +3,7 @@
   "title": "ComPWA policy configuration",
   "description": "Configuration for the tool.compwa.policy TOML table.",
   "type": "object",
+  "x-tombi-table-keys-order": "ascending",
   "properties": {
     "dev-python-version": {
       "default": "3.13",
@@ -66,6 +67,7 @@
     },
     "setup": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "env": {
           "type": "object",
@@ -84,6 +86,7 @@
     },
     "python": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "excluded-python-versions": {
           "default": "",
@@ -124,6 +127,7 @@
     },
     "github": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "allow-labels": {
           "default": false,
@@ -212,6 +216,7 @@
     },
     "nb": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "no-binder": {
           "default": false,
@@ -230,6 +235,7 @@
     },
     "format": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "no-cspell-update": {
           "default": false,
@@ -255,6 +261,7 @@
     },
     "repo": {
       "type": "object",
+      "x-tombi-table-keys-order": "ascending",
       "properties": {
         "gitpod": {
           "default": false,

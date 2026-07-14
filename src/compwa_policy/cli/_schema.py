@@ -37,6 +37,7 @@ def create_policy_schema() -> dict[str, Any]:
     for table, table_properties in sub_tables.items():
         root_properties[table] = {
             "type": "object",
+            "x-tombi-table-keys-order": "ascending",
             "properties": table_properties,
             "additionalProperties": False,
         }
@@ -47,6 +48,7 @@ def create_policy_schema() -> dict[str, Any]:
         "title": "ComPWA policy configuration",
         "description": "Configuration for the tool.compwa.policy TOML table.",
         "type": "object",
+        "x-tombi-table-keys-order": "ascending",
         "properties": root_properties,
         "additionalProperties": False,
         **({"$defs": settings_schema["$defs"]} if "$defs" in settings_schema else {}),
