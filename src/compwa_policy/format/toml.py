@@ -146,6 +146,7 @@ def _add_tombi_hook_and_config(
     expected = {
         "files": {},
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
+        "lint": {"rules": {"key-empty": "off"}},
     }
     schema_path = _get_policy_schema_path(precommit)
     if schema_path is not None:

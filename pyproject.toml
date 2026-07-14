@@ -1,7 +1,12 @@
 [project]
+name = "compwa-policy"
+description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
 authors = [
     { name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de" },
 ]
+maintainers = [{ email = "compwa-admin@ep1.rub.de" }]
 classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -28,12 +33,7 @@ dependencies = [
     "typer >=0.26.0",
     'typing-extensions; python_version <"3.12.0"',  # override
 ]
-description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
 dynamic = ["version"]
-license = { text = "BSD 3-Clause License" }
-maintainers = [{ email = "compwa-admin@ep1.rub.de" }]
-name = "compwa-policy"
-requires-python = ">=3.10"
 
 [project.readme]
 file = "README.md"
@@ -99,6 +99,9 @@ build-backend = "setuptools.build_meta"
 pytest-single-threaded = true
 repo-name = "policy"
 repo-title = "ComPWA repository policy"
+
+[tool.compwa.policy.format]
+tombi-errors-on-warnings = true
 
 [tool.compwa.policy.github]
 allow-labels = true
@@ -230,11 +233,11 @@ positional = true
 [tool.poe.groups.test.tasks.test-all]
 help = "Run all tests on each supported Python version"
 sequence = [
-    { ref = "test-py310 ${paths}" },
-    { ref = "test-py311 ${paths}" },
-    { ref = "test-py312 ${paths}" },
-    { ref = "test-py313 ${paths}" },
-    { ref = "test-py314 ${paths}" },
+    "test-py310 ${paths}",
+    "test-py311 ${paths}",
+    "test-py312 ${paths}",
+    "test-py313 ${paths}",
+    "test-py314 ${paths}",
 ]
 
 [[tool.poe.groups.test.tasks.test-all.args]]
@@ -283,9 +286,17 @@ help = "Perform all linting, formatting, and spelling checks"
 executor = { type = "simple" }
 help = "Upgrade lock files"
 parallel = [
-    { cmd = "pre-commit autoupdate -j8" },
-    { cmd = "uv lock --upgrade" },
+    "upgrade-precommit",
+    "upgrade-uv",
 ]
+
+[tool.poe.tasks.upgrade-precommit]
+cmd = "pre-commit autoupdate -j8"
+executor = { type = "simple" }
+
+[tool.poe.tasks.upgrade-uv]
+cmd = "uv lock --upgrade"
+executor = { type = "simple" }
 
 [tool.pytest]
 addopts = [
@@ -423,7 +434,7 @@ namespaces = false
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/compwa_policy/version.py"
+version_file = "src/compwa_policy/version.py"
 
 [tool.tombi.files]
 exclude = ["labels/*.toml"]
@@ -431,6 +442,9 @@ exclude = ["labels/*.toml"]
 [tool.tombi.format.rules]
 indent-width = 4
 line-width = 88
+
+[tool.tombi.lint.rules]
+key-empty = "off"
 
 [[tool.tombi.schemas]]
 root = "tool.compwa.policy"

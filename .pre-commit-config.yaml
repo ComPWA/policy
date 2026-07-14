@@ -46,6 +46,7 @@ repos:
     hooks:
       - id: tombi-format
       - id: tombi-lint
+        args: [--error-on-warnings]
 
   - repo: local
     hooks:
