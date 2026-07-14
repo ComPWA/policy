@@ -74,7 +74,12 @@ doc = [
     "sphinxcontrib-typer",
 ]
 style = ["ty", { include-group = "types" }]
-test = ["pytest", "pytest-benchmark", "pytest-cov", "pytest-describe"]
+test = [
+    "pytest",
+    "pytest-benchmark",
+    "pytest-cov",
+    "pytest-describe",
+]
 types = [
     "pytest",
     "pytest-benchmark",
@@ -84,7 +89,10 @@ types = [
 ]
 
 [build-system]
-requires = ["setuptools>=61.2", "setuptools_scm"]
+requires = [
+    "setuptools>=61.2",
+    "setuptools_scm",
+]
 build-backend = "setuptools.build_meta"
 
 [tool.compwa.policy]
@@ -112,7 +120,7 @@ omit = [
     "docs/**/*.ipynb",
     "docs/**/*.py",
     "examples/**/*.py",
-    "tests/**/*.py"
+    "tests/**/*.py",
 ]
 source = ["src"]
 
@@ -258,7 +266,13 @@ ref = "test"
 [tool.poe.tasks.all]
 help = "Run all continuous integration (CI) tasks locally"
 ignore_fail = "return_non_zero"
-sequence = ["style", "cov", "doc", "linkcheck", "test-all"]
+sequence = [
+    "style",
+    "cov",
+    "doc",
+    "linkcheck",
+    "test-all",
+]
 
 [tool.poe.tasks.style]
 cmd = "pre-commit run --all-files"
@@ -289,7 +303,11 @@ filterwarnings = [
     "ignore: The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025.:DeprecationWarning",
 ]
 minversion = "9.0"
-testpaths = ["benchmarks", "src", "tests"]
+testpaths = [
+    "benchmarks",
+    "src",
+    "tests",
+]
 
 [tool.ruff]
 preview = true
@@ -358,7 +376,13 @@ split-on-trailing-comma = false
     "SLF001",
     "T20",
 ]
-"docs/*" = ["E402", "INP001", "S101", "S113", "T201"]
+"docs/*" = [
+    "E402",
+    "INP001",
+    "S101",
+    "S113",
+    "T201",
+]
 "docs/conf.py" = ["D100"]
 "setup.py" = ["D100"]
 "src/compwa_policy/config.py" = ["D100"]
@@ -402,9 +426,7 @@ where = ["src"]
 write_to = "src/compwa_policy/version.py"
 
 [tool.tombi.files]
-exclude = [
-    "labels/*.toml",
-]
+exclude = ["labels/*.toml"]
 
 [tool.tombi.format.rules]
 indent-width = 4
