@@ -5,6 +5,7 @@ ci:
   skip:
     - check-dev-files
     - self-check
+    - tombi-format
     - ty
 
 repos:

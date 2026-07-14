@@ -206,6 +206,7 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "check-jsonschema",
         "pyright",
         "taplo",
+        "tombi-format",
         "ty",
         "uv-lock",
     }
