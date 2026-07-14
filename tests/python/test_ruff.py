@@ -3,6 +3,7 @@ from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
+# cspell:ignore ignorelist
 import pytest
 
 from compwa_policy.python.ruff import (
@@ -79,6 +80,8 @@ def describe_main():
         assert "[tool.ruff.lint]" in pyproject  # linting config migrated
         assert 'select = ["ALL"]' in pyproject
         assert '"*.ipynb"' in pyproject  # per-file-ignores for notebooks
+        assert 'ignorelist = ["display"]' in pyproject
+        assert "builtins-ignorelist" not in pyproject
 
         config = precommit.dumps()
         assert "flake8" not in config  # flake8 hook removed

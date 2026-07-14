@@ -561,7 +561,7 @@ def __update_flake8_builtins(pyproject: ModifiablePyproject) -> None:
     ___update_ruff_lint_table(
         pyproject,
         table_name="flake8-builtins",
-        minimal_settings={"builtins-ignorelist": ["display"]},
+        minimal_settings={"ignorelist": ["display"]},
     )
 
 
