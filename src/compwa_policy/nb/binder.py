@@ -18,8 +18,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from compwa_policy import Arguments
-    from compwa_policy.config import PythonVersion
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice, PythonVersion
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 

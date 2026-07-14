@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Table
 
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Session
 

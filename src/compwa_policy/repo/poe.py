@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
     from compwa_policy import Arguments
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 

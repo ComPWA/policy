@@ -16,8 +16,7 @@ from typing import TYPE_CHECKING, Literal
 from attrs import field, frozen
 
 if TYPE_CHECKING:
-    from compwa_policy.config import PythonVersion, TypeChecker
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice, PythonVersion, TypeChecker
     from compwa_policy.github import upgrade_lock
 
 

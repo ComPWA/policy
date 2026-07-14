@@ -16,8 +16,11 @@ import typer
 
 from compwa_policy import Arguments, TomlFormatter, _to_list
 from compwa_policy.cli._settings import load_settings
-from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
-from compwa_policy.env.conda import PackageManagerChoice
+from compwa_policy.config import (
+    DEFAULT_DEV_PYTHON_VERSION,
+    PackageManagerChoice,
+    PythonVersion,
+)
 from compwa_policy.github.upgrade_lock import Frequency
 
 if TYPE_CHECKING:

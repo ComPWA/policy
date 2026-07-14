@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
 
-from compwa_policy import config
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import (
@@ -21,9 +20,6 @@ if TYPE_CHECKING:
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
-
-PackageManagerChoice = config.PackageManagerChoice
-"""Package managers you want to develop the project with."""
 
 
 @check_hook(
