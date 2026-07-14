@@ -247,7 +247,7 @@ class Settings(BaseSettings):
     """Metadata keys allowed in Jupyter notebook cells."""
     no_cspell_update: bool = False
     """Do not enforce the shared cSpell configuration."""
-    tombi_errors_on_warnings: bool = False
+    tombi_errors_on_warnings: bool = True
     """Make the Tombi lint hook fail when it emits warnings."""
     toml_formatter: TomlFormatter = "tombi"
     """TOML formatter configured for the repository."""

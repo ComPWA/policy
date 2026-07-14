@@ -238,7 +238,7 @@
           "type": "boolean"
         },
         "tombi-errors-on-warnings": {
-          "default": false,
+          "default": true,
           "description": "Make the Tombi lint hook fail when it emits warnings.",
           "title": "Tombi Errors On Warnings",
           "type": "boolean"
