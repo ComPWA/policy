@@ -432,6 +432,11 @@ exclude = ["labels/*.toml"]
 indent-width = 4
 line-width = 88
 
+[[tool.tombi.schemas]]
+root = "tool.compwa.policy"
+path = "compwa-policy.schema.json"
+include = ["pyproject.toml"]
+
 [tool.ty.rules]
 division-by-zero = "warn"
 possibly-missing-import = "warn"

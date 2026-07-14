@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 __INCORRECT_TAPLO_CONFIG_PATHS = [Path("taplo.toml")]
 __TOMBI_CONFIG_PATHS = [Path(".tombi.toml"), Path("tombi.toml")]
+__POLICY_SCHEMA_PATH = "compwa-policy.schema.json"
 
 
 @check_hook(
@@ -135,6 +136,15 @@ def _add_tombi_hook_and_config(
         "files": {},
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
     }
+    schema_path = _get_policy_schema_path(precommit)
+    if schema_path is not None:
+        expected["schemas"] = [
+            {
+                "root": "tool.compwa.policy",
+                "path": schema_path,
+                "include": ["pyproject.toml"],
+            }
+        ]
     if excludes:
         expected["files"]["exclude"] = to_toml_array(
             sorted(excludes, key=str.lower), multiline=True
@@ -144,6 +154,19 @@ def _add_tombi_hook_and_config(
         return
     tool["tombi"] = expected
     pyproject.changelog.append("Updated Tombi configuration")
+
+
+def _get_policy_schema_path(precommit: ModifiablePrecommit) -> str | None:
+    policy_repo = precommit.find_repo(r"github\.com/ComPWA/policy/?$")
+    if policy_repo is not None and policy_repo.get("rev"):
+        revision = policy_repo["rev"]
+        return (
+            f"https://raw.githubusercontent.com/ComPWA/policy/{revision}/"
+            f"{__POLICY_SCHEMA_PATH}"
+        )
+    if Path(__POLICY_SCHEMA_PATH).exists():
+        return __POLICY_SCHEMA_PATH
+    return None
 
 
 def _update_tomlsort_config(session: Session, /) -> None:

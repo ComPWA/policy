@@ -183,6 +183,33 @@ def describe_update_vscode_extensions():
 
 
 def describe_tombi_configuration():
+    def associates_the_schema_from_the_policy_revision(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(
+            dedent("""
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: v0.12.3
+                hooks:
+                  - id: check-dev-files
+        """).lstrip()
+        )
+
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        assert 'root = "tool.compwa.policy"' in pyproject
+        assert "https://raw.githubusercontent.com/ComPWA/policy/v0.12.3/" in pyproject
+        assert "compwa-policy.schema.json" in pyproject
+
     def replaces_taplo_and_tomlsort(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

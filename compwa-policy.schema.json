@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ComPWA policy configuration",
+  "description": "Configuration for the tool.compwa.policy TOML table.",
+  "type": "object",
+  "properties": {
+    "dev-python-version": {
+      "default": "3.13",
+      "enum": [
+        "3.6",
+        "3.7",
+        "3.8",
+        "3.9",
+        "3.10",
+        "3.11",
+        "3.12",
+        "3.13",
+        "3.14"
+      ],
+      "title": "Dev Python Version",
+      "type": "string"
+    },
+    "package-manager": {
+      "default": "uv",
+      "enum": ["none", "uv", "conda", "pixi+uv", "pixi", "venv"],
+      "title": "Package Manager",
+      "type": "string"
+    },
+    "repo-name": {
+      "default": "",
+      "title": "Repo Name",
+      "type": "string"
+    },
+    "repo-organization": {
+      "default": "ComPWA",
+      "title": "Repo Organization",
+      "type": "string"
+    },
+    "repo-title": {
+      "default": "",
+      "title": "Repo Title",
+      "type": "string"
+    },
+    "no-ruff": {
+      "default": false,
+      "title": "No Ruff",
+      "type": "boolean"
+    },
+    "pytest-single-threaded": {
+      "default": false,
+      "title": "Pytest Single Threaded",
+      "type": "boolean"
+    },
+    "doc-apt-packages": {
+      "default": "",
+      "title": "Doc Apt Packages",
+      "type": "string"
+    },
+    "setup": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "keep-contributing-md": {
+          "default": false,
+          "title": "Keep Contributing Md",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "python": {
+      "type": "object",
+      "properties": {
+        "excluded-python-versions": {
+          "default": "",
+          "title": "Excluded Python Versions",
+          "type": "string"
+        },
+        "imports-on-top": {
+          "default": false,
+          "title": "Imports On Top",
+          "type": "boolean"
+        },
+        "branch-coverage": {
+          "default": true,
+          "title": "Branch Coverage",
+          "type": "boolean"
+        },
+        "type-checker": {
+          "default": [],
+          "items": {
+            "enum": ["mypy", "pyright", "ty"],
+            "type": "string"
+          },
+          "title": "Type Checker",
+          "type": "array"
+        },
+        "allow-vscode-coverage-gutters": {
+          "default": false,
+          "title": "Allow Vscode Coverage Gutters",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "github": {
+      "type": "object",
+      "properties": {
+        "allow-labels": {
+          "default": false,
+          "title": "Allow Labels",
+          "type": "boolean"
+        },
+        "allow-deprecated-workflows": {
+          "default": false,
+          "title": "Allow Deprecated Workflows",
+          "type": "boolean"
+        },
+        "no-github-actions": {
+          "default": false,
+          "title": "No Github Actions",
+          "type": "boolean"
+        },
+        "github-pages": {
+          "default": false,
+          "title": "Github Pages",
+          "type": "boolean"
+        },
+        "keep-pr-linting": {
+          "default": false,
+          "title": "Keep Pr Linting",
+          "type": "boolean"
+        },
+        "macos-python-version": {
+          "default": "3.10",
+          "title": "Macos Python Version",
+          "type": "string"
+        },
+        "no-cd": {
+          "default": false,
+          "title": "No Cd",
+          "type": "boolean"
+        },
+        "no-milestones": {
+          "default": false,
+          "title": "No Milestones",
+          "type": "boolean"
+        },
+        "no-pypi": {
+          "default": false,
+          "title": "No Pypi",
+          "type": "boolean"
+        },
+        "no-version-branches": {
+          "default": false,
+          "title": "No Version Branches",
+          "type": "boolean"
+        },
+        "ci-skipped-tests": {
+          "default": "",
+          "title": "Ci Skipped Tests",
+          "type": "string"
+        },
+        "keep-workflow": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Keep Workflow",
+          "type": "array"
+        },
+        "upgrade-frequency": {
+          "default": "quarterly",
+          "enum": ["monthly", "quarterly", "semiannually"],
+          "title": "Upgrade Frequency",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "nb": {
+      "type": "object",
+      "properties": {
+        "no-binder": {
+          "default": false,
+          "title": "No Binder",
+          "type": "boolean"
+        },
+        "allowed-cell-metadata": {
+          "default": "",
+          "title": "Allowed Cell Metadata",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "properties": {
+        "no-cspell-update": {
+          "default": false,
+          "title": "No Cspell Update",
+          "type": "boolean"
+        },
+        "toml-formatter": {
+          "default": "tombi",
+          "enum": ["taplo", "tombi"],
+          "title": "Toml Formatter",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "repo": {
+      "type": "object",
+      "properties": {
+        "gitpod": {
+          "default": false,
+          "title": "Gitpod",
+          "type": "boolean"
+        },
+        "keep-issue-templates": {
+          "default": false,
+          "title": "Keep Issue Templates",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
