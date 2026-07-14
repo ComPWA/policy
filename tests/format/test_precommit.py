@@ -97,6 +97,28 @@ def describe_sort_hooks():
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")
 
+    def sorts_check_dev_files_before_formatters():
+        with _load("""
+                repos:
+                  - repo: https://github.com/tombi-toml/tombi-pre-commit
+                    hooks:
+                      - id: tombi-format
+                      - id: tombi-lint
+                  - repo: local
+                    hooks:
+                      - id: check-dev-files
+                      - id: self-check
+                  - repo: https://github.com/astral-sh/ruff-pre-commit
+                    hooks:
+                      - id: ruff-check
+                      - id: ruff-format
+            """) as pc:
+            precommit._sort_hooks(pc)
+        result = pc.dumps()
+        check_dev_files_position = result.index("check-dev-files")
+        assert check_dev_files_position < result.index("tombi-format")
+        assert check_dev_files_position < result.index("ruff-format")
+
     def orders_all_categories():
         with _load("""
                 repos:

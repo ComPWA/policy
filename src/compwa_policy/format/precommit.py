@@ -54,9 +54,9 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # noqa: PLR0911
     repo_url = repo["repo"]
     if repo_url == "meta":
         return 0, repo_url
-    if re.match(r"^.*/(ComPWA-)?policy$", repo_url) is not None:
-        return 1, repo_url
     hook_ids = [hook["id"] for hook in repo["hooks"]]
+    if "check-dev-files" in hook_ids:
+        return 1, repo_url
     if any(i == "nbstripout" for i in hook_ids):
         return 2, repo_url
     if any(i == "nbqa-isort" for i in hook_ids):

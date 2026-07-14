@@ -15,39 +15,6 @@ repos:
       - id: check-hooks-apply
       - id: check-useless-excludes
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
-    hooks:
-      - id: ruff-check
-        args: [--fix]
-      - id: ruff-format
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
-    hooks:
-      - id: check-ast
-      - id: check-case-conflict
-      - id: check-json
-      - id: check-merge-conflict
-      - id: check-symlinks
-      - id: check-toml
-      - id: check-vcs-permalinks
-      - id: check-yaml
-      - id: debug-statements
-      - id: end-of-file-fixer
-      - id: mixed-line-ending
-      - id: name-tests-test
-        name: Tests should start with test_
-        args: ["--django"]
-      - id: trailing-whitespace
-
-  - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: v1.2.0
-    hooks:
-      - id: tombi-format
-      - id: tombi-lint
-        args: [--error-on-warnings]
-
   - repo: local
     hooks:
       - id: check-dev-files
@@ -114,6 +81,39 @@ repos:
             \.pre\-commit\-(config|hooks)\.yaml|
             tests/utilities/precommit/\.pre\-commit\-config\.yaml
           )$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: name-tests-test
+        name: Tests should start with test_
+        args: ["--django"]
+      - id: trailing-whitespace
+
+  - repo: https://github.com/tombi-toml/tombi-pre-commit
+    rev: v1.2.0
+    hooks:
+      - id: tombi-format
+      - id: tombi-lint
+        args: [--error-on-warnings]
 
   - repo: https://github.com/ComPWA/prettier-pre-commit
     rev: v3.8.1
