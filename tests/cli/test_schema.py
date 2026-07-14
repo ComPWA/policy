@@ -18,6 +18,12 @@ def describe_create_policy_schema() -> None:
             properties["python"]["properties"]["branch-coverage"]["description"]
             == "Enable branch coverage in the Coverage.py pytest configuration."
         )
+        assert properties["format"]["properties"]["tombi-errors-on-warnings"] == {
+            "default": False,
+            "description": "Make the Tombi lint hook fail when it emits warnings.",
+            "title": "Tombi Errors On Warnings",
+            "type": "boolean",
+        }
         assert properties["setup"]["properties"]["env"] == {
             "type": "object",
             "additionalProperties": {"type": "string"},

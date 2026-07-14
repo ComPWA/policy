@@ -183,6 +183,31 @@ def describe_update_vscode_extensions():
 
 
 def describe_tombi_configuration():
+    def optionally_treats_lint_warnings_as_errors(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        precommit_path = tmp_path / ".pre-commit-config.yaml"
+        precommit_path.write_text(_META_ONLY)
+
+        with Session() as session:
+            _add_tombi_hook_and_config(
+                session,
+                session.precommit,
+                errors_on_warnings=True,
+            )
+
+        repo = ModifiablePrecommit.load(precommit_path).find_repo("tombi-pre-commit")
+        assert repo is not None
+        assert repo["hooks"][1] == {
+            "id": "tombi-lint",
+            "args": ["--error-on-warnings"],
+        }
+
     def associates_the_schema_from_the_policy_revision(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

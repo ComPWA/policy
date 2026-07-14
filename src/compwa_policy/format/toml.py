@@ -67,7 +67,11 @@ def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
     elif args.toml_formatter == "tombi":
         _remove_taplo_hook_and_config(session, precommit)
         _remove_tomlsort_hook_and_config(session, precommit)
-        _add_tombi_hook_and_config(session, precommit)
+        _add_tombi_hook_and_config(
+            session,
+            precommit,
+            errors_on_warnings=args.tombi_errors_on_warnings,
+        )
         _update_tombi_vscode_extensions(session)
     else:
         msg = f"Unknown TOML formatter: {args.toml_formatter}"
@@ -114,12 +118,18 @@ def _remove_tombi_hook_and_config(
 
 
 def _add_tombi_hook_and_config(
-    session: Session, precommit: ModifiablePrecommit
+    session: Session,
+    precommit: ModifiablePrecommit,
+    *,
+    errors_on_warnings: bool = False,
 ) -> None:
+    lint_hook = Hook(id="tombi-lint")
+    if errors_on_warnings:
+        lint_hook["args"] = read_preserved_yaml("[--error-on-warnings]")
     expected_hook = Repo(
         repo="https://github.com/tombi-toml/tombi-pre-commit",
         rev="",
-        hooks=[Hook(id="tombi-format"), Hook(id="tombi-lint")],
+        hooks=[Hook(id="tombi-format"), lint_hook],
     )
     precommit.update_single_hook_repo(expected_hook)
     remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])

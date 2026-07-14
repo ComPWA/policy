@@ -68,6 +68,7 @@ class Arguments:
     repo_name: str
     repo_organization: str
     repo_title: str
+    tombi_errors_on_warnings: bool
     toml_formatter: TomlFormatter
     type_checker: set[TypeChecker]
     upgrade_frequency: UpgradeFrequency

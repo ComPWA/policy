@@ -252,6 +252,12 @@
           "title": "No Cspell Update",
           "type": "boolean"
         },
+        "tombi-errors-on-warnings": {
+          "default": false,
+          "description": "Make the Tombi lint hook fail when it emits warnings.",
+          "title": "Tombi Errors On Warnings",
+          "type": "boolean"
+        },
         "toml-formatter": {
           "default": "tombi",
           "description": "TOML formatter configured for the repository.",

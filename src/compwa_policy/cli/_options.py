@@ -257,6 +257,13 @@ AllowedCellMetadata = Annotated[
 ]
 
 # Format group ----------------------------------------------------------------
+TombiErrorsOnWarnings = Annotated[
+    bool | None,
+    typer.Option(
+        "--tombi-errors-on-warnings/--no-tombi-errors-on-warnings",
+        help="Make the Tombi lint hook fail when it emits warnings.",
+    ),
+]
 TomlFormatterOption = Annotated[
     TomlFormatter | None,
     typer.Option(

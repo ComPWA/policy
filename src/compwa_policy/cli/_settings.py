@@ -92,7 +92,11 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "upgrade_frequency",
     }),
     "nb": frozenset({"allowed_cell_metadata", "no_binder"}),
-    "format": frozenset({"no_cspell_update", "toml_formatter"}),
+    "format": frozenset({
+        "no_cspell_update",
+        "tombi_errors_on_warnings",
+        "toml_formatter",
+    }),
     "repo": frozenset({"gitpod", "keep_issue_templates"}),
     "setup": frozenset({"keep_contributing_md"}),
 }
@@ -243,6 +247,8 @@ class Settings(BaseSettings):
     """Metadata keys allowed in Jupyter notebook cells."""
     no_cspell_update: bool = False
     """Do not enforce the shared cSpell configuration."""
+    tombi_errors_on_warnings: bool = False
+    """Make the Tombi lint hook fail when it emits warnings."""
     toml_formatter: TomlFormatter = "tombi"
     """TOML formatter configured for the repository."""
     gitpod: bool = False
