@@ -90,7 +90,7 @@ def _define_combined_ci_job(config: ModifiablePyproject) -> None:
     existing = set(ci.get("depends_on", set()))
     if not expected <= existing:
         depends_on = expected | existing & tasks
-        ci["depends_on"] = to_toml_array(sorted(depends_on), multiline=False)
+        ci["depends_on"] = to_toml_array(sorted(depends_on))
         msg = "Updated combined CI job for Pixi"
         config.changelog.append(msg)
 
