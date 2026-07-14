@@ -3,9 +3,7 @@ name = "compwa-policy"
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
-authors = [
-    { name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de" },
-]
+authors = [{ name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de" }]
 maintainers = [{ email = "compwa-admin@ep1.rub.de" }]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -25,7 +23,7 @@ dependencies = [
     "pathspec",
     "pip-tools",
     "pydantic-settings >=2",
-    "pydantic >=2",
+    "pydantic >=2.0",
     "rtoml",  # fast, read-only parsing
     "ruamel.yaml",  # better YAML dumping
     "setuptools",
