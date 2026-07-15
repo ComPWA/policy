@@ -22,7 +22,7 @@ import typer
 from rich.tree import Tree
 from typer.core import TyperGroup
 
-from compwa_policy.cli import env, github, migrate, nb, python, repo
+from compwa_policy.cli import bootstrap, env, github, migrate, nb, python, repo
 from compwa_policy.cli import format as _format
 from compwa_policy.cli._checks import run_all
 from compwa_policy.cli._options import (
@@ -78,6 +78,7 @@ app.command("nb", no_args_is_help=False)(nb.nb)
 app.command("format", no_args_is_help=False)(_format.format_)
 app.command("repo", no_args_is_help=False)(repo.repo)
 app.command("migrate", no_args_is_help=False)(migrate.migrate)
+app.command("bootstrap", no_args_is_help=False)(bootstrap.bootstrap)
 
 
 @app.callback(invoke_without_command=True)

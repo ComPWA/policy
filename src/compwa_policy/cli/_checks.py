@@ -14,7 +14,7 @@ from typing import get_args
 import typer
 
 from compwa_policy import Arguments, _get_environment_variables, _to_list
-from compwa_policy._characterization import has_python_code
+from compwa_policy.characterization import has_notebooks, has_python_code
 from compwa_policy.env import conda, direnv, pixi, uv
 from compwa_policy.errors import PolicyError
 from compwa_policy.format import cspell, editorconfig, precommit, prettier, toml
@@ -47,7 +47,6 @@ from compwa_policy.repo import (
 )
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import CheckContext, FileSet, Group
-from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import Pyproject
 from compwa_policy.utilities.session import Session
 
@@ -55,7 +54,7 @@ from compwa_policy.utilities.session import Session
 def compute_context(args: Arguments) -> CheckContext:
     return CheckContext(
         is_python_repo=has_python_code() if args.python is None else args.python,
-        has_notebooks=is_committed("**/*.ipynb"),
+        has_notebooks=has_notebooks(),
         doc_apt_packages=_to_list(args.doc_apt_packages),
         environment_variables=_get_environment_variables(args.environment_variables),
     )

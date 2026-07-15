@@ -49,6 +49,14 @@ The `check-dev-files` hook (and the `policy` command without a subcommand) only 
 :show-nested:
 ```
 
+## Bootstrapping an existing repository
+
+Run `policy bootstrap` in an existing repository to detect whether it contains Python code, which package manager it uses, and which type checkers are already configured. The command records those choices in `pyproject.toml` under `[tool.compwa.policy]` and adds the `check-dev-files` hook to `.pre-commit-config.yaml`, preserving existing configuration in both files.
+
+```shell
+uvx --from git+https://github.com/ComPWA/policy policy bootstrap
+```
+
 <!-- prettier-ignore-start -->
 (configuration)=
 ## Configuration in `pyproject.toml`

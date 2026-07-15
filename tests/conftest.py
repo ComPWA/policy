@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from compwa_policy import _characterization
+from compwa_policy import characterization
 from compwa_policy.cli._options import build_arguments
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
@@ -120,8 +120,9 @@ def _clear_git_ls_files_cache() -> None:
     by an earlier test running in a different working directory.
     """
     match._git_ls_files_cmd.cache_clear()
-    _characterization.has_documentation.cache_clear()
-    _characterization.has_python_code.cache_clear()
+    characterization.has_documentation.cache_clear()
+    characterization.has_notebooks.cache_clear()
+    characterization.has_python_code.cache_clear()
     readthedocs._determine_docs_dir.cache_clear()
 
 

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy import _to_list
-from compwa_policy._characterization import has_documentation
+from compwa_policy.characterization import has_documentation, has_notebooks
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.utilities import (
     COMPWA_POLICY_DIR,
@@ -21,7 +21,6 @@ from compwa_policy.utilities import (
     write,
 )
 from compwa_policy.utilities.check_hook import check_hook
-from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -242,8 +241,8 @@ def __update_style_section(
 def __is_remove_style_job(precommit: Precommit) -> bool:
     precommit_ci = precommit.document.get("ci")
     outsource_to_precommit = precommit_ci is not None and "skip" not in precommit_ci
-    has_notebooks = is_committed("**/*.ipynb")
-    return outsource_to_precommit and not has_notebooks
+    repository_has_notebooks = has_notebooks()
+    return outsource_to_precommit and not repository_has_notebooks
 
 
 def __update_pytest_section(
