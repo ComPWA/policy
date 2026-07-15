@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import re
-import sys
 from collections import abc
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
@@ -15,10 +15,6 @@ from compwa_policy.utilities.pyproject.getters import (
 )
 from compwa_policy.utilities.toml import to_toml_array
 
-if sys.version_info >= (3, 10):
-    from itertools import pairwise
-else:
-    from more_itertools import pairwise
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 

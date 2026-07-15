@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from tomlkit.items import Array, Table
 
     from compwa_policy import Arguments
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -348,7 +348,7 @@ def _set_test_all_task(pyproject: ModifiablePyproject, /) -> None:
     expected["test-all"] = {
         "help": "Run all tests on each supported Python version",
         "sequence": to_toml_array([
-            {"ref": f"test-py{version.replace('.', '')} ${{paths}}"}
+            f"test-py{version.replace('.', '')} ${{paths}}"
             for version in supported_python_versions
         ]),
         "args": [
@@ -380,27 +380,40 @@ def _set_upgrade_task(
     pyproject: ModifiablePyproject, package_manager: PackageManagerChoice
 ) -> None:
     tasks = pyproject.get_table("tool.poe.tasks")
-    parallel_cmds = []
+    commands = {}
     if is_committed(".pre-commit-config.yaml"):
-        parallel_cmds.append({"cmd": "pre-commit autoupdate -j8"})
+        commands["_upgrade-precommit"] = "pre-commit autoupdate -j8"
     if "uv" in package_manager:
-        parallel_cmds.append({"cmd": "uv lock --upgrade"})
+        commands["_upgrade-uv"] = "uv lock --upgrade"
     if "pixi" in package_manager:
-        parallel_cmds.append({"cmd": "pixi upgrade"})
-    if not parallel_cmds:
-        if "upgrade" in tasks:
-            del tasks["upgrade"]
+        commands["_upgrade-pixi"] = "pixi upgrade"
+    helper_names = {"_upgrade-precommit", "_upgrade-uv", "_upgrade-pixi"}
+    if not commands:
+        removed = {"upgrade", *helper_names} & tasks.keys()
+        for task_name in removed:
+            del tasks[task_name]
+        if removed:
             msg = f"Removed Poe the Poet upgrade task from {CONFIG_PATH.pyproject}"
             pyproject.changelog.append(msg)
         return
-    existing = cast("Mapping", tasks.get("upgrade", {}))
-    expected = {
+    expected: dict[str, Any] = {
         "executor": to_inline_table({"type": "simple"}),
         "help": "Upgrade lock files",
-        "parallel": to_toml_array(parallel_cmds),
+        "parallel": to_toml_array(list(commands)),
     }
-    if existing != expected:
+    expected_helpers = {
+        name: {
+            "cmd": command,
+            "executor": to_inline_table({"type": "simple"}),
+        }
+        for name, command in commands.items()
+    }
+    existing_helpers = {name: tasks[name] for name in helper_names if name in tasks}
+    if tasks.get("upgrade") != expected or existing_helpers != expected_helpers:
         tasks["upgrade"] = expected
+        for name in helper_names - commands.keys():
+            tasks.pop(name, None)
+        tasks.update(expected_helpers)
         msg = f"Set Poe the Poet upgrade task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 

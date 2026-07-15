@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from ruamel.yaml.comments import CommentedMap
 
     from compwa_policy import Arguments
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Changelog, Session

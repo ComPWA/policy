@@ -43,6 +43,7 @@ Project = TypedDict(
         "name": str,
         "version": NotRequired[str],
         "dependencies": NotRequired[list[str]],
+        "license-files": NotRequired[list[str]],
         "optional-dependencies": NotRequired[dict[str, list[str]]],
         "urls": NotRequired["ProjectURLs"],
     },

@@ -22,6 +22,7 @@ repos:
             (.*/)?_quarto\.yml|
             (.*/)?Manifest\.toml|
             (.*/)?requirements.*\.(in|txt)|
+            .*\.toml|
             \.binder/.*|
             \.constraints/.*|
             \.cspell\.json|
@@ -41,6 +42,7 @@ repos:
             \.python\-version|
             \.readthedocs\.yml|
             \.taplo\.toml|
+            \.tombi\.toml|
             \.vscode/.*|
             \.zenodo\.json|
             CITATION\.cff|
@@ -62,6 +64,7 @@ repos:
             README\.md|
             taplo\.toml|
             tests/\.pydocstyle|
+            tombi\.toml|
             ty\.toml|
             uv\.lock
           )$

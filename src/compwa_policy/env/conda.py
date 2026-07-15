@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.scalarstring import PlainScalarString
@@ -20,9 +20,6 @@ if TYPE_CHECKING:
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
-
-PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
-"""Package managers you want to develop the project with."""
 
 
 @check_hook(

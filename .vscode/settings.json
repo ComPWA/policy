@@ -26,6 +26,9 @@
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.rulers": [88]
   },
+  "[toml]": {
+    "editor.defaultFormatter": "tombi-toml.tombi"
+  },
   "[yaml]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -51,7 +54,6 @@
   "ruff.importStrategy": "fromEnvironment",
   "ruff.organizeImports": true,
   "search.exclude": {
-    ".taplo.toml": true,
     "src/compwa_policy/.github/workflows/clean-caches.yml": true,
     "src/compwa_policy/.github/workflows/pr-linting.yml": true,
     "src/compwa_policy/.github/workflows/release-drafter.yml": true,

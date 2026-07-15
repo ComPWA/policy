@@ -150,19 +150,19 @@ def _update_codecov_settings(
     updated = __update_settings(
         config=pyproject.get_table("tool.coverage.run", create=True),
         branch=branch_coverage,
-        omit=[
+        omit=to_toml_array([
             # https://github.com/microsoft/vscode-python/issues/24973#issuecomment-2886889888
             "benchmarks/**/*.py",
             "docs/**/*.ipynb",
             "docs/**/*.py",
             "examples/**/*.py",
             "tests/**/*.py",
-        ],
+        ]),
         source=["src"],
     )
     updated |= __update_settings(
         config=pyproject.get_table("tool.coverage.report", create=True),
-        exclude_also=to_toml_array(["if TYPE_CHECKING:"], multiline=True),
+        exclude_also=to_toml_array(["if TYPE_CHECKING:"]),
     )
     if updated:
         msg = "Updated pytest coverage settings"

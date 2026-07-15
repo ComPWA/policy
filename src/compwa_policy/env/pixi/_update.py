@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Table
 
-    from compwa_policy.env.conda import PackageManagerChoice
+    from compwa_policy.config import PackageManagerChoice
     from compwa_policy.utilities.pyproject.getters import PythonVersion
     from compwa_policy.utilities.session import Session
 
@@ -90,7 +90,7 @@ def _define_combined_ci_job(config: ModifiablePyproject) -> None:
     existing = set(ci.get("depends_on", set()))
     if not expected <= existing:
         depends_on = expected | existing & tasks
-        ci["depends_on"] = to_toml_array(sorted(depends_on), multiline=False)
+        ci["depends_on"] = to_toml_array(sorted(depends_on))
         msg = "Updated combined CI job for Pixi"
         config.changelog.append(msg)
 

@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from ruamel.yaml import YAML
 
 from compwa_policy.cli._checks import CHECK_DEV_FILES_PATTERN
+from compwa_policy.cli._schema import (
+    SCHEMA_PATH,
+    create_policy_schema,
+    render_policy_schema,
+)
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.precommit import Precommit
 
@@ -39,7 +45,18 @@ def main(precommit: Precommit | None = None) -> int:
     if errors:
         print("\n--------------------\n".join(error.strip() for error in errors))  # noqa: T201
         return 1
+    _update_policy_schema()
     return 0
+
+
+def _update_policy_schema() -> None:
+    expected = create_policy_schema()
+    try:
+        existing = json.loads(SCHEMA_PATH.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        existing = None
+    if existing != expected:
+        SCHEMA_PATH.write_text(render_policy_schema())
 
 
 def _load_precommit_hook_definitions() -> tuple[dict[str, Hook], list[Hook]]:

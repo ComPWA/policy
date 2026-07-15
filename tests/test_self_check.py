@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import yaml
@@ -24,6 +25,9 @@ def describe_main() -> None:
 
         assert self_check.main(precommit) == 0
         assert manifest.exists()
+        schema = tmp_path / "compwa-policy.schema.json"
+        assert schema.exists()
+        assert '"repo-name"' in schema.read_text()
 
     def updates_a_pattern_that_drifted_in_both_yaml_files(
         tmp_path: Path,
@@ -39,6 +43,32 @@ def describe_main() -> None:
         updated = Precommit.load(tmp_path / ".pre-commit-config.yaml")
         local_hook = updated.document["repos"][0]["hooks"][0]
         assert local_hook["files"] == CHECK_DEV_FILES_PATTERN
+
+    def preserves_prettier_formatting_for_an_up_to_date_schema(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        hook = _create_hook(CHECK_DEV_FILES_PATTERN)
+        precommit, _ = _write_configuration(tmp_path, hook)
+        monkeypatch.chdir(tmp_path)
+        schema = tmp_path / "compwa-policy.schema.json"
+        self_check.main(precommit)
+        prettier_formatted = json.dumps(json.loads(schema.read_text()), indent=4) + "\n"
+        schema.write_text(prettier_formatted)
+
+        assert self_check.main(precommit) == 0
+        assert schema.read_text() == prettier_formatted
+
+    def updates_a_structurally_outdated_schema(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        hook = _create_hook(CHECK_DEV_FILES_PATTERN)
+        precommit, _ = _write_configuration(tmp_path, hook)
+        monkeypatch.chdir(tmp_path)
+        schema = tmp_path / "compwa-policy.schema.json"
+        schema.write_text('{"outdated": true}\n')
+
+        assert self_check.main(precommit) == 0
+        assert "outdated" not in json.loads(schema.read_text())
 
     def updates_a_local_hook_from_the_manifest(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch

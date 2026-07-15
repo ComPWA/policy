@@ -97,6 +97,28 @@ def describe_sort_hooks():
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")
 
+    def sorts_check_dev_files_before_formatters():
+        with _load("""
+                repos:
+                  - repo: https://github.com/tombi-toml/tombi-pre-commit
+                    hooks:
+                      - id: tombi-format
+                      - id: tombi-lint
+                  - repo: local
+                    hooks:
+                      - id: check-dev-files
+                      - id: self-check
+                  - repo: https://github.com/astral-sh/ruff-pre-commit
+                    hooks:
+                      - id: ruff-check
+                      - id: ruff-format
+            """) as pc:
+            precommit._sort_hooks(pc)
+        result = pc.dumps()
+        check_dev_files_position = result.index("check-dev-files")
+        assert check_dev_files_position < result.index("tombi-format")
+        assert check_dev_files_position < result.index("ruff-format")
+
     def orders_all_categories():
         with _load("""
                 repos:
@@ -172,12 +194,48 @@ def describe_update_precommit_ci():
                     rev: v0.0.1
                     hooks:
                       - id: ty
+                  - repo: https://github.com/tombi-toml/tombi-pre-commit
+                    rev: v1.2.0
+                    hooks:
+                      - id: tombi-format
+                      - id: tombi-lint
             """) as pc:
             precommit._update_precommit_ci_skip(pc)
         assert any("Updated ci.skip" in m for m in pc.changelog)
         result = pc.dumps()
         assert "my-local-hook" in result
+        assert "tombi-format" in result
+        assert "tombi-lint" in result
         assert "ty" in result
+
+    def skip_has_no_blank_line_between_ci_keys(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        source.write_text(
+            dedent("""
+            ci:
+              autofix_commit_msg: "MAINT: implement pre-commit autofixes"
+              autoupdate_commit_msg: "MAINT: upgrade lock files"
+              autoupdate_schedule: quarterly
+
+            repos:
+              - repo: https://github.com/tombi-toml/tombi-pre-commit
+                hooks:
+                  - id: tombi-format
+                  - id: tombi-lint
+        """).lstrip()
+        )
+
+        with ModifiablePrecommit.load(source) as pc:
+            precommit._update_precommit_ci_skip(pc)
+
+        assert (
+            "autoupdate_schedule: quarterly\n"
+            "  skip:\n"
+            "    - tombi-format\n"
+            "    - tombi-lint\n"
+            "\n"
+            "repos:"
+        ) in source.read_text()
 
     def skip_removes_redundant_section():
         with _load("""

@@ -5,6 +5,8 @@ ci:
   skip:
     - check-dev-files
     - self-check
+    - tombi-format
+    - tombi-lint
     - ty
 
 repos:
@@ -12,6 +14,74 @@ repos:
     hooks:
       - id: check-hooks-apply
       - id: check-useless-excludes
+
+  - repo: local
+    hooks:
+      - id: check-dev-files
+        name: Check developer config files in the repository
+        entry: check-dev-files
+        language: python
+        files: >-
+          (?x)^(
+            (.*/)?_quarto\.yml|
+            (.*/)?Manifest\.toml|
+            (.*/)?requirements.*\.(in|txt)|
+            .*\.toml|
+            \.binder/.*|
+            \.constraints/.*|
+            \.cspell\.json|
+            \.editorconfig|
+            \.envrc|
+            \.flake8|
+            \.gitattributes|
+            \.github/.*|
+            \.gitignore|
+            \.gitpod\.yml|
+            \.markdownlint\.json|
+            \.markdownlint\.yaml|
+            \.pre\-commit\-config\.yaml|
+            \.prettierignore|
+            \.pydocstyle|
+            \.pylintrc|
+            \.python\-version|
+            \.readthedocs\.yml|
+            \.taplo\.toml|
+            \.tombi\.toml|
+            \.vscode/.*|
+            \.zenodo\.json|
+            CITATION\.cff|
+            codecov\.yml|
+            commitlint\.config\.js|
+            CONTRIBUTING\.md|
+            cspell\.json|
+            doc/_relink_references\.py|
+            docs/\.pydocstyle|
+            docs/_relink_references\.py|
+            docs/conf\.py|
+            environment\.yml|
+            labels\.toml|
+            pixi\.lock|
+            pixi\.toml|
+            pyproject\.toml|
+            pyrightconfig\.json|
+            pytest\.ini|
+            README\.md|
+            taplo\.toml|
+            tests/\.pydocstyle|
+            tombi\.toml|
+            ty\.toml|
+            uv\.lock
+          )$
+        pass_filenames: false
+      - id: self-check
+        name: self-check
+        entry: self-check
+        language: python
+        files: >-
+          (?x)^(
+            \.pre\-commit\-(config|hooks)\.yaml|
+            tests/utilities/precommit/\.pre\-commit\-config\.yaml
+          )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.21
@@ -39,87 +109,17 @@ repos:
         args: ["--django"]
       - id: trailing-whitespace
 
-  - repo: local
+  - repo: https://github.com/tombi-toml/tombi-pre-commit
+    rev: v1.2.0
     hooks:
-      - id: check-dev-files
-        name: Check developer config files in the repository
-        entry: check-dev-files
-        language: python
-        files: >-
-          (?x)^(
-            (.*/)?_quarto\.yml|
-            (.*/)?Manifest\.toml|
-            (.*/)?requirements.*\.(in|txt)|
-            \.binder/.*|
-            \.constraints/.*|
-            \.cspell\.json|
-            \.editorconfig|
-            \.envrc|
-            \.flake8|
-            \.gitattributes|
-            \.github/.*|
-            \.gitignore|
-            \.gitpod\.yml|
-            \.markdownlint\.json|
-            \.markdownlint\.yaml|
-            \.pre\-commit\-config\.yaml|
-            \.prettierignore|
-            \.pydocstyle|
-            \.pylintrc|
-            \.python\-version|
-            \.readthedocs\.yml|
-            \.taplo\.toml|
-            \.vscode/.*|
-            \.zenodo\.json|
-            CITATION\.cff|
-            codecov\.yml|
-            commitlint\.config\.js|
-            CONTRIBUTING\.md|
-            cspell\.json|
-            doc/_relink_references\.py|
-            docs/\.pydocstyle|
-            docs/_relink_references\.py|
-            docs/conf\.py|
-            environment\.yml|
-            labels\.toml|
-            pixi\.lock|
-            pixi\.toml|
-            pyproject\.toml|
-            pyrightconfig\.json|
-            pytest\.ini|
-            README\.md|
-            taplo\.toml|
-            tests/\.pydocstyle|
-            ty\.toml|
-            uv\.lock
-          )$
-        pass_filenames: false
-      - id: self-check
-        name: self-check
-        entry: self-check
-        language: python
-        files: >-
-          (?x)^(
-            \.pre\-commit\-(config|hooks)\.yaml|
-            tests/utilities/precommit/\.pre\-commit\-config\.yaml
-          )$
+      - id: tombi-format
+      - id: tombi-lint
+        args: [--error-on-warnings]
 
   - repo: https://github.com/ComPWA/prettier-pre-commit
     rev: v3.8.1
     hooks:
       - id: prettier
-
-  - repo: https://github.com/ComPWA/taplo-pre-commit
-    rev: v0.9.3
-    hooks:
-      - id: taplo-format
-
-  - repo: https://github.com/pappasam/toml-sort
-    rev: v0.24.4
-    hooks:
-      - id: toml-sort
-        args: [--in-place]
-        exclude: (?x)^(labels/.*\.toml)$
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
     rev: v10.0.1

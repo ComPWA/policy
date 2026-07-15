@@ -7,6 +7,7 @@ import pytest
 from compwa_policy.python.pyproject import (
     _convert_to_dependency_groups,
     _rename_sty_to_style,
+    _update_license_files,
     _update_pypi_link_names,
     _update_python_version_classifiers,
     _update_requires_python,
@@ -14,6 +15,61 @@ from compwa_policy.python.pyproject import (
 )
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.session import Session
+
+
+def describe_update_license_files():
+    def adds_license(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "LICENSE").touch()
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text('[project]\nname = "x"\n')
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _update_license_files(pyproject)
+        assert pyproject.get_table("project")["license-files"] == ["LICENSE"]
+        assert 'license-files = ["LICENSE"]' in pyproject_path.read_text()
+
+    def preserves_existing_patterns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "LICENSE").touch()
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            '[project]\nname = "x"\nlicense-files = ["COPYING"]\n'
+        )
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _update_license_files(pyproject)
+        assert pyproject.get_table("project")["license-files"] == [
+            "COPYING",
+            "LICENSE",
+        ]
+
+    def removes_legacy_setuptools_field(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "LICENSE").touch()
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            '[project]\nname = "x"\nlicense-files = ["LICENSE"]\n\n'
+            '[tool.setuptools]\nlicense-files = ["LICENSE"]\n'
+        )
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _update_license_files(pyproject)
+        assert "license-files" not in pyproject.get_table("tool.setuptools")
+
+    @pytest.mark.parametrize(
+        "pyproject_contents", ['name = "x"\n', '[project]\nname = "x"\n']
+    )
+    def is_noop_without_required_files(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        pyproject_contents: str,
+    ):
+        monkeypatch.chdir(tmp_path)
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text(pyproject_contents)
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _update_license_files(pyproject)
+        assert "license-files" not in pyproject_path.read_text()
 
 
 def describe_update_pypi_link_names():

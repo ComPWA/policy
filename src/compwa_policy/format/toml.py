@@ -9,9 +9,14 @@ from typing import TYPE_CHECKING
 import rtoml
 import tomlkit
 
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
+from compwa_policy.utilities import (
+    COMPWA_POLICY_DIR,
+    CONFIG_PATH,
+    remove_configs,
+    vscode,
+)
 from compwa_policy.utilities.check_hook import check_hook
-from compwa_policy.utilities.match import filter_patterns
+from compwa_policy.utilities.match import filter_patterns, git_ls_files, is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject.getters import has_sub_table
 from compwa_policy.utilities.toml import to_toml_array
@@ -23,9 +28,9 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
-__INCORRECT_TAPLO_CONFIG_PATHS = [
-    Path("taplo.toml"),
-]
+__INCORRECT_TAPLO_CONFIG_PATHS = [Path("taplo.toml")]
+__TOMBI_CONFIG_PATHS = [Path(".tombi.toml"), Path("tombi.toml")]
+__POLICY_SCHEMA_PATH = "compwa-policy.schema.json"
 
 
 @check_hook(
@@ -37,24 +42,153 @@ __INCORRECT_TAPLO_CONFIG_PATHS = [
         CONFIG_PATH.taplo,
         CONFIG_PATH.vscode_extensions,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
+        *__TOMBI_CONFIG_PATHS,
     ],
+    patterns=[r".*\.toml"],
 )
-def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
+def check(session: Session, args: Arguments, _ctx: CheckContext) -> None:
+    precommit = session.precommit
+    has_toml_files = is_committed("*.toml")
+    if not args.toml_formatter_configured and not has_toml_files:
+        precommit.remove_hook("check-toml")
+        _remove_taplo_hook_and_config(session, precommit)
+        _remove_tomlsort_hook_and_config(session, precommit)
+        _remove_tombi_hook_and_config(session, precommit)
+        vscode.remove_settings(session, ["[toml]"])
+        return
     trigger_files = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.taplo,
         *__INCORRECT_TAPLO_CONFIG_PATHS,
+        *__TOMBI_CONFIG_PATHS,
     ]
-    if not any(f.exists() for f in trigger_files):
+    if not has_toml_files and not any(f.exists() for f in trigger_files):
         return
-    precommit = session.precommit
-    session.changelog += _rename_taplo_config()
-    _update_taplo_config(session)
-    _rename_precommit_url(precommit)
-    _update_precommit_repo(precommit)
-    _update_tomlsort_config(session)
-    _update_tomlsort_hook(precommit)
-    _update_vscode_extensions(session)
+    if args.toml_formatter == "taplo":
+        session.changelog += _rename_taplo_config()
+        _update_taplo_config(session)
+        _rename_precommit_url(precommit)
+        _update_precommit_repo(precommit)
+        _update_tomlsort_config(session)
+        _update_tomlsort_hook(precommit)
+        _update_vscode_extensions(session)
+        _remove_tombi_hook_and_config(session, precommit)
+    elif args.toml_formatter == "tombi":
+        _remove_taplo_hook_and_config(session, precommit)
+        _remove_tomlsort_hook_and_config(session, precommit)
+        _add_tombi_hook_and_config(
+            session,
+            precommit,
+            errors_on_warnings=args.tombi_errors_on_warnings,
+        )
+        _update_tombi_vscode_extensions(session)
+    else:
+        msg = f"Unknown TOML formatter: {args.toml_formatter}"
+        raise ValueError(msg)
+
+
+def _remove_taplo_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    for hook_id in ["taplo", "taplo-format"]:
+        precommit.remove_hook(hook_id)
+    remove_configs(
+        session,
+        [str(CONFIG_PATH.taplo), *(str(p) for p in __INCORRECT_TAPLO_CONFIG_PATHS)],
+    )
+
+
+def _remove_tomlsort_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    precommit.remove_hook("toml-sort")
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    tool = pyproject.get_table("tool", fallback={})
+    if "tomlsort" in tool:
+        del tool["tomlsort"]
+        pyproject.changelog.append("Removed toml-sort configuration")
+
+
+def _remove_tombi_hook_and_config(
+    session: Session, precommit: ModifiablePrecommit
+) -> None:
+    for hook_id in ["tombi-format", "tombi-lint"]:
+        precommit.remove_hook(hook_id)
+    remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    tool = pyproject.get_table("tool", fallback={})
+    if "tombi" in tool:
+        del tool["tombi"]
+        pyproject.changelog.append("Removed Tombi configuration")
+
+
+def _add_tombi_hook_and_config(
+    session: Session,
+    precommit: ModifiablePrecommit,
+    *,
+    errors_on_warnings: bool = False,
+) -> None:
+    lint_hook = Hook(id="tombi-lint")
+    if errors_on_warnings:
+        lint_hook["args"] = read_preserved_yaml("[--error-on-warnings]")
+    expected_hook = Repo(
+        repo="https://github.com/tombi-toml/tombi-pre-commit",
+        rev="",
+        hooks=[Hook(id="tombi-format"), lint_hook],
+    )
+    precommit.update_single_hook_repo(expected_hook)
+    remove_configs(session, [str(path) for path in __TOMBI_CONFIG_PATHS])
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    excludes = filter_patterns(
+        [
+            "**/Cargo.toml",
+            "**/Manifest.toml",
+            "**/Project.toml",
+            "**/uv.lock",
+            "labels*.toml",
+            "labels/*.toml",
+        ],
+        files=git_ls_files(),
+    )
+    expected = {
+        "format": {"rules": {"indent-width": 4, "line-width": 88}},
+        "lint": {"rules": {"key-empty": "off"}},
+    }
+    schema_path = _get_policy_schema_path(precommit)
+    if schema_path is not None:
+        expected["schemas"] = [
+            {
+                "root": "tool.compwa.policy",
+                "path": schema_path,
+                "include": ["pyproject.toml"],
+            }
+        ]
+    if excludes:
+        expected["files"] = {"exclude": to_toml_array(sorted(excludes, key=str.lower))}
+    tool = pyproject.get_table("tool", create=True)
+    if tool.get("tombi") == expected:
+        return
+    tool["tombi"] = expected
+    pyproject.changelog.append("Updated Tombi configuration")
+
+
+def _get_policy_schema_path(precommit: ModifiablePrecommit) -> str | None:
+    policy_repo = precommit.find_repo(r"github\.com/ComPWA/policy/?$")
+    if policy_repo is not None and policy_repo.get("rev"):
+        revision = policy_repo["rev"]
+        return (
+            f"https://raw.githubusercontent.com/ComPWA/policy/{revision}/"
+            f"{__POLICY_SCHEMA_PATH}"
+        )
+    if Path(__POLICY_SCHEMA_PATH).exists():
+        return __POLICY_SCHEMA_PATH
+    return None
 
 
 def _update_tomlsort_config(session: Session, /) -> None:
@@ -208,6 +342,22 @@ def _update_vscode_extensions(session: Session, /) -> None:
     vscode.add_extension_recommendation(session, "tamasfe.even-better-toml")
     vscode.remove_extension_recommendation(
         session, "bungcip.better-toml", unwanted=True
+    )
+    vscode.remove_extension_recommendation(session, "tombi-toml.tombi")
+    vscode.update_settings(
+        session,
+        {"[toml]": {"editor.defaultFormatter": "tamasfe.even-better-toml"}},
+    )
+
+
+def _update_tombi_vscode_extensions(session: Session, /) -> None:
+    vscode.add_extension_recommendation(session, "tombi-toml.tombi")
+    vscode.remove_extension_recommendation(
+        session, "tamasfe.even-better-toml", unwanted=True
+    )
+    vscode.update_settings(
+        session,
+        {"[toml]": {"editor.defaultFormatter": "tombi-toml.tombi"}},
     )
 
 

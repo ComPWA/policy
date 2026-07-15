@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from ruamel.yaml.tokens import CommentToken
+
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.getters import find_repo
@@ -54,9 +56,9 @@ def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # noqa: PLR0911
     repo_url = repo["repo"]
     if repo_url == "meta":
         return 0, repo_url
-    if re.match(r"^.*/(ComPWA-)?policy$", repo_url) is not None:
-        return 1, repo_url
     hook_ids = [hook["id"] for hook in repo["hooks"]]
+    if "check-dev-files" in hook_ids:
+        return 1, repo_url
     if any(i == "nbstripout" for i in hook_ids):
         return 2, repo_url
     if any(i == "nbqa-isort" for i in hook_ids):
@@ -189,6 +191,16 @@ def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
         return
     existing_skips = precommit_ci.get("skip")
     if expected_skips and existing_skips != expected_skips:
+        yaml_ci = cast("CommentedMap", precommit_ci)
+        last_ci_key = list(yaml_ci)[-1]
+        item_comments = yaml_ci.ca.items.get(last_ci_key)
+        if item_comments is not None:
+            trailing_comment = item_comments[2]
+            if (
+                isinstance(trailing_comment, CommentToken)
+                and not trailing_comment.value.strip()
+            ):
+                item_comments[2] = None
         precommit_ci["skip"] = sorted(expected_skips)
         yaml_config = cast("CommentedMap", precommit.document)
         yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
@@ -206,6 +218,8 @@ def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
         "check-jsonschema",
         "pyright",
         "taplo",
+        "tombi-format",
+        "tombi-lint",
         "ty",
         "uv-lock",
     }

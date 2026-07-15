@@ -437,14 +437,27 @@ def __update_per_file_ignores(
                 "T20",  # allow print and pprint
             },
         )
-    per_file_ignores = pyproject.get_table(
-        "tool.ruff.lint.per-file-ignores", create=True
-    )
     minimal_settings = {k: v for k, v in minimal_settings.items() if v}
+    table_name = "tool.ruff.lint.per-file-ignores"
+    if not minimal_settings:
+        ___remove_empty_per_file_ignores(pyproject)
+        return
+    per_file_ignores = pyproject.get_table(table_name, create=True)
     if not complies_with_subset(per_file_ignores, minimal_settings):
         per_file_ignores.update(minimal_settings)
         msg = "Updated Ruff configuration"
         pyproject.changelog.append(msg)
+
+
+def ___remove_empty_per_file_ignores(pyproject: ModifiablePyproject) -> None:
+    table_name = "tool.ruff.lint.per-file-ignores"
+    if not pyproject.has_table(table_name):
+        return
+    if pyproject.get_table(table_name):
+        return
+    lint = pyproject.get_table("tool.ruff.lint")
+    del lint["per-file-ignores"]
+    pyproject.changelog.append("Removed empty Ruff per-file ignores")
 
 
 def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
@@ -561,7 +574,7 @@ def __update_flake8_builtins(pyproject: ModifiablePyproject) -> None:
     ___update_ruff_lint_table(
         pyproject,
         table_name="flake8-builtins",
-        minimal_settings={"builtins-ignorelist": ["display"]},
+        minimal_settings={"ignorelist": ["display"]},
     )
 
 

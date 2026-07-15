@@ -11,15 +11,21 @@ what the CLI builds and hands to the check dispatch in ``compwa_policy.cli._chec
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from attrs import field, frozen
 
 if TYPE_CHECKING:
-    from compwa_policy.config import PythonVersion
-    from compwa_policy.env.conda import PackageManagerChoice
-    from compwa_policy.github import upgrade_lock
-    from compwa_policy.python import ty
+    from compwa_policy.config import (
+        PackageManagerChoice,
+        PythonVersion,
+        TypeChecker,
+        UpgradeFrequency,
+    )
+
+
+TomlFormatter = Literal["taplo", "tombi"]
+"""TOML formatters supported by the policy framework."""
 
 
 @frozen
@@ -62,8 +68,11 @@ class Arguments:
     repo_name: str
     repo_organization: str
     repo_title: str
-    type_checker: set[ty.TypeChecker]
-    upgrade_frequency: upgrade_lock.Frequency
+    tombi_errors_on_warnings: bool
+    toml_formatter: TomlFormatter
+    toml_formatter_configured: bool
+    type_checker: set[TypeChecker]
+    upgrade_frequency: UpgradeFrequency
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:

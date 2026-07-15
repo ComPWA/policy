@@ -14,11 +14,14 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from compwa_policy import Arguments, _to_list
+from compwa_policy import Arguments, TomlFormatter, _to_list
 from compwa_policy.cli._settings import load_settings
-from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, PythonVersion
-from compwa_policy.env.conda import PackageManagerChoice
-from compwa_policy.github.upgrade_lock import Frequency
+from compwa_policy.config import (
+    DEFAULT_DEV_PYTHON_VERSION,
+    PackageManagerChoice,
+    PythonVersion,
+)
+from compwa_policy.config import UpgradeFrequency as Frequency
 
 if TYPE_CHECKING:
     from typing import Any
@@ -254,6 +257,21 @@ AllowedCellMetadata = Annotated[
 ]
 
 # Format group ----------------------------------------------------------------
+TombiErrorsOnWarnings = Annotated[
+    bool | None,
+    typer.Option(
+        "--tombi-errors-on-warnings/--no-tombi-errors-on-warnings",
+        help="Make the Tombi lint hook fail when it emits warnings.",
+    ),
+]
+TomlFormatterOption = Annotated[
+    TomlFormatter | None,
+    typer.Option(
+        "--toml-formatter",
+        show_default="tombi",
+        help="Choose the TOML formatter",
+    ),
+]
 NoCspellUpdate = Annotated[
     bool | None,
     typer.Option(
@@ -294,7 +312,11 @@ def build_arguments(**overrides: Any) -> Arguments:
     to the ``[tool.compwa.policy]`` table (if present) and then to the same default that
     the ``check-dev-files`` hook uses. See the ``_settings`` for the resolution order.
     """
-    settings = load_settings(**overrides).model_dump()
+    resolved_settings = load_settings(**overrides)
+    settings = resolved_settings.model_dump()
+    settings["toml_formatter_configured"] = (
+        "toml_formatter" in resolved_settings.model_fields_set
+    )
     settings["excluded_python_versions"] = set(
         _to_list(settings["excluded_python_versions"])
     )
