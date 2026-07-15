@@ -202,3 +202,47 @@ def describe_set_upgrade_task():
             "Removed Poe the Poet upgrade task" in m for m in pyproject.changelog
         )
         assert "upgrade" not in pyproject.dumps()
+
+    def keeps_simple_uv_upgrade_for_root_lock(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        (tmp_path / "uv.lock").touch()
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+
+        with ModifiablePyproject.load(io.StringIO("[tool.poe.tasks]\n")) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        task = pyproject.get_table("tool.poe.tasks._upgrade-uv")
+        assert task == {
+            "cmd": "uv lock --upgrade",
+            "executor": {"type": "simple"},
+        }
+
+    def uses_expression_uv_upgrade_for_nested_lock(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        (tmp_path / "uv.lock").touch()
+        subproject = tmp_path / "packages" / "subpackage"
+        subproject.mkdir(parents=True)
+        (subproject / "pyproject.toml").touch()
+        (subproject / "uv.lock").touch()
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+
+        with ModifiablePyproject.load(io.StringIO("[tool.poe.tasks]\n")) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        task = pyproject.get_table("tool.poe.tasks._upgrade-uv")
+        assert "cmd" not in task
+        assert "--directory" in task["expr"]
+        assert task["imports"] == ["pathlib", "subprocess"]
+        assert task["assert"] is True
