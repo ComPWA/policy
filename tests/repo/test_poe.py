@@ -246,3 +246,48 @@ def describe_set_upgrade_task():
         assert "--directory" in task["expr"]
         assert task["imports"] == ["pathlib", "subprocess"]
         assert task["assert"] is True
+
+    def adds_julia_upgrade_for_single_manifest(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        julia_project = tmp_path / "julia"
+        julia_project.mkdir()
+        (julia_project / "Manifest.toml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text("[tool.poe.tasks]\n")
+        git_add(tmp_path)
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        tasks = Pyproject.load(config_path).get_table("tool.poe.tasks")
+        assert tasks["upgrade"]["parallel"] == ["_upgrade-uv", "_upgrade-julia"]
+        assert tasks["_upgrade-julia"]["cmd"].endswith("--project=julia")
+
+    def loops_over_multiple_julia_manifests(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        for name in ["julia-a", "julia-b"]:
+            project = tmp_path / name
+            project.mkdir()
+            (project / "Manifest.toml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text("[tool.poe.tasks]\n")
+        git_add(tmp_path)
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        task = Pyproject.load(config_path).get_table("tool.poe.tasks._upgrade-julia")
+        assert "git ls-files" in task["cmd"]
+        assert "Pkg.activate(project)" in task["cmd"]

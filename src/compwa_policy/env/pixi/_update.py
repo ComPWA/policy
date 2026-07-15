@@ -5,7 +5,14 @@ from typing import TYPE_CHECKING, Any
 import yaml
 
 from compwa_policy.env.pixi._helpers import has_pixi_config
+from compwa_policy.repo.upgrade import (
+    get_julia_manifest_paths,
+    get_julia_upgrade_command,
+    get_uv_upgrade_script,
+    has_nested_uv_lock,
+)
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
     Pyproject,
@@ -13,7 +20,11 @@ from compwa_policy.utilities.pyproject import (
 )
 from compwa_policy.utilities.pyproject.setters import split_dependency_definition
 from compwa_policy.utilities.readme import add_badge
-from compwa_policy.utilities.toml import to_inline_table, to_toml_array
+from compwa_policy.utilities.toml import (
+    to_inline_table,
+    to_multiline_string,
+    to_toml_array,
+)
 
 if TYPE_CHECKING:
     from collections.abc import MutableMapping
@@ -55,6 +66,7 @@ def update_pixi_configuration(
         _update_docnb_and_doclive(config, "tasks")
         _update_docnb_and_doclive(config, "feature.dev.tasks")
     _clean_up_task_env(config)
+    _set_upgrade_task(config, package_manager)
     vscode.update_settings(
         session,
         {"files.associations": {"**/pixi.lock": "yaml"}},
@@ -250,6 +262,57 @@ def _set_dev_python_version(
         dependencies["python"] = version
         msg = f"Set Python version for Pixi developer environment to {version}"
         config.changelog.append(msg)
+
+
+def _set_upgrade_task(
+    config: ModifiablePyproject, package_manager: PackageManagerChoice
+) -> None:
+    tasks = __get_table(config, "tasks", create=True)
+    helper_tasks: dict[str, dict[str, Any]] = {"_upgrade-pixi": {"cmd": "pixi update"}}
+    if is_committed(".pre-commit-config.yaml"):
+        helper_tasks["_upgrade-precommit"] = {"cmd": "pre-commit autoupdate -j8"}
+    if "uv" in package_manager:
+        helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
+    manifest_paths = get_julia_manifest_paths()
+    if manifest_paths:
+        helper_tasks["_upgrade-julia"] = _get_julia_upgrade_task(manifest_paths)
+    helper_names = {
+        "_upgrade-pixi",
+        "_upgrade-precommit",
+        "_upgrade-uv",
+        "_upgrade-julia",
+    }
+    expected = {
+        "depends-on": to_toml_array(helper_tasks),
+        "description": "Upgrade all lock files",
+    }
+    existing_helpers = {name: tasks[name] for name in helper_names if name in tasks}
+    if tasks.get("upgrade") != expected or existing_helpers != helper_tasks:
+        tasks["upgrade"] = expected
+        for name in helper_names - helper_tasks.keys():
+            tasks.pop(name, None)
+        tasks.update(helper_tasks)
+        config.changelog.append("Set Pixi upgrade task")
+
+
+def _get_uv_upgrade_task() -> dict[str, Any]:
+    if not has_nested_uv_lock():
+        return {"cmd": "uv lock --upgrade"}
+    script = get_uv_upgrade_script()
+    return {
+        "cmd": to_multiline_string(f"""
+uv run --no-project python -c '
+{script}
+'
+""")
+    }
+
+
+def _get_julia_upgrade_task(manifest_paths: list[str]) -> dict[str, Any]:
+    command: Any = get_julia_upgrade_command(manifest_paths)
+    if "\n" in command:
+        command = to_multiline_string(command)
+    return {"cmd": command}
 
 
 def __update_gitattributes(session: Session, /) -> None:
