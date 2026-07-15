@@ -8,11 +8,12 @@ from compwa_policy.env.pixi._update import (
     _clean_up_task_env,
     _define_combined_ci_job,
     _set_dev_python_version,
+    _set_upgrade_task,
     _update_dev_environment,
     _update_docnb_and_doclive,
     update_pixi_configuration,
 )
-from compwa_policy.utilities.pyproject import ModifiablePyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.session import Session
 
 _ENVIRONMENT_YML = dedent("""
@@ -204,3 +205,66 @@ def describe_set_dev_python_version():
             _set_dev_python_version(config, "3.12")
         assert any("Set Python version" in m for m in config.changelog)
         assert 'python = "3.12.*"' in config.dumps()
+
+
+def describe_set_upgrade_task():
+    def defines_applicable_helpers(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".pre-commit-config.yaml").touch()
+        (tmp_path / "uv.lock").touch()
+        julia_project = tmp_path / "julia"
+        julia_project.mkdir()
+        (julia_project / "Manifest.toml").touch()
+        git_add(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text("[tasks]\n")
+
+        with ModifiablePyproject.load(config_path) as config:
+            _set_upgrade_task(config, package_manager="pixi+uv")
+
+        config = Pyproject.load(config_path)
+        tasks = config.get_table("tasks")
+        assert tasks["upgrade"]["depends-on"] == [
+            "_upgrade-pixi",
+            "_upgrade-precommit",
+            "_upgrade-uv",
+            "_upgrade-julia",
+        ]
+        assert tasks["_upgrade-pixi"]["cmd"] == "pixi update"
+        assert tasks["_upgrade-precommit"]["cmd"] == "pre-commit autoupdate -j8"
+        assert tasks["_upgrade-uv"]["cmd"] == "uv lock --upgrade"
+        assert tasks["_upgrade-julia"]["cmd"].endswith("--project=julia")
+
+    def discovers_multiple_uv_and_julia_projects(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        for directory in [tmp_path, tmp_path / "nested"]:
+            directory.mkdir(exist_ok=True)
+            (directory / "pyproject.toml").touch()
+            (directory / "uv.lock").touch()
+            (directory / "Manifest.toml").touch()
+        git_add(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text("[tasks]\n")
+
+        with ModifiablePyproject.load(config_path) as config:
+            _set_upgrade_task(config, package_manager="pixi+uv")
+
+        tasks = Pyproject.load(config_path).get_table("tasks")
+        uv_cmd = tasks["_upgrade-uv"]["cmd"]
+        julia_cmd = tasks["_upgrade-julia"]["cmd"]
+        assert '"ls-files"' in uv_cmd
+        assert '"--directory"' in uv_cmd
+        assert "git ls-files" in julia_cmd
+        assert "Pkg.activate(project)" in julia_cmd

@@ -12,6 +12,13 @@ import tomlkit
 
 from compwa_policy._characterization import has_documentation
 from compwa_policy.errors import PolicyError
+from compwa_policy.repo.upgrade import (
+    UV_UPGRADE_EXPRESSION,
+    UV_UPGRADE_IMPORTS,
+    get_julia_manifest_paths,
+    get_julia_upgrade_command,
+    has_nested_uv_lock,
+)
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files, is_committed
@@ -397,7 +404,15 @@ def _set_upgrade_task(
             "cmd": "pixi upgrade",
             "executor": to_inline_table({"type": "simple"}),
         }
-    helper_names = {"_upgrade-precommit", "_upgrade-uv", "_upgrade-pixi"}
+    julia_task = _get_julia_upgrade_task()
+    if julia_task is not None:
+        helper_tasks["_upgrade-julia"] = julia_task
+    helper_names = {
+        "_upgrade-precommit",
+        "_upgrade-uv",
+        "_upgrade-pixi",
+        "_upgrade-julia",
+    }
     if not helper_tasks:
         removed = {"upgrade", *helper_names} & tasks.keys()
         for task_name in removed:
@@ -421,35 +436,30 @@ def _set_upgrade_task(
         pyproject.changelog.append(msg)
 
 
+def _get_julia_upgrade_task() -> dict[str, Any] | None:
+    manifest_paths = get_julia_manifest_paths()
+    if not manifest_paths:
+        return None
+    command: Any = get_julia_upgrade_command(manifest_paths)
+    if "\n" in command:
+        command = to_multiline_string(command)
+    return {
+        "cmd": command,
+        "executor": to_inline_table({"type": "simple"}),
+    }
+
+
 def _get_uv_upgrade_task() -> dict[str, Any]:
     task: dict[str, Any] = {"executor": to_inline_table({"type": "simple"})}
-    if _has_nested_uv_lock():
+    if has_nested_uv_lock():
         task.update({
-            "expr": to_multiline_string("""
-all(
-    subprocess.run(
-        ["uv", "lock", "--upgrade", "--directory", str(pathlib.Path(file).parent)],
-        check=False,
-    ).returncode == 0
-    for file in subprocess.run(
-        ["git", "ls-files"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
-    if pathlib.Path(file).name == "pyproject.toml"
-)
-"""),
-            "imports": to_toml_array(["pathlib", "subprocess"], multiline=False),
+            "expr": to_multiline_string(UV_UPGRADE_EXPRESSION),
+            "imports": to_toml_array(UV_UPGRADE_IMPORTS, multiline=False),
             "assert": True,
         })
     else:
         task["cmd"] = "uv lock --upgrade"
     return task
-
-
-def _has_nested_uv_lock() -> bool:
-    return any(path != "uv.lock" for path in git_ls_files("uv.lock", "**/uv.lock"))
 
 
 def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
