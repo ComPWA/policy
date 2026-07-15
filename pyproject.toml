@@ -3,6 +3,7 @@ name = "compwa-policy"
 description = "Pre-commit hooks that ensure that ComPWA repositories have a similar developer set-up"
 requires-python = ">=3.10"
 license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [{ name = "Common Partial Wave Analysis", email = "compwa-admin@ep1.rub.de" }]
 maintainers = [{ email = "compwa-admin@ep1.rub.de" }]
 classifiers = [
@@ -410,7 +411,6 @@ convention = "google"
 
 [tool.setuptools]
 include-package-data = false
-license-files = ["LICENSE"]
 package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]

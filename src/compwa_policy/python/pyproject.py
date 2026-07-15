@@ -32,10 +32,29 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     if config is None:
         return
     _update_pypi_link_names(config)
+    _update_license_files(config)
     _convert_to_dependency_groups(config)
     _rename_sty_to_style(config)
     _update_requires_python(config)
     _update_python_version_classifiers(config, args.excluded_python_versions)
+
+
+def _update_license_files(pyproject: ModifiablePyproject) -> None:
+    if not os.path.isfile("LICENSE") or not pyproject.has_table("project"):
+        return
+    project = pyproject.get_table("project")
+    license_files = project.get("license-files", [])
+    updated = False
+    if "LICENSE" not in license_files:
+        license_files = sorted([*license_files, "LICENSE"])
+        project["license-files"] = to_toml_array(license_files)
+        updated = True
+    setuptools = pyproject.get_table("tool.setuptools", fallback={})
+    if "license-files" in setuptools:
+        del setuptools["license-files"]
+        updated = True
+    if updated:
+        pyproject.changelog.append('Added "LICENSE" to project license-files')
 
 
 def _update_pypi_link_names(pyproject: ModifiablePyproject) -> None:

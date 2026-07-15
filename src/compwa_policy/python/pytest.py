@@ -162,7 +162,7 @@ def _update_codecov_settings(
     )
     updated |= __update_settings(
         config=pyproject.get_table("tool.coverage.report", create=True),
-        exclude_also=to_toml_array(["if TYPE_CHECKING:"], multiline=True),
+        exclude_also=to_toml_array(["if TYPE_CHECKING:"]),
     )
     if updated:
         msg = "Updated pytest coverage settings"
