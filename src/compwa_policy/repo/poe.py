@@ -20,7 +20,11 @@ from compwa_policy.utilities.pyproject import (
     Pyproject,
     has_dependency,
 )
-from compwa_policy.utilities.toml import to_inline_table, to_toml_array
+from compwa_policy.utilities.toml import (
+    to_inline_table,
+    to_multiline_string,
+    to_toml_array,
+)
 
 if TYPE_CHECKING:
     from tomlkit.items import Array, Table
@@ -380,15 +384,21 @@ def _set_upgrade_task(
     pyproject: ModifiablePyproject, package_manager: PackageManagerChoice
 ) -> None:
     tasks = pyproject.get_table("tool.poe.tasks")
-    commands = {}
+    helper_tasks = {}
     if is_committed(".pre-commit-config.yaml"):
-        commands["_upgrade-precommit"] = "pre-commit autoupdate -j8"
+        helper_tasks["_upgrade-precommit"] = {
+            "cmd": "pre-commit autoupdate -j8",
+            "executor": to_inline_table({"type": "simple"}),
+        }
     if "uv" in package_manager:
-        commands["_upgrade-uv"] = "uv lock --upgrade"
+        helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
     if "pixi" in package_manager:
-        commands["_upgrade-pixi"] = "pixi upgrade"
+        helper_tasks["_upgrade-pixi"] = {
+            "cmd": "pixi upgrade",
+            "executor": to_inline_table({"type": "simple"}),
+        }
     helper_names = {"_upgrade-precommit", "_upgrade-uv", "_upgrade-pixi"}
-    if not commands:
+    if not helper_tasks:
         removed = {"upgrade", *helper_names} & tasks.keys()
         for task_name in removed:
             del tasks[task_name]
@@ -399,23 +409,47 @@ def _set_upgrade_task(
     expected: dict[str, Any] = {
         "executor": to_inline_table({"type": "simple"}),
         "help": "Upgrade lock files",
-        "parallel": to_toml_array(list(commands)),
-    }
-    expected_helpers = {
-        name: {
-            "cmd": command,
-            "executor": to_inline_table({"type": "simple"}),
-        }
-        for name, command in commands.items()
+        "parallel": to_toml_array(helper_tasks),
     }
     existing_helpers = {name: tasks[name] for name in helper_names if name in tasks}
-    if tasks.get("upgrade") != expected or existing_helpers != expected_helpers:
+    if tasks.get("upgrade") != expected or existing_helpers != helper_tasks:
         tasks["upgrade"] = expected
-        for name in helper_names - commands.keys():
+        for name in helper_names - helper_tasks.keys():
             tasks.pop(name, None)
-        tasks.update(expected_helpers)
+        tasks.update(helper_tasks)
         msg = f"Set Poe the Poet upgrade task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _get_uv_upgrade_task() -> dict[str, Any]:
+    task: dict[str, Any] = {"executor": to_inline_table({"type": "simple"})}
+    if _has_nested_uv_lock():
+        task.update({
+            "expr": to_multiline_string("""
+all(
+    subprocess.run(
+        ["uv", "lock", "--upgrade", "--directory", str(pathlib.Path(file).parent)],
+        check=False,
+    ).returncode == 0
+    for file in subprocess.run(
+        ["git", "ls-files"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    if pathlib.Path(file).name == "pyproject.toml"
+)
+"""),
+            "imports": to_toml_array(["pathlib", "subprocess"], multiline=False),
+            "assert": True,
+        })
+    else:
+        task["cmd"] = "uv lock --upgrade"
+    return task
+
+
+def _has_nested_uv_lock() -> bool:
+    return any(path != "uv.lock" for path in git_ls_files("uv.lock", "**/uv.lock"))
 
 
 def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
