@@ -5,11 +5,41 @@ from textwrap import dedent
 import pytest
 import tomlkit
 
-from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.toml import (
+    to_inline_table,
+    to_multiline_string,
+    to_toml_array,
+)
 
 
 def _dump(array):
     return tomlkit.dumps({"a": array}).strip()
+
+
+def describe_to_inline_table():
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ({}, "a = {}"),
+            ({"type": "simple"}, 'a = { type = "simple" }'),
+            (
+                {"name": "path", "positional": True},
+                'a = { name = "path", positional = true }',
+            ),
+        ],
+    )
+    def renders_with_tombi_spacing(value: dict, expected: str):
+        assert _dump(to_inline_table(value)) == expected
+
+
+def describe_to_multiline_string():
+    def has_the_same_value_after_serialization():
+        value = "\nline one\nline two\n"
+        string = to_multiline_string(value)
+
+        parsed_again = tomlkit.loads(tomlkit.dumps({"value": string}))["value"]
+
+        assert string == parsed_again
 
 
 def describe_to_toml_array():
