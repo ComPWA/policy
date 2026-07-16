@@ -56,6 +56,7 @@ def describe_build_arguments():
         assert args.package_manager == "uv"
         assert args.repo_organization == "ComPWA"
         assert args.type_checker == set()
+        assert args.excluded_dependencies == set()
         assert args.excluded_python_versions == set()
         assert args.keep_workflow == set()
         assert args.branch_coverage is True
@@ -98,6 +99,7 @@ def describe_pyproject_config():
             type-checker = ["mypy", "pyright"]
 
             [tool.compwa.policy.nb]
+            excluded-dependencies = ["python-lsp-server"]
             no-binder = true
 
             [tool.compwa.policy.setup]
@@ -115,6 +117,7 @@ def describe_pyproject_config():
             "imports_on_top": True,
             "type_checker": ["mypy", "pyright"],
             "no_binder": True,
+            "excluded_dependencies": ["python-lsp-server"],
             "keep_contributing_md": True,
             "environment_variables": {
                 "PYTHONHASHSEED": "0",
@@ -134,6 +137,9 @@ def describe_pyproject_config():
             branch-coverage = false
             type-checker = ["mypy", "pyright"]
 
+            [tool.compwa.policy.nb]
+            excluded-dependencies = ["python-lsp-server"]
+
             [tool.compwa.policy.setup.env]
             PYTHONHASHSEED = "0"
             """,
@@ -141,6 +147,7 @@ def describe_pyproject_config():
         args = build_arguments()
         assert args.dev_python_version == "3.12"
         assert args.branch_coverage is False
+        assert args.excluded_dependencies == {"python-lsp-server"}
         assert args.type_checker == {"mypy", "pyright"}
         assert args.environment_variables == "PYTHONHASHSEED=0"
 
@@ -215,8 +222,21 @@ def describe_build_policy():
         }
 
     def collects_repeated_list_option() -> None:
-        policy = _build_policy(["--type-checker=mypy", "--type-checker=pyright"])
-        assert policy == {"python": {"type-checker": ["mypy", "pyright"]}}
+        policy = _build_policy([
+            "--exclude-dependency=python-lsp-server",
+            "--exclude-dependency=jupyterlab-git",
+            "--type-checker=mypy",
+            "--type-checker=pyright",
+        ])
+        assert policy == {
+            "nb": {
+                "excluded-dependencies": [
+                    "python-lsp-server",
+                    "jupyterlab-git",
+                ]
+            },
+            "python": {"type-checker": ["mypy", "pyright"]},
+        }
 
     def maps_environment_variables_to_setup_env() -> None:
         policy = _build_policy([

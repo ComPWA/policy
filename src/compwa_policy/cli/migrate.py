@@ -86,6 +86,7 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
     ),
     "nb": (
         "--allowed-cell-metadata",
+        "--exclude-dependency",
         "--no-binder",
     ),
     "format": ("--no-cspell-update",),
@@ -192,6 +193,8 @@ def _validate(args: list[str]) -> None:
 
 
 def _flag_to_field(flag: str) -> str:
+    if flag == "--exclude-dependency":
+        return "excluded_dependencies"
     return flag.lstrip("-").replace("-", "_")
 
 

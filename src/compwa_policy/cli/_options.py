@@ -255,6 +255,13 @@ AllowedCellMetadata = Annotated[
         help="Comma-separated list of allowed metadata in Jupyter notebook cells, e.g. editable,slideshow.",
     ),
 ]
+ExcludeDependency = Annotated[
+    list[str] | None,
+    typer.Option(
+        "--exclude-dependency",
+        help="Notebook dependency that policy must not install.",
+    ),
+]
 
 # Format group ----------------------------------------------------------------
 TombiErrorsOnWarnings = Annotated[
@@ -320,6 +327,7 @@ def build_arguments(**overrides: Any) -> Arguments:
     settings["excluded_python_versions"] = set(
         _to_list(settings["excluded_python_versions"])
     )
+    settings["excluded_dependencies"] = set(settings["excluded_dependencies"])
     if settings["macos_python_version"] == "disable":
         settings["macos_python_version"] = None
     settings["repo_name"] = settings["repo_name"] or os.path.basename(os.getcwd())

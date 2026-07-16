@@ -25,8 +25,9 @@ def describe_create_policy_schema() -> None:
             "type": "boolean",
         }
         sorted_array_fields = (
-            properties["python"]["properties"]["type-checker"],
             properties["github"]["properties"]["keep-workflow"],
+            properties["nb"]["properties"]["excluded-dependencies"],
+            properties["python"]["properties"]["type-checker"],
         )
         assert all(
             field["x-tombi-array-values-order"] == "ascending"

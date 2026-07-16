@@ -126,6 +126,35 @@
       },
       "additionalProperties": false
     },
+    "nb": {
+      "type": "object",
+      "x-tombi-table-keys-order": "ascending",
+      "properties": {
+        "excluded-dependencies": {
+          "default": [],
+          "description": "Notebook dependencies that policy must not install.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Excluded Dependencies",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        },
+        "no-binder": {
+          "default": false,
+          "description": "Do not update the Binder configuration.",
+          "title": "No Binder",
+          "type": "boolean"
+        },
+        "allowed-cell-metadata": {
+          "default": "",
+          "description": "Metadata keys allowed in Jupyter notebook cells.",
+          "title": "Allowed Cell Metadata",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "github": {
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
@@ -211,25 +240,6 @@
           "description": "Frequency of the workflow that upgrades lock and constraint files.",
           "enum": ["monthly", "quarterly", "semiannually"],
           "title": "Upgrade Frequency",
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "nb": {
-      "type": "object",
-      "x-tombi-table-keys-order": "ascending",
-      "properties": {
-        "no-binder": {
-          "default": false,
-          "description": "Do not update the Binder configuration.",
-          "title": "No Binder",
-          "type": "boolean"
-        },
-        "allowed-cell-metadata": {
-          "default": "",
-          "description": "Metadata keys allowed in Jupyter notebook cells.",
-          "title": "Allowed Cell Metadata",
           "type": "string"
         }
       },
