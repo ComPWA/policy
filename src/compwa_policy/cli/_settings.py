@@ -37,9 +37,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any
+from typing import Annotated, Any, TypeVar
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -56,6 +56,13 @@ from compwa_policy.config import (
 )
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.pyproject import Pyproject
+
+T = TypeVar("T")
+SortedArray = Annotated[
+    list[T],
+    Field(json_schema_extra={"x-tombi-array-values-order": "ascending"}),
+]
+"""Array-valued setting whose TOML representation is sorted by Tombi."""
 
 #: Top-level table that holds the policy configuration in :code:`pyproject.toml`.
 POLICY_TABLE = "tool.compwa.policy"
@@ -207,7 +214,7 @@ class Settings(BaseSettings):
     """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
     """Enable branch coverage in the Coverage.py pytest configuration."""
-    type_checker: list[TypeChecker] = []
+    type_checker: SortedArray[TypeChecker] = []
     """Type checkers used by the project."""
     pytest_single_threaded: bool = False
     """Run pytest without the parallel ``-n`` argument."""
@@ -237,7 +244,7 @@ class Settings(BaseSettings):
     """Python versions for which the CI test job is skipped."""
     doc_apt_packages: str = ""
     """APT packages required to build the documentation."""
-    keep_workflow: list[str] = []
+    keep_workflow: SortedArray[str] = []
     """GitHub Actions workflow files that policy must not update or remove."""
     upgrade_frequency: UpgradeFrequency = "quarterly"
     """Frequency of the workflow that upgrades lock and constraint files."""

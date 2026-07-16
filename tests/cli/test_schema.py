@@ -24,6 +24,14 @@ def describe_create_policy_schema() -> None:
             "title": "Tombi Errors On Warnings",
             "type": "boolean",
         }
+        sorted_array_fields = (
+            properties["python"]["properties"]["type-checker"],
+            properties["github"]["properties"]["keep-workflow"],
+        )
+        assert all(
+            field["x-tombi-array-values-order"] == "ascending"
+            for field in sorted_array_fields
+        )
         assert properties["setup"]["properties"]["env"] == {
             "type": "object",
             "additionalProperties": {"type": "string"},
