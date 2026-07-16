@@ -40,12 +40,12 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
 
 
 def _update_license_files(pyproject: ModifiablePyproject) -> None:
-    if not os.path.isfile("LICENSE") or not pyproject.has_table("project"):
+    if not pyproject.has_table("project"):
         return
     project = pyproject.get_table("project")
-    license_files = project.get("license-files", [])
     updated = False
-    if "LICENSE" not in license_files:
+    license_files = project.get("license-files", [])
+    if os.path.isfile("LICENSE") and "LICENSE" not in license_files:
         license_files = sorted([*license_files, "LICENSE"])
         project["license-files"] = to_toml_array(license_files)
         updated = True
@@ -53,6 +53,16 @@ def _update_license_files(pyproject: ModifiablePyproject) -> None:
     if "license-files" in setuptools:
         del setuptools["license-files"]
         updated = True
+    if "license" in project or "license-files" in project:
+        classifiers = project.get("classifiers", [])
+        updated_classifiers = [
+            classifier
+            for classifier in classifiers
+            if not classifier.startswith("License ::")
+        ]
+        if classifiers != updated_classifiers:
+            project["classifiers"] = to_toml_array(updated_classifiers)
+            pyproject.changelog.append("Removed license classifiers")
     if updated:
         pyproject.changelog.append('Added "LICENSE" to project license-files')
 
