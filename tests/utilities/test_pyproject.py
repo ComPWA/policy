@@ -61,6 +61,24 @@ def describe_load():
 
 
 def describe_edit_and_dump():
+    def preserves_table_order(tmp_path: Path):
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            dedent("""
+                [project]
+                name = "my-package"
+
+                [dependency-groups]
+                dev = ["pytest"]
+            """)
+        )
+        pyproject = ModifiablePyproject.load(pyproject_path)
+
+        pyproject.dump()
+
+        result = pyproject_path.read_text()
+        assert result.index("[project]") < result.index("[dependency-groups]")
+
     def creates_and_modifies_tables():
         src = dedent("""
             [owner]

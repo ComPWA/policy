@@ -171,7 +171,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
 
     @override
     def dumps(self) -> str:
-        src = tomlkit.dumps(self._document, sort_keys=True)
+        src = tomlkit.dumps(self._document)
         return f"{src.strip()}\n"
 
     def __enter__(self) -> Self:
@@ -199,7 +199,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         if isinstance(target, io.IOBase):
             current_position = target.tell()
             target.seek(0)
-            tomlkit.dump(self._document, target, sort_keys=True)  # ty:ignore[invalid-argument-type]
+            tomlkit.dump(self._document, target)  # ty:ignore[invalid-argument-type]
             target.seek(current_position)
         elif isinstance(target, (Path, str)):
             src = self.dumps()
