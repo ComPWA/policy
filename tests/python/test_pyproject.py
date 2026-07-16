@@ -57,6 +57,38 @@ def describe_update_license_files():
         assert "license-files" not in pyproject.get_table("tool.setuptools")
 
     @pytest.mark.parametrize(
+        "license_metadata",
+        [
+            'license = "MIT"',
+            'license-files = ["LICENSE"]',
+            'license = "MIT"\nlicense-files = ["LICENSE"]',
+        ],
+        ids=["license", "license-files", "both"],
+    )
+    def removes_license_classifiers(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        license_metadata: str,
+    ):
+        monkeypatch.chdir(tmp_path)
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text(
+            "[project]\n"
+            'name = "x"\n'
+            f"{license_metadata}\n"
+            "classifiers = [\n"
+            '    "Development Status :: 4 - Beta",\n'
+            '    "License :: OSI Approved :: MIT License",\n'
+            "]\n"
+        )
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _update_license_files(pyproject)
+        assert pyproject.get_table("project")["classifiers"] == [
+            "Development Status :: 4 - Beta"
+        ]
+        assert "License ::" not in pyproject_path.read_text()
+
+    @pytest.mark.parametrize(
         "pyproject_contents", ['name = "x"\n', '[project]\nname = "x"\n']
     )
     def is_noop_without_required_files(
