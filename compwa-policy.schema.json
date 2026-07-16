@@ -114,7 +114,8 @@
             "type": "string"
           },
           "title": "Type Checker",
-          "type": "array"
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
         },
         "allow-vscode-coverage-gutters": {
           "default": false,
@@ -202,7 +203,8 @@
             "type": "string"
           },
           "title": "Keep Workflow",
-          "type": "array"
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
         },
         "upgrade-frequency": {
           "default": "quarterly",
