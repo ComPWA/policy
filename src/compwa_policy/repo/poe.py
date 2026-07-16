@@ -427,13 +427,25 @@ def _set_upgrade_task(
         "parallel": to_toml_array(helper_tasks),
     }
     existing_helpers = {name: tasks[name] for name in helper_names if name in tasks}
-    if tasks.get("upgrade") != expected or existing_helpers != helper_tasks:
+    if _unwrap_toml(tasks.get("upgrade")) != _unwrap_toml(expected) or _unwrap_toml(
+        existing_helpers
+    ) != _unwrap_toml(helper_tasks):
         tasks["upgrade"] = expected
         for name in helper_names - helper_tasks.keys():
             tasks.pop(name, None)
         tasks.update(helper_tasks)
         msg = f"Set Poe the Poet upgrade task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _unwrap_toml(value: Any) -> Any:
+    """Recursively convert Tomlkit items into formatting-independent Python values."""
+    if isinstance(value, Mapping):
+        return {key: _unwrap_toml(item) for key, item in value.items()}
+    if isinstance(value, Sequence) and not isinstance(value, str):
+        return [_unwrap_toml(item) for item in value]
+    unwrap = getattr(value, "unwrap", None)
+    return unwrap() if unwrap is not None else value
 
 
 def _get_julia_upgrade_task() -> dict[str, Any] | None:

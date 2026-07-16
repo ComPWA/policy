@@ -247,6 +247,31 @@ def describe_set_upgrade_task():
         assert task["imports"] == ["pathlib", "subprocess"]
         assert task["assert"] is True
 
+    def is_idempotent_after_dumping_tombi_spaced_inline_tables(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text("[tool.poe.tasks]\n")
+        (tmp_path / ".pre-commit-config.yaml").touch()
+        (tmp_path / "uv.lock").touch()
+        nested = tmp_path / "nested"
+        nested.mkdir()
+        (nested / "pyproject.toml").touch()
+        (nested / "uv.lock").touch()
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        assert pyproject.changelog == []
+
     def adds_julia_upgrade_for_single_manifest(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

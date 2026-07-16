@@ -25,10 +25,15 @@ def to_toml_array(items: Iterable[Any], multiline: bool | None = None) -> Array:
 
 def to_inline_table(value: Mapping[str, Any]) -> InlineTable:
     table = tomlkit.inline_table()
+    if value:
+        table.append(None, tomlkit.ws(" "))
     for key, val in value.items():
         table[key] = val
+    if value:
+        table.append(None, tomlkit.ws(" "))
     return table
 
 
 def to_multiline_string(value: str) -> String:
-    return String(StringType.MLB, value, value, Trivia())
+    parsed_value = value.removeprefix("\n")
+    return String(StringType.MLB, parsed_value, value, Trivia())
