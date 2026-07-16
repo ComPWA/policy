@@ -22,218 +22,11 @@
       "title": "Dev Python Version",
       "type": "string"
     },
-    "package-manager": {
-      "default": "uv",
-      "description": "Package or environment manager used by the repository.",
-      "enum": ["none", "uv", "conda", "pixi+uv", "pixi", "venv"],
-      "title": "Package Manager",
-      "type": "string"
-    },
-    "repo-name": {
-      "default": "",
-      "description": "Repository name, usually as it appears in its hosting URL.",
-      "title": "Repo Name",
-      "type": "string"
-    },
-    "repo-organization": {
-      "default": "ComPWA",
-      "description": "Organization under which the repository is hosted.",
-      "title": "Repo Organization",
-      "type": "string"
-    },
-    "repo-title": {
-      "default": "",
-      "description": "Human-readable repository title; defaults to the repository name when empty.",
-      "title": "Repo Title",
-      "type": "string"
-    },
-    "no-ruff": {
-      "default": false,
-      "description": "Do not enforce Ruff as a linter.",
-      "title": "No Ruff",
-      "type": "boolean"
-    },
-    "pytest-single-threaded": {
-      "default": false,
-      "description": "Run pytest without the parallel ``-n`` argument.",
-      "title": "Pytest Single Threaded",
-      "type": "boolean"
-    },
     "doc-apt-packages": {
       "default": "",
       "description": "APT packages required to build the documentation.",
       "title": "Doc Apt Packages",
       "type": "string"
-    },
-    "setup": {
-      "type": "object",
-      "x-tombi-table-keys-order": "ascending",
-      "properties": {
-        "env": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "keep-contributing-md": {
-          "default": false,
-          "description": "Do not update or remove ``CONTRIBUTING.md``.",
-          "title": "Keep Contributing Md",
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "python": {
-      "type": "object",
-      "x-tombi-table-keys-order": "ascending",
-      "properties": {
-        "excluded-python-versions": {
-          "default": "",
-          "description": "Python versions that the project does not support.",
-          "title": "Excluded Python Versions",
-          "type": "string"
-        },
-        "imports-on-top": {
-          "default": false,
-          "description": "Move notebook imports to the top of the notebook.",
-          "title": "Imports On Top",
-          "type": "boolean"
-        },
-        "branch-coverage": {
-          "default": true,
-          "description": "Enable branch coverage in the Coverage.py pytest configuration.",
-          "title": "Branch Coverage",
-          "type": "boolean"
-        },
-        "type-checker": {
-          "default": [],
-          "description": "Type checkers used by the project.",
-          "items": {
-            "enum": ["mypy", "pyright", "ty"],
-            "type": "string"
-          },
-          "title": "Type Checker",
-          "type": "array",
-          "x-tombi-array-values-order": "ascending"
-        },
-        "allow-vscode-coverage-gutters": {
-          "default": false,
-          "description": "Keep and recommend the VS Code Coverage Gutters extension.",
-          "title": "Allow Vscode Coverage Gutters",
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "github": {
-      "type": "object",
-      "x-tombi-table-keys-order": "ascending",
-      "properties": {
-        "allow-labels": {
-          "default": false,
-          "description": "Do not enforce the shared ``labels.toml`` configuration.",
-          "title": "Allow Labels",
-          "type": "boolean"
-        },
-        "allow-deprecated-workflows": {
-          "default": false,
-          "description": "Allow deprecated continuous-integration workflows.",
-          "title": "Allow Deprecated Workflows",
-          "type": "boolean"
-        },
-        "no-github-actions": {
-          "default": false,
-          "description": "Do not add the standard ComPWA GitHub Actions workflows.",
-          "title": "No Github Actions",
-          "type": "boolean"
-        },
-        "github-pages": {
-          "default": false,
-          "description": "Publish the documentation through GitHub Pages.",
-          "title": "Github Pages",
-          "type": "boolean"
-        },
-        "keep-pr-linting": {
-          "default": false,
-          "description": "Do not overwrite the pull-request linting workflow.",
-          "title": "Keep Pr Linting",
-          "type": "boolean"
-        },
-        "macos-python-version": {
-          "default": "3.10",
-          "description": "Python version for the macOS test job; use ``disable`` to omit the job.",
-          "title": "Macos Python Version",
-          "type": "string"
-        },
-        "no-cd": {
-          "default": false,
-          "description": "Do not add continuous-deployment workflows.",
-          "title": "No Cd",
-          "type": "boolean"
-        },
-        "no-milestones": {
-          "default": false,
-          "description": "Do not add workflows that manage GitHub milestones.",
-          "title": "No Milestones",
-          "type": "boolean"
-        },
-        "no-pypi": {
-          "default": false,
-          "description": "Do not publish the package to PyPI.",
-          "title": "No Pypi",
-          "type": "boolean"
-        },
-        "no-version-branches": {
-          "default": false,
-          "description": "Do not update major and minor version branches when tagging a release.",
-          "title": "No Version Branches",
-          "type": "boolean"
-        },
-        "ci-skipped-tests": {
-          "default": "",
-          "description": "Python versions for which the CI test job is skipped.",
-          "title": "Ci Skipped Tests",
-          "type": "string"
-        },
-        "keep-workflow": {
-          "default": [],
-          "description": "GitHub Actions workflow files that policy must not update or remove.",
-          "items": {
-            "type": "string"
-          },
-          "title": "Keep Workflow",
-          "type": "array",
-          "x-tombi-array-values-order": "ascending"
-        },
-        "upgrade-frequency": {
-          "default": "quarterly",
-          "description": "Frequency of the workflow that upgrades lock and constraint files.",
-          "enum": ["monthly", "quarterly", "semiannually"],
-          "title": "Upgrade Frequency",
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
-    "nb": {
-      "type": "object",
-      "x-tombi-table-keys-order": "ascending",
-      "properties": {
-        "no-binder": {
-          "default": false,
-          "description": "Do not update the Binder configuration.",
-          "title": "No Binder",
-          "type": "boolean"
-        },
-        "allowed-cell-metadata": {
-          "default": "",
-          "description": "Metadata keys allowed in Jupyter notebook cells.",
-          "title": "Allowed Cell Metadata",
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
     },
     "format": {
       "type": "object",
@@ -261,6 +54,186 @@
       },
       "additionalProperties": false
     },
+    "github": {
+      "type": "object",
+      "x-tombi-table-keys-order": "ascending",
+      "properties": {
+        "allow-deprecated-workflows": {
+          "default": false,
+          "description": "Allow deprecated continuous-integration workflows.",
+          "title": "Allow Deprecated Workflows",
+          "type": "boolean"
+        },
+        "allow-labels": {
+          "default": false,
+          "description": "Do not enforce the shared ``labels.toml`` configuration.",
+          "title": "Allow Labels",
+          "type": "boolean"
+        },
+        "ci-skipped-tests": {
+          "default": "",
+          "description": "Python versions for which the CI test job is skipped.",
+          "title": "Ci Skipped Tests",
+          "type": "string"
+        },
+        "github-pages": {
+          "default": false,
+          "description": "Publish the documentation through GitHub Pages.",
+          "title": "Github Pages",
+          "type": "boolean"
+        },
+        "keep-pr-linting": {
+          "default": false,
+          "description": "Do not overwrite the pull-request linting workflow.",
+          "title": "Keep Pr Linting",
+          "type": "boolean"
+        },
+        "keep-workflow": {
+          "default": [],
+          "description": "GitHub Actions workflow files that policy must not update or remove.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Keep Workflow",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        },
+        "macos-python-version": {
+          "default": "3.10",
+          "description": "Python version for the macOS test job; use ``disable`` to omit the job.",
+          "title": "Macos Python Version",
+          "type": "string"
+        },
+        "no-cd": {
+          "default": false,
+          "description": "Do not add continuous-deployment workflows.",
+          "title": "No Cd",
+          "type": "boolean"
+        },
+        "no-github-actions": {
+          "default": false,
+          "description": "Do not add the standard ComPWA GitHub Actions workflows.",
+          "title": "No Github Actions",
+          "type": "boolean"
+        },
+        "no-milestones": {
+          "default": false,
+          "description": "Do not add workflows that manage GitHub milestones.",
+          "title": "No Milestones",
+          "type": "boolean"
+        },
+        "no-pypi": {
+          "default": false,
+          "description": "Do not publish the package to PyPI.",
+          "title": "No Pypi",
+          "type": "boolean"
+        },
+        "no-version-branches": {
+          "default": false,
+          "description": "Do not update major and minor version branches when tagging a release.",
+          "title": "No Version Branches",
+          "type": "boolean"
+        },
+        "upgrade-frequency": {
+          "default": "quarterly",
+          "description": "Frequency of the workflow that upgrades lock and constraint files.",
+          "enum": ["monthly", "quarterly", "semiannually"],
+          "title": "Upgrade Frequency",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "nb": {
+      "type": "object",
+      "x-tombi-table-keys-order": "ascending",
+      "properties": {
+        "allowed-cell-metadata": {
+          "default": "",
+          "description": "Metadata keys allowed in Jupyter notebook cells.",
+          "title": "Allowed Cell Metadata",
+          "type": "string"
+        },
+        "excluded-dependencies": {
+          "default": [],
+          "description": "Notebook dependencies that policy must not install.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Excluded Dependencies",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        },
+        "no-binder": {
+          "default": false,
+          "description": "Do not update the Binder configuration.",
+          "title": "No Binder",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "no-ruff": {
+      "default": false,
+      "description": "Do not enforce Ruff as a linter.",
+      "title": "No Ruff",
+      "type": "boolean"
+    },
+    "package-manager": {
+      "default": "uv",
+      "description": "Package or environment manager used by the repository.",
+      "enum": ["none", "uv", "conda", "pixi+uv", "pixi", "venv"],
+      "title": "Package Manager",
+      "type": "string"
+    },
+    "pytest-single-threaded": {
+      "default": false,
+      "description": "Run pytest without the parallel ``-n`` argument.",
+      "title": "Pytest Single Threaded",
+      "type": "boolean"
+    },
+    "python": {
+      "type": "object",
+      "x-tombi-table-keys-order": "ascending",
+      "properties": {
+        "allow-vscode-coverage-gutters": {
+          "default": false,
+          "description": "Keep and recommend the VS Code Coverage Gutters extension.",
+          "title": "Allow Vscode Coverage Gutters",
+          "type": "boolean"
+        },
+        "branch-coverage": {
+          "default": true,
+          "description": "Enable branch coverage in the Coverage.py pytest configuration.",
+          "title": "Branch Coverage",
+          "type": "boolean"
+        },
+        "excluded-python-versions": {
+          "default": "",
+          "description": "Python versions that the project does not support.",
+          "title": "Excluded Python Versions",
+          "type": "string"
+        },
+        "imports-on-top": {
+          "default": false,
+          "description": "Move notebook imports to the top of the notebook.",
+          "title": "Imports On Top",
+          "type": "boolean"
+        },
+        "type-checker": {
+          "default": [],
+          "description": "Type checkers used by the project.",
+          "items": {
+            "enum": ["mypy", "pyright", "ty"],
+            "type": "string"
+          },
+          "title": "Type Checker",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        }
+      },
+      "additionalProperties": false
+    },
     "repo": {
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
@@ -275,6 +248,43 @@
           "default": false,
           "description": "Do not remove the GitHub issue-template directory.",
           "title": "Keep Issue Templates",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "repo-name": {
+      "default": "",
+      "description": "Repository name, usually as it appears in its hosting URL.",
+      "title": "Repo Name",
+      "type": "string"
+    },
+    "repo-organization": {
+      "default": "ComPWA",
+      "description": "Organization under which the repository is hosted.",
+      "title": "Repo Organization",
+      "type": "string"
+    },
+    "repo-title": {
+      "default": "",
+      "description": "Human-readable repository title; defaults to the repository name when empty.",
+      "title": "Repo Title",
+      "type": "string"
+    },
+    "setup": {
+      "type": "object",
+      "x-tombi-table-keys-order": "ascending",
+      "properties": {
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "keep-contributing-md": {
+          "default": false,
+          "description": "Do not update or remove ``CONTRIBUTING.md``.",
+          "title": "Keep Contributing Md",
           "type": "boolean"
         }
       },

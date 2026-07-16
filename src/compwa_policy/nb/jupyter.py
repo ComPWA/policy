@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from packaging.utils import canonicalize_name
+
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
 
@@ -19,7 +21,11 @@ if TYPE_CHECKING:
     enabled=lambda _args, ctx: ctx.has_notebooks,
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
-    _update_dev_requirements(session, args.no_ruff)
+    _update_dev_requirements(
+        session,
+        excluded_dependencies=args.excluded_dependencies,
+        no_ruff=args.no_ruff,
+    )
     # cspell:ignore toolsai
     vscode.add_extension_recommendation(session, "ms-toolsai.jupyter")
     vscode.add_extension_recommendation(session, "ms-toolsai.vscode-jupyter-cell-tags")
@@ -30,7 +36,12 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     )
 
 
-def _update_dev_requirements(session: Session, /, no_ruff: bool) -> None:
+def _update_dev_requirements(
+    session: Session,
+    /,
+    excluded_dependencies: set[str],
+    no_ruff: bool,
+) -> None:
     pyproject = session.pyproject
     if pyproject is None:
         return
@@ -62,5 +73,15 @@ def _update_dev_requirements(session: Session, /, no_ruff: bool) -> None:
         pyproject.remove_dependency("isort")
         pyproject.remove_dependency("jupyterlab-code-formatter")
         packages.add("jupyter-ruff")
+    excluded_dependencies = {
+        canonicalize_name(package) for package in excluded_dependencies
+    }
+    packages = {
+        package
+        for package in packages
+        if canonicalize_name(package) not in excluded_dependencies
+    }
+    for package in sorted(excluded_dependencies):
+        pyproject.remove_dependency(package)
     for package in sorted(packages):
         pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])

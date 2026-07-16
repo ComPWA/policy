@@ -98,7 +98,11 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "no_version_branches",
         "upgrade_frequency",
     }),
-    "nb": frozenset({"allowed_cell_metadata", "no_binder"}),
+    "nb": frozenset({
+        "allowed_cell_metadata",
+        "excluded_dependencies",
+        "no_binder",
+    }),
     "format": frozenset({
         "no_cspell_update",
         "tombi_errors_on_warnings",
@@ -208,6 +212,8 @@ class Settings(BaseSettings):
     """Environment variables added to the development setup."""
     excluded_python_versions: str = ""
     """Python versions that the project does not support."""
+    excluded_dependencies: SortedArray[str] = []
+    """Notebook dependencies that policy must not install."""
     no_ruff: bool = False
     """Do not enforce Ruff as a linter."""
     imports_on_top: bool = False
@@ -315,7 +321,12 @@ class Settings(BaseSettings):
         """
         return _join(value)
 
-    @field_validator("type_checker", "keep_workflow", mode="before")
+    @field_validator(
+        "excluded_dependencies",
+        "type_checker",
+        "keep_workflow",
+        mode="before",
+    )
     @classmethod
     def _normalize_list(cls, value: Any) -> list[str]:
         """Accept a comma/space string, a TOML array, or repeated CLI options.

@@ -7,6 +7,7 @@ from compwa_policy.cli._options import (
     AllowedCellMetadata,
     DevPythonVersion,
     DocAptPackages,
+    ExcludeDependency,
     NoBinder,
     NoRuff,
     PackageManager,
@@ -21,6 +22,7 @@ def nb(  # noqa: PLR0917
     no_ruff: NoRuff = None,
     allowed_cell_metadata: AllowedCellMetadata = None,
     doc_apt_packages: DocAptPackages = None,
+    exclude_dependency: ExcludeDependency = None,
 ) -> None:
     """Standardize Jupyter notebook config: Jupyter, nbstripout, Binder."""
     args = build_arguments(
@@ -30,5 +32,6 @@ def nb(  # noqa: PLR0917
         no_ruff=no_ruff,
         allowed_cell_metadata=allowed_cell_metadata,
         doc_apt_packages=doc_apt_packages,
+        excluded_dependencies=exclude_dependency,
     )
     _checks.dispatch(args, "nb")

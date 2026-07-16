@@ -25,8 +25,9 @@ def describe_create_policy_schema() -> None:
             "type": "boolean",
         }
         sorted_array_fields = (
-            properties["python"]["properties"]["type-checker"],
             properties["github"]["properties"]["keep-workflow"],
+            properties["nb"]["properties"]["excluded-dependencies"],
+            properties["python"]["properties"]["type-checker"],
         )
         assert all(
             field["x-tombi-array-values-order"] == "ascending"
@@ -38,6 +39,15 @@ def describe_create_policy_schema() -> None:
         }
         assert schema["x-tombi-table-keys-order"] == "ascending"
         assert properties["format"]["x-tombi-table-keys-order"] == "ascending"
+
+    def orders_properties_alphabetically() -> None:
+        properties = create_policy_schema()["properties"]
+        assert list(properties) == sorted(properties)
+        assert all(
+            list(section["properties"]) == sorted(section["properties"])
+            for section in properties.values()
+            if section.get("type") == "object" and "properties" in section
+        )
 
     def renders_stable_pretty_json() -> None:
         rendered = render_policy_schema()
