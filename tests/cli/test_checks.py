@@ -8,7 +8,7 @@ import pytest
 import typer
 from attrs import evolve
 
-from compwa_policy import _characterization
+from compwa_policy import characterization
 from compwa_policy.cli._checks import (
     ALL_GROUPS,
     CHECK_DEV_FILES_PATTERN,
@@ -73,8 +73,9 @@ _EXPECTED_CHECK_HOOKS = (
 
 def _clear_caches() -> None:
     match._git_ls_files_cmd.cache_clear()
-    _characterization.has_documentation.cache_clear()
-    _characterization.has_python_code.cache_clear()
+    characterization.has_documentation.cache_clear()
+    characterization.has_notebooks.cache_clear()
+    characterization.has_python_code.cache_clear()
     readthedocs._determine_docs_dir.cache_clear()
 
 

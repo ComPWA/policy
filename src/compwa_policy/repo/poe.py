@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
 
-from compwa_policy._characterization import has_documentation
+from compwa_policy.characterization import has_documentation
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
