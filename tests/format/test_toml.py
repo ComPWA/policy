@@ -264,6 +264,37 @@ def describe_tombi_configuration():
         assert "https://raw.githubusercontent.com/ComPWA/policy/v0.12.3/" in pyproject
         assert "compwa-policy.schema.json" in pyproject
 
+    def follows_tombi_table_order(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        (tmp_path / "uv.lock").touch()
+        (tmp_path / ".pre-commit-config.yaml").write_text(
+            dedent("""
+            repos:
+              - repo: https://github.com/ComPWA/policy
+                rev: v0.12.3
+                hooks:
+                  - id: check-dev-files
+        """).lstrip()
+        )
+        git_add(tmp_path)
+
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+
+        pyproject = (tmp_path / "pyproject.toml").read_text()
+        files_position = pyproject.index("[tool.tombi.files]")
+        format_position = pyproject.index("[tool.tombi.format.rules]")
+        lint_position = pyproject.index("[tool.tombi.lint.rules]")
+        schemas_position = pyproject.index("[[tool.tombi.schemas]]")
+        assert files_position < format_position < lint_position < schemas_position
+
     def replaces_taplo_and_tomlsort(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

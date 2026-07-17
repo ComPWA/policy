@@ -156,10 +156,13 @@ def _add_tombi_hook_and_config(
         ],
         files=git_ls_files(),
     )
-    expected = {
+    expected = {}
+    if excludes:
+        expected["files"] = {"exclude": to_toml_array(sorted(excludes, key=str.lower))}
+    expected.update({
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
         "lint": {"rules": {"key-empty": "off"}},
-    }
+    })
     schema_path = _get_policy_schema_path(precommit)
     if schema_path is not None:
         expected["schemas"] = [
@@ -169,8 +172,6 @@ def _add_tombi_hook_and_config(
                 "include": ["pyproject.toml"],
             }
         ]
-    if excludes:
-        expected["files"] = {"exclude": to_toml_array(sorted(excludes, key=str.lower))}
     tool = pyproject.get_table("tool", create=True)
     if tool.get("tombi") == expected:
         return
