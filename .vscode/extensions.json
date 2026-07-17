@@ -31,6 +31,7 @@
     "ms-python.mypy-type-checker",
     "ms-python.pylint",
     "ms-python.vscode-pylance",
+    "ms-python.vscode-python-envs",
     "ryanluker.vscode-coverage-gutters",
     "tamasfe.even-better-toml",
     "travisillig.vscode-json-stable-stringify",
