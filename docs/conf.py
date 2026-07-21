@@ -58,6 +58,7 @@ extensions = [
     "sphinx_api_relink",
     "sphinx_codeautolink",
     "sphinx_copybutton",
+    "sphinx_tippy",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
@@ -131,4 +132,10 @@ nitpicky = True
 primary_domain = "py"
 project = PACKAGE_NAME
 release = get_package_version(PACKAGE_NAME)
+tippy_anchor_parent_selector = "article.bd-article"
+tippy_props = {
+    "delay": [200, 100],
+    "maxWidth": 500,
+    "placement": "auto-start",
+}
 version = get_package_version(PACKAGE_NAME)

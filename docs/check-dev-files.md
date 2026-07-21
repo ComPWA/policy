@@ -70,7 +70,8 @@ Instead of repeating the same flags under `args:` in every `.pre-commit-config.y
 
 The table mirrors the subcommand tree. Shared options live at the top level, while
 subcommand-specific options live in nested tables. The following copyable example is
-generated from the settings schema and shows every built-in default:
+generated from the settings schema and shows every built-in default. Hover over an
+option to see what it does:
 
 ```{eval-rst}
 .. policy-settings::
