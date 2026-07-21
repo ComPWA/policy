@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 from sphinx_api_relink.helpers import get_branch_name, get_package_version
+
+sys.path.insert(0, str(Path(__file__).parent))
 
 BRANCH = get_branch_name()
 ORGANIZATION = "ComPWA"
@@ -48,6 +53,7 @@ copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
 default_role = "py:obj"
 extensions = [
+    "_ext.policy_settings",
     "myst_parser",
     "sphinx_api_relink",
     "sphinx_codeautolink",

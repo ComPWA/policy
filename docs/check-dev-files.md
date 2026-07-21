@@ -68,33 +68,17 @@ Instead of repeating the same flags under `args:` in every `.pre-commit-config.y
 2. the `[tool.compwa.policy]` table in `pyproject.toml`;
 3. the built-in default.
 
-The table is organized hierarchically, mirroring the subcommand tree: options shared by several checks live in the top-level table, while options that belong to a single subcommand live in a sub-table named after it. The `env` subcommand maps to a `setup` table, and environment variables are a plain nested table under `[tool.compwa.policy.setup.env]`:
+The table mirrors the subcommand tree. Shared options live at the top level, while
+subcommand-specific options live in nested tables. The following copyable example is
+generated from the settings schema and shows every built-in default:
 
-```toml
-[tool.compwa.policy]
-# options shared by several checks
-dev-python-version = "3.13"
-package-manager = "pixi"
-
-[tool.compwa.policy.python]
-imports-on-top = true
-type-checker = ["mypy", "pyright"]
-
-[tool.compwa.policy.nb]
-no-binder = true
-allowed-cell-metadata = ["scrolled"]
-
-# options of the `env` subcommand (uv, conda, pixi, direnv)
-[tool.compwa.policy.setup]
-keep-contributing-md = true
-
-# environment variables, as a plain TOML table
-[tool.compwa.policy.setup.env]
-PYTHONHASHSEED = "0"
-
-[tool.compwa.policy.repo]
-gitpod = true
+```{eval-rst}
+.. policy-settings::
+    :caption: pyproject.toml
 ```
+
+The `env` subcommand maps to the `setup` table. Environment variables can be added as
+key-value pairs under `[tool.compwa.policy.setup.env]`.
 
 Both the native TOML form (arrays, tables, booleans) and the legacy command-line string form (`"mypy,pyright"`, `"A=1,B=2"`) are accepted, so an existing `args:` list can be moved into `pyproject.toml` verbatim.
 
