@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+import tomlkit
 
 from compwa_policy.format.toml import (
     _add_tombi_hook_and_config,
@@ -263,6 +264,66 @@ def describe_tombi_configuration():
         assert 'root = "tool.compwa.policy"' in pyproject
         assert "https://raw.githubusercontent.com/ComPWA/policy/v0.12.3/" in pyproject
         assert "compwa-policy.schema.json" in pyproject
+
+    def preserves_repository_specific_schemas(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""
+                [project]
+                name = "x"
+
+                [[tool.tombi.schemas]]
+                root = "tool.pwa"
+                path = "pwa.schema.json"
+                include = ["pyproject.toml"]
+
+                [[tool.tombi.schemas]]
+                path = "pwa.schema.json"
+                include = ["pwa.toml"]
+
+                [[tool.tombi.schemas]]
+                root = "tool.compwa.policy"
+                path = "outdated-policy.schema.json"
+                include = ["pyproject.toml"]
+            """).lstrip()
+        )
+        (tmp_path / ".pre-commit-config.yaml").write_text(
+            dedent("""
+                repos:
+                  - repo: https://github.com/ComPWA/policy
+                    rev: v0.12.3
+                    hooks:
+                      - id: check-dev-files
+            """).lstrip()
+        )
+
+        with Session() as session:
+            _add_tombi_hook_and_config(session, session.precommit)
+
+        tombi = tomlkit.loads((tmp_path / "pyproject.toml").read_text())["tool"][
+            "tombi"
+        ]
+        assert tombi["schemas"] == [
+            {
+                "root": "tool.pwa",
+                "path": "pwa.schema.json",
+                "include": ["pyproject.toml"],
+            },
+            {
+                "path": "pwa.schema.json",
+                "include": ["pwa.toml"],
+            },
+            {
+                "root": "tool.compwa.policy",
+                "path": "https://raw.githubusercontent.com/ComPWA/policy/v0.12.3/compwa-policy.schema.json",
+                "include": ["pyproject.toml"],
+            },
+        ]
 
     def follows_tombi_table_order(
         tmp_path: Path,
