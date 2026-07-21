@@ -163,16 +163,22 @@ def _add_tombi_hook_and_config(
         "format": {"rules": {"indent-width": 4, "line-width": 88}},
         "lint": {"rules": {"key-empty": "off"}},
     })
+    tool = pyproject.get_table("tool", create=True)
+    tombi = tool.get("tombi", {})
+    schemas = [
+        schema
+        for schema in tombi.get("schemas", [])
+        if schema.get("root") != "tool.compwa.policy"
+    ]
     schema_path = _get_policy_schema_path(precommit)
     if schema_path is not None:
-        expected["schemas"] = [
-            {
-                "root": "tool.compwa.policy",
-                "path": schema_path,
-                "include": ["pyproject.toml"],
-            }
-        ]
-    tool = pyproject.get_table("tool", create=True)
+        schemas.append({
+            "root": "tool.compwa.policy",
+            "path": schema_path,
+            "include": ["pyproject.toml"],
+        })
+    if schemas:
+        expected["schemas"] = schemas
     if tool.get("tombi") == expected:
         return
     tool["tombi"] = expected
