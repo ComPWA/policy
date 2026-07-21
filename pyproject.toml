@@ -70,6 +70,7 @@ doc = [
     "sphinx-book-theme",
     "sphinx-codeautolink",
     "sphinx-copybutton",
+    "sphinx-tippy",
     "sphinxcontrib-typer",
 ]
 style = [
@@ -310,6 +311,7 @@ filterwarnings = [
 minversion = "9.0"
 testpaths = [
     "benchmarks",
+    "docs/_ext",
     "src",
     "tests",
 ]
