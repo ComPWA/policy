@@ -307,29 +307,29 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
     ignored_rules = {
         "any-type",
-        "missing-trailing-comma",
-        "missing-copyright-notice",
-        "undocumented-public-class",
-        "undocumented-public-method",
-        "undocumented-public-function",
-        "undocumented-magic-method",
-        "undocumented-public-init",
+        "DOC",  # do not check undocumented exceptions
+        "if-else-block-instead-of-if-exp",
         "incorrect-blank-line-before-class",  # conflicts with D211
-        "multi-line-summary-second-line",
+        "line-too-long",  # line-width already handled by Ruff formatter
+        "logging-f-string",
+        "missing-copyright-notice",
         "missing-dashed-underline-after-section",
         "missing-section-name-colon",
-        "DOC",  # do not check undocumented exceptions
-        "line-too-long",  # line-width already handled by Ruff formatter
-        "read-whole-file",
-        "write-whole-file",
-        "reimplemented-starmap",
-        "logging-f-string",
-        "single-line-implicit-string-concatenation",  # conflicts with formatter
-        "unspecified-encoding",
-        "pytest-fixture-incorrect-parentheses-style",
-        "PTH",  # do not enforce Path
+        "missing-trailing-comma",
+        "multi-line-summary-second-line",
         "non-empty-init-module",
-        "if-else-block-instead-of-if-exp",
+        "PTH",  # do not enforce Path
+        "pytest-fixture-incorrect-parentheses-style",
+        "read-whole-file",
+        "reimplemented-starmap",
+        "single-line-implicit-string-concatenation",  # conflicts with formatter
+        "undocumented-magic-method",
+        "undocumented-public-class",
+        "undocumented-public-function",
+        "undocumented-public-init",
+        "undocumented-public-method",
+        "unspecified-encoding",
+        "write-whole-file",
     }
     if "3.6" in pyproject.get_supported_python_versions():
         ignored_rules.add("outdated-version-block")
@@ -368,26 +368,26 @@ def __update_per_file_ignores(
             key=key,
             expected_ignores={
                 "ANN",  # global-statement
-                "useless-expression",
+                "assert",
                 "C90",  # complex-structure
                 "D",  # pydocstyle
-                "too-many-blank-lines",  # specific for jupyterlab-lsp
-                "useless-semicolon",
-                "non-lowercase-variable-in-function",
-                "mixed-case-variable-in-global-scope",
-                "PLR09",  # complicated logic
-                "magic-value-comparison",
-                "global-variable-not-assigned",
                 "global-statement",
-                "assert",
+                "global-variable-not-assigned",
+                "magic-value-comparison",
+                "mixed-case-variable-in-global-scope",
+                "non-lowercase-variable-in-function",
+                "PLR09",  # complicated logic
                 "T20",  # print found
                 "TC00",  # type-checking block
+                "too-many-blank-lines",  # specific for jupyterlab-lsp
+                "useless-expression",
+                "useless-semicolon",
                 *___get_existing_nbqa_ignores(pyproject),
             },
             banned_ignores={
-                "undefined-name",
                 "explicit-string-concatenation",
                 "TCH00",  # https://astral.sh/blog/ruff-v0.8.0#new-error-codes-for-flake8-type-checking-rules
+                "undefined-name",
             },
         )
     docs_dir = "docs"
@@ -397,8 +397,8 @@ def __update_per_file_ignores(
             pyproject,
             key=key,
             expected_ignores={
-                "implicit-namespace-package",
                 "assert",
+                "implicit-namespace-package",
                 "request-without-timeout",
             },
         )
@@ -425,14 +425,14 @@ def __update_per_file_ignores(
             key=key,
             expected_ignores={
                 "ANN",  # don't check missing types
-                "D",  # no need for pydocstyle
+                "assert",
                 "boolean-type-hint-positional-argument",
-                "implicit-namespace-package",
+                "D",  # no need for pydocstyle
                 "float-equality-comparison",
+                "implicit-namespace-package",
                 "import-private-name",
                 "magic-value-comparison",
                 "no-self-use",
-                "assert",
                 "private-member-access",
                 "T20",  # allow print and pprint
             },

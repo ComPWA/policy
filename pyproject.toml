@@ -391,7 +391,10 @@ split-on-trailing-comma = false
     "print",
     "request-without-timeout",
 ]
-"docs/conf.py" = ["undocumented-public-module"]
+"docs/conf.py" = [
+    "builtin-variable-shadowing",
+    "undocumented-public-module",
+]
 "setup.py" = ["undocumented-public-module"]
 "src/compwa_policy/config.py" = ["undocumented-public-module"]
 "tests/*" = [
