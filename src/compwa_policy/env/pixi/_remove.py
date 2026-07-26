@@ -25,5 +25,5 @@ def remove_pixi_configuration(session: Session, /) -> None:
     if pyproject is None:
         return
     if pyproject.has_table("tool.pixi"):
-        del pyproject._document["tool"]["pixi"]  # noqa: SLF001
+        del pyproject._document["tool"]["pixi"]  # ruff: ignore[private-member-access]
         pyproject.changelog.append("Removed Pixi configuration table")

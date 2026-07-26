@@ -92,7 +92,7 @@ def _remove_pip_constraint_files() -> Changelog:
 def _remove_uv_configuration(pyproject: ModifiablePyproject | None) -> None:
     if pyproject is None:
         return
-    readonly_pyproject = pyproject._document  # noqa: SLF001
+    readonly_pyproject = pyproject._document  # ruff: ignore[private-member-access]
     if "tool" not in readonly_pyproject or "uv" not in readonly_pyproject["tool"]:
         return
     tool_table = pyproject.get_table("tool")

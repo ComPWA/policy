@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class _IncreasedYamlIndent(yaml.Dumper):
-    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:  # noqa: ARG002
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:  # ruff: ignore[unused-method-argument]
         return super().increase_indent(flow, indentless=False)
 
     def write_line_break(self, data: str | None = None) -> None:

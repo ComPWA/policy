@@ -141,7 +141,7 @@ def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
 
 
 def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None:
-    tools = pyproject._document.get("tool")  # noqa: SLF001
+    tools = pyproject._document.get("tool")  # ruff: ignore[private-member-access]
     if isinstance(tools, dict) and tool_table in tools:
         tools.pop(tool_table)
         msg = f"Removed [tool.{tool_table}] table"

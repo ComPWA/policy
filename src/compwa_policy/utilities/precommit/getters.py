@@ -1,9 +1,9 @@
-# noqa: D100
+# ruff: ignore[undocumented-public-module]
 from __future__ import annotations
 
 import operator
 import re
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 from typing import TYPE_CHECKING
 
 from packaging.version import InvalidVersion, Version
@@ -67,8 +67,8 @@ def get_latest_rev(repo_url: str, fallback: str = "PLEASE-UPDATE") -> str:
 
 def _git_ls_remote_tags(repo_url: str) -> str:
     try:
-        return subprocess.check_output(  # noqa: S603
-            ["git", "ls-remote", "--tags", "--refs", repo_url],  # noqa: S607
+        return subprocess.check_output(  # ruff: ignore[subprocess-without-shell-equals-true]
+            ["git", "ls-remote", "--tags", "--refs", repo_url],  # ruff: ignore[start-process-with-partial-path]
             stderr=subprocess.DEVNULL,
             text=True,
             timeout=10,

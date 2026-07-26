@@ -65,7 +65,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     if config is None:
         return
     if config.has_table("tool.tox"):
-        del config._document["tool"]["tox"]  # noqa: SLF001
+        del config._document["tool"]["tox"]  # ruff: ignore[private-member-access]
         msg = f"Removed deprecated tool.tox section from {CONFIG_PATH.pyproject}"
         config.changelog.append(msg)
     if config.has_table("tool.poe"):

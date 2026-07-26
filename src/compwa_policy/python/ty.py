@@ -132,7 +132,7 @@ def _remove_ty(session: Session, /) -> None:
         config_path.unlink()
         pyproject.changelog.append(f"Removed {config_path}")
     if pyproject.has_table("tool.ty"):
-        del pyproject._document["tool"]["ty"]  # noqa: SLF001
+        del pyproject._document["tool"]["ty"]  # ruff: ignore[private-member-access]
         pyproject.changelog.append("Removed ty configuration table")
     pyproject.remove_dependency("ty")
     precommit.remove_hook("ty")

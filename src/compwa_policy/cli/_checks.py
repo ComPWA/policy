@@ -65,7 +65,7 @@ def check_dev_python_version(args: Arguments) -> int:
     if CONFIG_PATH.pyproject.exists():
         supported_versions = Pyproject.load().get_supported_python_versions()
         if supported_versions and args.dev_python_version not in supported_versions:
-            print(  # noqa: T201
+            print(  # ruff: ignore[print]
                 f"The specified development Python version {args.dev_python_version} is"
                 " not listed in the supported Python versions of pyproject.toml:"
                 f" {', '.join(sorted(supported_versions))}"
@@ -133,10 +133,10 @@ def _run(args: Arguments, groups: frozenset[Group]) -> int:
             run_checks(session, args, ctx, groups=groups)
             changes = session.flush()
     except PolicyError as exception:
-        print("\n".join(exception.args))  # noqa: T201
+        print("\n".join(exception.args))  # ruff: ignore[print]
         return 1
     if changes:
-        print("\n--------------------\n".join(changes))  # noqa: T201
+        print("\n--------------------\n".join(changes))  # ruff: ignore[print]
         return 1
     return 0
 

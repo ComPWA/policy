@@ -59,7 +59,7 @@ def append_safe(session: Session, /, expected_line: str, path: Path) -> bool:
     return True
 
 
-def contains_line(input: Path | io.TextIOBase | str, expected_line: str) -> bool:  # noqa: A002
+def contains_line(input: Path | io.TextIOBase | str, expected_line: str) -> bool:  # ruff: ignore[builtin-argument-shadowing]
     if isinstance(input, io.TextIOBase):
         lines = input.readlines()
     else:
@@ -82,7 +82,7 @@ def hash_file(path: Path | str) -> str:
 
 
 def read(
-    input: Path | io.TextIOBase | str,  # noqa: A002
+    input: Path | io.TextIOBase | str,  # ruff: ignore[builtin-argument-shadowing]
     *,
     session: Session | None = None,
 ) -> str:

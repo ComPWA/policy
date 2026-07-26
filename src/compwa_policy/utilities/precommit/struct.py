@@ -1,4 +1,4 @@
-# noqa: D100
+# ruff: ignore[undocumented-public-module]
 from __future__ import annotations
 
 import sys

@@ -15,7 +15,7 @@ from compwa_policy.cli._options import (
 )
 
 
-def env(  # noqa: PLR0917
+def env(  # ruff: ignore[too-many-positional-arguments]
     python: Python = None,
     dev_python_version: DevPythonVersion = None,
     package_manager: PackageManager = None,

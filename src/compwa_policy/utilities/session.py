@@ -81,7 +81,7 @@ class Session(AbstractContextManager):
             loaded = resource.load()
             self._loaded[key] = loaded
         if self._is_in_context and key not in self._entered:
-            loaded.__enter__()  # noqa: PLC2801
+            loaded.__enter__()  # ruff: ignore[unnecessary-dunder-call]
             self._entered.add(key)
         return cast("R", loaded)
 
@@ -94,7 +94,7 @@ class Session(AbstractContextManager):
             loaded = ModifiablePath.load_path(normalized)
             self._loaded[key] = loaded
         if self._is_in_context and key not in self._entered:
-            loaded.__enter__()  # noqa: PLC2801
+            loaded.__enter__()  # ruff: ignore[unnecessary-dunder-call]
             self._entered.add(key)
         return cast("ModifiablePath", loaded)
 

@@ -130,7 +130,7 @@ def get_sub_table(
     return cast("MutableMapping[str, Any]", table)
 
 
-def remove_dependency(  # noqa: C901, PLR0912
+def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
     pyproject: PyprojectTOML,
     package: str,
     ignored_sections: Iterable[str] | None = None,

@@ -113,10 +113,10 @@ def _rename_workspace_table(config: ModifiablePyproject) -> None:
     project = __get_table(config, "project")
     workspace = __get_table(config, "workspace", create=True)
     workspace.update(project)
-    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
-        del config._document["tool"]["pixi"]["project"]  # noqa: SLF001
+    if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
+        del config._document["tool"]["pixi"]["project"]  # ruff: ignore[private-member-access]
     else:
-        del config._document["project"]  # noqa: SLF001  # ty:ignore[invalid-argument-type]
+        del config._document["project"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
     msg = 'Renamed "project" table to "workspace" in Pixi configuration'
     config.changelog.append(msg)
 
@@ -136,7 +136,7 @@ def _define_minimal_project(
         channels=["conda-forge"],
         platforms=["linux-64"],
     )
-    if config._source == CONFIG_PATH.pixi_toml:  # noqa: SLF001
+    if config._source == CONFIG_PATH.pixi_toml:  # ruff: ignore[private-member-access]
         pyproject = session.pyproject
         if pyproject is not None:
             minimal_settings["name"] = pyproject.get_package_name()
@@ -375,12 +375,12 @@ def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
 def __get_table(
     config: ModifiablePyproject, key: str, create: bool = False
 ) -> MutableMapping[str, Any]:
-    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+    if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
         key = f"tool.pixi.{key}"
     return config.get_table(key, create=create)
 
 
 def __has_table(config: Pyproject, key: str) -> bool:
-    if config._source == CONFIG_PATH.pyproject:  # noqa: SLF001
+    if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
         key = f"tool.pixi.{key}"
     return config.has_table(key)

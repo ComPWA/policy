@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     directories=(CONFIG_PATH.github_workflow_dir.parent,),
     patterns=("(.*/)?Manifest\\.toml",),
 )
-def check(session: Session, args: Arguments, _: CheckContext) -> None:  # noqa: C901
+def check(session: Session, args: Arguments, _: CheckContext) -> None:  # ruff: ignore[complex-structure]
     frequency = args.upgrade_frequency
 
     def dump_dependabot_config() -> Changelog:

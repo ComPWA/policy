@@ -82,7 +82,7 @@ app.command("bootstrap", no_args_is_help=False)(bootstrap.bootstrap)
 
 
 @app.callback(invoke_without_command=True)
-def run_everything(  # noqa: PLR0917
+def run_everything(  # ruff: ignore[too-many-positional-arguments]
     ctx: typer.Context,
     python: Python = None,
     dev_python_version: DevPythonVersion = None,

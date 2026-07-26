@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 from functools import cache
 from typing import TYPE_CHECKING
 
@@ -41,7 +41,7 @@ def _git_ls_files_cmd(*glob: str, untracked: bool = False) -> str:
     cmd = ["git", "ls-files", *glob]
     if untracked:
         cmd.extend(["--cached", "--exclude-standard", "--others"])
-    return subprocess.check_output(cmd).decode("utf-8")  # noqa: S603
+    return subprocess.check_output(cmd).decode("utf-8")  # ruff: ignore[subprocess-without-shell-equals-true]
 
 
 def matches_files(pattern: str, files: list[str]) -> bool:

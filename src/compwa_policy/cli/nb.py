@@ -15,7 +15,7 @@ from compwa_policy.cli._options import (
 )
 
 
-def nb(  # noqa: PLR0917
+def nb(  # ruff: ignore[too-many-positional-arguments]
     package_manager: PackageManager = None,
     dev_python_version: DevPythonVersion = None,
     no_binder: NoBinder = None,
