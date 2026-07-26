@@ -79,6 +79,10 @@ def describe_main():
         assert "[tool.black]" not in pyproject  # black settings removed
         assert "[tool.ruff.lint]" in pyproject  # linting config migrated
         assert 'select = ["ALL"]' in pyproject
+        assert '"any-type"' in pyproject
+        assert '"ANN401"' not in pyproject
+        assert '"undocumented-public-module"' in pyproject
+        assert '"D100"' not in pyproject
         assert '"*.ipynb"' in pyproject  # per-file-ignores for notebooks
         assert 'ignorelist = ["display"]' in pyproject
         assert "builtins-ignorelist" not in pyproject

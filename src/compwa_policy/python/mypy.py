@@ -75,7 +75,7 @@ def _remove_mypy(session: Session, /) -> None:
     if pyproject is None:
         return
     if pyproject.has_table("tool.mypy"):
-        del pyproject._document["tool"]["mypy"]  # noqa: SLF001
+        del pyproject._document["tool"]["mypy"]  # ruff: ignore[private-member-access]
         pyproject.changelog.append("Removed mypy configuration table")
     pyproject.remove_dependency("mypy")
     precommit.remove_hook("mypy")

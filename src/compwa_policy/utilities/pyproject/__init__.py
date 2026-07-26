@@ -323,7 +323,7 @@ def has_pyproject_package_name(session: Session, /) -> bool:
 
 
 def has_dependency(pyproject: Pyproject, package: str | tuple[str, ...]) -> bool:
-    toml_document: PyprojectTOML = pyproject._document  # noqa: SLF001
+    toml_document: PyprojectTOML = pyproject._document  # ruff: ignore[private-member-access]
     dependencies = set(toml_document.get("project", {}).get("dependencies", []))
     for group in toml_document.get("dependency-groups", {}).values():
         dependencies |= {x for x in group if isinstance(x, str)}

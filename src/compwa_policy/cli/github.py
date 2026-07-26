@@ -29,7 +29,7 @@ from compwa_policy.cli._options import (
 )
 
 
-def github(  # noqa: PLR0917
+def github(  # ruff: ignore[too-many-positional-arguments]
     python: Python = None,
     dev_python_version: DevPythonVersion = None,
     allow_labels: AllowLabels = None,

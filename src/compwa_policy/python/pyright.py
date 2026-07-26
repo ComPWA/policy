@@ -143,7 +143,7 @@ def _remove_pyright(session: Session, /) -> None:
         msg = f"Removed old pyright configuration file {pyright_config}"
         pyproject.changelog.append(msg)
     if pyproject.has_table("tool.pyright"):
-        del pyproject._document["tool"]["pyright"]  # noqa: SLF001
+        del pyproject._document["tool"]["pyright"]  # ruff: ignore[private-member-access]
         msg = "Removed pyright configuration from pyproject.toml"
         pyproject.changelog.append(msg)
     pyproject.remove_dependency("pyright")

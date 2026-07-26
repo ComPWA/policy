@@ -56,7 +56,7 @@ class ModifiableReadme(ModifiableResource):
             error_message += f"{self._source} contains no title, so cannot add badge"
             raise PolicyError(error_message)
         insert_position = 0
-        for insert_position, line in enumerate(self._lines):  # noqa: B007
+        for insert_position, line in enumerate(self._lines):  # ruff: ignore[unused-loop-control-variable]
             if line.startswith("#"):
                 break
         self._lines.insert(insert_position + 1, f"\n{badge}")

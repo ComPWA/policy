@@ -17,7 +17,7 @@ from compwa_policy.cli._options import (
 )
 
 
-def python(  # noqa: PLR0917
+def python(  # ruff: ignore[too-many-positional-arguments]
     python: Python = None,
     dev_python_version: DevPythonVersion = None,
     excluded_python_versions: ExcludedPythonVersions = None,

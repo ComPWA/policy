@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def format_config(
-    input: Path | io.TextIOBase | str,  # noqa: A002
+    input: Path | io.TextIOBase | str,  # ruff: ignore[builtin-argument-shadowing]
     output: Path | io.TextIOBase | str,
     additional_rules: Iterable[Callable[[str], str]] | None = None,
 ) -> None:

@@ -43,7 +43,7 @@ def main(precommit: Precommit | None = None) -> int:
         if any(hooks_updated):
             _write_precommit_config(config)
     if errors:
-        print("\n--------------------\n".join(error.strip() for error in errors))  # noqa: T201
+        print("\n--------------------\n".join(error.strip() for error in errors))  # ruff: ignore[print]
         return 1
     _update_policy_schema()
     return 0

@@ -50,7 +50,7 @@ autosectionlabel_prefix_document = True
 codeautolink_concat_default = True
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
-copyright = "2023, Common Partial Wave Analysis"  # noqa: A001
+copyright = "2023, Common Partial Wave Analysis"
 default_role = "py:obj"
 extensions = [
     "_ext.policy_settings",

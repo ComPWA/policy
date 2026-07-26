@@ -1,5 +1,5 @@
 import os
-import subprocess  # noqa: S404
+import subprocess  # ruff: ignore[suspicious-subprocess-import]
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -50,7 +50,7 @@ def test_dir() -> Path:
 @pytest.fixture
 def git_init() -> GitCommand:
     def run(directory: Path) -> None:
-        subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # noqa: S607
+        subprocess.run(["git", "init", "-q"], cwd=directory, check=True)  # ruff: ignore[start-process-with-partial-path]
 
     return run
 
@@ -58,7 +58,7 @@ def git_init() -> GitCommand:
 @pytest.fixture
 def git_add() -> GitCommand:
     def run(directory: Path) -> None:
-        subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # noqa: S607
+        subprocess.run(["git", "add", "-A"], cwd=directory, check=True)  # ruff: ignore[start-process-with-partial-path]
 
     return run
 
@@ -71,7 +71,7 @@ def git_commit(git_init: GitCommand, git_add: GitCommand) -> GitCommand:
         git_init(directory)
         git_add(directory)
         subprocess.run(
-            ["git", "commit", "-qm", "init", "--allow-empty"],  # noqa: S607
+            ["git", "commit", "-qm", "init", "--allow-empty"],  # ruff: ignore[start-process-with-partial-path]
             cwd=directory,
             check=True,
         )

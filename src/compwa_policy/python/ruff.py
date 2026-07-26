@@ -141,7 +141,7 @@ def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
 
 
 def __remove_tool_table(pyproject: ModifiablePyproject, tool_table: str) -> None:
-    tools = pyproject._document.get("tool")  # noqa: SLF001
+    tools = pyproject._document.get("tool")  # ruff: ignore[private-member-access]
     if isinstance(tools, dict) and tool_table in tools:
         tools.pop(tool_table)
         msg = f"Removed [tool.{tool_table}] table"
@@ -306,33 +306,33 @@ def __update_ruff_format_settings(pyproject: ModifiablePyproject) -> None:
 def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
     settings = pyproject.get_table("tool.ruff.lint", create=True)
     ignored_rules = {
-        "ANN401",  # allow typing.Any
-        "COM812",  # missing trailing comma
-        "CPY001",  # don't add copyright
-        "D101",  # class docstring
-        "D102",  # method docstring
-        "D103",  # function docstring
-        "D105",  # magic method docstring
-        "D107",  # init docstring
-        "D203",  # conflicts with D211
-        "D213",  # multi-line docstring should start at the second line
-        "D407",  # missing dashed underline after section
-        "D416",  # section name does not have to end with a colon
+        "any-type",
         "DOC",  # do not check undocumented exceptions
-        "E501",  # line-width already handled by black
-        "FURB101",  # do not enforce Path.read_text()
-        "FURB103",  # do not enforce Path.write_text()
-        "FURB140",  # do not enforce itertools.starmap
-        "G004",  # allow f-string in logging
-        "ISC001",  # conflicts with ruff formatter
-        "PLW1514",  # allow missing encoding in open()
-        "PT001",  # allow pytest.fixture without parentheses
+        "if-else-block-instead-of-if-exp",
+        "incorrect-blank-line-before-class",  # conflicts with D211
+        "line-too-long",  # line-width already handled by Ruff formatter
+        "logging-f-string",
+        "missing-copyright-notice",
+        "missing-dashed-underline-after-section",
+        "missing-section-name-colon",
+        "missing-trailing-comma",
+        "multi-line-summary-second-line",
+        "non-empty-init-module",
         "PTH",  # do not enforce Path
-        "RUF067",  # `__init__` module should only contain docstrings and re-exports
-        "SIM108",  # allow if-else blocks
+        "pytest-fixture-incorrect-parentheses-style",
+        "read-whole-file",
+        "reimplemented-starmap",
+        "single-line-implicit-string-concatenation",  # conflicts with formatter
+        "undocumented-magic-method",
+        "undocumented-public-class",
+        "undocumented-public-function",
+        "undocumented-public-init",
+        "undocumented-public-method",
+        "unspecified-encoding",
+        "write-whole-file",
     }
     if "3.6" in pyproject.get_supported_python_versions():
-        ignored_rules.add("UP036")
+        ignored_rules.add("outdated-version-block")
     ignored_rules = ___merge_rules(settings.get("ignore", []), ignored_rules)
     minimal_settings = {
         "select": to_toml_array(["ALL"]),
@@ -368,26 +368,26 @@ def __update_per_file_ignores(
             key=key,
             expected_ignores={
                 "ANN",  # global-statement
-                "B018",  # useless-expression
+                "assert",
                 "C90",  # complex-structure
                 "D",  # pydocstyle
-                "E303",  # too many blank lines, specific for jupyterlab-lsp
-                "E703",  # useless-semicolon
-                "N806",  # non-lowercase-variable-in-function
-                "N816",  # mixed-case-variable-in-global-scope
+                "global-statement",
+                "global-variable-not-assigned",
+                "magic-value-comparison",
+                "mixed-case-variable-in-global-scope",
+                "non-lowercase-variable-in-function",
                 "PLR09",  # complicated logic
-                "PLR2004",  # magic-value-comparison
-                "PLW0602",  # global-variable-not-assigned
-                "PLW0603",  # global-statement
-                "S101",  # `assert` detected
                 "T20",  # print found
                 "TC00",  # type-checking block
+                "too-many-blank-lines",  # specific for jupyterlab-lsp
+                "useless-expression",
+                "useless-semicolon",
                 *___get_existing_nbqa_ignores(pyproject),
             },
             banned_ignores={
-                "F821",  # identify variables that are not defined
-                "ISC003",  # explicit-string-concatenation
+                "explicit-string-concatenation",
                 "TCH00",  # https://astral.sh/blog/ruff-v0.8.0#new-error-codes-for-flake8-type-checking-rules
+                "undefined-name",
             },
         )
     docs_dir = "docs"
@@ -397,9 +397,9 @@ def __update_per_file_ignores(
             pyproject,
             key=key,
             expected_ignores={
-                "INP001",  # implicit namespace package
-                "S101",  # `assert` detected
-                "S113",  # requests call without timeout
+                "assert",
+                "implicit-namespace-package",
+                "request-without-timeout",
             },
         )
     conf_path = f"{docs_dir}/conf.py"
@@ -409,11 +409,12 @@ def __update_per_file_ignores(
             pyproject,
             key=key,
             expected_ignores={
-                "D100",  # no module docstring
+                "builtin-variable-shadowing",
+                "undocumented-public-module",
             },
         )
     if os.path.exists("setup.py"):
-        minimal_settings["setup.py"] = to_toml_array(["D100"])
+        minimal_settings["setup.py"] = to_toml_array(["undocumented-public-module"])
     for tests_dir in ["benchmarks", "tests"]:
         if not os.path.exists(tests_dir):
             continue
@@ -425,15 +426,15 @@ def __update_per_file_ignores(
             key=key,
             expected_ignores={
                 "ANN",  # don't check missing types
+                "assert",
+                "boolean-type-hint-positional-argument",
                 "D",  # no need for pydocstyle
-                "FBT001",  # don't force booleans as keyword arguments
-                "INP001",  # allow implicit-namespace-package
-                "RUF069",  # float-equality-comparison
-                "PLC2701",  # private module imports
-                "PLR2004",  # magic-value-comparison
-                "PLR6301",  # allow non-static method
-                "S101",  # allow assert
-                "SLF001",  # allow access to private members
+                "float-equality-comparison",
+                "implicit-namespace-package",
+                "import-private-name",
+                "magic-value-comparison",
+                "no-self-use",
+                "private-member-access",
                 "T20",  # allow print and pprint
             },
         )

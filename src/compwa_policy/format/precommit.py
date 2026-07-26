@@ -52,7 +52,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
         precommit.changelog.append(msg)
 
 
-def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # noqa: PLR0911
+def __repo_sort_key(repo: Repo) -> tuple[int, str]:  # ruff: ignore[too-many-return-statements]
     repo_url = repo["repo"]
     if repo_url == "meta":
         return 0, repo_url

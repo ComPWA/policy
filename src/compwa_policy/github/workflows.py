@@ -72,14 +72,14 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     _recommend_vscode_extension(session)
 
 
-def _update_cd_workflow(  # noqa: C901
+def _update_cd_workflow(  # ruff: ignore[complex-structure]
     session: Session,
     /,
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
 ) -> None:
-    def update() -> Changelog:  # noqa: C901
+    def update() -> Changelog:  # ruff: ignore[complex-structure]
         yaml = create_prettier_round_trip_yaml()
         workflow_path = CONFIG_PATH.github_workflow_dir / "cd.yml"
         expected_data = yaml.load(COMPWA_POLICY_DIR / workflow_path)
@@ -126,7 +126,7 @@ def _update_pr_linting() -> Changelog:
     return []
 
 
-def _update_ci_workflow(  # noqa: PLR0917
+def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     session: Session,
     /,
     allow_deprecated: bool,
@@ -174,7 +174,7 @@ def _update_ci_workflow(  # noqa: PLR0917
     session.changelog += remove_workflow("clean-cache.yml")
 
 
-def _get_ci_workflow(  # noqa: PLR0917
+def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     path: Path,
     precommit: Precommit,
     doc_apt_packages: list[str],
