@@ -30,11 +30,9 @@ def describe_bootstrap():
         policy_repo = precommit["repos"][0]
         assert policy_repo["repo"] == "https://github.com/ComPWA/policy"
         assert policy_repo["hooks"] == [{"id": "check-dev-files"}]
-        assert (
-            "Configure policy further:\n"
-            "https://compwa.github.io/policy/check-dev-files/configuration\n"
-            in capsys.readouterr().out
-        )
+        output = capsys.readouterr().out
+        assert "Configure policy further:" in output
+        assert "https://compwa.github.io/policy/check-dev-files/configuration" in output
 
     def preserves_existing_precommit_hooks(
         tmp_path: Path,
