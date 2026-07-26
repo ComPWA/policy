@@ -409,6 +409,7 @@ def __update_per_file_ignores(
             pyproject,
             key=key,
             expected_ignores={
+                "builtin-variable-shadowing",
                 "undocumented-public-module",
             },
         )
