@@ -5,9 +5,11 @@ from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import yaml
+from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.format import precommit
 from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
+from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.session import Session
 
 if TYPE_CHECKING:
@@ -158,6 +160,49 @@ def describe_sort_hooks():
         ]
         positions = [result.index(token) for token in expected_order]
         assert positions == sorted(positions)
+
+    def keeps_repos_a_round_trip_sequence():
+        with _load("""
+                repos:
+                  - repo: https://github.com/psf/black
+                    hooks:
+                      - id: black
+                  - repo: meta
+                    hooks:
+                      - id: check-hooks-apply
+            """) as pc:
+            precommit._sort_hooks(pc)
+            repos = pc.document["repos"]
+        assert isinstance(repos, CommentedSeq)
+
+    def allows_updating_a_hook_after_sorting():
+        """Sorting used to replace ``repos`` with a plain `list`.
+
+        Later checks then crashed on the round-trip-only
+        ``yaml_set_comment_before_after_key``.
+        """
+        expected = Repo(
+            repo="https://github.com/streetsidesoftware/cspell-cli",
+            rev="v10.0.1",
+            hooks=[Hook(id="cspell", language_version="25.9.0")],
+        )
+        with _load("""
+                repos:
+                  - repo: https://github.com/ComPWA/policy
+                    rev: 0.9.2
+                    hooks:
+                      - id: check-dev-files
+                  - repo: meta
+                    hooks:
+                      - id: check-hooks-apply
+                  - repo: https://github.com/streetsidesoftware/cspell-cli
+                    rev: v10.0.1
+                    hooks:
+                      - id: cspell
+            """) as pc:
+            precommit._sort_hooks(pc)
+            pc.update_single_hook_repo(expected)
+        assert "language_version: 25.9.0" in pc.dumps()
 
 
 def describe_update_precommit_ci():

@@ -87,3 +87,30 @@ def describe_update_single_hook_precommit_repo():
         assert "id: check-foo" in result
         assert "entry: ty check" in result
         assert result.count("repo: local") == 1
+
+
+def describe_update_precommit_hook():
+    def appends_hook_to_repo_with_fewer_repos_than_hooks():
+        """The separator used to be keyed on the hook index, not the repo index.
+
+        Indexing ``repos`` with a hook index raises `IndexError` as soon as the
+        hook lands beyond the last repo.
+        """
+        config = dedent("""
+            repos:
+              - repo: meta
+                hooks:
+                  - id: check-hooks-apply
+
+              - repo: https://github.com/nbQA-dev/nbQA
+                rev: 1.9.1
+                hooks:
+                  - id: nbqa-black
+                  - id: nbqa-isort
+        """).lstrip()
+        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
+            precommit.update_hook(
+                repo_url="https://github.com/nbQA-dev/nbQA",
+                expected_hook=Hook(id="nbqa-pyupgrade"),
+            )
+        assert "id: nbqa-pyupgrade" in precommit.dumps()

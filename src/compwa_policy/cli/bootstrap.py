@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _POLICY_REPO = "https://github.com/ComPWA/policy"
+_CONFIGURATION_URL = "https://compwa.github.io/policy/check-dev-files/configuration"
 
 
 def bootstrap() -> None:
@@ -30,6 +31,7 @@ def bootstrap() -> None:
     rich.print(
         "[green]Bootstrapped policy configuration and the check-dev-files hook.[/green]"
     )
+    rich.print(f"Configure policy further:\n{_CONFIGURATION_URL}")
 
 
 def _write_policy_configuration(

@@ -47,7 +47,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
         return
     sorted_repos = sorted(repos, key=__repo_sort_key)
     if sorted_repos != repos:
-        precommit.document["repos"] = sorted_repos
+        repos[:] = sorted_repos  # in place, to keep the round-trip container
         msg = "Sorted all pre-commit hooks"
         precommit.changelog.append(msg)
 

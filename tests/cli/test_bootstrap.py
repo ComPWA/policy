@@ -12,6 +12,7 @@ def describe_bootstrap():
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init,
+        capsys: pytest.CaptureFixture,
     ) -> None:
         monkeypatch.chdir(tmp_path)
         git_init(tmp_path)
@@ -29,6 +30,9 @@ def describe_bootstrap():
         policy_repo = precommit["repos"][0]
         assert policy_repo["repo"] == "https://github.com/ComPWA/policy"
         assert policy_repo["hooks"] == [{"id": "check-dev-files"}]
+        output = capsys.readouterr().out
+        assert "Configure policy further:" in output
+        assert "https://compwa.github.io/policy/check-dev-files/configuration" in output
 
     def preserves_existing_precommit_hooks(
         tmp_path: Path,
