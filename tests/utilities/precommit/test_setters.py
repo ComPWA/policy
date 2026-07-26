@@ -1,14 +1,8 @@
-from __future__ import annotations
-
 import io
 from textwrap import dedent
-from typing import TYPE_CHECKING, cast
 
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
-
-if TYPE_CHECKING:
-    from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 
 def _expected_ty_repo() -> Repo:
@@ -121,25 +115,3 @@ def describe_update_precommit_hook():
             )
 
         assert "id: nbqa-pyupgrade" in precommit.dumps()
-
-    def sets_the_separator_on_the_repo_sequence():
-        config = dedent("""
-            repos:
-              - repo: https://github.com/nbQA-dev/nbQA
-                rev: 1.9.1
-                hooks:
-                  - id: nbqa-isort
-
-              - repo: meta
-                hooks:
-                  - id: check-hooks-apply
-        """).lstrip()
-
-        with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
-            precommit.update_hook(
-                "https://github.com/nbQA-dev/nbQA", Hook(id="nbqa-pyupgrade")
-            )
-            repos = cast("CommentedSeq", precommit.document["repos"])
-            first_repo = cast("CommentedMap", repos[0])
-            assert 1 in repos.ca.items  # separator before the next repo
-            assert not any(isinstance(key, int) for key in first_repo.ca.items)

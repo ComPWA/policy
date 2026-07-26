@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from ruamel.yaml.comments import CommentedSeq
 from ruamel.yaml.tokens import CommentToken
 
 from compwa_policy.utilities import CONFIG_PATH
@@ -48,10 +47,7 @@ def _sort_hooks(precommit: ModifiablePrecommit) -> None:
         return
     sorted_repos = sorted(repos, key=__repo_sort_key)
     if sorted_repos != repos:
-        if isinstance(repos, CommentedSeq):
-            repos[:] = sorted_repos  # keep the round-trip container
-        else:
-            precommit.document["repos"] = sorted_repos
+        repos[:] = sorted_repos  # in place, to keep the round-trip container
         msg = "Sorted all pre-commit hooks"
         precommit.changelog.append(msg)
 
