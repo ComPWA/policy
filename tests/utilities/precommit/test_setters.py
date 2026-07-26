@@ -108,10 +108,9 @@ def describe_update_precommit_hook():
                   - id: nbqa-black
                   - id: nbqa-isort
         """).lstrip()
-
         with ModifiablePrecommit.load(io.StringIO(config)) as precommit:
             precommit.update_hook(
-                "https://github.com/nbQA-dev/nbQA", Hook(id="nbqa-pyupgrade")
+                repo_url="https://github.com/nbQA-dev/nbQA",
+                expected_hook=Hook(id="nbqa-pyupgrade"),
             )
-
         assert "id: nbqa-pyupgrade" in precommit.dumps()
