@@ -184,7 +184,7 @@ def describe_sort_hooks():
         expected = Repo(
             repo="https://github.com/streetsidesoftware/cspell-cli",
             rev="v10.0.1",
-            hooks=[Hook(id="cspell", language_version="25.9.0")],
+            hooks=[Hook(id="cspell", args=["--gitignore"])],
         )
         with _load("""
                 repos:
@@ -202,7 +202,7 @@ def describe_sort_hooks():
             """) as pc:
             precommit._sort_hooks(pc)
             pc.update_single_hook_repo(expected)
-        assert "language_version: 25.9.0" in pc.dumps()
+        assert "args:\n          - --gitignore" in pc.dumps()
 
 
 def describe_update_precommit_ci():
