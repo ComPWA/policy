@@ -76,6 +76,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_doc_group(config)
             _set_test_group(config)
             _set_notebook_group(config, ctx.has_notebooks)
+            _set_quarto_linkcheck(config)
             _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
                 _set_all_task(config)
@@ -209,6 +210,25 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
     notebook_group = pyproject.get_table("tool.poe.groups.notebook", create=True)
     if __safe_update(notebook_group, "heading", "Notebooks"):
         msg = f"Set Poe the Poet notebook group heading in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
+    if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
+        return
+    pyproject.add_dependency("lychee-bin", dependency_group="doc")
+    tasks = _get_or_create_group_tasks(pyproject, "doc")
+    existing = cast("Mapping", tasks.get("linkcheck", {}))
+    if "lychee" in existing.get("cmd", ""):
+        return
+    expected = {
+        "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
+        "executor": to_inline_table({"group": "doc"}),
+        "help": "Check external links in the documentation (requires internet connection)",
+    }
+    if existing != expected:
+        tasks["linkcheck"] = expected
+        msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 
 
