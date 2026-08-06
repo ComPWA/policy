@@ -145,11 +145,11 @@ def describe_main():
         assert "lychee-bin" in pyproject.get_table("dependency-groups.doc")
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck == {
-            "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
             "executor": {"group": "doc"},
             "help": (
                 "Check external links in the documentation (requires internet connection)"
             ),
+            "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
         }
 
     def preserves_custom_lychee_extensions(
@@ -185,6 +185,40 @@ def describe_main():
             "tool.poe.groups.doc.tasks.linkcheck"
         )
         assert linkcheck["cmd"] == "lychee --extensions md,qmd,typ ."
+
+    def preserves_custom_lychee_shell(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                shell = "lychee . && lychee --extensions qmd ."
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        linkcheck = Pyproject.load(config_path).get_table(
+            "tool.poe.groups.doc.tasks.linkcheck"
+        )
+        assert linkcheck["shell"] == "lychee . && lychee --extensions qmd ."
 
 
 def describe_update_doclive():

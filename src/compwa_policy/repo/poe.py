@@ -219,12 +219,12 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     pyproject.add_dependency("lychee-bin", dependency_group="doc")
     tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = cast("Mapping", tasks.get("linkcheck", {}))
-    if "lychee" in existing.get("cmd", ""):
+    if "lychee" in existing.get("cmd", "") or "lychee" in existing.get("shell", ""):
         return
     expected = {
-        "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
         "executor": to_inline_table({"group": "doc"}),
         "help": "Check external links in the documentation (requires internet connection)",
+        "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
     }
     if existing != expected:
         tasks["linkcheck"] = expected
