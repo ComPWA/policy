@@ -216,11 +216,17 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
 def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
         return
-    pyproject.add_dependency("lychee-bin", dependency_group="doc")
     tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = cast("Mapping", tasks.get("linkcheck", {}))
     if "lychee" in existing.get("cmd", "") or "lychee" in existing.get("shell", ""):
+        if not has_dependency(pyproject, "lychee-bin"):
+            executor = existing.get("executor", {})
+            dependency_group = (
+                executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
+            )
+            pyproject.add_dependency("lychee-bin", dependency_group=dependency_group)
         return
+    pyproject.add_dependency("lychee-bin", dependency_group="doc")
     expected = {
         "executor": to_inline_table({"group": "doc"}),
         "help": "Check external links in the documentation (requires internet connection)",
