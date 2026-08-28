@@ -1,10 +1,15 @@
 import io
+import re
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from compwa_policy.github.workflows import check, remove_workflow
+from compwa_policy.github.workflows import (
+    check,
+    preserve_action_versions,
+    remove_workflow,
+)
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import PythonVersion
 from compwa_policy.utilities.session import Session
@@ -155,3 +160,45 @@ def describe_remove_workflow():
         changes = remove_workflow("ci-tests.yml")
         assert any("Removed deprecated ci-tests.yml" in m for m in changes)
         assert not workflow.exists()
+
+
+def describe_preserve_action_versions():
+    @pytest.mark.parametrize(
+        ("expected", "existing", "output"),
+        [
+            (
+                "  - uses: actions/checkout@v7\n  - uses: actions/checkout@v7\n",
+                "  - uses: actions/checkout@sha1 # v7.0.1\n",
+                "  - uses: actions/checkout@sha1 # v7.0.1\n  - uses: actions/checkout@v7\n",
+            ),
+            (
+                "  - uses: actions/checkout@v7\n",
+                "  - uses: ./.github/actions/local\n",
+                "  - uses: actions/checkout@v7\n",
+            ),
+            (
+                "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@v4\n",
+                "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
+                "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
+            ),
+        ],
+        ids=["repeated-action", "unknown-action", "reusable-workflow"],
+    )
+    def substitutes_references(expected: str, existing: str, output: str):
+        assert preserve_action_versions(expected, existing) == output
+
+
+def describe_action_pins():
+    def survive_a_rerun(workflows_repo: Path, run_check):
+        _run_main(run_check)
+        pinned = {}
+        for filename in ("cd.yml", "ci.yml", "clean-caches.yml", "pr-linting.yml"):
+            path = workflows_repo / _WORKFLOW_DIR / filename
+            pinned[filename] = re.sub(
+                r"@[^\s#]+", "@0123456789abcdef # pinned", path.read_text()
+            )
+            path.write_text(pinned[filename])
+        changes = _run_main(run_check)
+        assert not changes  # pins alone must not trigger an update
+        for filename, content in pinned.items():
+            assert (workflows_repo / _WORKFLOW_DIR / filename).read_text() == content

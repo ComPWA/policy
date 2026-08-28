@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
-from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, update_file
+from compwa_policy.github.workflows import copy_workflow_file
+from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
@@ -37,7 +38,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
                 f"Removed {', '.join(str(p) for p in paths_to_remove)}"
             )
         return
-    update_file(session, CONFIG_PATH.release_drafter_workflow)
+    copy_workflow_file(session, filename="release-drafter.yml")
     session.changelog += _update_draft(
         args.repo_name, args.repo_title, args.repo_organization
     )
