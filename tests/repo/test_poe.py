@@ -152,6 +152,37 @@ def describe_main():
             "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
         }
 
+    def configures_lychee_for_shorthand_linkcheck_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }]
+                doc = []
+
+                [tool.poe.tasks]
+                doc = "quarto render"
+                doclive = "quarto preview"
+                linkcheck = "echo linkcheck-not-supported"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(tmp_path / "pyproject.toml")
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["shell"] == (
+            "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
+        )
+
     def preserves_custom_lychee_extensions(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
@@ -309,6 +340,18 @@ def describe_check_no_uv_run():
             cmd = "uv run pytest"
         """).lstrip()
         pyproject = Pyproject.load(io.StringIO(config))
+        with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
+            _check_no_uv_run(pyproject)
+
+    def rejects_uv_run_in_shorthand_task(tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [tool.poe.tasks]
+                test = "uv run pytest"
+            """).lstrip()
+        )
+        pyproject = Pyproject.load(config_path)
         with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
             _check_no_uv_run(pyproject)
 

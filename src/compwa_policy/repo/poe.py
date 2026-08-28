@@ -217,7 +217,7 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
         return
     tasks = _get_or_create_group_tasks(pyproject, "doc")
-    existing = cast("Mapping", tasks.get("linkcheck", {}))
+    existing = __as_task_table(tasks.get("linkcheck", {}))
     if "lychee" in existing.get("cmd", "") or "lychee" in existing.get("shell", ""):
         if not has_dependency(pyproject, "lychee-bin"):
             executor = existing.get("executor", {})
@@ -250,7 +250,11 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
     offending_tasks = []
     for task_table in all_task_tables:
         for name, task in task_table.items():
-            if __has_uv_run(task.get("cmd", "")) and task.get("executor") != "simple":
+            task_config = __as_task_table(task)
+            if (
+                __has_uv_run(task_config.get("cmd", ""))
+                and task_config.get("executor") != "simple"
+            ):
                 offending_tasks.append(name)
     if offending_tasks:
         msg = (
@@ -514,6 +518,8 @@ def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     tasks = pyproject.get_table("tool.poe.groups.doc.tasks")
     if "doclive" not in tasks:
         return
+    if not isinstance(tasks["doclive"], MutableMapping):
+        tasks["doclive"] = __as_task_table(tasks["doclive"])
     doclive_task = cast("Table", tasks["doclive"])
     executor = cast("dict[str, Any]", doclive_task.get("executor", {}))
     if "doc" in pyproject.get_table("dependency-groups", fallback=set()):
@@ -533,6 +539,28 @@ def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     ]):
         msg = f"Updated Poe the Poet doclive task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def __as_task_table(task: Any, /) -> Mapping:
+    """Expand the shorthand notations for a Poe task into a task table.
+
+    A task defined as a string is a :code:`cmd` task, one defined as an array is a
+    :code:`sequence` task.
+
+    >>> __as_task_table("pytest -m slow")
+    {'cmd': 'pytest -m slow'}
+    >>> __as_task_table(["style", "test"])
+    {'sequence': ['style', 'test']}
+    >>> __as_task_table({"shell": "ls | wc -l"})
+    {'shell': 'ls | wc -l'}
+    """
+    if isinstance(task, str):
+        return {"cmd": task}
+    if isinstance(task, Mapping):
+        return task
+    if isinstance(task, Sequence):
+        return {"sequence": list(task)}
+    return {}
 
 
 def __safe_update(table: MutableMapping, key: str, expected_value: Any) -> bool:
