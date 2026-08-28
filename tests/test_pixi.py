@@ -8,12 +8,17 @@ from compwa_policy.env.pixi._update import (
     _clean_up_task_env,
     _define_combined_ci_job,
     _set_dev_python_version,
+    _set_quarto_linkcheck,
     _set_upgrade_task,
     _update_dev_environment,
     _update_docnb_and_doclive,
     update_pixi_configuration,
 )
-from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
+from compwa_policy.utilities.pyproject import (
+    ModifiablePixi,
+    ModifiablePyproject,
+    Pyproject,
+)
 from compwa_policy.utilities.session import Session
 
 _ENVIRONMENT_YML = dedent("""
@@ -205,6 +210,72 @@ def describe_set_dev_python_version():
             _set_dev_python_version(config, "3.12")
         assert any("Set Python version" in m for m in config.changelog)
         assert 'python = "3.12.*"' in config.dumps()
+
+
+def describe_set_quarto_linkcheck():
+    @pytest.mark.parametrize(
+        "config_case",
+        [
+            ("pyproject.toml", "tool.pixi.tasks", "tool.pixi.pypi-dependencies"),
+            ("pixi.toml", "tasks", "pypi-dependencies"),
+        ],
+        ids=["pyproject", "pixi-toml"],
+    )
+    def configures_native_pixi_task(
+        config_case: tuple[str, str, str],
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        config_name, tasks_table, dependencies_table = config_case
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / config_name
+        config_path.write_text(
+            "[tool.pixi]\n" if config_name == "pyproject.toml" else ""
+        )
+        git_add(tmp_path)
+
+        if config_name == "pyproject.toml":
+            config_resource = ModifiablePyproject.load()
+        else:
+            config_resource = ModifiablePixi.load()
+        with config_resource as config:
+            _set_quarto_linkcheck(config)
+
+        config = Pyproject.load(config_path)
+        assert config.get_table(dependencies_table)["lychee-bin"] == "*"
+        linkcheck = config.get_table(f"{tasks_table}.linkcheck")
+        assert linkcheck["cmd"] == (
+            "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
+        )
+
+    def preserves_custom_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pixi.toml"
+        original = dedent("""
+            [tasks]
+            linkcheck = "lychee --config lychee.toml ."
+
+            [pypi-dependencies]
+            lychee-bin = ">=0.24.0"
+        """).lstrip()
+        config_path.write_text(original)
+        git_add(tmp_path)
+
+        with ModifiablePixi.load() as config:
+            _set_quarto_linkcheck(config)
+
+        assert config_path.read_text() == original
 
 
 def describe_set_upgrade_task():
