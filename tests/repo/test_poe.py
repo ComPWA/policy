@@ -294,6 +294,41 @@ def describe_main():
         assert linkcheck["cmd"] == "lychee ."
         assert linkcheck["executor"] == {"group": "linkcheck"}
 
+    def adds_lychee_to_the_group_that_runs_the_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }]
+                doc = ["lychee-bin", "quarto-cli"]
+                linkcheck = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "lychee ."
+                executor = { group = "linkcheck" }
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        assert pyproject.get_table("dependency-groups.linkcheck") == ["lychee-bin"]
+
 
 def describe_update_doclive():
     def adds_executor():
