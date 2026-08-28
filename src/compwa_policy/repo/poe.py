@@ -218,7 +218,7 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
         return
     tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
-    if "lychee" in existing.get("cmd", "") or "lychee" in existing.get("shell", ""):
+    if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
         executor = existing.get("executor", {})
         dependency_group = (
             executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
@@ -252,7 +252,7 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
         for name, task in task_table.items():
             task_config = __as_task_table(task)
             if (
-                __has_uv_run(task_config.get("cmd", ""))
+                __mentions(task_config.get("cmd", ""), "uv run")
                 and task_config.get("executor") != "simple"
             ):
                 offending_tasks.append(name)
@@ -265,20 +265,24 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
         raise PolicyError(msg)
 
 
-def __has_uv_run(cmd: str | Sequence) -> bool:
-    """Check whether a Poe task command shells out to :code:`uv run`.
+def __mentions(command: Any, snippet: str) -> bool:
+    """Check whether a Poe task command contains a snippet.
 
-    >>> __has_uv_run("uv run pytest")
+    A command can be a string, but also an array of argv tokens or of sub-commands.
+
+    >>> __mentions("uv run pytest", "uv run")
     True
-    >>> __has_uv_run(["python", "-m", "pytest"])
+    >>> __mentions(["python", "-m", "pytest"], "uv run")
     False
-    >>> __has_uv_run(["uv run pytest", "coverage report"])
+    >>> __mentions(["uv run pytest", "coverage report"], "uv run")
+    True
+    >>> __mentions(["lychee", "--root-dir", "."], "lychee")
     True
     """
-    if isinstance(cmd, str):
-        return "uv run" in cmd
-    if isinstance(cmd, Sequence):
-        return any(__has_uv_run(part) for part in cmd)
+    if isinstance(command, str):
+        return snippet in command
+    if isinstance(command, Sequence):
+        return any(__mentions(part, snippet) for part in command)
     return False
 
 

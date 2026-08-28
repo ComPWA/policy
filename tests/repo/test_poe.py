@@ -251,6 +251,40 @@ def describe_main():
         )
         assert linkcheck["shell"] == "lychee . && lychee --extensions qmd ."
 
+    def preserves_lychee_in_a_cmd_array(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = ["lychee-bin"]
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = ["uvx", "lychee@0.18", "--root-dir", ".", "."]
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["cmd"] == ["uvx", "lychee@0.18", "--root-dir", ".", "."]
+        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin"]
+
     def preserves_existing_linkcheck_dependency_group(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
