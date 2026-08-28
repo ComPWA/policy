@@ -227,15 +227,13 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
             pyproject.add_dependency("lychee-bin", dependency_group=dependency_group)
         return
     pyproject.add_dependency("lychee-bin", dependency_group="doc")
-    expected = {
+    tasks["linkcheck"] = {
         "executor": to_inline_table({"group": "doc"}),
         "help": "Check external links in the documentation (requires internet connection)",
         "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
     }
-    if existing != expected:
-        tasks["linkcheck"] = expected
-        msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
-        pyproject.changelog.append(msg)
+    msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
+    pyproject.changelog.append(msg)
 
 
 def _check_no_uv_run(pyproject: Pyproject) -> None:
