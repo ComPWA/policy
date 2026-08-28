@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from compwa_policy.characterization import uses_quarto
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.repo.upgrade import (
     get_julia_manifest_paths,
@@ -267,7 +268,7 @@ def _set_dev_python_version(
 
 
 def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
-    if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
+    if not uses_quarto():
         return
     tasks = __get_table(config, "tasks", create=True)
     existing = tasks.get("linkcheck", {})

@@ -183,6 +183,45 @@ def describe_main():
             "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
         )
 
+    def keeps_sphinx_linkcheck_for_a_quarto_sub_site(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").touch()
+        (tmp_path / "docs" / "demo").mkdir()
+        (tmp_path / "docs" / "demo" / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = ["sphinx"]
+
+                [tool.poe.tasks.doc]
+                cmd = "sphinx-build --builder=html docs docs/_build/html"
+
+                [tool.poe.tasks.doclive]
+                cmd = "sphinx-autobuild docs docs/_build/html"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "sphinx-build --builder=linkcheck docs docs/_build/linkcheck"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["cmd"] == (
+            "sphinx-build --builder=linkcheck docs docs/_build/linkcheck"
+        )
+        assert "lychee-bin" not in pyproject.get_table("dependency-groups.doc")
+
     def preserves_custom_lychee_extensions(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

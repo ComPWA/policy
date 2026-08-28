@@ -36,6 +36,18 @@ def has_documentation() -> bool:
 
 
 @cache
+def uses_quarto() -> bool:
+    """Check whether Quarto is the documentation system of this repository.
+
+    A repository that is documented with Sphinx can contain a Quarto sub-site, so the
+    presence of a Sphinx configuration file takes precedence.
+    """
+    if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
+        return False
+    return not is_committed("conf.py", "**/conf.py", ":!:tests", untracked=True)
+
+
+@cache
 def has_notebooks() -> bool:
     return is_committed("*.ipynb", "**/*.ipynb", untracked=True)
 

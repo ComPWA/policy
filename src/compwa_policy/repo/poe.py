@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
 
-from compwa_policy.characterization import has_documentation
+from compwa_policy.characterization import has_documentation, uses_quarto
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
@@ -214,7 +214,7 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
 
 
 def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
-    if not is_committed("_quarto.yml", "**/_quarto.yml", ":!:tests", untracked=True):
+    if not uses_quarto():
         return
     tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
