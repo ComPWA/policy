@@ -120,9 +120,9 @@ def _clear_git_ls_files_cache() -> None:
     by an earlier test running in a different working directory.
     """
     match._git_ls_files_cmd.cache_clear()
-    characterization.has_documentation.cache_clear()
-    characterization.has_notebooks.cache_clear()
-    characterization.has_python_code.cache_clear()
+    for characterizer in vars(characterization).values():
+        if hasattr(characterizer, "cache_clear"):
+            characterizer.cache_clear()
     readthedocs._determine_docs_dir.cache_clear()
 
 

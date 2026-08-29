@@ -32,6 +32,7 @@ __all__ = [
         CONFIG_PATH.pyproject,
         CONFIG_PATH.vscode_settings,
     ],
+    patterns=("(.*/)?_quarto\\.yml",),
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     if "pixi" in args.package_manager:

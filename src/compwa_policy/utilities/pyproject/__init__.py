@@ -322,11 +322,31 @@ def has_pyproject_package_name(session: Session, /) -> bool:
     return pyproject.get_package_name() is not None
 
 
-def has_dependency(pyproject: Pyproject, package: str | tuple[str, ...]) -> bool:
+def has_dependency(
+    pyproject: Pyproject,
+    package: str | tuple[str, ...],
+    dependency_group: str | abc.Sequence[str] | None = None,
+) -> bool:
+    """Check whether a package is listed as a dependency.
+
+    If a :code:`dependency_group` is given, the search is limited to that group and the
+    groups it pulls in through :code:`include-group`.
+    """
     toml_document: PyprojectTOML = pyproject._document  # ruff: ignore[private-member-access]
-    dependencies = set(toml_document.get("project", {}).get("dependencies", []))
-    for group in toml_document.get("dependency-groups", {}).values():
-        dependencies |= {x for x in group if isinstance(x, str)}
+    dependency_groups = toml_document.get("dependency-groups", {})
+    if dependency_group is None:
+        dependencies = set(toml_document.get("project", {}).get("dependencies", []))
+        for group in dependency_groups.values():
+            dependencies |= {x for x in group if isinstance(x, str)}
+    else:
+        group_names = (
+            [dependency_group]
+            if isinstance(dependency_group, str)
+            else list(dependency_group)
+        )
+        dependencies = set()
+        for group_name in group_names:
+            dependencies |= _resolve_dependency_group(dependency_groups, group_name)
     if isinstance(package, str):
         packages_to_search = {package}
     else:
@@ -336,6 +356,36 @@ def has_dependency(pyproject: Pyproject, package: str | tuple[str, ...]) -> bool
         if dependency_name.lower() in packages_to_search:
             return True
     return False
+
+
+def _resolve_dependency_group(
+    dependency_groups: abc.Mapping[str, abc.Sequence], group_name: str
+) -> set[str]:
+    """Collect the dependencies of a group, following :code:`include-group` entries.
+
+    >>> groups = {
+    ...     "dev": [{"include-group": "doc"}, "pytest"],
+    ...     "doc": ["sphinx"],
+    ... }
+    >>> sorted(_resolve_dependency_group(groups, "dev"))
+    ['pytest', 'sphinx']
+    >>> _resolve_dependency_group(groups, "non-existent")
+    set()
+    """
+    dependencies: set[str] = set()
+    visited: set[str] = set()
+    to_visit = [group_name]
+    while to_visit:
+        name = to_visit.pop()
+        if name in visited:
+            continue
+        visited.add(name)
+        for item in dependency_groups.get(name, []):
+            if isinstance(item, str):
+                dependencies.add(item)
+            elif isinstance(item, abc.Mapping) and "include-group" in item:
+                to_visit.append(item["include-group"])
+    return dependencies
 
 
 def get_constraints_file(python_version: PythonVersion) -> Path | None:

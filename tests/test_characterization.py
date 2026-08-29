@@ -7,6 +7,7 @@ from compwa_policy.characterization import (
     characterize_repository,
     detect_package_manager,
     detect_type_checkers,
+    uses_quarto,
 )
 
 
@@ -28,6 +29,29 @@ def describe_characterize_repository():
         assert result.has_python_code is True
         assert result.package_manager == "pixi+uv"
         assert result.type_checkers == {"ty"}
+
+
+def describe_uses_quarto():
+    def recognizes_a_quarto_project(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, git_init
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+
+        assert uses_quarto() is True
+
+    def ignores_a_quarto_sub_site_of_a_sphinx_project(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, git_init
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        git_init(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").touch()
+        (tmp_path / "docs" / "demo").mkdir()
+        (tmp_path / "docs" / "demo" / "_quarto.yml").touch()
+
+        assert uses_quarto() is False
 
 
 def describe_detect_package_manager():

@@ -111,6 +111,297 @@ def describe_main():
             # no pyproject
             run_check(check, session, has_notebooks=False, package_manager="uv")
 
+    def configures_lychee_for_quarto(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        (tmp_path / "index.qmd").touch()
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }]
+                doc = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "echo linkcheck-not-supported"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(tmp_path / "pyproject.toml")
+        assert "lychee-bin" in pyproject.get_table("dependency-groups.doc")
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck == {
+            "executor": {"group": "doc"},
+            "help": (
+                "Check external links in the documentation (requires internet connection)"
+            ),
+            "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
+        }
+
+    def configures_lychee_for_shorthand_linkcheck_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }]
+                doc = []
+
+                [tool.poe.tasks]
+                doc = "quarto render"
+                doclive = "quarto preview"
+                linkcheck = "echo linkcheck-not-supported"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(tmp_path / "pyproject.toml")
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["shell"] == (
+            "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
+        )
+
+    def keeps_sphinx_linkcheck_for_a_quarto_sub_site(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").touch()
+        (tmp_path / "docs" / "demo").mkdir()
+        (tmp_path / "docs" / "demo" / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = ["sphinx"]
+
+                [tool.poe.tasks.doc]
+                cmd = "sphinx-build --builder=html docs docs/_build/html"
+
+                [tool.poe.tasks.doclive]
+                cmd = "sphinx-autobuild docs docs/_build/html"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "sphinx-build --builder=linkcheck docs docs/_build/linkcheck"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["cmd"] == (
+            "sphinx-build --builder=linkcheck docs docs/_build/linkcheck"
+        )
+        assert "lychee-bin" not in pyproject.get_table("dependency-groups.doc")
+
+    def preserves_custom_lychee_extensions(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "lychee --extensions md,qmd,typ ."
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        linkcheck = Pyproject.load(config_path).get_table(
+            "tool.poe.groups.doc.tasks.linkcheck"
+        )
+        assert linkcheck["cmd"] == "lychee --extensions md,qmd,typ ."
+
+    def preserves_custom_lychee_shell(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                shell = "lychee . && lychee --extensions qmd ."
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        linkcheck = Pyproject.load(config_path).get_table(
+            "tool.poe.groups.doc.tasks.linkcheck"
+        )
+        assert linkcheck["shell"] == "lychee . && lychee --extensions qmd ."
+
+    def preserves_lychee_in_a_cmd_array(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = ["lychee-bin"]
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = ["uvx", "lychee@0.18", "--root-dir", ".", "."]
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["cmd"] == ["uvx", "lychee@0.18", "--root-dir", ".", "."]
+        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin"]
+
+    def preserves_existing_linkcheck_dependency_group(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        original = dedent("""
+            [dependency-groups]
+            dev = [
+                { include-group = "doc" },
+                { include-group = "linkcheck" },
+            ]
+            doc = ["quarto-cli"]
+            linkcheck = ["lychee-bin>=0.24.0"]
+
+            [tool.poe.tasks.doc]
+            cmd = "quarto render"
+
+            [tool.poe.tasks.doclive]
+            cmd = "quarto preview"
+
+            [tool.poe.tasks.linkcheck]
+            cmd = "lychee ."
+            executor = { group = "linkcheck" }
+        """).lstrip()
+        config_path.write_text(original)
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        assert pyproject.get_table("dependency-groups.doc") == ["quarto-cli"]
+        assert pyproject.get_table("dependency-groups.linkcheck") == [
+            "lychee-bin>=0.24.0"
+        ]
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck["cmd"] == "lychee ."
+        assert linkcheck["executor"] == {"group": "linkcheck"}
+
+    def adds_lychee_to_the_group_that_runs_the_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }]
+                doc = ["lychee-bin", "quarto-cli"]
+                linkcheck = []
+
+                [tool.poe.tasks.doc]
+                cmd = "quarto render"
+
+                [tool.poe.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.tasks.linkcheck]
+                cmd = "lychee ."
+                executor = { group = "linkcheck" }
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        assert pyproject.get_table("dependency-groups.linkcheck") == ["lychee-bin"]
+
 
 def describe_update_doclive():
     def adds_executor():
@@ -157,6 +448,18 @@ def describe_check_no_uv_run():
             cmd = "uv run pytest"
         """).lstrip()
         pyproject = Pyproject.load(io.StringIO(config))
+        with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
+            _check_no_uv_run(pyproject)
+
+    def rejects_uv_run_in_shorthand_task(tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [tool.poe.tasks]
+                test = "uv run pytest"
+            """).lstrip()
+        )
+        pyproject = Pyproject.load(config_path)
         with pytest.raises(PolicyError, match=r"should not use 'uv run'"):
             _check_no_uv_run(pyproject)
 

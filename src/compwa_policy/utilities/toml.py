@@ -23,7 +23,7 @@ def to_toml_array(items: Iterable[Any], multiline: bool | None = None) -> Array:
     return array
 
 
-def to_inline_table(value: Mapping[str, Any]) -> InlineTable:
+def to_inline_table(value: Mapping[str, Any], /) -> InlineTable:
     table = tomlkit.inline_table()
     if value:
         table.append(None, tomlkit.ws(" "))

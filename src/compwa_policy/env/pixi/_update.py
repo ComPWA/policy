@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 import yaml
 
+from compwa_policy.characterization import uses_quarto
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.repo.upgrade import (
     get_julia_manifest_paths,
@@ -56,6 +58,7 @@ def update_pixi_configuration(
     _define_minimal_project(session, package_manager)
     _import_conda_dependencies(config)
     _import_conda_environment(config)
+    _set_quarto_linkcheck(config)
     if package_manager == "pixi+uv":
         _define_combined_ci_job(config)
     else:
@@ -262,6 +265,29 @@ def _set_dev_python_version(
         dependencies["python"] = version
         msg = f"Set Python version for Pixi developer environment to {version}"
         config.changelog.append(msg)
+
+
+def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
+    if not uses_quarto():
+        return
+    tasks = __get_table(config, "tasks", create=True)
+    existing = tasks.get("linkcheck", {})
+    if isinstance(existing, str):
+        command = existing
+    elif isinstance(existing, Mapping):
+        command = existing.get("cmd", "")
+    else:
+        command = ""
+    pypi_dependencies = __get_table(config, "pypi-dependencies", create=True)
+    if "lychee-bin" not in pypi_dependencies:
+        pypi_dependencies["lychee-bin"] = "*"
+        config.changelog.append("Added lychee-bin to Pixi dependencies")
+    if "lychee" in command:
+        return
+    tasks["linkcheck"] = {
+        "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
+    }
+    config.changelog.append("Set Pixi linkcheck task")
 
 
 def _set_upgrade_task(

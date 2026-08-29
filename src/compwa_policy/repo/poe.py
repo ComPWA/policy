@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import tomlkit
 
-from compwa_policy.characterization import has_documentation
+from compwa_policy.characterization import has_documentation, uses_quarto
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
@@ -76,6 +76,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_doc_group(config)
             _set_test_group(config)
             _set_notebook_group(config, ctx.has_notebooks)
+            _set_quarto_linkcheck(config)
             _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
                 _set_all_task(config)
@@ -212,6 +213,29 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
         pyproject.changelog.append(msg)
 
 
+def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
+    if not uses_quarto():
+        return
+    tasks = _get_or_create_group_tasks(pyproject, "doc")
+    existing = __as_task_table(tasks.get("linkcheck", {}))
+    if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
+        executor = existing.get("executor", {})
+        dependency_group = (
+            executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
+        )
+        if not has_dependency(pyproject, "lychee-bin", dependency_group):
+            pyproject.add_dependency("lychee-bin", dependency_group=dependency_group)
+        return
+    pyproject.add_dependency("lychee-bin", dependency_group="doc")
+    tasks["linkcheck"] = {
+        "executor": to_inline_table({"group": "doc"}),
+        "help": "Check external links in the documentation (requires internet connection)",
+        "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
+    }
+    msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
+    pyproject.changelog.append(msg)
+
+
 def _check_no_uv_run(pyproject: Pyproject) -> None:
     poe_table = pyproject.get_table("tool.poe")
     all_task_tables: list[Mapping] = [
@@ -224,7 +248,11 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
     offending_tasks = []
     for task_table in all_task_tables:
         for name, task in task_table.items():
-            if __has_uv_run(task.get("cmd", "")) and task.get("executor") != "simple":
+            task_config = __as_task_table(task)
+            if (
+                __mentions(task_config.get("cmd", ""), "uv run")
+                and task_config.get("executor") != "simple"
+            ):
                 offending_tasks.append(name)
     if offending_tasks:
         msg = (
@@ -235,20 +263,24 @@ def _check_no_uv_run(pyproject: Pyproject) -> None:
         raise PolicyError(msg)
 
 
-def __has_uv_run(cmd: str | Sequence) -> bool:
-    """Check whether a Poe task command shells out to :code:`uv run`.
+def __mentions(command: Any, snippet: str) -> bool:
+    """Check whether a Poe task command contains a snippet.
 
-    >>> __has_uv_run("uv run pytest")
+    A command can be a string, but also an array of argv tokens or of sub-commands.
+
+    >>> __mentions("uv run pytest", "uv run")
     True
-    >>> __has_uv_run(["python", "-m", "pytest"])
+    >>> __mentions(["python", "-m", "pytest"], "uv run")
     False
-    >>> __has_uv_run(["uv run pytest", "coverage report"])
+    >>> __mentions(["uv run pytest", "coverage report"], "uv run")
+    True
+    >>> __mentions(["lychee", "--root-dir", "."], "lychee")
     True
     """
-    if isinstance(cmd, str):
-        return "uv run" in cmd
-    if isinstance(cmd, Sequence):
-        return any(__has_uv_run(part) for part in cmd)
+    if isinstance(command, str):
+        return snippet in command
+    if isinstance(command, Sequence):
+        return any(__mentions(part, snippet) for part in command)
     return False
 
 
@@ -488,6 +520,8 @@ def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     tasks = pyproject.get_table("tool.poe.groups.doc.tasks")
     if "doclive" not in tasks:
         return
+    if not isinstance(tasks["doclive"], MutableMapping):
+        tasks["doclive"] = __as_task_table(tasks["doclive"])
     doclive_task = cast("Table", tasks["doclive"])
     executor = cast("dict[str, Any]", doclive_task.get("executor", {}))
     if "doc" in pyproject.get_table("dependency-groups", fallback=set()):
@@ -507,6 +541,28 @@ def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
     ]):
         msg = f"Updated Poe the Poet doclive task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def __as_task_table(task: Any, /) -> Mapping:
+    """Expand the shorthand notations for a Poe task into a task table.
+
+    A task defined as a string is a :code:`cmd` task, one defined as an array is a
+    :code:`sequence` task.
+
+    >>> __as_task_table("pytest -m slow")
+    {'cmd': 'pytest -m slow'}
+    >>> __as_task_table(["style", "test"])
+    {'sequence': ['style', 'test']}
+    >>> __as_task_table({"shell": "ls | wc -l"})
+    {'shell': 'ls | wc -l'}
+    """
+    if isinstance(task, str):
+        return {"cmd": task}
+    if isinstance(task, Mapping):
+        return task
+    if isinstance(task, Sequence):
+        return {"sequence": list(task)}
+    return {}
 
 
 def __safe_update(table: MutableMapping, key: str, expected_value: Any) -> bool:
