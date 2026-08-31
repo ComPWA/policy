@@ -29,9 +29,20 @@ def describe_get_expected_config() -> None:
 
         assert config["name-template"] == ("ComPWA actions $NEXT_PATCH_VERSION")
         assert config["tag-template"] == expected_version
-        # cspell:ignore rtfd
         assert "actions.rtfd.io/en/$NEXT_PATCH_VERSION" in config["template"]
         assert (
             f"ComPWA/actions/compare/$PREVIOUS_TAG...{expected_version}"
             in config["template"]
         )
+
+    def omits_documentation_link_without_readthedocs(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        config = _get_expected_config(
+            repo_name="actions",
+            repo_title="ComPWA actions",
+            organization="ComPWA",
+            tag_prefix="v",
+        )
+        assert "rtfd.io" not in config["template"]

@@ -5,6 +5,9 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
+from jinja2 import Environment, select_autoescape
+from ruamel.yaml.scalarstring import LiteralScalarString, PlainScalarString
+
 from compwa_policy.github.workflows import copy_workflow_file
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
@@ -64,26 +67,27 @@ def _get_expected_config(
     repo_name: str, repo_title: str, organization: str, tag_prefix: str
 ) -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
-    config = yaml.load(COMPWA_POLICY_DIR / CONFIG_PATH.release_drafter_config)
-    key = "name-template"
-    config[key] = config[key].replace("<<REPO_TITLE>>", repo_title)
-    key = "tag-template"
-    config[key] = config[key].replace(
-        "$NEXT_PATCH_VERSION", f"{tag_prefix}$NEXT_PATCH_VERSION"
+    template_path = COMPWA_POLICY_DIR / f"{CONFIG_PATH.release_drafter_config}.jinja"
+    config = yaml.load(template_path)
+    environment = Environment(
+        autoescape=select_autoescape(default_for_string=False),
+        keep_trailing_newline=True,
     )
-    key = "template"
-    lines = config[key].split("\n")
-    if not os.path.exists(CONFIG_PATH.readthedocs):
-        lines = lines[2:]
-    config[key] = (
-        "\n"
-        .join(lines)
-        .replace("<<ORGANIZATION>>", organization)
-        .replace("<<REPO_NAME>>", repo_name)
-        .replace(
-            "$PREVIOUS_TAG...$NEXT_PATCH_VERSION",
-            f"$PREVIOUS_TAG...{tag_prefix}$NEXT_PATCH_VERSION",
-        )
+    context = {
+        "HAS_READTHEDOCS": CONFIG_PATH.readthedocs.exists(),
+        "ORGANIZATION": organization,
+        "REPO_NAME": repo_name,
+        "REPO_TITLE": repo_title,
+        "TAG_PREFIX": tag_prefix,
+    }
+    config["name-template"] = PlainScalarString(
+        environment.from_string(config["name-template"]).render(context)
+    )
+    config["tag-template"] = PlainScalarString(
+        environment.from_string(config["tag-template"]).render(context)
+    )
+    config["template"] = LiteralScalarString(
+        environment.from_string(config["template"]).render(context)
     )
     return config
 
