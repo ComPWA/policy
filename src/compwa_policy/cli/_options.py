@@ -209,6 +209,13 @@ NoVersionBranches = Annotated[
         help="Do not push to matching major/minor version branches upon tagging.",
     ),
 ]
+TagPrefix = Annotated[
+    str | None,
+    typer.Option(
+        "--tag-prefix",
+        help="Prefix release tags, for example `v` to produce `v1.2.3`.",
+    ),
+]
 CiSkippedTests = Annotated[
     str | None,
     typer.Option(

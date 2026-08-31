@@ -61,6 +61,7 @@ def describe_build_arguments():
         assert args.keep_workflow == set()
         assert args.branch_coverage is True
         assert args.python is None
+        assert not args.tag_prefix
 
     def post_processes_options() -> None:
         # cspell:ignore myproj
@@ -98,6 +99,9 @@ def describe_pyproject_config():
             imports-on-top = true
             type-checker = ["mypy", "pyright"]
 
+            [tool.compwa.policy.github]
+            tag-prefix = "v"
+
             [tool.compwa.policy.nb]
             excluded-dependencies = ["python-lsp-server"]
             no-binder = true
@@ -116,6 +120,7 @@ def describe_pyproject_config():
             "branch_coverage": False,
             "imports_on_top": True,
             "type_checker": ["mypy", "pyright"],
+            "tag_prefix": "v",
             "no_binder": True,
             "excluded_dependencies": ["python-lsp-server"],
             "keep_contributing_md": True,
@@ -137,6 +142,9 @@ def describe_pyproject_config():
             branch-coverage = false
             type-checker = ["mypy", "pyright"]
 
+            [tool.compwa.policy.github]
+            tag-prefix = "v"
+
             [tool.compwa.policy.nb]
             excluded-dependencies = ["python-lsp-server"]
 
@@ -148,6 +156,7 @@ def describe_pyproject_config():
         assert args.dev_python_version == "3.12"
         assert args.branch_coverage is False
         assert args.excluded_dependencies == {"python-lsp-server"}
+        assert args.tag_prefix == "v"
         assert args.type_checker == {"mypy", "pyright"}
         assert args.environment_variables == "PYTHONHASHSEED=0"
 
@@ -208,10 +217,15 @@ def describe_build_policy():
             "--pytest-single-threaded",
             "--repo-name=policy",
             "--repo-title=ComPWA repository policy",
+            "--tag-prefix=v",
             "--type-checker=ty",
         ])
         assert policy == {
-            "github": {"allow-labels": True, "no-pypi": True},
+            "github": {
+                "allow-labels": True,
+                "no-pypi": True,
+                "tag-prefix": "v",
+            },
             "python": {
                 "branch-coverage": False,
                 "type-checker": ["ty"],

@@ -1,5 +1,5 @@
-name-template: <<REPO_TITLE>> $NEXT_PATCH_VERSION
-tag-template: $NEXT_PATCH_VERSION
+name-template: "{{ REPO_TITLE }} $NEXT_PATCH_VERSION"
+tag-template: "{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
 
 references:
   - main
@@ -34,8 +34,10 @@ replacers:
 sort-direction: ascending
 
 template: |
-  _See all documentation for this version [here](https://<<REPO_NAME>>.rtfd.io/en/$NEXT_PATCH_VERSION)._
+  {% if HAS_READTHEDOCS -%}
+  _See all documentation for this version [here](https://{{ REPO_NAME }}.rtfd.io/en/$NEXT_PATCH_VERSION)._
 
+  {% endif -%}
   $CHANGES
 
-  _The full changelog as commits can be found [here](https://github.com/<<ORGANIZATION>>/<<REPO_NAME>>/compare/$PREVIOUS_TAG...$NEXT_PATCH_VERSION)._
+  _The full changelog as commits can be found [here](https://github.com/{{ ORGANIZATION }}/{{ REPO_NAME }}/compare/$PREVIOUS_TAG...{{ TAG_PREFIX }}$NEXT_PATCH_VERSION)._

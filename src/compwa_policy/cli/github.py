@@ -24,6 +24,7 @@ from compwa_policy.cli._options import (
     RepoName,
     RepoOrganization,
     RepoTitle,
+    TagPrefix,
     UpgradeFrequency,
     build_arguments,
 )
@@ -42,6 +43,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
     no_milestones: NoMilestones = None,
     no_pypi: NoPypi = None,
     no_version_branches: NoVersionBranches = None,
+    tag_prefix: TagPrefix = None,
     ci_skipped_tests: CiSkippedTests = None,
     doc_apt_packages: DocAptPackages = None,
     environment_variables: EnvironmentVariables = None,
@@ -66,6 +68,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
         no_milestones=no_milestones,
         no_pypi=no_pypi,
         no_version_branches=no_version_branches,
+        tag_prefix=tag_prefix,
         ci_skipped_tests=ci_skipped_tests,
         doc_apt_packages=doc_apt_packages,
         environment_variables=environment_variables,
