@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     enabled=lambda args, _ctx: not args.no_github_actions,
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
+    repository = f"{args.repo_organization}/{args.repo_name}"
     if args.no_cd:
         session.changelog += remove_workflow("cd.yml")
     else:
@@ -49,6 +50,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             args.no_milestones,
             args.no_pypi,
             args.no_version_branches,
+            repository,
         )
     _update_ci_workflow(
         session,
@@ -60,9 +62,10 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         args.dev_python_version,
         args.pytest_single_threaded,
         _to_list(args.ci_skipped_tests),
+        repository,
     )
     if not args.keep_pr_linting:
-        copy_workflow_file(session, filename="pr-linting.yml")
+        copy_workflow_file(session, filename="pr-linting.yml", repository=repository)
     _recommend_vscode_extension(session)
 
 
@@ -72,6 +75,7 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
+    repository: str,
 ) -> None:
     def update() -> Changelog:  # ruff: ignore[complex-structure]
         yaml = create_prettier_round_trip_yaml()
@@ -92,7 +96,9 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
         if not expected_data["jobs"]:
             return remove_workflow("cd.yml")
         if not workflow_path.exists():
-            return update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(
+                yaml, expected_data, workflow_path, repository=repository
+            )
         existing_data = yaml.load(workflow_path)
         for name, job_def in existing_data["jobs"].items():
             if name in banned_jobs:
@@ -101,7 +107,9 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
                 continue
             expected_data["jobs"][name] = job_def
         if existing_data != expected_data:
-            return update_workflow(yaml, expected_data, workflow_path)
+            return update_workflow(
+                yaml, expected_data, workflow_path, repository=repository
+            )
         return []
 
     session.changelog += update()
@@ -119,6 +127,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
+    repository: str,
 ) -> None:
     def update() -> Changelog:
         precommit = session.precommit
@@ -140,10 +149,14 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
                 return ["Removed redundant CI workflows"]
         else:
             if not workflow_path.exists():
-                return update_workflow(yaml, expected_data, workflow_path)
+                return update_workflow(
+                    yaml, expected_data, workflow_path, repository=repository
+                )
             existing_data = yaml.load(workflow_path)
             if existing_data != expected_data:
-                return update_workflow(yaml, expected_data, workflow_path)
+                return update_workflow(
+                    yaml, expected_data, workflow_path, repository=repository
+                )
         return []
 
     session.changelog += update()
@@ -152,7 +165,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
         session.changelog += remove_workflow("ci-style.yml")
         session.changelog += remove_workflow("ci-tests.yml")
         session.changelog += remove_workflow("linkcheck.yml")
-    copy_workflow_file(session, filename="clean-caches.yml")
+    copy_workflow_file(session, filename="clean-caches.yml", repository=repository)
     session.changelog += remove_workflow("clean-cache.yml")
 
 
@@ -276,10 +289,14 @@ def __get_coverage_python_version() -> PythonVersion:
     return DEFAULT_DEV_PYTHON_VERSION
 
 
-def copy_workflow_file(session: Session, /, *, filename: str) -> None:
+def copy_workflow_file(
+    session: Session, /, *, filename: str, repository: str | None = None
+) -> None:
     """Install a workflow that is copied verbatim from the policy templates."""
     template_path = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
     expected_content = template_path.read_text()
+    if repository is not None:
+        expected_content = resolve_self_references(expected_content, repository)
     if not CONFIG_PATH.pip_constraints.exists():
         expected_content = __remove_constraint_pinning(expected_content)
     workflow_path = CONFIG_PATH.github_workflow_dir / filename
@@ -360,6 +377,32 @@ def preserve_action_versions(expected: str, existing: str) -> str:
     return _USES_PATTERN.sub(substitute, expected)
 
 
+def resolve_self_references(workflow: str, repository: str) -> str:
+    r"""Resolve references to the current repository at the workflow commit.
+
+    >>> resolve_self_references(
+    ...     "  uses: ComPWA/actions/.github/workflows/ci.yml@v4.0\n",
+    ...     "ComPWA/actions",
+    ... )
+    '  uses: $/.github/workflows/ci.yml\n'
+    >>> resolve_self_references(
+    ...     "  uses: ComPWA/actions/clean-caches@v4\n",
+    ...     "ComPWA/policy",
+    ... )
+    '  uses: ComPWA/actions/clean-caches@v4\n'
+    """
+
+    def substitute(match: re.Match) -> str:
+        reference = match["reference"]
+        repository_prefix = f"{repository}/"
+        if not reference.startswith(repository_prefix):
+            return match[0]
+        path = reference.removeprefix(repository_prefix).split("@", maxsplit=1)[0]
+        return f"{match['prefix']}$/{path}{match['comment']}"
+
+    return _USES_PATTERN.sub(substitute, workflow)
+
+
 def __collect_action_references(workflow_content: str) -> dict[str, list[str]]:
     references: dict[str, list[str]] = {}
     for match in _USES_PATTERN.finditer(workflow_content):
@@ -388,8 +431,16 @@ def remove_workflow(filename: str) -> Changelog:
     return []
 
 
-def update_workflow(yaml: YAML, config: dict, path: Path) -> Changelog:
+def update_workflow(
+    yaml: YAML,
+    config: dict,
+    path: Path,
+    *,
+    repository: str | None = None,
+) -> Changelog:
     expected_content = __dump_to_string(yaml, config)
+    if repository is not None:
+        expected_content = resolve_self_references(expected_content, repository)
     if not path.exists():
         path.parent.mkdir(exist_ok=True, parents=True)
         path.write_text(expected_content)
