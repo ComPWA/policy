@@ -217,3 +217,13 @@ def describe_action_pins():
         assert not changes  # pins alone must not trigger an update
         for filename, content in pinned.items():
             assert (workflows_repo / _WORKFLOW_DIR / filename).read_text() == content
+
+    def survive_a_rerun_with_codecov(workflows_repo: Path, run_check):
+        (workflows_repo / "codecov.yml").touch()
+        _run_main(run_check)
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        assert 'coverage-python-version: "3.13"' in ci_path.read_text()
+        pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
+        ci_path.write_text(pinned)
+        assert not _run_main(run_check)
+        assert ci_path.read_text() == pinned

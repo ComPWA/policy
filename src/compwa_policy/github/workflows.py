@@ -252,7 +252,9 @@ def __update_pytest_section(
     else:
         with_section = {}
         if CONFIG_PATH.codecov.exists():
-            with_section["coverage-python-version"] = __get_coverage_python_version()
+            with_section["coverage-python-version"] = DoubleQuotedScalarString(
+                __get_coverage_python_version()
+            )
             secrets = {
                 "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}",
             }

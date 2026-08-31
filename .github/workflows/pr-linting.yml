@@ -11,4 +11,4 @@ on:
 
 jobs:
   lint-pr:
-    uses: ComPWA/actions/.github/workflows/pr-linting.yml@v4
+    uses: ComPWA/actions/.github/workflows/pr-linting.yml@99e91bcc486218c7dbbb4f2e0319bfcb028562aa # 4.0.1
