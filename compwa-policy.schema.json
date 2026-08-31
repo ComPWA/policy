@@ -134,6 +134,12 @@
           "title": "No Version Branches",
           "type": "boolean"
         },
+        "tag-prefix": {
+          "default": "",
+          "description": "Prefix applied to release tags, such as ``v`` in ``v1.2.3``.",
+          "title": "Tag Prefix",
+          "type": "string"
+        },
         "upgrade-frequency": {
           "default": "quarterly",
           "description": "Frequency of the workflow that upgrades lock and constraint files.",

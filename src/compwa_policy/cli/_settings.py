@@ -96,6 +96,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "no_milestones",
         "no_pypi",
         "no_version_branches",
+        "tag_prefix",
         "upgrade_frequency",
     }),
     "nb": frozenset({
@@ -246,6 +247,8 @@ class Settings(BaseSettings):
     """Do not publish the package to PyPI."""
     no_version_branches: bool = False
     """Do not update major and minor version branches when tagging a release."""
+    tag_prefix: str = ""
+    """Prefix applied to release tags, such as ``v`` in ``v1.2.3``."""
     ci_skipped_tests: str = ""
     """Python versions for which the CI test job is skipped."""
     doc_apt_packages: str = ""

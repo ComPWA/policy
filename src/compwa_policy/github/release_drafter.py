@@ -40,13 +40,15 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         return
     copy_workflow_file(session, filename="release-drafter.yml")
     session.changelog += _update_draft(
-        args.repo_name, args.repo_title, args.repo_organization
+        args.repo_name, args.repo_title, args.repo_organization, args.tag_prefix
     )
 
 
-def _update_draft(repo_name: str, repo_title: str, organization: str) -> Changelog:
+def _update_draft(
+    repo_name: str, repo_title: str, organization: str, tag_prefix: str
+) -> Changelog:
     yaml = create_prettier_round_trip_yaml()
-    expected = _get_expected_config(repo_name, repo_title, organization)
+    expected = _get_expected_config(repo_name, repo_title, organization, tag_prefix)
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
         yaml.dump(expected, output_path)
@@ -59,12 +61,16 @@ def _update_draft(repo_name: str, repo_title: str, organization: str) -> Changel
 
 
 def _get_expected_config(
-    repo_name: str, repo_title: str, organization: str
+    repo_name: str, repo_title: str, organization: str, tag_prefix: str
 ) -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(COMPWA_POLICY_DIR / CONFIG_PATH.release_drafter_config)
     key = "name-template"
     config[key] = config[key].replace("<<REPO_TITLE>>", repo_title)
+    key = "tag-template"
+    config[key] = config[key].replace(
+        "$NEXT_PATCH_VERSION", f"{tag_prefix}$NEXT_PATCH_VERSION"
+    )
     key = "template"
     lines = config[key].split("\n")
     if not os.path.exists(CONFIG_PATH.readthedocs):
@@ -74,6 +80,10 @@ def _get_expected_config(
         .join(lines)
         .replace("<<ORGANIZATION>>", organization)
         .replace("<<REPO_NAME>>", repo_name)
+        .replace(
+            "$PREVIOUS_TAG...$NEXT_PATCH_VERSION",
+            f"$PREVIOUS_TAG...{tag_prefix}$NEXT_PATCH_VERSION",
+        )
     )
     return config
 
