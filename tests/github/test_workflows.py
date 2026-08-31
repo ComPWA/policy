@@ -53,6 +53,8 @@ def _run_main(
     no_version_branches: bool = False,
     precommit_content: str = "repos: []\n",
     python_version: PythonVersion = "3.13",
+    repo_name: str = "my-package",
+    repo_organization: str = "ComPWA",
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
 ) -> list[str]:
@@ -71,6 +73,8 @@ def _run_main(
             no_pypi=no_pypi,
             no_version_branches=no_version_branches,
             dev_python_version=python_version,
+            repo_name=repo_name,
+            repo_organization=repo_organization,
             pytest_single_threaded=single_threaded,
             ci_skipped_tests=",".join(skip_tests or []),
         )
@@ -128,6 +132,17 @@ def describe_main():
         assert changes
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "style:" not in ci  # style job outsourced to pre-commit.ci
+
+    def resolves_actions_repository_references_to_self(workflows_repo: Path, run_check):
+        _run_main(run_check, repo_name="actions")
+        cd = (workflows_repo / _WORKFLOW_DIR / "cd.yml").read_text()
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        clean_caches = (workflows_repo / _WORKFLOW_DIR / "clean-caches.yml").read_text()
+        assert "uses: $/.github/workflows/close-milestone.yml" in cd
+        assert "uses: $/.github/workflows/style.yml" in ci
+        assert "uses: $/clean-caches" in clean_caches
+        assert "ComPWA/actions/" not in cd + ci + clean_caches
+        assert not _run_main(run_check, repo_name="actions")
 
     def removes_doc_and_test_jobs(
         tmp_path: Path,
@@ -202,3 +217,13 @@ def describe_action_pins():
         assert not changes  # pins alone must not trigger an update
         for filename, content in pinned.items():
             assert (workflows_repo / _WORKFLOW_DIR / filename).read_text() == content
+
+    def survive_a_rerun_with_codecov(workflows_repo: Path, run_check):
+        (workflows_repo / "codecov.yml").touch()
+        _run_main(run_check)
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        assert 'coverage-python-version: "3.13"' in ci_path.read_text()
+        pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
+        ci_path.write_text(pinned)
+        assert not _run_main(run_check)
+        assert ci_path.read_text() == pinned
