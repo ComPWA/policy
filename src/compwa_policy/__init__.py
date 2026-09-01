@@ -69,6 +69,7 @@ class Arguments:
     repo_name: str
     repo_organization: str
     repo_title: str
+    release_name_template: str
     tag_prefix: str
     tombi_errors_on_warnings: bool
     toml_formatter: TomlFormatter

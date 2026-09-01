@@ -134,6 +134,12 @@
           "title": "No Version Branches",
           "type": "boolean"
         },
+        "release-name-template": {
+          "default": "{{ REPO_TITLE }} $NEXT_PATCH_VERSION",
+          "description": "Release title template supporting repository and Release Drafter variables.",
+          "title": "Release Name Template",
+          "type": "string"
+        },
         "tag-prefix": {
           "default": "",
           "description": "Prefix applied to release tags, such as ``v`` in ``v1.2.3``.",

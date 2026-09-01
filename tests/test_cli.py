@@ -62,6 +62,7 @@ def describe_build_arguments():
         assert args.branch_coverage is True
         assert args.python is None
         assert not args.tag_prefix
+        assert args.release_name_template == "{{ REPO_TITLE }} $NEXT_PATCH_VERSION"
 
     def post_processes_options() -> None:
         # cspell:ignore myproj
@@ -100,6 +101,7 @@ def describe_pyproject_config():
             type-checker = ["mypy", "pyright"]
 
             [tool.compwa.policy.github]
+            release-name-template = "{{ ORGANIZATION }}/{{ REPO_NAME }}@{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
             tag-prefix = "v"
 
             [tool.compwa.policy.nb]
@@ -120,6 +122,7 @@ def describe_pyproject_config():
             "branch_coverage": False,
             "imports_on_top": True,
             "type_checker": ["mypy", "pyright"],
+            "release_name_template": "{{ ORGANIZATION }}/{{ REPO_NAME }}@{{ TAG_PREFIX }}$NEXT_PATCH_VERSION",
             "tag_prefix": "v",
             "no_binder": True,
             "excluded_dependencies": ["python-lsp-server"],
