@@ -209,6 +209,15 @@ NoVersionBranches = Annotated[
         help="Do not push to matching major/minor version branches upon tagging.",
     ),
 ]
+ReleaseNameTemplate = Annotated[
+    str | None,
+    typer.Option(
+        "--release-name-template",
+        help=(
+            "Release title template supporting repository and Release Drafter variables."
+        ),
+    ),
+]
 TagPrefix = Annotated[
     str | None,
     typer.Option(

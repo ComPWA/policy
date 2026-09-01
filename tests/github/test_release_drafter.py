@@ -25,7 +25,13 @@ def describe_get_expected_config() -> None:
         monkeypatch.chdir(tmp_path)
         (tmp_path / ".readthedocs.yml").touch()
 
-        config = _get_expected_config("actions", "ComPWA actions", "ComPWA", tag_prefix)
+        config = _get_expected_config(
+            repo_name="actions",
+            repo_title="ComPWA actions",
+            organization="ComPWA",
+            release_name_template="{{ REPO_TITLE }} $NEXT_PATCH_VERSION",
+            tag_prefix=tag_prefix,
+        )
 
         assert config["name-template"] == ("ComPWA actions $NEXT_PATCH_VERSION")
         assert config["tag-template"] == expected_version
@@ -43,6 +49,20 @@ def describe_get_expected_config() -> None:
             repo_name="actions",
             repo_title="ComPWA actions",
             organization="ComPWA",
+            release_name_template="{{ REPO_TITLE }} $NEXT_PATCH_VERSION",
             tag_prefix="v",
         )
         assert "rtfd.io" not in config["template"]
+
+    def renders_configured_release_name_template() -> None:
+        config = _get_expected_config(
+            repo_name="actions",
+            repo_title="ComPWA actions",
+            organization="ComPWA",
+            release_name_template=(
+                "{{ ORGANIZATION }}/{{ REPO_NAME }}@{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
+            ),
+            tag_prefix="v",
+        )
+
+        assert config["name-template"] == "ComPWA/actions@v$NEXT_PATCH_VERSION"

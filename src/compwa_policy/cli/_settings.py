@@ -96,6 +96,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "no_milestones",
         "no_pypi",
         "no_version_branches",
+        "release_name_template",
         "tag_prefix",
         "upgrade_frequency",
     }),
@@ -247,6 +248,8 @@ class Settings(BaseSettings):
     """Do not publish the package to PyPI."""
     no_version_branches: bool = False
     """Do not update major and minor version branches when tagging a release."""
+    release_name_template: str = "{{ REPO_TITLE }} $NEXT_PATCH_VERSION"
+    """Release title template supporting repository and Release Drafter variables."""
     tag_prefix: str = ""
     """Prefix applied to release tags, such as ``v`` in ``v1.2.3``."""
     ci_skipped_tests: str = ""

@@ -43,15 +43,25 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         return
     copy_workflow_file(session, filename="release-drafter.yml")
     session.changelog += _update_draft(
-        args.repo_name, args.repo_title, args.repo_organization, args.tag_prefix
+        args.repo_name,
+        args.repo_title,
+        args.repo_organization,
+        args.release_name_template,
+        args.tag_prefix,
     )
 
 
 def _update_draft(
-    repo_name: str, repo_title: str, organization: str, tag_prefix: str
+    repo_name: str,
+    repo_title: str,
+    organization: str,
+    release_name_template: str,
+    tag_prefix: str,
 ) -> Changelog:
     yaml = create_prettier_round_trip_yaml()
-    expected = _get_expected_config(repo_name, repo_title, organization, tag_prefix)
+    expected = _get_expected_config(
+        repo_name, repo_title, organization, release_name_template, tag_prefix
+    )
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
         yaml.dump(expected, output_path)
@@ -64,7 +74,11 @@ def _update_draft(
 
 
 def _get_expected_config(
-    repo_name: str, repo_title: str, organization: str, tag_prefix: str
+    repo_name: str,
+    repo_title: str,
+    organization: str,
+    release_name_template: str,
+    tag_prefix: str,
 ) -> dict[str, Any]:
     yaml = create_prettier_round_trip_yaml()
     template_path = COMPWA_POLICY_DIR / f"{CONFIG_PATH.release_drafter_config}.jinja"
@@ -81,7 +95,7 @@ def _get_expected_config(
         "TAG_PREFIX": tag_prefix,
     }
     config["name-template"] = PlainScalarString(
-        environment.from_string(config["name-template"]).render(context)
+        environment.from_string(release_name_template).render(context)
     )
     config["tag-template"] = PlainScalarString(
         environment.from_string(config["tag-template"]).render(context)
