@@ -106,7 +106,7 @@ repo-title = "ComPWA repository policy"
 [tool.compwa.policy.github]
 allow-labels = true
 no-pypi = true
-release-name-template = "{{ ORGANIZATION }}/{{ REPO_NAME }}@{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
+release-name-template = "{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
 
 [tool.compwa.policy.python]
 branch-coverage = false
