@@ -411,6 +411,7 @@ split-on-trailing-comma = false
     "magic-value-comparison",
     "no-self-use",
     "private-member-access",
+    "pytest-fixture-autouse",
     "too-many-statements",
 ]
 

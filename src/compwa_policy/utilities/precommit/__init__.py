@@ -6,7 +6,7 @@ import io
 import re
 import sys
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, TypeVar
+from typing import IO, TYPE_CHECKING, Literal, TypeVar
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark
@@ -99,7 +99,7 @@ class ModifiablePrecommit(Precommit, ModifiableResource):
         _exc_type: type[BaseException] | None,
         _exc_value: BaseException | None,
         _tb: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         if self.__changelog and self.source is not None:
             self.dump(self.source)
         return False

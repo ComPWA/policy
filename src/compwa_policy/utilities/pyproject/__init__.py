@@ -156,7 +156,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         if isinstance(source, io.IOBase):
             current_position = source.tell()
             source.seek(0)
-            document = tomlkit.load(source)  # ty:ignore[invalid-argument-type]
+            document = tomlkit.load(source)
             source.seek(current_position)
             return cls(document, source)  # ty:ignore[invalid-argument-type]
         if isinstance(source, Path):
@@ -183,7 +183,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         _exc_type: type[BaseException] | None,
         _exc_value: BaseException | None,
         _tb: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         if self._changelog and self._source is not None:
             self.dump(self._source)
         return False
@@ -199,7 +199,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         if isinstance(target, io.IOBase):
             current_position = target.tell()
             target.seek(0)
-            tomlkit.dump(self._document, target)  # ty:ignore[invalid-argument-type]
+            tomlkit.dump(self._document, target)
             target.seek(current_position)
         elif isinstance(target, (Path, str)):
             src = self.dumps()
