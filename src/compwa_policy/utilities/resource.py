@@ -53,7 +53,7 @@ class ModifiableResource(AbstractContextManager, ABC):
         _exc_type: type[BaseException] | None,
         _exc_value: BaseException | None,
         _tb: TracebackType | None,
-    ) ->  Literal[False]:
+    ) -> Literal[False]:
         return False
 
 
