@@ -253,7 +253,7 @@ UpgradeFrequency = Annotated[
         show_default="quarterly",
         help=(
             "Add a workflow to upgrade lock files, like uv.lock,"
-            " .pre-commit-config.yml, and pip .constraints/ files. The argument is the"
+            " .pre-commit-config.yaml, and pip .constraints/ files. The argument is the"
             " frequency of the cron job."
         ),
     ),
