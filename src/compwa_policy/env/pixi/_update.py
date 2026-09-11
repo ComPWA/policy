@@ -296,7 +296,7 @@ def _set_upgrade_task(
     tasks = __get_table(config, "tasks", create=True)
     helper_tasks: dict[str, dict[str, Any]] = {"_upgrade-pixi": {"cmd": "pixi update"}}
     if is_committed(".pre-commit-config.yaml"):
-        helper_tasks["_upgrade-prek"] = {"cmd": "prek autoupdate -j8"}
+        helper_tasks["_upgrade-prek"] = {"cmd": "prek autoupdate"}
     if "uv" in package_manager:
         helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
     manifest_paths = get_julia_manifest_paths()
@@ -304,7 +304,7 @@ def _set_upgrade_task(
         helper_tasks["_upgrade-julia"] = _get_julia_upgrade_task(manifest_paths)
     helper_names = {
         "_upgrade-pixi",
-        "_upgrade-precommit",  # deprecated, replaced by _upgrade-prek
+        "_upgrade-precommit",
         "_upgrade-prek",
         "_upgrade-uv",
         "_upgrade-julia",

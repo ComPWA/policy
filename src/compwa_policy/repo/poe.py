@@ -426,7 +426,7 @@ def _set_upgrade_task(
     helper_tasks = {}
     if is_committed(".pre-commit-config.yaml"):
         helper_tasks["_upgrade-prek"] = {
-            "cmd": "prek autoupdate -j8",
+            "cmd": "prek autoupdate",
             "executor": to_inline_table({"type": "simple"}),
         }
     if "uv" in package_manager:

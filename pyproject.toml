@@ -284,15 +284,18 @@ help = "Perform all linting, formatting, and spelling checks"
 [tool.poe.tasks.upgrade]
 executor = { type = "simple" }
 help = "Upgrade lock files"
-parallel = ["_upgrade-prek", "_upgrade-uv"]
+parallel = [
+    "_upgrade-prek",
+    "_upgrade-uv",
+]
 
 [tool.poe.tasks._upgrade-prek]
-cmd = "prek autoupdate -j8"
+cmd = "prek autoupdate"
 executor = { type = "simple" }
 
 [tool.poe.tasks._upgrade-uv]
-cmd = "uv lock --upgrade"
 executor = { type = "simple" }
+cmd = "uv lock --upgrade"
 
 [tool.pytest]
 addopts = [
