@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 
 from compwa_policy import _to_list
-from compwa_policy.characterization import has_documentation
+from compwa_policy.characterization import has_documentation, has_notebooks
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
+    from compwa_policy.utilities.precommit import Precommit
     from compwa_policy.utilities.session import Changelog, Session
 
 
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     group="github",
     paths=[
         CONFIG_PATH.codecov,
+        CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
         CONFIG_PATH.readthedocs,
         ".python-version",
@@ -128,8 +130,10 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     repository: str,
 ) -> None:
     def update() -> Changelog:
+        precommit = session.precommit
         yaml, expected_data = _get_ci_workflow(
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "ci.yml",
+            precommit,
             doc_apt_packages,
             environment_variables,
             github_pages,
@@ -167,6 +171,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
 
 def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     path: Path,
+    precommit: Precommit,
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
     github_pages: bool,
@@ -180,7 +185,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
     __update_pytest_section(config, macos_python_version, single_threaded, skip_tests)
-    __update_style_section(config, python_version)
+    __update_style_section(config, python_version, precommit)
     return yaml, config
 
 
@@ -217,11 +222,22 @@ def __update_doc_section(
         del config["jobs"]["doc"]
 
 
-def __update_style_section(config: CommentedMap, python_version: PythonVersion) -> None:
+def __update_style_section(
+    config: CommentedMap, python_version: PythonVersion, precommit: Precommit
+) -> None:
     if python_version != DEFAULT_DEV_PYTHON_VERSION:
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
+    if __is_remove_style_job(precommit):
+        del config["jobs"]["style"]
+
+
+def __is_remove_style_job(precommit: Precommit) -> bool:
+    precommit_ci = precommit.document.get("ci")
+    outsource_to_precommit = precommit_ci is not None and "skip" not in precommit_ci
+    repository_has_notebooks = has_notebooks()
+    return outsource_to_precommit and not repository_has_notebooks
 
 
 def __update_pytest_section(

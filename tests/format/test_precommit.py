@@ -8,7 +8,7 @@ import yaml
 from ruamel.yaml.comments import CommentedSeq
 
 from compwa_policy.format import precommit
-from compwa_policy.utilities.precommit import ModifiablePrecommit
+from compwa_policy.utilities.precommit import ModifiablePrecommit, Precommit
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.session import Session
 
@@ -205,7 +205,7 @@ def describe_sort_hooks():
         assert "args:\n          - --gitignore" in pc.dumps()
 
 
-def describe_remove_precommit_ci_section():
+def describe_update_precommit_ci():
     def is_noop_without_ci_section():
         with _load("""
             repos:
@@ -213,26 +213,88 @@ def describe_remove_precommit_ci_section():
                 hooks:
                   - id: check-hooks-apply
         """) as pc:
-            precommit._remove_precommit_ci_section(pc)
-        assert not pc.changelog
+            precommit._update_precommit_ci_autofix_commit_msg(pc)
+            precommit._update_precommit_ci_autoupdate_commit_msg(pc)
+            precommit._update_precommit_ci_skip(pc)  # no ci section -> nothing to do
 
-    def removes_ci_section():
+    def sets_autofix_commit_msg():
         with _load("""
                 ci:
                   autofix_prs: true
-                  skip:
-                    - my-local-hook
+                repos: []
+            """) as pc:
+            precommit._update_precommit_ci_autofix_commit_msg(pc)
+        assert any("autofix_commit_msg" in m for m in pc.changelog)
+        assert "MAINT: implement pre-commit autofixes" in pc.dumps()
+
+    def skip_collects_local_and_non_functional_hooks():
+        with _load("""
+                ci:
+                  autofix_prs: true
                 repos:
                   - repo: local
                     hooks:
                       - id: my-local-hook
+                  - repo: https://github.com/astral-sh/ty-pre-commit
+                    rev: v0.0.1
+                    hooks:
+                      - id: ty
+                  - repo: https://github.com/tombi-toml/tombi-pre-commit
+                    rev: v1.2.0
+                    hooks:
+                      - id: tombi-format
+                      - id: tombi-lint
             """) as pc:
-            precommit._remove_precommit_ci_section(pc)
-        assert any("Removed pre-commit.ci" in m for m in pc.changelog)
+            precommit._update_precommit_ci_skip(pc)
+        assert any("Updated ci.skip" in m for m in pc.changelog)
         result = pc.dumps()
-        assert "ci:" not in result
-        assert "autofix_prs" not in result
         assert "my-local-hook" in result
+        assert "tombi-format" in result
+        assert "tombi-lint" in result
+        assert "ty" in result
+
+    def skip_has_no_blank_line_between_ci_keys(tmp_path: Path):
+        source = tmp_path / ".pre-commit-config.yaml"
+        source.write_text(
+            dedent("""
+            ci:
+              autofix_commit_msg: "MAINT: implement pre-commit autofixes"
+              autoupdate_commit_msg: "MAINT: upgrade lock files"
+              autoupdate_schedule: quarterly
+
+            repos:
+              - repo: https://github.com/tombi-toml/tombi-pre-commit
+                hooks:
+                  - id: tombi-format
+                  - id: tombi-lint
+        """).lstrip()
+        )
+
+        with ModifiablePrecommit.load(source) as pc:
+            precommit._update_precommit_ci_skip(pc)
+
+        assert (
+            "autoupdate_schedule: quarterly\n"
+            "  skip:\n"
+            "    - tombi-format\n"
+            "    - tombi-lint\n"
+            "\n"
+            "repos:"
+        ) in source.read_text()
+
+    def skip_removes_redundant_section():
+        with _load("""
+                ci:
+                  skip:
+                    - some-hook
+                repos:
+                  - repo: meta
+                    hooks:
+                      - id: check-hooks-apply
+            """) as pc:
+            precommit._update_precommit_ci_skip(pc)
+        assert any("Removed redundant ci.skip" in m for m in pc.changelog)
+        assert "skip" not in pc.dumps()
 
 
 def describe_update_repo_urls():
@@ -247,6 +309,26 @@ def describe_update_repo_urls():
             precommit._update_repo_urls(pc)
         assert any("Updated repo URLs" in m for m in pc.changelog)
         assert _POLICY_URL in pc.dumps()
+
+
+def describe_get_local_and_non_functional_hooks():
+    def separates_local_from_non_functional():
+        config = Precommit.load(
+            io.StringIO(
+                dedent("""
+                repos:
+                  - repo: local
+                    hooks:
+                      - id: my-local-hook
+                  - repo: https://github.com/astral-sh/ty-pre-commit
+                    rev: v0.0.1
+                    hooks:
+                      - id: ty
+                """).lstrip()
+            )
+        ).document
+        assert precommit.get_local_hooks(config) == ["my-local-hook"]
+        assert precommit.get_non_functional_hooks(config) == ["ty"]
 
 
 def describe_update_conda_environment():
@@ -317,4 +399,3 @@ def describe_main():
             run_check(precommit.check, session, has_notebooks=False)
         result = pc.dumps()
         assert result.index("meta") < result.index("psf/black")  # hooks sorted
-        assert "ci:" not in result  # pre-commit.ci config removed

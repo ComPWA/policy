@@ -51,13 +51,14 @@ def _run_main(
     no_milestones: bool = False,
     no_pypi: bool = False,
     no_version_branches: bool = False,
+    precommit_content: str = "repos: []\n",
     python_version: PythonVersion = "3.13",
     repo_name: str = "my-package",
     repo_organization: str = "ComPWA",
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
 ) -> list[str]:
-    with Session.load(_precommit()) as session:
+    with Session.load(_precommit(precommit_content)) as session:
         run_check(
             check,
             session,
@@ -125,11 +126,12 @@ def describe_main():
         assert "CODECOV_TOKEN" in ci
         assert "3.11" in ci  # coverage python version from .python-version
 
-    def keeps_style_job(workflows_repo: Path, run_check):
-        changes = _run_main(run_check)
+    def removes_style_job_when_outsourced(workflows_repo: Path, run_check):
+        precommit = "ci:\n  autofix_prs: true\nrepos: []\n"
+        changes = _run_main(run_check, precommit_content=precommit)
         assert changes
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
-        assert "style:" in ci
+        assert "style:" not in ci  # style job outsourced to pre-commit.ci
 
     def resolves_actions_repository_references_to_self(workflows_repo: Path, run_check):
         _run_main(run_check, repo_name="actions")

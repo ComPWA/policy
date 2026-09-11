@@ -285,11 +285,11 @@ help = "Perform all linting, formatting, and spelling checks"
 executor = { type = "simple" }
 help = "Upgrade lock files"
 parallel = [
-    "_upgrade-prek",
+    "_upgrade-precommit",
     "_upgrade-uv",
 ]
 
-[tool.poe.tasks._upgrade-prek]
+[tool.poe.tasks._upgrade-precommit]
 cmd = "prek autoupdate"
 executor = { type = "simple" }
 

@@ -121,7 +121,8 @@ def migrate(
     hook = _find_hook(precommit)
     if hook is None:
         rich.print(f"[yellow]No '{_HOOK_ID}' hook found in {config_file}[/yellow]")
-    args = list(hook.get("args", [])) if hook is not None else []
+        raise typer.Exit(code=0)
+    args = list(hook.get("args", []))
     notebook_hooks = _find_relocatable_notebook_hooks(precommit)
     if not args and not notebook_hooks:
         rich.print(f"[green]The '{_HOOK_ID}' hook has nothing to migrate.[/green]")
@@ -135,10 +136,9 @@ def migrate(
 
     if policy:
         _write_pyproject(policy)
-    if hook is not None:
-        _apply_precommit_changes(
-            precommit, hook, strip_args=bool(args), relocate=bool(notebook_hooks)
-        )
+    _apply_precommit_changes(
+        precommit, hook, strip_args=bool(args), relocate=bool(notebook_hooks)
+    )
     _report_result(has_args=bool(args), notebook_hooks=notebook_hooks)
 
 

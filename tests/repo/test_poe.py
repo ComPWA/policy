@@ -499,14 +499,16 @@ def describe_set_upgrade_task():
         (tmp_path / ".pre-commit-config.yaml").touch()
         config_path = tmp_path / "pyproject.toml"
         config_path.write_text(
-            '[tool.poe.tasks._upgrade-prek]\ncmd = "prek autoupdate -j8"\n'
+            '[tool.poe.tasks._upgrade-precommit]\ncmd = "prek autoupdate -j8"\n'
         )
         git_add(tmp_path)
 
         with ModifiablePyproject.load(config_path) as pyproject:
             _set_upgrade_task(pyproject, package_manager="uv")
 
-        task = Pyproject.load(config_path).get_table("tool.poe.tasks._upgrade-prek")
+        task = Pyproject.load(config_path).get_table(
+            "tool.poe.tasks._upgrade-precommit"
+        )
         assert task["cmd"] == "prek autoupdate"
 
     def removes_task_when_empty(

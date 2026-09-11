@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from compwa_policy import Arguments
     from compwa_policy.config import UpgradeFrequency
     from compwa_policy.utilities.check_hook import CheckContext
+    from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
 __CRON_SCHEDULES: dict[UpgradeFrequency, str] = {
@@ -33,11 +34,14 @@ __TRIGGER_ECOSYSTEMS = {"julia", "pre-commit", "uv"}
 
 @check_hook(
     group="github",
+    paths=[CONFIG_PATH.precommit],
     directories=(CONFIG_PATH.github_workflow_dir.parent, CONFIG_PATH.pip_constraints),
     enabled=lambda args, _ctx: args.upgrade_frequency != "no",
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
     frequency = args.upgrade_frequency
+    precommit = session.precommit
+    _update_precommit_schedule(precommit, frequency)
     session.changelog += _remove_script("pin_requirements.py")
     session.changelog += _remove_script("upgrade.sh")
     _update_lock_workflow(session, frequency, args.keep_workflow)
@@ -55,6 +59,8 @@ def _remove_script(script_name: str) -> Changelog:
 def _update_lock_workflow(
     session: Session, /, frequency: UpgradeFrequency, keep_workflow: set[str]
 ) -> None:
+    precommit = session.precommit
+
     def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
             COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / workflow_file
@@ -70,7 +76,10 @@ def _update_lock_workflow(
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
-        if get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS:
+        if (
+            get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS
+            or "autoupdate_schedule" in precommit.document.get("ci", {})
+        ):
             del expected_data["on"]["schedule"]
         else:
             expected_data["on"]["schedule"][0]["cron"] = _to_cron_schedule(frequency)
@@ -98,3 +107,29 @@ def _to_cron_schedule(frequency: UpgradeFrequency) -> str:
         msg = f'No cron schedule defined for frequency "{frequency}"'
         raise PolicyError(msg)
     return __CRON_SCHEDULES[frequency]
+
+
+def _update_precommit_schedule(
+    precommit: ModifiablePrecommit, frequency: UpgradeFrequency
+) -> None:
+    ci_section = precommit.document.get("ci")
+    if ci_section is None:
+        return
+    key = "autoupdate_schedule"
+    if get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS:
+        frequency = "quarterly"
+        if ci_section.get(key) == frequency:
+            return
+        ci_section[key] = "quarterly"
+        precommit.changelog.append(
+            "Set pre-commit autoupdate schedule to quarterly (maximum), because the"
+            " schedule is now determined by Dependabot"
+        )
+    else:
+        if frequency == "semiannually":
+            frequency = "quarterly"
+        if ci_section[key] != frequency:
+            ci_section[key] = frequency
+            precommit.changelog.append(
+                f"Set pre-commit autoupdate schedule to {frequency!r}"
+            )
