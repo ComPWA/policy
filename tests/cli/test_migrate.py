@@ -3,7 +3,6 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-import typer
 
 from compwa_policy.cli.migrate import migrate
 
@@ -80,64 +79,3 @@ def describe_migrate():
         pyproject = (tmp_path / "pyproject.toml").read_text()
         assert 'repo-title = "ComPWA demos"' in pyproject
         assert R'repo-title = "\"ComPWA demos\""' not in pyproject
-
-
-def describe_prek_migration():
-    def replaces_stale_precommit_shims(
-        tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
-        capsys: pytest.CaptureFixture,
-    ):
-        _write_repo(tmp_path, ["--repo-name=demo"])
-        monkeypatch.chdir(tmp_path)
-        installed: list[list[str]] = []
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.find_precommit_git_shims",
-            lambda: ["pre-commit"],
-        )
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.install_prek_git_shims", installed.append
-        )
-        migrate(Path(".pre-commit-config.yaml"))
-        out = capsys.readouterr().out
-        assert "Replacing pre-commit Git hook shims with prek" in out
-        assert installed == [["pre-commit"]]
-
-    def migrates_shims_without_a_check_dev_files_hook(
-        tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
-        capsys: pytest.CaptureFixture,
-    ):
-        (tmp_path / ".pre-commit-config.yaml").write_text("repos: []\n")
-        monkeypatch.chdir(tmp_path)
-        installed: list[list[str]] = []
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.find_precommit_git_shims",
-            lambda: ["pre-commit", "pre-push"],
-        )
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.install_prek_git_shims", installed.append
-        )
-        migrate(Path(".pre-commit-config.yaml"))
-        capsys.readouterr()
-        assert installed == [["pre-commit", "pre-push"]]
-
-    def leaves_shims_alone_on_a_dry_run(
-        tmp_path: Path,
-        monkeypatch: pytest.MonkeyPatch,
-        capsys: pytest.CaptureFixture,
-    ):
-        _write_repo(tmp_path, ["--repo-name=demo"])
-        monkeypatch.chdir(tmp_path)
-        installed: list[list[str]] = []
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.find_precommit_git_shims",
-            lambda: ["pre-commit"],
-        )
-        monkeypatch.setattr(
-            "compwa_policy.cli.migrate.install_prek_git_shims", installed.append
-        )
-        with pytest.raises(typer.Exit):
-            migrate(Path(".pre-commit-config.yaml"), dry_run=True)
-        capsys.readouterr()
-        assert installed == []

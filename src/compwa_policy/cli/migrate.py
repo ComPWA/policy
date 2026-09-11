@@ -33,10 +33,6 @@ from compwa_policy.format.precommit import (
 )
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
-from compwa_policy.utilities.prek import (
-    find_precommit_git_shims,
-    install_prek_git_shims,
-)
 from compwa_policy.utilities.pyproject import ModifiablePyproject
 
 if TYPE_CHECKING:
@@ -127,13 +123,12 @@ def migrate(
         rich.print(f"[yellow]No '{_HOOK_ID}' hook found in {config_file}[/yellow]")
     args = list(hook.get("args", [])) if hook is not None else []
     notebook_hooks = _find_relocatable_notebook_hooks(precommit)
-    stale_shims = find_precommit_git_shims()
-    if not args and not notebook_hooks and not stale_shims:
+    if not args and not notebook_hooks:
         rich.print(f"[green]The '{_HOOK_ID}' hook has nothing to migrate.[/green]")
         raise typer.Exit(code=0)
 
     policy = _build_validated_policy(args)
-    _report_plan(policy, notebook_hooks, stale_shims)
+    _report_plan(policy, notebook_hooks)
     if dry_run:
         rich.print("[cyan](dry run: no files changed)[/cyan]")
         raise typer.Exit(code=0)
@@ -144,8 +139,6 @@ def migrate(
         _apply_precommit_changes(
             precommit, hook, strip_args=bool(args), relocate=bool(notebook_hooks)
         )
-    if stale_shims:
-        install_prek_git_shims(stale_shims)
     _report_result(has_args=bool(args), notebook_hooks=notebook_hooks)
 
 
@@ -162,9 +155,7 @@ def _build_validated_policy(args: list[str]) -> dict[str, Any]:
     return _build_policy(args)
 
 
-def _report_plan(
-    policy: dict[str, Any], notebook_hooks: list[str], stale_shims: list[str]
-) -> None:
+def _report_plan(policy: dict[str, Any], notebook_hooks: list[str]) -> None:
     if policy:
         rich.print("[bold]Adding to pyproject.toml:[/bold]")
         rich.print(Syntax(_render(policy), "toml", background_color="default"))
@@ -172,11 +163,6 @@ def _report_plan(
         rich.print(
             f"[bold]Moving notebook hooks to {__NBHOOKS_REPO_URL}:[/bold]"
             f" {', '.join(notebook_hooks)}"
-        )
-    if stale_shims:
-        rich.print(
-            "[bold]Replacing pre-commit Git hook shims with prek:[/bold]"
-            f" {', '.join(stale_shims)}"
         )
 
 

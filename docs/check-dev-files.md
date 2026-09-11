@@ -16,8 +16,6 @@ If you run the command often, you can install it as a persistent tool with [`uv 
 
 ## Hook arguments
 
-The checks standardize Poe and Pixi upgrade tasks to run `prek autoupdate` without the `-j` flag, removing it from existing generated tasks.
-
 The `check-dev-files` hook (and the `policy` command without a subcommand) only accepts the options that are shared across the whole repository, such as `--repo-name`. These can be added to the [`args`](https://pre-commit.com/#config-args) key in your `.pre-commit-config.yaml` file. Options scoped to a single area (for example, `--no-pypi`) are exposed on the matching subcommand and are configured through its `[tool.compwa.policy.<group>]` table. See {doc}`check-dev-files/configuration` for details.
 
 The full command tree and its options are:
