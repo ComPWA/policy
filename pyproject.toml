@@ -294,8 +294,8 @@ cmd = "prek autoupdate"
 executor = { type = "simple" }
 
 [tool.poe.tasks._upgrade-uv]
-executor = { type = "simple" }
 cmd = "uv lock --upgrade"
+executor = { type = "simple" }
 
 [tool.pytest]
 addopts = [

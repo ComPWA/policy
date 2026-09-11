@@ -494,7 +494,7 @@ def _get_julia_upgrade_task() -> dict[str, Any] | None:
 
 
 def _get_uv_upgrade_task() -> dict[str, Any]:
-    task: dict[str, Any] = {"executor": to_inline_table({"type": "simple"})}
+    task: dict[str, Any] = {}
     if has_nested_uv_lock():
         task.update({
             "expr": to_multiline_string(UV_UPGRADE_EXPRESSION),
@@ -503,6 +503,7 @@ def _get_uv_upgrade_task() -> dict[str, Any]:
         })
     else:
         task["cmd"] = "uv lock --upgrade"
+    task["executor"] = to_inline_table({"type": "simple"})
     return task
 
 
