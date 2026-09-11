@@ -39,6 +39,7 @@ def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     if session.pyproject is not None:
         session.pyproject.remove_dependency("pre-commit")
         session.pyproject.remove_dependency("pre-commit-uv")
+        session.pyproject.remove_dependency("prek")
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

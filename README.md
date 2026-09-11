@@ -9,7 +9,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)
 
-This repository sets the policies for developer environment in repositories if the [ComPWA organization](https://github.com/ComPWA) (See our [Help developing](https://compwa.github.io/develop) page). The policies are automatically enforced through [pre-commit](https://pre-commit.com).
+This repository sets the policies for developer environment in repositories if the [ComPWA organization](https://github.com/ComPWA) (See our [Help developing](https://compwa.github.io/develop) page). The policies are automatically enforced through [prek](https://prek.j178.dev), a drop-in replacement for [pre-commit](https://pre-commit.com).
 
 ## Usage
 
@@ -26,7 +26,7 @@ repos:
 then run
 
 ```shell
-pre-commit autoupdate --repo=https://github.com/ComPWA/policy
+prek autoupdate --repo=https://github.com/ComPWA/policy
 ```
 
 The notebook formatting hooks that used to live here have moved to [ComPWA/nbhooks](https://github.com/ComPWA/nbhooks). When a repository contains notebooks, `check-dev-files` automatically migrates them over and keeps them up to date.
@@ -40,7 +40,7 @@ The notebook formatting hooks that used to live here have moved to [ComPWA/nbhoo
 
 ## Command-line interface
 
-The same checks are exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command, so you can run them on the fly without setting up `pre-commit` first:
+The same checks are exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command, so you can run them on the fly without setting up `prek` first:
 
 ```shell
 uvx --from git+https://github.com/ComPWA/policy policy --help

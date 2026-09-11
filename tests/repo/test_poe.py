@@ -488,6 +488,29 @@ def describe_set_all_task():
 
 
 def describe_set_upgrade_task():
+    def removes_prek_jobs_flag(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".pre-commit-config.yaml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            '[tool.poe.tasks._upgrade-precommit]\ncmd = "prek autoupdate -j8"\n'
+        )
+        git_add(tmp_path)
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        task = Pyproject.load(config_path).get_table(
+            "tool.poe.tasks._upgrade-precommit"
+        )
+        assert task["cmd"] == "prek autoupdate"
+
     def removes_task_when_empty(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
