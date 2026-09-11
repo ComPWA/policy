@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
-
-from ruamel.yaml.tokens import CommentToken
+from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
@@ -31,9 +29,7 @@ def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit
     _sort_hooks(precommit)
     _update_conda_environment(precommit)
-    _update_precommit_ci_autofix_commit_msg(precommit)
-    _update_precommit_ci_autoupdate_commit_msg(precommit)
-    _update_precommit_ci_skip(precommit)
+    _remove_precommit_ci_section(precommit)
     _update_notebook_hooks(precommit, ctx.has_notebooks)
     _update_repo_urls(precommit)
     if session.pyproject is not None:
@@ -154,85 +150,18 @@ def _get_nbhooks_hooks(precommit: ModifiablePrecommit) -> dict[str, Hook]:
     return {hook["id"]: hook for hook in nbhooks_repo["hooks"]}
 
 
-def _update_precommit_ci_autofix_commit_msg(precommit: ModifiablePrecommit) -> None:
-    precommit_ci = precommit.document.get("ci")
-    if precommit_ci is None:
+def _remove_precommit_ci_section(precommit: ModifiablePrecommit) -> None:
+    """Remove the :code:`ci` section that configures pre-commit.ci.
+
+    ComPWA repositories run their hooks through `ComPWA/actions
+    <https://github.com/ComPWA/actions>`_ instead of through `pre-commit.ci
+    <https://pre-commit.ci>`_, so the section no longer has any effect.
+    """
+    if "ci" not in precommit.document:
         return
-    expected_msg = "MAINT: implement pre-commit autofixes"
-    key = "autofix_commit_msg"
-    msg = precommit_ci.get(key)
-    if msg != expected_msg:
-        precommit_ci[key] = expected_msg
-        msg = f"Set ci.{key} to {expected_msg!r}"
-        precommit.changelog.append(msg)
-
-
-def _update_precommit_ci_autoupdate_commit_msg(precommit: ModifiablePrecommit) -> None:
-    precommit_ci = precommit.document.get("ci")
-    if precommit_ci is None:
-        return
-    expected_msg = "MAINT: upgrade lock files"
-    key = "autoupdate_commit_msg"
-    msg = precommit_ci.get(key)
-    if msg != expected_msg:
-        precommit_ci[key] = expected_msg
-        msg = f"Set ci.{key} to {expected_msg!r}"
-        precommit.changelog.append(msg)
-
-
-def _update_precommit_ci_skip(precommit: ModifiablePrecommit) -> None:
-    precommit_ci = precommit.document.get("ci")
-    if precommit_ci is None:
-        return
-    local_hooks = get_local_hooks(precommit.document)
-    non_functional_hooks = get_non_functional_hooks(precommit.document)
-    expected_skips = sorted(set(non_functional_hooks) | set(local_hooks))
-    if not expected_skips and "skip" in precommit_ci:
-        del precommit_ci["skip"]
-        msg = "Removed redundant ci.skip section"
-        precommit.changelog.append(msg)
-        return
-    existing_skips = precommit_ci.get("skip")
-    if expected_skips and existing_skips != expected_skips:
-        yaml_ci = cast("CommentedMap", precommit_ci)
-        last_ci_key = list(yaml_ci)[-1]
-        item_comments = yaml_ci.ca.items.get(last_ci_key)
-        if item_comments is not None:
-            trailing_comment = item_comments[2]
-            if (
-                isinstance(trailing_comment, CommentToken)
-                and not trailing_comment.value.strip()
-            ):
-                item_comments[2] = None
-        precommit_ci["skip"] = sorted(expected_skips)
-        yaml_config = cast("CommentedMap", precommit.document)
-        yaml_config.yaml_set_comment_before_after_key("repos", before="\n")
-        msg = "Updated ci.skip section"
-        precommit.changelog.append(msg)
-
-
-def get_local_hooks(config: PrecommitConfig) -> list[str]:
-    repos = config["repos"]
-    return [h["id"] for r in repos for h in r["hooks"] if r["repo"] == "local"]
-
-
-def get_non_functional_hooks(config: PrecommitConfig) -> list[str]:
-    skipped_hooks = {
-        "check-jsonschema",
-        "pyright",
-        "taplo",
-        "tombi-format",
-        "tombi-lint",
-        "ty",
-        "uv-lock",
-    }
-    return [
-        hook["id"]
-        for repo in config["repos"]
-        for hook in repo["hooks"]
-        if repo["repo"]
-        if hook["id"] in skipped_hooks
-    ]
+    del precommit.document["ci"]
+    msg = "Removed pre-commit.ci configuration"
+    precommit.changelog.append(msg)
 
 
 def _update_conda_environment(precommit: ModifiablePrecommit) -> None:

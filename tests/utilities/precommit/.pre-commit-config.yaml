@@ -1,9 +1,4 @@
 # Example config for tests
-ci:
-  autoupdate_schedule: quarterly
-  skip:
-    - mypy
-
 repos:
   - repo: meta
     hooks:

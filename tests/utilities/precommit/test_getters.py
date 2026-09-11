@@ -27,11 +27,7 @@ def describe_load():
             config = Precommit.load(stream).document
         else:
             config = Precommit.load(example_yaml).document
-        assert set(config) == {"ci", "repos"}
-
-        ci = config.get("ci")
-        assert ci is not None
-        assert ci.get("autoupdate_schedule") == "quarterly"
+        assert set(config) == {"repos"}
 
         repos = config.get("repos")
         assert repos is not None
@@ -39,10 +35,7 @@ def describe_load():
 
     def reads_from_default_path():
         config = Precommit.load().document
-        assert "ci" in config
-        ci = config.get("ci")
-        assert ci is not None
-        assert ci.get("autoupdate_commit_msg") == "MAINT: upgrade lock files"
+        assert find_repo(config, "astral-sh/ruff-pre-commit") is not None
 
 
 def describe_find_repo():
