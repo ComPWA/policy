@@ -3,7 +3,7 @@
 :::{title} Welcome
 :::
 
-This repository standardizes and synchronizes the developer environment of [ComPWA repositories](https://github.com/orgs/ComPWA/repositories). Its [`check-dev-files`](./check-dev-files.md) hook keeps configuration files up to date as developer tools introduce new features and deprecate old ones. The policies are enforced through [pre-commit](https://pre-commit.com); all available hooks are listed in [`.pre-commit-hooks.yaml`](https://github.com/ComPWA/policy/blob/main/.pre-commit-hooks.yaml).
+This repository standardizes and synchronizes the developer environment of [ComPWA repositories](https://github.com/orgs/ComPWA/repositories). Its [`check-dev-files`](./check-dev-files.md) hook keeps configuration files up to date as developer tools introduce new features and deprecate old ones. The policies are enforced through [prek](https://prek.j178.dev), a drop-in replacement for [pre-commit](https://pre-commit.com); all available hooks are listed in [`.pre-commit-hooks.yaml`](https://github.com/ComPWA/policy/blob/main/.pre-commit-hooks.yaml).
 
 ## Set up a repository
 
@@ -19,18 +19,18 @@ repos:
           - --repo-name="short name for your repository"
 ```
 
-Then install and activate [`pre-commit`](https://pre-commit.com/#install):
+Then install and activate [`prek`](https://prek.j178.dev/installation):
 
 ```shell
-pip install pre-commit
-pre-commit autoupdate --repo=https://github.com/ComPWA/policy
-pre-commit install
+uv tool install prek
+prek autoupdate --repo=https://github.com/ComPWA/policy
+prek install
 ```
 
 Running the hook for the first time turns this minimal configuration into the standard ComPWA developer setup:
 
 ```shell
-pre-commit run check-dev-files --all-files
+prek run check-dev-files --all-files
 ```
 
 For an existing repository, `policy bootstrap` can detect its current setup and configure the hook automatically. See the {doc}`command-line guide <check-dev-files>` for bootstrapping, individual checks, and installation options.

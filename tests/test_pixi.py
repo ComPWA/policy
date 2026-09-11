@@ -303,12 +303,12 @@ def describe_set_upgrade_task():
         tasks = config.get_table("tasks")
         assert tasks["upgrade"]["depends-on"] == [
             "_upgrade-pixi",
-            "_upgrade-precommit",
+            "_upgrade-prek",
             "_upgrade-uv",
             "_upgrade-julia",
         ]
         assert tasks["_upgrade-pixi"]["cmd"] == "pixi update"
-        assert tasks["_upgrade-precommit"]["cmd"] == "pre-commit autoupdate -j8"
+        assert tasks["_upgrade-prek"]["cmd"] == "prek autoupdate -j8"
         assert tasks["_upgrade-uv"]["cmd"] == "uv lock --upgrade"
         assert tasks["_upgrade-julia"]["cmd"].endswith("--project=julia")
 

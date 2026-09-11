@@ -425,8 +425,8 @@ def _set_upgrade_task(
     tasks = pyproject.get_table("tool.poe.tasks")
     helper_tasks = {}
     if is_committed(".pre-commit-config.yaml"):
-        helper_tasks["_upgrade-precommit"] = {
-            "cmd": "pre-commit autoupdate -j8",
+        helper_tasks["_upgrade-prek"] = {
+            "cmd": "prek autoupdate -j8",
             "executor": to_inline_table({"type": "simple"}),
         }
     if "uv" in package_manager:
@@ -440,7 +440,8 @@ def _set_upgrade_task(
     if julia_task is not None:
         helper_tasks["_upgrade-julia"] = julia_task
     helper_names = {
-        "_upgrade-precommit",
+        "_upgrade-precommit",  # deprecated, replaced by _upgrade-prek
+        "_upgrade-prek",
         "_upgrade-uv",
         "_upgrade-pixi",
         "_upgrade-julia",

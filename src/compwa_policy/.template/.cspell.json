@@ -93,6 +93,7 @@
     "pandoc",
     "prebuilds",
     "precommit",
+    "prek",
     "prereleased",
     "prettierignore",
     "pyproject",

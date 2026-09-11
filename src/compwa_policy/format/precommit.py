@@ -37,8 +37,11 @@ def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     _update_notebook_hooks(precommit, ctx.has_notebooks)
     _update_repo_urls(precommit)
     if session.pyproject is not None:
+        # The hook manager is installed as a standalone tool (see CONTRIBUTING.md), so
+        # it does not belong in the project's dependency groups.
         session.pyproject.remove_dependency("pre-commit")
         session.pyproject.remove_dependency("pre-commit-uv")
+        session.pyproject.remove_dependency("prek")
 
 
 def _sort_hooks(precommit: ModifiablePrecommit) -> None:

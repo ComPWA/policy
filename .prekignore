@@ -1,0 +1,2 @@
+# Example config used by the unit tests, not a nested prek project
+tests/utilities/precommit/

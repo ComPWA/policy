@@ -87,6 +87,7 @@
     "pathspec",
     "prebuilds",
     "precommit",
+    "prek",
     "prereleased",
     "prettierignore",
     "pyenv",
