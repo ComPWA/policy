@@ -7,7 +7,7 @@ import sys
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -53,7 +53,7 @@ class ModifiableResource(AbstractContextManager, ABC):
         _exc_type: type[BaseException] | None,
         _exc_value: BaseException | None,
         _tb: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         return False
 
 

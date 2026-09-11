@@ -18,7 +18,7 @@ from __future__ import annotations
 import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Literal, TypeVar, cast
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -157,7 +157,7 @@ class Session(AbstractContextManager):
         exc_type: type[BaseException] | None,
         exc_value: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
+    ) -> Literal[False]:
         try:
             if exc_type is None:
                 self.flush()

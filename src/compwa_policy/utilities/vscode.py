@@ -169,7 +169,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
             new_dict = {}
             for key, value in obj.items():
                 sub_keys_to_remove = keys.get(key, {})
-                new_value = _remove_keys(value, sub_keys_to_remove)  # ty:ignore[invalid-argument-type]
+                new_value = _remove_keys(value, sub_keys_to_remove)
                 if (
                     isinstance(new_value, abc.Iterable)
                     and not isinstance(new_value, str)
@@ -177,7 +177,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
                     and len(new_value) == 0
                 ):
                     continue
-                new_dict[key] = _remove_keys(value, keys.get(key, {}))  # ty:ignore[invalid-argument-type]
+                new_dict[key] = _remove_keys(value, keys.get(key, {}))
             return new_dict  # ty:ignore[invalid-return-type]
         if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
             removed_keys = set(keys)
@@ -226,7 +226,7 @@ def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     if isinstance(old, dict) and isinstance(new, dict):
         return _update_dict_recursively(old, new, sort)  # ty:ignore[invalid-return-type]
     if isinstance(old, list) and isinstance(new, list):
-        return sorted({*old, *new})  # ty:ignore[invalid-argument-type]
+        return sorted({*old, *new})  # ty:ignore[invalid-return-type]
     return new
 
 
