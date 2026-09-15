@@ -10,6 +10,7 @@ from compwa_policy.errors import PolicyError
 from compwa_policy.repo.poe import (
     _check_expected_sections,
     _check_no_uv_run,
+    _migrate_style_task_to_prek,
     _set_all_task,
     _set_upgrade_task,
     _update_doclive,
@@ -485,6 +486,69 @@ def describe_set_all_task():
         all_task = Pyproject.load(config_path).get_table("tool.poe.tasks.all")
         assert "ignore_fail" not in all_task
         assert all_task["help"] == "Run all continuous integration (CI) tasks locally"
+
+
+def describe_migrate_style_task_to_prek():
+    def rewrites_shorthand_precommit_command(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text('[tool.poe.tasks]\nstyle = "pre-commit run -a"\n')
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _migrate_style_task_to_prek(pyproject)
+        task = Pyproject.load(config_path).get_table("tool.poe.tasks")["style"]
+        assert task == "prek run --all-files"
+
+    def rewrites_cmd_in_task_table(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [tool.poe.tasks.style]
+                cmd = "pre-commit run --all-files"
+                executor = { group = "style" }
+            """).lstrip()
+        )
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _migrate_style_task_to_prek(pyproject)
+        task = Pyproject.load(config_path).get_table("tool.poe.tasks.style")
+        assert task["cmd"] == "prek run --all-files"
+        assert task["executor"] == {"group": "style"}
+
+    def leaves_prek_command_untouched(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text('[tool.poe.tasks.style]\ncmd = "prek run --all-files"\n')
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _migrate_style_task_to_prek(pyproject)
+        assert pyproject.changelog == []
+
+    def is_noop_without_style_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text('[tool.poe.tasks.test]\ncmd = "pytest"\n')
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _migrate_style_task_to_prek(pyproject)
+        assert pyproject.changelog == []
 
 
 def describe_set_upgrade_task():

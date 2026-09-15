@@ -18,6 +18,7 @@ from compwa_policy.repo.upgrade import (
     get_julia_manifest_paths,
     get_julia_upgrade_command,
     has_nested_uv_lock,
+    migrate_precommit_style_command,
 )
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
 from compwa_policy.utilities.check_hook import check_hook
@@ -88,6 +89,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_test_all_task(config)
             _update_doclive(config)
         if config.has_table("tool.poe.tasks"):
+            _migrate_style_task_to_prek(config)
             _set_upgrade_task(config, args.package_manager)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
@@ -417,6 +419,25 @@ def _set_test_all_task(pyproject: ModifiablePyproject, /) -> None:
             tasks[name] = task
         msg = f"Updated Poe the Poet test-all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _migrate_style_task_to_prek(pyproject: ModifiablePyproject, /) -> None:
+    tasks = pyproject.get_table("tool.poe.tasks")
+    style_task = tasks.get("style")
+    if style_task is None:
+        return
+    cmd = __as_task_table(style_task).get("cmd")
+    if not isinstance(cmd, str):
+        return
+    new_cmd = migrate_precommit_style_command(cmd)
+    if new_cmd is None:
+        return
+    if isinstance(style_task, MutableMapping):
+        style_task["cmd"] = new_cmd
+    else:
+        tasks["style"] = new_cmd
+    msg = f"Migrated Poe the Poet style task from pre-commit to prek in {CONFIG_PATH.pyproject}"
+    pyproject.changelog.append(msg)
 
 
 def _set_upgrade_task(

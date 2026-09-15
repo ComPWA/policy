@@ -12,6 +12,7 @@ from compwa_policy.repo.upgrade import (
     get_julia_upgrade_command,
     get_uv_upgrade_script,
     has_nested_uv_lock,
+    migrate_precommit_style_command,
 )
 from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
 from compwa_policy.utilities.match import is_committed
@@ -69,6 +70,7 @@ def update_pixi_configuration(
         _update_docnb_and_doclive(config, "tasks")
         _update_docnb_and_doclive(config, "feature.dev.tasks")
     _clean_up_task_env(config)
+    _migrate_style_task_to_prek(config)
     _set_upgrade_task(config, package_manager)
     vscode.update_settings(
         session,
@@ -288,6 +290,29 @@ def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
         "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
     }
     config.changelog.append("Set Pixi linkcheck task")
+
+
+def _migrate_style_task_to_prek(config: ModifiablePyproject) -> None:
+    for table_key in ("tasks", "feature.dev.tasks"):
+        if not __has_table(config, table_key):
+            continue
+        tasks = __get_table(config, table_key)
+        for task_name in ("style", "sty"):
+            style_task = tasks.get(task_name)
+            if style_task is None:
+                continue
+            cmd = style_task if isinstance(style_task, str) else style_task.get("cmd")
+            if not isinstance(cmd, str):
+                continue
+            new_cmd = migrate_precommit_style_command(cmd)
+            if new_cmd is None:
+                continue
+            if isinstance(style_task, str):
+                tasks[task_name] = new_cmd
+            else:
+                style_task["cmd"] = new_cmd
+            msg = f"Migrated Pixi {task_name} task from pre-commit to prek"
+            config.changelog.append(msg)
 
 
 def _set_upgrade_task(
