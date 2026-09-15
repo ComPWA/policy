@@ -7,6 +7,7 @@ import pytest
 from compwa_policy.env.pixi._update import (
     _clean_up_task_env,
     _define_combined_ci_job,
+    _migrate_style_task_to_prek,
     _set_dev_python_version,
     _set_quarto_linkcheck,
     _set_upgrade_task,
@@ -276,6 +277,49 @@ def describe_set_quarto_linkcheck():
             _set_quarto_linkcheck(config)
 
         assert config_path.read_text() == original
+
+
+def describe_migrate_style_task_to_prek():
+    def rewrites_style_task_in_tasks_table(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text('[tasks.style]\ncmd = "pre-commit run --all-files"\n')
+        with ModifiablePyproject.load(config_path) as config:
+            _migrate_style_task_to_prek(config)
+        task = Pyproject.load(config_path).get_table("tasks.style")
+        assert task["cmd"] == "prek run --all-files"
+
+    def rewrites_sty_task_in_feature_dev_tasks(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text('[feature.dev.tasks.sty]\ncmd = "pre-commit run -a"\n')
+        with ModifiablePyproject.load(config_path) as config:
+            _migrate_style_task_to_prek(config)
+        task = Pyproject.load(config_path).get_table("feature.dev.tasks.sty")
+        assert task["cmd"] == "prek run --all-files"
+
+    def leaves_prek_command_untouched(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text('[tasks.style]\ncmd = "prek run --all-files"\n')
+        with ModifiablePyproject.load(config_path) as config:
+            _migrate_style_task_to_prek(config)
+        assert config.changelog == []
 
 
 def describe_set_upgrade_task():

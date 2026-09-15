@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import re
+
 from compwa_policy.utilities.match import git_ls_files
+
+_PRECOMMIT_RUN_PATTERN = re.compile(r"pre-commit run(\s+(--all-files|-a))?")
 
 UV_UPGRADE_IMPORTS = ["pathlib", "subprocess"]
 UV_UPGRADE_EXPRESSION = """
@@ -20,6 +24,21 @@ all(
     if pathlib.Path(file).name == "pyproject.toml"
 )
 """
+
+
+def migrate_precommit_style_command(cmd: str) -> str | None:
+    """Migrate a style task command from pre-commit to prek.
+
+    >>> migrate_precommit_style_command("pre-commit run --all-files")
+    'prek run --all-files'
+    >>> migrate_precommit_style_command("pre-commit run -a")
+    'prek run --all-files'
+    >>> migrate_precommit_style_command("prek run --all-files") is None
+    True
+    """
+    if not _PRECOMMIT_RUN_PATTERN.search(cmd):
+        return None
+    return _PRECOMMIT_RUN_PATTERN.sub("prek run --all-files", cmd)
 
 
 def has_nested_uv_lock() -> bool:
