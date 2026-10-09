@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import io
 import re
-import sys
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Literal, TypeVar
+from typing import IO, TYPE_CHECKING, Literal, Self, TypeVar
 
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.error import CommentMark
@@ -22,11 +21,6 @@ from compwa_policy.utilities.precommit.setters import (
 )
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
 from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from types import TracebackType

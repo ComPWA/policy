@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from collections import abc
 from collections.abc import Collection, Sized
 from functools import cache
@@ -16,10 +15,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from compwa_policy.utilities.session import Session
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
+from typing import Self
 
 K = TypeVar("K")
 V = TypeVar("V")

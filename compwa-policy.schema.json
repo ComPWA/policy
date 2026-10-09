@@ -100,7 +100,7 @@
           "x-tombi-array-values-order": "ascending"
         },
         "macos-python-version": {
-          "default": "3.10",
+          "default": "3.11",
           "description": "Python version for the macOS test job; use ``disable`` to omit the job.",
           "title": "Macos Python Version",
           "type": "string"

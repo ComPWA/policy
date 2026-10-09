@@ -1,14 +1,8 @@
 # ruff: ignore[undocumented-public-module]
 from __future__ import annotations
 
-import sys
 from functools import cache
-from typing import ForwardRef, Literal, TypedDict
-
-if sys.version_info >= (3, 11):
-    from typing import NotRequired
-else:
-    from typing_extensions import NotRequired
+from typing import ForwardRef, Literal, NotRequired, TypedDict
 
 
 class PrecommitConfig(TypedDict):

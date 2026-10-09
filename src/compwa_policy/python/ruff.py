@@ -266,7 +266,7 @@ def ___get_target_version(pyproject: Pyproject) -> str:
 
     >>> pyproject = Pyproject.load()
     >>> ___get_target_version(pyproject)
-    'py310'
+    'py311'
     """
     supported_python_versions = pyproject.get_supported_python_versions()
     versions = {f"py{v.replace('.', '')}" for v in supported_python_versions}

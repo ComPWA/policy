@@ -15,10 +15,9 @@ therefore requires implementing
 
 from __future__ import annotations
 
-import sys
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Literal, Self, TypeVar, cast
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -28,11 +27,6 @@ from compwa_policy.utilities.resource import (
     ModifiablePath,
     ModifiableResource,
 )
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from collections.abc import Hashable

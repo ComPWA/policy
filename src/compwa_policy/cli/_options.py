@@ -9,7 +9,7 @@ parsing and dispatch are organized here.
 from __future__ import annotations
 
 import os
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Annotated
 
 import typer
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-class TypeChecker(str, Enum):
+class TypeChecker(StrEnum):
     """Type checkers that can be enabled with ``--type-checker``.
 
     Typer does not support ``list[Literal[...]]``, so the :data:`.ty.TypeChecker`
@@ -181,7 +181,7 @@ MacosPythonVersion = Annotated[
     str | None,
     typer.Option(
         "--macos-python-version",
-        show_default="3.10",
+        show_default="3.11",
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     ),
 ]

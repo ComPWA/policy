@@ -3,16 +3,11 @@
 from __future__ import annotations
 
 import shutil
-import sys
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, TypeAlias
+from typing import TYPE_CHECKING, Literal, Self, TypeAlias
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 if TYPE_CHECKING:
     from types import TracebackType
 
