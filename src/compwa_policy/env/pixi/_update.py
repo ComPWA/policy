@@ -62,6 +62,8 @@ def update_pixi_configuration(
     _import_conda_environment(config)
     if package_manager == "pixi+uv":
         _define_combined_ci_job(config)
+        if not __uses_poe(session):
+            _set_quarto_linkcheck(config, session)
     else:
         _set_quarto_linkcheck(config, session)
         if is_python_package:
@@ -89,6 +91,16 @@ def __get_pixi_config(
     if package_manager == "pixi":
         return session.pyproject
     return session.pixi
+
+
+def __uses_poe(session: Session) -> bool:
+    """Whether the ``pixi+uv`` repository defines its tasks with Poe the Poet.
+
+    Link checking is then configured as a Poe task in :code:`pyproject.toml` instead of
+    as a Pixi task.
+    """
+    pyproject = session.pyproject
+    return pyproject is not None and pyproject.has_table("tool.poe")
 
 
 def _define_combined_ci_job(config: ModifiablePyproject) -> None:
