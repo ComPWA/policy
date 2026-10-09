@@ -23,7 +23,7 @@ import tomli_w
 import typer
 from rich.syntax import Syntax
 
-from compwa_policy import _get_environment_variables
+from compwa_policy import _get_environment_variables, _to_list
 from compwa_policy.cli._settings import POLICY_TABLE, Settings, policy_sub_table
 from compwa_policy.errors import PolicyError
 from compwa_policy.format.precommit import (
@@ -210,6 +210,8 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
     {'github': {'no-pypi': True}, 'repo-name': 'demo', 'python': {'type-checker': ['ty']}}
     >>> _build_policy(["--no-python", "--environment-variables=A=1,B=2"])
     {'python': False, 'setup': {'env': {'A': '1', 'B': '2'}}}
+    >>> _build_policy(["--excluded-python-versions=3.14,3.15"])
+    {'python': {'excluded-python-versions': ['3.14', '3.15']}}
     """
     policy: dict[str, Any] = {}
     environment_variables: dict[str, str] = {}
@@ -234,7 +236,7 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
         if not separator:
             target[key] = True
         elif _is_list_field(field):
-            target.setdefault(key, []).append(raw_value)
+            target.setdefault(key, []).extend(_to_list(raw_value))
         else:
             target[key] = raw_value
     if environment_variables:

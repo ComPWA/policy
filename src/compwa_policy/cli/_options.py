@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from compwa_policy import Arguments, TomlFormatter, _to_list
+from compwa_policy import Arguments, TomlFormatter
 from compwa_policy.cli._settings import load_settings
 from compwa_policy.config import (
     DEFAULT_DEV_PYTHON_VERSION,
@@ -108,10 +108,10 @@ EnvironmentVariables = Annotated[
 
 # Python group ----------------------------------------------------------------
 ExcludedPythonVersions = Annotated[
-    str | None,
+    list[str] | None,
     typer.Option(
         "--excluded-python-versions",
-        help="Comma- or space-separated list of Python versions you do NOT want to support.",
+        help="Python version you do NOT want to support. Can be repeated.",
     ),
 ]
 NoRuff = Annotated[
@@ -347,9 +347,7 @@ def build_arguments(**overrides: Any) -> Arguments:
     settings["toml_formatter_configured"] = (
         "toml_formatter" in resolved_settings.model_fields_set
     )
-    settings["excluded_python_versions"] = set(
-        _to_list(settings["excluded_python_versions"])
-    )
+    settings["excluded_python_versions"] = set(settings["excluded_python_versions"])
     settings["excluded_dependencies"] = set(settings["excluded_dependencies"])
     if "dev_python_version" not in resolved_settings.model_fields_set:
         settings["dev_python_version"] = _get_default_dev_python_version(
