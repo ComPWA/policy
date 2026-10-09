@@ -280,10 +280,15 @@ def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
         command = existing.get("cmd", "")
     else:
         command = ""
-    pypi_dependencies = __get_table(config, "pypi-dependencies", create=True)
-    if "lychee-bin" not in pypi_dependencies:
-        pypi_dependencies["lychee-bin"] = "*"
-        config.changelog.append("Added lychee-bin to Pixi dependencies")
+    if __has_table(config, "pypi-dependencies"):
+        pypi_dependencies = __get_table(config, "pypi-dependencies")
+        if "lychee-bin" in pypi_dependencies:
+            del pypi_dependencies["lychee-bin"]
+            config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
+    dependencies = __get_table(config, "dependencies", create=True)
+    if "lychee" not in dependencies:
+        dependencies["lychee"] = "*"
+        config.changelog.append("Added lychee to Pixi conda dependencies")
     if "lychee" in command:
         return
     tasks["linkcheck"] = {

@@ -26,6 +26,10 @@ The full command tree and its options are:
 :show-nested:
 ```
 
+## Quarto link checking with Pixi
+
+For Quarto repositories using `pixi` or `pixi+uv`, the policy adds a `linkcheck` task backed by the conda-forge `lychee` package. This works without a Python interpreter in the Pixi workspace. The policy removes the former `lychee-bin` entry from Pixi's root `[pypi-dependencies]` table and preserves existing conda `lychee` constraints and custom lychee commands.
+
 ## Bootstrapping an existing repository
 
 Run `policy bootstrap` in an existing repository to detect whether it contains Python code, which package manager it uses, and which type checkers are already configured. The command records those choices in `pyproject.toml` under `[tool.compwa.policy]` and adds the `check-dev-files` hook to `.pre-commit-config.yaml`, preserving existing configuration in both files.
