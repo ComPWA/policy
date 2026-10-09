@@ -172,14 +172,15 @@ def describe_main():
         with Session.load() as session:
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(tmp_path / "pyproject.toml")
-        assert "lychee-bin" in pyproject.get_table("dependency-groups.doc")
+        assert "lychee-bin>=0.24.0" in pyproject.get_table("dependency-groups.doc")
+        assert "qmd" in pyproject.get_table("tool.lychee")["extensions"]
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck == {
             "executor": {"group": "doc"},
             "help": (
                 "Check external links in the documentation (requires internet connection)"
             ),
-            "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
+            "cmd": "lychee .",
         }
 
     def configures_lychee_for_shorthand_linkcheck_task(
@@ -209,9 +210,7 @@ def describe_main():
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(tmp_path / "pyproject.toml")
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
-        assert linkcheck["shell"] == (
-            "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
-        )
+        assert linkcheck["cmd"] == "lychee ."
 
     def keeps_sphinx_linkcheck_for_a_quarto_sub_site(
         tmp_path: Path,
@@ -352,7 +351,7 @@ def describe_main():
         pyproject = Pyproject.load(config_path)
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck["cmd"] == ["uvx", "lychee@0.18", "--root-dir", ".", "."]
-        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin"]
+        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin>=0.24.0"]
 
     def preserves_existing_linkcheck_dependency_group(
         tmp_path: Path,
@@ -430,7 +429,9 @@ def describe_main():
         with Session.load() as session:
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(config_path)
-        assert pyproject.get_table("dependency-groups.linkcheck") == ["lychee-bin"]
+        assert pyproject.get_table("dependency-groups.linkcheck") == [
+            "lychee-bin>=0.24.0"
+        ]
 
 
 def describe_update_doclive():

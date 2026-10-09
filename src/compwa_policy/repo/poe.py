@@ -12,6 +12,7 @@ import tomlkit
 
 from compwa_policy.characterization import has_documentation, uses_quarto
 from compwa_policy.errors import PolicyError
+from compwa_policy.repo.lychee import configure_lychee, require_lychee
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
     UV_UPGRADE_IMPORTS,
@@ -218,6 +219,7 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
 def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     if not uses_quarto():
         return
+    configure_lychee(pyproject)
     tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
     if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
@@ -225,14 +227,13 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
         dependency_group = (
             executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
         )
-        if not has_dependency(pyproject, "lychee-bin", dependency_group):
-            pyproject.add_dependency("lychee-bin", dependency_group=dependency_group)
+        require_lychee(pyproject, dependency_group)
         return
-    pyproject.add_dependency("lychee-bin", dependency_group="doc")
+    require_lychee(pyproject, "doc")
     tasks["linkcheck"] = {
         "executor": to_inline_table({"group": "doc"}),
         "help": "Check external links in the documentation (requires internet connection)",
-        "shell": "lychee --root-dir . . && lychee --root-dir . --extensions qmd .",
+        "cmd": "lychee .",
     }
     msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
     pyproject.changelog.append(msg)

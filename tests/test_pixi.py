@@ -247,14 +247,12 @@ def describe_set_quarto_linkcheck():
             _set_quarto_linkcheck(config)
 
         config = Pyproject.load(config_path)
-        assert config.get_table(dependencies_table)["lychee"] == "*"
+        assert config.get_table(dependencies_table)["lychee"] == ">=0.24.0"
         assert not config.has_table(
             dependencies_table.replace("dependencies", "pypi-dependencies")
         )
         linkcheck = config.get_table(f"{tasks_table}.linkcheck")
-        assert linkcheck["cmd"] == (
-            "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
-        )
+        assert linkcheck["cmd"] == "lychee ."
 
     def preserves_custom_task(
         tmp_path: Path,
