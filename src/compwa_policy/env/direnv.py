@@ -5,7 +5,7 @@ from __future__ import annotations
 from textwrap import dedent, indent
 from typing import TYPE_CHECKING
 
-import rtoml
+import tomli
 
 from compwa_policy.env.pixi import has_pixi_config
 from compwa_policy.utilities import CONFIG_PATH
@@ -93,7 +93,7 @@ def __determine_pixi_dev_environment(session: Session, /) -> str | None:
 
 def __get_pixi_environment_names(session: Session, /) -> set[str]:
     if CONFIG_PATH.pixi_toml.exists():
-        pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
+        pixi_config = tomli.loads(CONFIG_PATH.pixi_toml.read_text())
         return set(pixi_config.get("environments", set()))
     pyproject = session.pyproject
     if pyproject is not None and pyproject.has_table("tool.pixi.environments"):

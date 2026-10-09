@@ -6,7 +6,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-import rtoml
+import tomli
 from jinja2 import Environment, FileSystemLoader
 
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, readme, vscode
@@ -239,7 +239,7 @@ def __get_runner_instructions(session: Session, /) -> str:
         if pyproject.has_table("tool.pixi.tasks"):
             return pixi_instructions
     if CONFIG_PATH.pixi_toml.exists():
-        pixi_config = rtoml.load(CONFIG_PATH.pixi_toml)
+        pixi_config = tomli.loads(CONFIG_PATH.pixi_toml.read_text())
         if has_sub_table(pixi_config, "tasks"):
             return pixi_instructions
     return ""

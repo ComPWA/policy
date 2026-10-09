@@ -7,7 +7,7 @@ from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import rtoml
+import tomli
 import yaml
 
 from compwa_policy.utilities import CONFIG_PATH
@@ -129,7 +129,7 @@ def _has_table(document: dict[str, Any], dotted_key: str) -> bool:
 def _load_pyproject() -> dict[str, Any]:
     if not CONFIG_PATH.pyproject.exists():
         return {}
-    return rtoml.load(CONFIG_PATH.pyproject)
+    return tomli.loads(CONFIG_PATH.pyproject.read_text())
 
 
 def _precommit_hook_ids() -> set[str]:

@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import rtoml
+import tomli
 import tomlkit
 
 from compwa_policy.utilities import (
@@ -273,8 +273,8 @@ def _update_taplo_config(session: Session, /) -> None:
 
     rules = tomlkit.aot()
     if CONFIG_PATH.pixi_toml.exists():
-        with open(CONFIG_PATH.pixi_toml) as stream:
-            pixi_config = rtoml.load(stream)
+        with open(CONFIG_PATH.pixi_toml, "rb") as stream:
+            pixi_config = tomli.load(stream)
         if has_sub_table(pixi_config, "tasks"):
             rules.append(__taplo_rule(CONFIG_PATH.pixi_toml, ["tasks"]))
     pyproject = session.pyproject

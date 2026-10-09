@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-import rtoml
+import tomli
 import yaml
 
 from compwa_policy.cli.bootstrap import bootstrap
@@ -22,7 +22,7 @@ def describe_bootstrap():
 
         bootstrap()
 
-        document = rtoml.load(tmp_path / "pyproject.toml")
+        document = tomli.loads((tmp_path / "pyproject.toml").read_text())
         policy = document["tool"]["compwa"]["policy"]
         assert policy["package-manager"] == "uv"
         assert policy["python"]["type-checker"] == ["mypy"]

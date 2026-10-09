@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import rtoml
+import tomli
 from ini2toml.api import Translator
 
 from compwa_policy.errors import PolicyError
@@ -77,7 +77,7 @@ def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     with open(CONFIG_PATH.pytest_ini) as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name="pytest.ini")
-    pytest_config = rtoml.loads(toml_str)
+    pytest_config = tomli.loads(toml_str)
     pytest_config.pop("coverage:run", None)
     tool_table = pyproject.get_table("tool", create=True)
     tool_table.update(pytest_config)

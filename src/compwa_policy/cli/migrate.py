@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, get_origin
 
 import rich
-import rtoml
+import tomli_w
 import typer
 from rich.syntax import Syntax
 
@@ -260,7 +260,7 @@ def _unquote_cli_value(value: str) -> str:
 
 def _render(policy: dict[str, Any]) -> str:
     document = {"tool": {"compwa": {"policy": policy}}}
-    return rtoml.dumps(document, pretty=True).strip()
+    return tomli_w.dumps(document).strip()
 
 
 def _write_pyproject(policy: dict[str, Any]) -> None:

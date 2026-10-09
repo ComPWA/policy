@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
-import rtoml
+import tomli
 from ini2toml.api import Translator
 from ruamel.yaml.comments import CommentedSeq
 
@@ -61,7 +61,7 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     with open(old_config_path) as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name=old_config_path)
-    mypy_config = rtoml.loads(toml_str)
+    mypy_config = tomli.loads(toml_str)
     tool_table = pyproject.get_table("tool", create=True)
     tool_table.update(mypy_config)
     os.remove(old_config_path)
