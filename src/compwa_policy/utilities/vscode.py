@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from collections import abc
-from collections.abc import Iterable, Sized
+from collections.abc import Collection, Sized
 from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -26,7 +26,7 @@ V = TypeVar("V")
 T = TypeVar("T", dict, list, Any)
 
 
-RemovedKeys = Iterable[str] | dict[str, "RemovedKeys"]
+RemovedKeys = Collection[str] | dict[str, "RemovedKeys"]
 """Type for keys to be removed from a (nested) dictionary."""
 
 

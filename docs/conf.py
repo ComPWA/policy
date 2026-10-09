@@ -43,14 +43,14 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "UpgradeFrequency": "typing.Literal",
     "V": "typing.TypeVar",
 }
-author = "Common Partial Wave Analysis"
+author = ""
 autodoc_member_order = "bysource"
 autodoc_typehints_format = "short"
 autosectionlabel_prefix_document = True
 codeautolink_concat_default = True
 copybutton_prompt_is_regexp = True
 copybutton_prompt_text = r">>> |\.\.\. "  # doctest
-copyright = "2023, Common Partial Wave Analysis"
+copyright = f"2021, {ORGANIZATION}"
 default_role = "py:obj"
 extensions = [
     "_ext.policy_settings",

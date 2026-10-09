@@ -154,12 +154,6 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
     ) -> Self:
         """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
         _ = session
-        if isinstance(source, io.IOBase):
-            current_position = source.tell()
-            source.seek(0)
-            document = tomlkit.load(source)
-            source.seek(current_position)
-            return cls(document, source)  # ty:ignore[invalid-argument-type]
         if isinstance(source, Path):
             with open(source) as stream:
                 document = tomlkit.load(stream)
@@ -167,6 +161,12 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         if isinstance(source, str):
             document = tomlkit.loads(source)
             return cls(document)  # ty:ignore[invalid-argument-type]
+        if isinstance(source, io.IOBase):
+            current_position = source.tell()
+            source.seek(0)
+            document = tomlkit.load(source)
+            source.seek(current_position)
+            return cls(document, source)  # ty:ignore[invalid-argument-type]
         msg = f"Source of type {type(source).__name__} is not supported"
         raise TypeError(msg)
 
@@ -197,15 +197,15 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         if target is None:
             msg = "Target required when source is not a file or I/O stream"
             raise ValueError(msg)
-        if isinstance(target, io.IOBase):
+        if isinstance(target, (Path, str)):
+            src = self.dumps()
+            with open(target, "w") as stream:
+                stream.write(src)
+        elif isinstance(target, io.IOBase):
             current_position = target.tell()
             target.seek(0)
             tomlkit.dump(self._document, target)
             target.seek(current_position)
-        elif isinstance(target, (Path, str)):
-            src = self.dumps()
-            with open(target, "w") as stream:
-                stream.write(src)
         else:
             msg = f"Target of type {type(target).__name__} is not supported"
             raise TypeError(msg)
