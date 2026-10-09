@@ -10,7 +10,7 @@ _PRECOMMIT_RUN_PATTERN = re.compile(r"pre-commit run(\s+(--all-files|-a))?")
 
 UV_UPGRADE_IMPORTS = ["pathlib", "subprocess"]
 UV_UPGRADE_EXPRESSION = """
-all(
+all([
     subprocess.run(
         ["uv", "lock", "--upgrade", "--directory", str(pathlib.Path(file).parent)],
         check=False,
@@ -22,7 +22,7 @@ all(
         text=True,
     ).stdout.splitlines()
     if pathlib.Path(file).name == "pyproject.toml"
-)
+])
 """
 
 
