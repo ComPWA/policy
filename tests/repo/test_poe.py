@@ -97,12 +97,41 @@ def describe_main():
         assert "test-py311" in pyproject
         assert "[tool.poe.tasks.upgrade]" in pyproject  # upgrade task added
 
-    def uses_pixi_upgrade_command(poe_repo: Path, run_check):
+    @pytest.mark.parametrize("existing_command", [None, "pixi upgrade", "pixi update"])
+    def uses_pixi_update_command(
+        poe_repo: Path, run_check, existing_command: str | None
+    ):
+        pyproject_path = poe_repo / "pyproject.toml"
+        if existing_command is not None:
+            with ModifiablePyproject.load(pyproject_path) as pyproject:
+                tasks = pyproject.get_table("tool.poe.tasks")
+                tasks["upgrade"] = {
+                    "executor": {"type": "simple"},
+                    "help": "Upgrade lock files",
+                    "parallel": ["_upgrade-pixi"],
+                }
+                tasks["_upgrade-pixi"] = {
+                    "cmd": existing_command,
+                    "executor": {"type": "simple"},
+                }
+                pyproject.dump()
+
         with Session.load() as session:
             run_check(check, session, has_notebooks=True, package_manager="pixi")
 
-        pyproject = (poe_repo / "pyproject.toml").read_text()
-        assert "pixi upgrade" in pyproject  # pixi-specific upgrade command
+        pyproject = Pyproject.load(pyproject_path)
+        assert pyproject.get_table("tool.poe.tasks._upgrade-pixi") == {
+            "cmd": "pixi update",
+            "executor": {"type": "simple"},
+        }
+        assert pyproject.get_table("tool.poe.tasks.upgrade")["parallel"] == [
+            "_upgrade-pixi"
+        ]
+
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=True, package_manager="pixi")
+            assert session.pyproject is not None
+            assert not session.pyproject.changelog
 
     def is_noop_without_pyproject(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check

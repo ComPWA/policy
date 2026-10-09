@@ -454,7 +454,7 @@ def _set_upgrade_task(
         helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
     if "pixi" in package_manager:
         helper_tasks["_upgrade-pixi"] = {
-            "cmd": "pixi upgrade",
+            "cmd": "pixi update",
             "executor": to_inline_table({"type": "simple"}),
         }
     julia_task = _get_julia_upgrade_task()
