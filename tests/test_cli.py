@@ -52,7 +52,7 @@ repos:
 def describe_build_arguments():
     def applies_defaults() -> None:
         args = build_arguments()
-        assert args.dev_python_version == "3.13"
+        assert args.dev_python_version == "3.14"
         assert args.package_manager == "uv"
         assert args.repo_organization == "ComPWA"
         assert args.type_checker == set()

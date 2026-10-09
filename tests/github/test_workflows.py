@@ -261,7 +261,7 @@ def describe_action_pins():
         (workflows_repo / "codecov.yml").touch()
         _run_main(run_check)
         ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
-        assert 'coverage-python-version: "3.13"' in ci_path.read_text()
+        assert 'coverage-python-version: "3.14"' in ci_path.read_text()
         pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
         ci_path.write_text(pinned)
         assert not _run_main(run_check)
