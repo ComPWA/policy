@@ -3,21 +3,14 @@
 from __future__ import annotations
 
 import re
-import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 from attrs import frozen
 
 from compwa_policy import Arguments
 from compwa_policy.utilities.session import Session
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
 
 Group = Literal["python", "github", "env", "nb", "format", "repo"]
 

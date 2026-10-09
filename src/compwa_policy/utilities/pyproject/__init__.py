@@ -12,6 +12,7 @@ from typing import (
     Any,
     Final,
     Literal,
+    Self,
     TypeVar,
     cast,
     final,
@@ -40,10 +41,6 @@ from compwa_policy.utilities.pyproject.setters import (
 )
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 if sys.version_info >= (3, 12):
     from typing import override
 else:
@@ -128,7 +125,7 @@ class Pyproject:
         """Extract sorted, supported Python versions from package classifiers.
 
         >>> Pyproject.load().get_supported_python_versions()
-        ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+        ['3.11', '3.12', '3.13', '3.14', '3.15']
         """
         return get_supported_python_versions(self._document)
 

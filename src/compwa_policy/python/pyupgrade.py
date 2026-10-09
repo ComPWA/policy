@@ -64,7 +64,7 @@ def __get_pyupgrade_version_argument(session: Session, /) -> CommentedSeq:
     >>> from compwa_policy.utilities.session import Session
     >>> with Session() as session:
     ...     __get_pyupgrade_version_argument(session)
-    ['--py310-plus']
+    ['--py311-plus']
     """
     pyproject = session.pyproject
     if pyproject is None:

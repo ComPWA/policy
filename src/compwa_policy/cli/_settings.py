@@ -238,7 +238,7 @@ class Settings(BaseSettings):
     """Publish the documentation through GitHub Pages."""
     keep_pr_linting: bool = False
     """Do not overwrite the pull-request linting workflow."""
-    macos_python_version: str = "3.10"
+    macos_python_version: str = "3.11"
     """Python version for the macOS test job; use ``disable`` to omit the job."""
     no_cd: bool = False
     """Do not add continuous-deployment workflows."""
