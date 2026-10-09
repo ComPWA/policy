@@ -401,8 +401,8 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
 
     The :code:`modifiable` flag determines which parser to use:
 
-    - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**,
-      but does not preserve comments and formatting.
+    - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**, but
+      does not preserve comments and formatting.
     - `True`: uses :mod:`tomlkit`, which is **slower**, but preservers comments and
       formatting.
     """
