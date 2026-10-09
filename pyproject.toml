@@ -25,9 +25,10 @@ dependencies = [
     "pip-tools",
     "pydantic-settings >=2",
     "pydantic >=2.0",
-    "rtoml",  # fast, read-only parsing
     "ruamel.yaml",  # better YAML dumping
     "setuptools",
+    "tomli",  # fast, read-only parsing
+    "tomli-w",  # write TOML without preserving formatting
     "tomlkit",  # preserve original TOML formatting
     "typer >=0.26.0",
     'typing-extensions; python_version <"3.12.0"',  # override
