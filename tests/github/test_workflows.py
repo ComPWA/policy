@@ -2,6 +2,7 @@ import io
 import re
 from collections.abc import Callable
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -13,6 +14,7 @@ from compwa_policy.github.workflows import (
 from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.pyproject import PythonVersion
 from compwa_policy.utilities.session import Session
+from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 _WORKFLOW_DIR = Path(".github/workflows")
 
@@ -82,6 +84,43 @@ def _run_main(
 
 
 def describe_main():
+    @pytest.mark.parametrize("existing", [False, True], ids=["new", "migration"])
+    def grants_version_branch_permissions_without_secrets(
+        workflows_repo: Path, run_check, existing: bool
+    ):
+        cd_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
+        yaml = create_prettier_round_trip_yaml()
+        if existing:
+            data = dedent("""\
+            name: CD
+            on: release
+            jobs:
+              push:
+                secrets: inherit
+                uses: ComPWA/actions/.github/workflows/push-to-version-branches.yml@0123456789abcdef # pinned
+              benchmark:
+                secrets:
+                    PAT: ${{ secrets.BENCHMARK_PAT }}
+                uses: example/benchmark/.github/workflows/run.yml@v1
+            """)
+            cd_path.parent.mkdir(parents=True)
+            cd_path.write_text(data)
+        assert _run_main(run_check)
+        content = cd_path.read_text()
+        jobs = yaml.load(cd_path)["jobs"]
+        assert jobs["push"]["permissions"] == {"contents": "write"}
+        assert "secrets" not in jobs["push"]
+        assert jobs["push"]["if"] == (
+            "startsWith(github.ref, 'refs/tags') && !github.event.release.prerelease"
+        )
+        if existing:
+            assert jobs["push"]["uses"].endswith("@0123456789abcdef")
+            assert jobs["benchmark"]["secrets"] == {
+                "PAT": "${{ secrets.BENCHMARK_PAT }}"
+            }
+        assert not _run_main(run_check)
+        assert cd_path.read_text() == content
+
     def creates_workflows(workflows_repo: Path, run_check):
         changes = _run_main(run_check)
         assert changes
