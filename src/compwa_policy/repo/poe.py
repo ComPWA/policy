@@ -92,6 +92,8 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         if config.has_table("tool.poe.tasks"):
             _migrate_style_task_to_prek(config)
             _set_upgrade_task(config, args.package_manager)
+    if args.package_manager == "pixi+uv":
+        _set_quarto_linkcheck(config)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
@@ -220,7 +222,9 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     if not uses_quarto():
         return
     configure_lychee(pyproject)
-    tasks = _get_or_create_group_tasks(pyproject, "doc")
+    tasks = pyproject.get_table("tool.poe.tasks", fallback={})
+    if "linkcheck" not in tasks:
+        tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
     if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
         executor = existing.get("executor", {})
