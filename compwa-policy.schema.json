@@ -6,7 +6,7 @@
   "x-tombi-table-keys-order": "ascending",
   "properties": {
     "dev-python-version": {
-      "default": "3.13",
+      "default": "3.14",
       "description": "Python version used for the development environment.",
       "enum": [
         "3.6",

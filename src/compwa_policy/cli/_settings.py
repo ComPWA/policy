@@ -18,7 +18,7 @@ nested table under ``[tool.compwa.policy.setup.env]``:
 .. code-block:: toml
 
     [tool.compwa.policy]
-    dev-python-version = "3.13"
+    dev-python-version = "3.14"
     package-manager = "pixi"
 
     [tool.compwa.policy.python]
