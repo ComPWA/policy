@@ -128,7 +128,7 @@ class Pyproject:
         """Extract sorted, supported Python versions from package classifiers.
 
         >>> Pyproject.load().get_supported_python_versions()
-        ['3.10', '3.11', '3.12', '3.13', '3.14']
+        ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         """
         return get_supported_python_versions(self._document)
 
@@ -401,8 +401,8 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
 
     The :code:`modifiable` flag determines which parser to use:
 
-    - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**,
-      but does not preserve comments and formatting.
+    - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**, but
+      does not preserve comments and formatting.
     - `True`: uses :mod:`tomlkit`, which is **slower**, but preservers comments and
       formatting.
     """

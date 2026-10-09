@@ -12,6 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
     "PyYAML",
@@ -238,6 +239,7 @@ sequence = [
     "test-py312 ${paths}",
     "test-py313 ${paths}",
     "test-py314 ${paths}",
+    "test-py315 ${paths}",
 ]
 
 [[tool.poe.groups.test.tasks.test-all.args]]
@@ -264,6 +266,10 @@ ref = "test"
 
 [tool.poe.groups.test.tasks.test-py314]
 env = { UV_PYTHON = "3.14" }
+ref = "test"
+
+[tool.poe.groups.test.tasks.test-py315]
+env = { UV_PYTHON = "3.15" }
 ref = "test"
 
 [tool.poe.tasks.all]
