@@ -60,10 +60,10 @@ def update_pixi_configuration(
     _define_minimal_project(session, package_manager)
     _import_conda_dependencies(config)
     _import_conda_environment(config)
-    _set_quarto_linkcheck(config, session)
     if package_manager == "pixi+uv":
         _define_combined_ci_job(config)
     else:
+        _set_quarto_linkcheck(config, session)
         if is_python_package:
             _install_package_editable(config)
         _set_dev_python_version(config, dev_python_version)
