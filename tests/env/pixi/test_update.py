@@ -53,7 +53,7 @@ def describe_update_pixi_configuration():
         assert config.get_table("dependencies") == {
             "ffmpeg": "*",
             "r-base": "*",
-            "lychee": "*",
+            "lychee": ">=0.24.0",
         }
         assert not config.has_table("pypi-dependencies")
         assert "lychee" in config.get_table("tasks.linkcheck")["cmd"]

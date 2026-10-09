@@ -7,6 +7,7 @@ import yaml
 
 from compwa_policy.characterization import uses_quarto
 from compwa_policy.env.pixi._helpers import has_pixi_config
+from compwa_policy.repo.lychee import configure_lychee
 from compwa_policy.repo.upgrade import (
     get_julia_manifest_paths,
     get_julia_upgrade_command,
@@ -59,7 +60,7 @@ def update_pixi_configuration(
     _define_minimal_project(session, package_manager)
     _import_conda_dependencies(config)
     _import_conda_environment(config)
-    _set_quarto_linkcheck(config)
+    _set_quarto_linkcheck(config, session)
     if package_manager == "pixi+uv":
         _define_combined_ci_job(config)
     else:
@@ -259,7 +260,7 @@ def _install_package_editable(config: ModifiablePyproject) -> None:
 
 
 def _set_dev_python_version(
-    config: ModifiablePyproject, dev_python_version: PythonVersion
+    config: ModifiablePyproject, /, dev_python_version: PythonVersion
 ) -> None:
     dependencies = __get_table(config, "dependencies", create=True)
     version = f"{dev_python_version}.*"
@@ -269,9 +270,12 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
+def _set_quarto_linkcheck(
+    config: ModifiablePyproject, /, session: Session | None = None
+) -> None:
     if not uses_quarto():
         return
+    configure_lychee(config, session)
     tasks = __get_table(config, "tasks", create=True)
     existing = tasks.get("linkcheck", {})
     if isinstance(existing, str):
@@ -292,13 +296,11 @@ def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
             config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
     dependencies = __get_table(config, "dependencies", create=True)
     if "lychee" not in dependencies:
-        dependencies["lychee"] = "*"
+        dependencies["lychee"] = ">=0.24.0"
         config.changelog.append("Added lychee to Pixi conda dependencies")
     if "lychee" in command:
         return
-    tasks["linkcheck"] = {
-        "cmd": "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
-    }
+    tasks["linkcheck"] = {"cmd": "lychee ."}
     config.changelog.append("Set Pixi linkcheck task")
 
 
@@ -326,7 +328,7 @@ def _migrate_style_task_to_prek(config: ModifiablePyproject) -> None:
 
 
 def _set_upgrade_task(
-    config: ModifiablePyproject, package_manager: PackageManagerChoice
+    config: ModifiablePyproject, /, package_manager: PackageManagerChoice
 ) -> None:
     tasks = __get_table(config, "tasks", create=True)
     helper_tasks: dict[str, dict[str, Any]] = {"_upgrade-pixi": {"cmd": "pixi update"}}
@@ -390,7 +392,7 @@ def __update_gitignore(session: Session, /) -> None:
         session.changelog.append(f"Added {ignore_path} under {CONFIG_PATH.gitignore}")
 
 
-def _update_dev_environment(config: ModifiablePyproject) -> None:
+def _update_dev_environment(config: ModifiablePyproject, /) -> None:
     if not __has_table(config, "project.optional-dependencies"):
         return
     optional_dependencies = __get_table(config, "project.optional-dependencies")
@@ -404,7 +406,7 @@ def _update_dev_environment(config: ModifiablePyproject) -> None:
         config.changelog.append(msg)
 
 
-def _update_docnb_and_doclive(config: ModifiablePyproject, table_key: str) -> None:
+def _update_docnb_and_doclive(config: ModifiablePyproject, /, table_key: str) -> None:
     if not __has_table(config, table_key):
         return
     tasks = __get_table(config, table_key)
@@ -434,14 +436,14 @@ def ___outsource_cmd(task: Table, other_task_name: str) -> bool:
 
 
 def __get_table(
-    config: ModifiablePyproject, key: str, create: bool = False
+    config: ModifiablePyproject, /, key: str, create: bool = False
 ) -> MutableMapping[str, Any]:
     if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
         key = f"tool.pixi.{key}"
     return config.get_table(key, create=create)
 
 
-def __has_table(config: Pyproject, key: str) -> bool:
+def __has_table(config: Pyproject, /, key: str) -> bool:
     if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
         key = f"tool.pixi.{key}"
     return config.has_table(key)
