@@ -217,8 +217,8 @@ def describe_set_quarto_linkcheck():
     @pytest.mark.parametrize(
         "config_case",
         [
-            ("pyproject.toml", "tool.pixi.tasks", "tool.pixi.pypi-dependencies"),
-            ("pixi.toml", "tasks", "pypi-dependencies"),
+            ("pyproject.toml", "tool.pixi.tasks", "tool.pixi.dependencies"),
+            ("pixi.toml", "tasks", "dependencies"),
         ],
         ids=["pyproject", "pixi-toml"],
     )
@@ -247,7 +247,10 @@ def describe_set_quarto_linkcheck():
             _set_quarto_linkcheck(config)
 
         config = Pyproject.load(config_path)
-        assert config.get_table(dependencies_table)["lychee-bin"] == "*"
+        assert config.get_table(dependencies_table)["lychee"] == "*"
+        assert not config.has_table(
+            dependencies_table.replace("dependencies", "pypi-dependencies")
+        )
         linkcheck = config.get_table(f"{tasks_table}.linkcheck")
         assert linkcheck["cmd"] == (
             "lychee --root-dir . . && lychee --root-dir . --extensions qmd ."
@@ -267,8 +270,8 @@ def describe_set_quarto_linkcheck():
             [tasks]
             linkcheck = "lychee --config lychee.toml ."
 
-            [pypi-dependencies]
-            lychee-bin = ">=0.24.0"
+            [dependencies]
+            lychee = ">=0.24.0"
         """).lstrip()
         config_path.write_text(original)
         git_add(tmp_path)
