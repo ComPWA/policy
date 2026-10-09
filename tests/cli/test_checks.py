@@ -137,7 +137,7 @@ def describe_check_dev_python_version():
     def skips_excluded_versions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(_PYPROJECT)
-        args = build_arguments(excluded_python_versions="3.12")
+        args = build_arguments(excluded_python_versions=["3.12"])
         assert args.dev_python_version == "3.11"
 
     def keeps_explicit_unsupported_version(

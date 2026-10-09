@@ -212,7 +212,7 @@ class Settings(BaseSettings):
     """Human-readable repository title; defaults to the repository name when empty."""
     environment_variables: str = ""
     """Environment variables added to the development setup."""
-    excluded_python_versions: str = ""
+    excluded_python_versions: SortedArray[PythonVersion] = []
     """Python versions that the project does not support."""
     excluded_dependencies: SortedArray[str] = []
     """Notebook dependencies that policy must not install."""
@@ -313,17 +313,16 @@ class Settings(BaseSettings):
         "ci_skipped_tests",
         "doc_apt_packages",
         "allowed_cell_metadata",
-        "excluded_python_versions",
         mode="before",
     )
     @classmethod
     def _normalize_string_list(cls, value: Any) -> str:
         """Accept a comma/space string or a TOML array for a list-valued option.
 
-        >>> Settings(excluded_python_versions=["3.6", "3.7"]).excluded_python_versions
-        '3.6,3.7'
-        >>> Settings(excluded_python_versions="3.6, 3.7").excluded_python_versions
-        '3.6, 3.7'
+        >>> Settings(ci_skipped_tests=["3.12", "3.13"]).ci_skipped_tests
+        '3.12,3.13'
+        >>> Settings(ci_skipped_tests="3.12, 3.13").ci_skipped_tests
+        '3.12, 3.13'
         """
         return _join(value)
 

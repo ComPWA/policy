@@ -68,12 +68,12 @@ def describe_build_arguments():
         # cspell:ignore myproj
         args = build_arguments(
             type_checker=[TypeChecker.mypy, TypeChecker.ty],
-            excluded_python_versions="3.6, 3.7",
+            excluded_python_versions=["3.11", "3.12"],
             macos_python_version="disable",
             repo_name="myproj",
         )
         assert args.type_checker == {"mypy", "ty"}
-        assert args.excluded_python_versions == {"3.6", "3.7"}
+        assert args.excluded_python_versions == {"3.11", "3.12"}
         assert args.macos_python_version is None
         assert args.repo_name == "myproj"
         assert args.repo_title == "myproj"  # falls back to repo_name
@@ -198,6 +198,25 @@ def describe_pyproject_config():
             """,
         )
         with pytest.raises(ValueError, match="does_not_exist"):
+            load_settings()
+
+    @pytest.mark.parametrize(
+        "value",
+        ['"3.14"', '["3,14"]'],
+        ids=["string", "unknown-version"],
+    )
+    def rejects_invalid_excluded_python_versions(
+        value: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _write_policy(
+            tmp_path,
+            monkeypatch,
+            f"""
+            [tool.compwa.policy.python]
+            excluded-python-versions = {value}
+            """,
+        )
+        with pytest.raises(ValueError, match="excluded_python_versions"):
             load_settings()
 
     def ignores_environment_variables(
