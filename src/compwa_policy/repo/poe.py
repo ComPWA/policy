@@ -92,7 +92,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         if config.has_table("tool.poe.tasks"):
             _migrate_style_task_to_prek(config)
             _set_upgrade_task(config, args.package_manager)
-    if args.package_manager == "pixi+uv":
+    if args.package_manager == "pixi+uv" and config.has_table("tool.poe"):
         _set_quarto_linkcheck(config)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")

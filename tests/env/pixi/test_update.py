@@ -14,16 +14,26 @@ def describe_update_pixi_configuration():
     @pytest.mark.parametrize(
         "legacy_dependency", [False, True], ids=["fresh", "existing"]
     )
-    def leaves_uv_linkcheck_out_of_pixi(
+    @pytest.mark.parametrize(
+        "has_pyproject", [False, True], ids=["no-pyproject", "pyproject-without-poe"]
+    )
+    def configures_linkcheck_in_pixi_without_poe(
         legacy_dependency: bool,
+        has_pyproject: bool,
+        *,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
         git_add: Callable[[Path], None],
+        run_check,
     ):
         git_init(tmp_path)
         monkeypatch.chdir(tmp_path)
         (tmp_path / "_quarto.yml").touch()
+        (tmp_path / "index.qmd").touch()
+        pyproject_path = tmp_path / "pyproject.toml"
+        if has_pyproject:
+            pyproject_path.write_text('[project]\nname = "my-notes"\n')
         config_path = tmp_path / "pixi.toml"
         config_path.write_text(
             dedent("""
@@ -34,6 +44,10 @@ def describe_update_pixi_configuration():
                 [dependencies]
                 ffmpeg = "*"
                 r-base = "*"
+
+                [tasks]
+                doc = "quarto render"
+                doclive = "quarto preview"
             """).lstrip()
             + ('\n[pypi-dependencies]\nlychee-bin = "*"\n' if legacy_dependency else "")
         )
@@ -47,6 +61,9 @@ def describe_update_pixi_configuration():
                     dev_python_version="3.12",
                     package_manager="pixi+uv",
                 )
+                run_check(
+                    check, session, has_notebooks=False, package_manager="pixi+uv"
+                )
             return session
 
         update()
@@ -54,11 +71,14 @@ def describe_update_pixi_configuration():
         assert config.get_table("dependencies") == {
             "ffmpeg": "*",
             "r-base": "*",
+            "lychee": ">=0.24.0",
         }
-        assert config.has_table("pypi-dependencies") == legacy_dependency
-        if legacy_dependency:
-            assert config.get_table("pypi-dependencies.lychee-bin") == "*"
-        assert not config.has_table("tasks.linkcheck")
+        assert not config.has_table("pypi-dependencies")
+        assert config.get_table("tasks.linkcheck") == {"cmd": "lychee ."}
+        if has_pyproject:
+            pyproject = Pyproject.load(pyproject_path)
+            assert not pyproject.has_table("tool.poe")
+            assert not pyproject.has_table("dependency-groups")
         first_result = config_path.read_text()
         assert update().changelog == []
         assert config_path.read_text() == first_result
