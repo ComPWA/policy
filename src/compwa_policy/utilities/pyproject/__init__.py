@@ -18,7 +18,8 @@ from typing import (
     overload,
 )
 
-import rtoml
+import tomli
+import tomli_w
 import tomlkit
 from attrs import field, frozen
 
@@ -83,7 +84,7 @@ class Pyproject:
         return cls(document, source)
 
     def dumps(self) -> str:
-        src = rtoml.dumps(self._document, pretty=True)
+        src = tomli_w.dumps(self._document)
         return f"{src.strip()}\n"
 
     def get_table(
@@ -400,21 +401,22 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
 
     The :code:`modifiable` flag determines which parser to use:
 
-    - `False`: use `rtoml <https://github.com/samuelcolvin/rtoml>`_, which is
-      **faster**, but does not preserve comments and formatting.
+    - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**,
+      but does not preserve comments and formatting.
     - `True`: uses :mod:`tomlkit`, which is **slower**, but preservers comments and
       formatting.
     """
-    parser = tomlkit if modifiable else rtoml
+    parser = tomlkit if modifiable else tomli
     if isinstance(source, io.IOBase):
         current_position = source.tell()
         source.seek(0)
-        document = parser.load(source)  # ty:ignore[invalid-argument-type]
+        text = source.read()
         source.seek(current_position)
-        return document  # ty:ignore[invalid-return-type]
+        if isinstance(text, bytes):
+            text = text.decode()
+        return parser.loads(text)  # ty:ignore[invalid-return-type]
     if isinstance(source, Path):
-        with open(source) as stream:
-            return parser.load(stream)  # ty:ignore[invalid-return-type]
+        return parser.loads(source.read_text())  # ty:ignore[invalid-return-type]
     if isinstance(source, str):
         return parser.loads(source)  # ty:ignore[invalid-return-type]
     msg = f"Source of type {type(source).__name__} is not supported"

@@ -1,5 +1,5 @@
 import pytest
-import rtoml
+import tomli
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities.pyproject import load_pyproject_toml
@@ -107,7 +107,7 @@ def describe_get_supported_python_versions():
 
 def describe_get_sub_table():
     def returns_nested_tables_and_values():
-        document = rtoml.loads("""
+        document = tomli.loads("""
             [project]
             name = "my-package"
 
@@ -133,7 +133,7 @@ def describe_get_sub_table():
 
 def describe_has_sub_table():
     def detects_presence():
-        document = rtoml.loads("""
+        document = tomli.loads("""
             [project]
             name = "my-package"
 
