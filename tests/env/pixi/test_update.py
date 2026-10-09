@@ -55,7 +55,7 @@ def describe_update_pixi_configuration():
             "r-base": "*",
             "lychee": "*",
         }
-        assert not config.get_table("pypi-dependencies", fallback={})
+        assert not config.has_table("pypi-dependencies")
         assert "lychee" in config.get_table("tasks.linkcheck")["cmd"]
         first_result = config_path.read_text()
         assert update().changelog == []

@@ -284,6 +284,11 @@ def _set_quarto_linkcheck(config: ModifiablePyproject, /) -> None:
         pypi_dependencies = __get_table(config, "pypi-dependencies")
         if "lychee-bin" in pypi_dependencies:
             del pypi_dependencies["lychee-bin"]
+            if not pypi_dependencies:
+                if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
+                    del config._document["tool"]["pixi"]["pypi-dependencies"]  # ruff: ignore[private-member-access]
+                else:
+                    del config._document["pypi-dependencies"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
             config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
     dependencies = __get_table(config, "dependencies", create=True)
     if "lychee" not in dependencies:
