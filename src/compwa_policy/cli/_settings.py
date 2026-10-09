@@ -201,7 +201,7 @@ class Settings(BaseSettings):
     python: bool | None = None
     """Whether the repository contains Python code; ``None`` enables auto-detection."""
     dev_python_version: PythonVersion = DEFAULT_DEV_PYTHON_VERSION
-    """Python version used for the development environment."""
+    """Python version for the development environment, if supported by the project."""
     package_manager: PackageManagerChoice = "uv"
     """Package or environment manager used by the repository."""
     repo_name: str = ""

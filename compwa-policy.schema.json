@@ -7,7 +7,7 @@
   "properties": {
     "dev-python-version": {
       "default": "3.14",
-      "description": "Python version used for the development environment.",
+      "description": "Python version for the development environment, if supported by the project.",
       "enum": [
         "3.6",
         "3.7",

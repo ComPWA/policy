@@ -20,6 +20,7 @@ from compwa_policy.cli._checks import (
     run_checks,
 )
 from compwa_policy.cli._options import build_arguments
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
 from compwa_policy.utilities.check_hook import CheckContext, Group
@@ -108,6 +109,48 @@ def describe_check_dev_python_version():
         args = build_arguments(dev_python_version="3.9")
         assert check_dev_python_version(args) == 1
         assert "not listed in the supported Python versions" in capsys.readouterr().out
+
+    @pytest.mark.parametrize(
+        ("project_table", "expected"),
+        [
+            ('requires-python = "~=3.13.0"', "3.13"),
+            ('requires-python = ">=3.10"', DEFAULT_DEV_PYTHON_VERSION),
+            ('requires-python = ">=3.15"', "3.15"),
+            ("", DEFAULT_DEV_PYTHON_VERSION),
+        ],
+        ids=["older", "default", "newer", "undetermined"],
+    )
+    def falls_back_to_latest_supported_version(
+        project_table: str,
+        expected: str,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            f'[project]\nname = "my-package"\n{project_table}\n'
+        )
+        args = build_arguments()
+        assert args.dev_python_version == expected
+        assert check_dev_python_version(args) == 0
+
+    def skips_excluded_versions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(_PYPROJECT)
+        args = build_arguments(excluded_python_versions="3.12")
+        assert args.dev_python_version == "3.11"
+
+    def keeps_explicit_unsupported_version(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "my-package"\nrequires-python = "~=3.13.0"\n'
+            f'\n[tool.compwa.policy]\ndev-python-version = "{DEFAULT_DEV_PYTHON_VERSION}"\n'
+        )
+        args = build_arguments()
+        assert args.dev_python_version == DEFAULT_DEV_PYTHON_VERSION
+        assert check_dev_python_version(args) == 1
 
 
 def describe_compute_context():

@@ -22,6 +22,9 @@ from compwa_policy.config import (
     PythonVersion,
 )
 from compwa_policy.config import UpgradeFrequency as Frequency
+from compwa_policy.errors import PolicyError
+from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.pyproject import Pyproject
 
 if TYPE_CHECKING:
     from typing import Any
@@ -45,7 +48,11 @@ DevPythonVersion = Annotated[
     typer.Option(
         "--dev-python-version",
         show_default=DEFAULT_DEV_PYTHON_VERSION,
-        help="Specify the Python version for your developer environment.",
+        help=(
+            "Specify the Python version for your developer environment. If omitted,"
+            f" Python {DEFAULT_DEV_PYTHON_VERSION} is used, or the latest version that"
+            " pyproject.toml supports if it does not support that version."
+        ),
     ),
 ]
 PackageManager = Annotated[
@@ -344,9 +351,39 @@ def build_arguments(**overrides: Any) -> Arguments:
         _to_list(settings["excluded_python_versions"])
     )
     settings["excluded_dependencies"] = set(settings["excluded_dependencies"])
+    if "dev_python_version" not in resolved_settings.model_fields_set:
+        settings["dev_python_version"] = _get_default_dev_python_version(
+            excluded=settings["excluded_python_versions"]
+        )
     if settings["macos_python_version"] == "disable":
         settings["macos_python_version"] = None
     settings["repo_name"] = settings["repo_name"] or os.path.basename(os.getcwd())
     settings["repo_title"] = settings["repo_title"] or settings["repo_name"]
     settings["type_checker"] = set(settings["type_checker"])
     return Arguments(**settings)
+
+
+def _get_default_dev_python_version(excluded: set[str]) -> PythonVersion:
+    """Fall back to the latest supported version if the default is not supported.
+
+    Versions are taken from the classifiers or ``requires-python`` of
+    :code:`pyproject.toml`, without the ``excluded`` versions. The latest of these that
+    is not newer than :data:`.DEFAULT_DEV_PYTHON_VERSION` is preferred, so that a newer
+    version is only used if the project supports nothing older.
+    """
+    if not CONFIG_PATH.pyproject.exists():
+        return DEFAULT_DEV_PYTHON_VERSION
+    try:
+        supported_versions = Pyproject.load().get_supported_python_versions()
+    except PolicyError:
+        return DEFAULT_DEV_PYTHON_VERSION
+    candidates = [v for v in supported_versions if v not in excluded]
+    if not candidates or DEFAULT_DEV_PYTHON_VERSION in candidates:
+        return DEFAULT_DEV_PYTHON_VERSION
+    default = _to_version_tuple(DEFAULT_DEV_PYTHON_VERSION)
+    older = [v for v in candidates if _to_version_tuple(v) < default]
+    return older[-1] if older else candidates[0]
+
+
+def _to_version_tuple(version: str) -> tuple[int, ...]:
+    return tuple(int(i) for i in version.split("."))
