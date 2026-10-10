@@ -42,6 +42,19 @@ class TypeChecker(StrEnum):
     ty = "ty"
 
 
+class DependabotEcosystem(StrEnum):
+    """Package ecosystems that can be selected with ``--dependabot-ecosystem``.
+
+    Mirrors the :data:`.config.DependabotEcosystem` literal for the same reason as
+    :class:`TypeChecker`.
+    """
+
+    github_actions = "github-actions"
+    julia = "julia"
+    pre_commit = "pre-commit"
+    uv = "uv"
+
+
 # Cross-cutting options -------------------------------------------------------
 DevPythonVersion = Annotated[
     PythonVersion | None,
@@ -253,6 +266,13 @@ KeepWorkflow = Annotated[
         help="Names of the GitHub Actions workflows that should not be updated or removed, including the .yml extension.",
     ),
 ]
+DependabotEcosystems = Annotated[
+    list[DependabotEcosystem] | None,
+    typer.Option(
+        "--dependabot-ecosystem",
+        help="Package ecosystems that Dependabot should update. If not specified, they are derived from the files in the repository.",
+    ),
+]
 UpgradeFrequency = Annotated[
     Frequency | None,
     typer.Option(
@@ -358,6 +378,10 @@ def build_arguments(**overrides: Any) -> Arguments:
     settings["repo_name"] = settings["repo_name"] or os.path.basename(os.getcwd())
     settings["repo_title"] = settings["repo_title"] or settings["repo_name"]
     settings["type_checker"] = set(settings["type_checker"])
+    if settings["dependabot_ecosystems"] is not None:
+        settings["dependabot_ecosystems"] = {
+            str(ecosystem) for ecosystem in settings["dependabot_ecosystems"]
+        }
     return Arguments(**settings)
 
 

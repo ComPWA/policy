@@ -77,6 +77,16 @@
           "title": "Ci Skipped Tests",
           "type": "string"
         },
+        "dependabot-ecosystems": {
+          "description": "Package ecosystems that Dependabot updates; derived from the repository files if unset.",
+          "items": {
+            "enum": ["github-actions", "julia", "pre-commit", "uv"],
+            "type": "string"
+          },
+          "title": "Dependabot Ecosystems",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        },
         "github-pages": {
           "default": false,
           "description": "Publish the documentation through GitHub Pages.",

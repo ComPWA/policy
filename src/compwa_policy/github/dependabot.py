@@ -15,6 +15,7 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from compwa_policy import Arguments
+    from compwa_policy.config import DependabotEcosystem
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     directories=(CONFIG_PATH.github_workflow_dir.parent,),
     patterns=("(.*/)?Manifest\\.toml",),
 )
-def check(session: Session, args: Arguments, _: CheckContext) -> None:  # ruff: ignore[complex-structure]
+def check(session: Session, args: Arguments, _: CheckContext) -> None:
     frequency = args.upgrade_frequency
 
     def dump_dependabot_config() -> Changelog:
@@ -46,19 +47,15 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:  # ruff: 
     if frequency is not None:
         expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
     template_ecosystem = cast("dict[str, Any]", expected["updates"][0])
-    package_ecosystems: list[dict[str, Any]] = []
-    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}", untracked=True):
-        package_ecosystems.append(get_ecosystem("github-actions"))
-    if is_committed("**/Manifest.toml", untracked=True):
-        package_ecosystems.append(get_ecosystem("julia"))
-    if is_committed(".pre-commit-config.yaml", untracked=True):
-        package_ecosystems.append(get_ecosystem("pre-commit"))
-    if is_committed("uv.lock", untracked=True):
-        package_ecosystems.append(get_ecosystem("uv"))
+    ecosystems = args.dependabot_ecosystems
+    if ecosystems is None:
+        ecosystems = _detect_ecosystems()
+    package_ecosystems = [get_ecosystem(name) for name in sorted(ecosystems)]
 
     if not package_ecosystems:
-        dependabot_path.unlink(missing_ok=True)
-        session.changelog.append(f"Removed {dependabot_path}")
+        if dependabot_path.exists():
+            dependabot_path.unlink()
+            session.changelog.append(f"Removed {dependabot_path}")
         return
     expected["updates"] = package_ecosystems
     if not dependabot_path.exists():
@@ -67,6 +64,19 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:  # ruff: 
     existing = rt_yaml.load(dependabot_path)
     if existing != expected:
         session.changelog += dump_dependabot_config()
+
+
+def _detect_ecosystems() -> set[DependabotEcosystem]:
+    ecosystems: set[DependabotEcosystem] = set()
+    if is_committed(f"{CONFIG_PATH.github_workflow_dir / '*.yml'}", untracked=True):
+        ecosystems.add("github-actions")
+    if is_committed("**/Manifest.toml", untracked=True):
+        ecosystems.add("julia")
+    if is_committed(".pre-commit-config.yaml", untracked=True):
+        ecosystems.add("pre-commit")
+    if is_committed("uv.lock", untracked=True):
+        ecosystems.add("uv")
+    return ecosystems
 
 
 @cache
