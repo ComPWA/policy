@@ -12,5 +12,8 @@ PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 TypeChecker = Literal["mypy", "pyright", "ty"]
 """Type checkers supported by the policy framework."""
 
+DependabotEcosystem = Literal["github-actions", "julia", "pre-commit", "uv"]
+"""Package ecosystems that the Dependabot configuration can update."""
+
 UpgradeFrequency = Literal["monthly", "quarterly", "semiannually"]
 """Frequencies supported for updating lock files."""

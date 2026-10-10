@@ -67,6 +67,7 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--allow-deprecated-workflows",
         "--allow-labels",
         "--ci-skipped-tests",
+        "--dependabot-ecosystem",
         "--doc-apt-packages",
         "--github-pages",
         "--keep-pr-linting",

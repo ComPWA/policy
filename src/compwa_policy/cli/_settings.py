@@ -40,6 +40,7 @@ from enum import Enum
 from typing import Annotated, Any, TypeVar
 
 from pydantic import Field, field_validator
+from pydantic.json_schema import SkipJsonSchema  # ruff: ignore[typing-only-third-party-import]
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -49,6 +50,7 @@ from pydantic_settings import (
 from compwa_policy import TomlFormatter, _to_list
 from compwa_policy.config import (
     DEFAULT_DEV_PYTHON_VERSION,
+    DependabotEcosystem,
     PackageManagerChoice,
     PythonVersion,
     TypeChecker,
@@ -63,6 +65,12 @@ SortedArray = Annotated[
     Field(json_schema_extra={"x-tombi-array-values-order": "ascending"}),
 ]
 """Array-valued setting whose TOML representation is sorted by Tombi."""
+
+
+def _omit_default(schema: dict[str, Any]) -> None:
+    """Hide a ``None`` default from the schema, since TOML has no null value."""
+    schema.pop("default", None)
+
 
 #: Top-level table that holds the policy configuration in :code:`pyproject.toml`.
 POLICY_TABLE = "tool.compwa.policy"
@@ -87,6 +95,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "allow_deprecated_workflows",
         "allow_labels",
         "ci_skipped_tests",
+        "dependabot_ecosystems",
         "github_pages",
         "keep_pr_linting",
         "keep_workflow",
@@ -258,6 +267,10 @@ class Settings(BaseSettings):
     """APT packages required to build the documentation."""
     keep_workflow: SortedArray[str] = []
     """GitHub Actions workflow files that policy must not update or remove."""
+    dependabot_ecosystems: SortedArray[DependabotEcosystem] | SkipJsonSchema[None] = (
+        Field(default=None, json_schema_extra=_omit_default)
+    )
+    """Package ecosystems that Dependabot updates; derived from the repository files if unset."""
     upgrade_frequency: UpgradeFrequency = "quarterly"
     """Frequency of the workflow that upgrades lock and constraint files."""
     no_binder: bool = False

@@ -17,6 +17,7 @@ from attrs import field, frozen
 
 if TYPE_CHECKING:
     from compwa_policy.config import (
+        DependabotEcosystem,
         PackageManagerChoice,
         PythonVersion,
         TypeChecker,
@@ -42,6 +43,7 @@ class Arguments:
     allowed_cell_metadata: str
     branch_coverage: bool
     ci_skipped_tests: str
+    dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
     doc_apt_packages: str
     environment_variables: str
