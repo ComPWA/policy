@@ -10,6 +10,7 @@ import tomli
 from compwa_policy.env.pixi import has_pixi_config
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
+from compwa_policy.utilities.match import is_committed
 
 if TYPE_CHECKING:
     from compwa_policy import Arguments
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
         CONFIG_PATH.conda,
         CONFIG_PATH.pixi_toml,
         CONFIG_PATH.pyproject,
+        "uv.lock",
     ],
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
@@ -61,20 +63,16 @@ def __get_pixi_direnv(session: Session, /) -> str:
     dev_environment = __determine_pixi_dev_environment(session)
     if dev_environment is not None:
         environment_flag = f" --environment {dev_environment}"
-    return dedent(f"""
-        watch_file pixi.lock
-        eval "$(pixi shell-hook{environment_flag})"
-    """).strip()
+    return f"layout pixi{environment_flag}"
 
 
 def __get_uv_direnv(variables: dict[str, str]) -> str:
-    script = dedent("""
-    uv sync --all-extras --quiet
-    source .venv/bin/activate
-    """)
+    script = "layout uv --all-extras --quiet"
+    if not is_committed("uv.lock"):
+        script = "uv lock --quiet\n" + script
     for name, value in variables.items():
         script += f"\nexport {name}={value}"
-    return script.strip()
+    return script
 
 
 def __determine_pixi_dev_environment(session: Session, /) -> str | None:
