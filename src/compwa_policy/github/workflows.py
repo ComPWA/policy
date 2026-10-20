@@ -42,18 +42,21 @@ if TYPE_CHECKING:
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     repository = f"{args.repo_organization}/{args.repo_name}"
-    if args.no_cd:
-        session.changelog += remove_workflow("cd.yml")
-    else:
-        _update_cd_workflow(
-            session,
-            args.no_milestones,
-            args.no_pypi,
-            args.no_version_branches,
-            repository,
-        )
+    keep = args.keep_workflow
+    if "cd.yml" not in keep:
+        if args.no_cd:
+            session.changelog += remove_workflow("cd.yml")
+        else:
+            _update_cd_workflow(
+                session,
+                args.no_milestones,
+                args.no_pypi,
+                args.no_version_branches,
+                repository,
+            )
     _update_ci_workflow(
         session,
+        keep,
         args.allow_deprecated_workflows,
         ctx.doc_apt_packages,
         ctx.environment_variables,
@@ -64,7 +67,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         _to_list(args.ci_skipped_tests),
         repository,
     )
-    if not args.keep_pr_linting:
+    if not args.keep_pr_linting and "pr-linting.yml" not in keep:
         copy_workflow_file(session, filename="pr-linting.yml", repository=repository)
     _recommend_vscode_extension(session)
 
@@ -118,6 +121,7 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
 
 def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     session: Session,
+    keep_workflow: set[str],
     /,
     allow_deprecated: bool,
     doc_apt_packages: list[str],
@@ -143,30 +147,45 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             skip_tests,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
+        if not workflow_path.exists():
+            if not expected_data.get("jobs"):
+                return []
+            return update_workflow(
+                yaml, expected_data, workflow_path, repository=repository
+            )
+        existing_data = yaml.load(workflow_path)
+        __preserve_custom_jobs(expected_data, existing_data, workflow_path.name)
         if not expected_data.get("jobs"):
-            if workflow_path.exists():
-                workflow_path.unlink()
-                return ["Removed redundant CI workflows"]
-        else:
-            if not workflow_path.exists():
-                return update_workflow(
-                    yaml, expected_data, workflow_path, repository=repository
-                )
-            existing_data = yaml.load(workflow_path)
-            if existing_data != expected_data:
-                return update_workflow(
-                    yaml, expected_data, workflow_path, repository=repository
-                )
+            workflow_path.unlink()
+            return ["Removed redundant CI workflows"]
+        if existing_data != expected_data:
+            return update_workflow(
+                yaml, expected_data, workflow_path, repository=repository
+            )
         return []
 
-    session.changelog += update()
+    if "ci.yml" not in keep_workflow:
+        session.changelog += update()
     if not allow_deprecated:
-        session.changelog += remove_workflow("ci-docs.yml")
-        session.changelog += remove_workflow("ci-style.yml")
-        session.changelog += remove_workflow("ci-tests.yml")
-        session.changelog += remove_workflow("linkcheck.yml")
-    copy_workflow_file(session, filename="clean-caches.yml", repository=repository)
-    session.changelog += remove_workflow("clean-cache.yml")
+        session.changelog += _remove_workflows(
+            keep_workflow,
+            "ci-docs.yml",
+            "ci-style.yml",
+            "ci-tests.yml",
+            "linkcheck.yml",
+        )
+    if "clean-caches.yml" not in keep_workflow:
+        copy_workflow_file(session, filename="clean-caches.yml", repository=repository)
+    session.changelog += _remove_workflows(keep_workflow, "clean-cache.yml")
+
+
+def __preserve_custom_jobs(expected: dict, existing: dict, filename: str) -> None:
+    """Add jobs from the existing workflow that the policy template does not define."""
+    yaml = create_prettier_round_trip_yaml()
+    template = yaml.load(COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename)
+    for name, job_def in existing.get("jobs", {}).items():
+        if name not in template["jobs"]:
+            expected["jobs"][name] = job_def
 
 
 def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
@@ -422,6 +441,14 @@ def __get_action_name(reference: str) -> str:
     './.github/actions/local'
     """
     return reference.split("@", maxsplit=1)[0]
+
+
+def _remove_workflows(keep_workflow: set[str], *filenames: str) -> Changelog:
+    changelog: Changelog = []
+    for filename in filenames:
+        if filename not in keep_workflow:
+            changelog += remove_workflow(filename)
+    return changelog
 
 
 def remove_workflow(filename: str) -> Changelog:
