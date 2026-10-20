@@ -48,6 +48,7 @@ def _run_main(
     doc_apt_packages: list[str] | None = None,
     environment_variables: dict[str, str] | None = None,
     github_pages: bool = False,
+    keep_workflow: set[str] | None = None,
     macos_python_version: PythonVersion | None = None,
     no_cd: bool = False,
     no_milestones: bool = False,
@@ -69,6 +70,7 @@ def _run_main(
             environment_variables=environment_variables or {},
             github_pages=github_pages,
             keep_pr_linting=False,
+            keep_workflow=keep_workflow or set(),
             macos_python_version=macos_python_version,
             no_cd=no_cd,
             no_milestones=no_milestones,
@@ -199,6 +201,38 @@ def describe_main():
         ci = (tmp_path / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "doc:" not in ci  # no documentation -> doc job removed
         assert "test:" not in ci  # no tests directory -> test job removed
+
+    def preserves_custom_ci_jobs(workflows_repo: Path, run_check):
+        _run_main(run_check)
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        custom_job = "  preview:\n    needs: doc\n    runs-on: ubuntu-24.04\n    steps:\n      - run: echo preview\n"
+        ci_path.write_text(ci_path.read_text() + custom_job)
+        assert not _run_main(run_check)
+        assert ci_path.read_text().endswith(custom_job)
+
+    def removes_dropped_template_ci_jobs(workflows_repo: Path, run_check):
+        _run_main(run_check)
+        (workflows_repo / "tests").rmdir()
+        assert _run_main(run_check)
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "test:" not in ci
+
+    @pytest.mark.parametrize(
+        "filename", ["cd.yml", "ci.yml", "clean-caches.yml", "pr-linting.yml"]
+    )
+    def keeps_workflows(workflows_repo: Path, run_check, filename: str):
+        workflow_path = workflows_repo / _WORKFLOW_DIR / filename
+        workflow_path.parent.mkdir(parents=True)
+        workflow_path.write_text("custom: true\n")
+        _run_main(run_check, keep_workflow={filename})
+        assert workflow_path.read_text() == "custom: true\n"
+
+    def keeps_removed_workflows(workflows_repo: Path, run_check):
+        workflow_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
+        workflow_path.parent.mkdir(parents=True)
+        workflow_path.write_text("custom: true\n")
+        _run_main(run_check, keep_workflow={"cd.yml"}, no_cd=True)
+        assert workflow_path.exists()
 
 
 def describe_remove_workflow():
