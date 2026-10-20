@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.python import has_constraint_files
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
 
 
 def _update_extensions(session: Session, /) -> None:
+    _update_quarto_extension(session)
     # cspell:disable
     vscode.add_extension_recommendation(session, "eamodio.gitlens")
     vscode.add_extension_recommendation(session, "mhutchie.git-graph")
@@ -64,7 +66,6 @@ def _update_settings(
             "diffEditor.experimental.showMoves": True,
             "editor.formatOnSave": True,
             "gitlens.telemetry.enabled": False,
-            "multiDiffEditor.experimental.enabled": True,
             "redhat.telemetry.enabled": False,
             "telemetry.telemetryLevel": "off",
         },
@@ -114,6 +115,7 @@ def _remove_outdated_settings(session: Session, /) -> None:
         "editor.rulers",
         "githubPullRequests.telemetry.enabled",
         "gitlens.advanced.telemetry.enabled",
+        "multiDiffEditor.experimental.enabled",
         "python.analysis.diagnosticMode",
         "python.analysis.typeCheckingMode",
         "python.formatting.provider",
@@ -141,6 +143,15 @@ def _update_doc_settings(session: Session, /) -> None:
     myst_extension = "executablebookproject.myst-highlight"
     if myst_extension not in vscode.get_unwanted_extensions(session):
         vscode.add_extension_recommendation(session, myst_extension)
+
+
+def _update_quarto_extension(session: Session, /) -> None:
+    extension = "quarto.quarto"
+    quarto_files = ("_quarto.yml", "**/_quarto.yml", "*.qmd", "**/*.qmd", ":!:tests")
+    if is_committed(*quarto_files, untracked=True):
+        vscode.add_extension_recommendation(session, extension)
+    else:
+        vscode.remove_extension_recommendation(session, extension)
 
 
 def _update_notebook_settings(session: Session, /) -> None:
