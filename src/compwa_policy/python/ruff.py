@@ -137,7 +137,6 @@ def _remove_isort(session: Session, /, imports_on_top: bool) -> None:
 
 
 def _ignore_nbqa_temporary_files(session: Session, /) -> None:
-    """Ignore the temporary Python files that nbQA hooks leave behind on interruption."""
     if find_hook(session.precommit.document, r"^nbqa-") is None:
         return
     add_to_gitignore(session, "*_nbqa_ipynb.py")
