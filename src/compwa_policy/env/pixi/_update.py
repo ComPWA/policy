@@ -15,7 +15,7 @@ from compwa_policy.repo.upgrade import (
     has_nested_uv_lock,
     migrate_precommit_style_command,
 )
-from compwa_policy.utilities import CONFIG_PATH, append_safe, vscode
+from compwa_policy.utilities import CONFIG_PATH, add_to_gitignore, append_safe, vscode
 from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -81,7 +81,7 @@ def update_pixi_configuration(
     )
     if has_pixi_config(session):
         __update_gitattributes(session)
-        __update_gitignore(session)
+        add_to_gitignore(session, ".pixi/")
 
 
 def __get_pixi_config(
@@ -396,12 +396,6 @@ def __update_gitattributes(session: Session, /) -> None:
         session.changelog += [
             f"Added linguist definition for pixi.lock under {CONFIG_PATH.gitattributes}"
         ]
-
-
-def __update_gitignore(session: Session, /) -> None:
-    ignore_path = ".pixi/"
-    if append_safe(session, ignore_path, CONFIG_PATH.gitignore):
-        session.changelog.append(f"Added {ignore_path} under {CONFIG_PATH.gitignore}")
 
 
 def _update_dev_environment(config: ModifiablePyproject, /) -> None:

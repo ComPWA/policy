@@ -11,7 +11,7 @@ from setuptools import find_packages
 
 from compwa_policy.utilities import (
     CONFIG_PATH,
-    append_safe,
+    add_to_gitignore,
     natural_sorting,
     remove_configs,
     vscode,
@@ -140,11 +140,7 @@ def _ignore_nbqa_temporary_files(session: Session, /) -> None:
     """Ignore the temporary Python files that nbQA hooks leave behind on interruption."""
     if find_hook(session.precommit.document, r"^nbqa-") is None:
         return
-    ignore_pattern = "*_nbqa_ipynb.py"
-    if append_safe(session, ignore_pattern, CONFIG_PATH.gitignore):
-        session.changelog.append(
-            f"Added {ignore_pattern} under {CONFIG_PATH.gitignore}"
-        )
+    add_to_gitignore(session, "*_nbqa_ipynb.py")
 
 
 def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
