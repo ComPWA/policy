@@ -59,12 +59,6 @@ def append_safe(session: Session, /, expected_line: str, path: Path) -> bool:
     return True
 
 
-def add_to_gitignore(session: Session, /, pattern: str) -> None:
-    """Add a pattern to the :code:`.gitignore` file if it is not already present."""
-    if append_safe(session, pattern, CONFIG_PATH.gitignore):
-        session.changelog.append(f"Added {pattern} under {CONFIG_PATH.gitignore}")
-
-
 def contains_line(input: Path | io.TextIOBase | str, expected_line: str) -> bool:  # ruff: ignore[builtin-argument-shadowing]
     if isinstance(input, io.TextIOBase):
         lines = input.readlines()
@@ -174,6 +168,12 @@ def remove_lines(
         return
     message = f"Removed {pattern!r} from {file}"
     resource.write_text("".join(filtered_lines), message)
+
+
+def add_to_gitignore(session: Session, /, pattern: str) -> None:
+    """Add a pattern to the :code:`.gitignore` file if it is not already present."""
+    if append_safe(session, pattern, CONFIG_PATH.gitignore):
+        session.changelog.append(f"Added {pattern} under {CONFIG_PATH.gitignore}")
 
 
 def natural_sorting(text: str) -> list[float | str]:
