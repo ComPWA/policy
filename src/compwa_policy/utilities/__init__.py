@@ -170,6 +170,12 @@ def remove_lines(
     resource.write_text("".join(filtered_lines), message)
 
 
+def add_to_gitignore(session: Session, /, pattern: str) -> None:
+    """Add a pattern to the :code:`.gitignore` file if it is not already present."""
+    if append_safe(session, pattern, CONFIG_PATH.gitignore):
+        session.changelog.append(f"Added {pattern} under {CONFIG_PATH.gitignore}")
+
+
 def natural_sorting(text: str) -> list[float | str]:
     # https://stackoverflow.com/a/5967539/13219025
     return [
