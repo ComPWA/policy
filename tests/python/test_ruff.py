@@ -7,6 +7,7 @@ from textwrap import dedent
 import pytest
 
 from compwa_policy.python.ruff import (
+    _ignore_nbqa_temporary_files,
     _move_ruff_lint_config,
     _update_lint_dependencies,
     check,
@@ -156,6 +157,30 @@ def describe_main():
         assert "target-version" not in pyproject  # dropped for requires-python
         assert "extend-select" not in pyproject  # folded into select
         assert "ANN101" not in pyproject  # deprecated rule removed
+
+
+def describe_ignore_nbqa_temporary_files():
+    @pytest.mark.parametrize(
+        ("precommit_config", "expected"),
+        [
+            (_PRECOMMIT_TO_CLEAN, True),
+            ("repos: []\n", False),
+        ],
+        ids=["with-nbqa", "without-nbqa"],
+    )
+    def updates_gitignore(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        precommit_config: str,
+        expected: bool,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".gitignore").write_text("*.pyc\n")
+        (tmp_path / ".pre-commit-config.yaml").write_text(precommit_config)
+        with Session() as session:
+            _ignore_nbqa_temporary_files(session)
+        lines = (tmp_path / ".gitignore").read_text().splitlines()
+        assert ("*_nbqa_ipynb.py" in lines) is expected
 
 
 def describe_move_ruff_lint_config():

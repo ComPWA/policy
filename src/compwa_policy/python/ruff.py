@@ -9,8 +9,15 @@ from typing import TYPE_CHECKING, Any
 from ruamel.yaml import YAML
 from setuptools import find_packages
 
-from compwa_policy.utilities import CONFIG_PATH, natural_sorting, remove_configs, vscode
+from compwa_policy.utilities import (
+    CONFIG_PATH,
+    append_safe,
+    natural_sorting,
+    remove_configs,
+    vscode,
+)
 from compwa_policy.utilities.check_hook import check_hook
+from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.pyproject import (
     ModifiablePyproject,
@@ -37,6 +44,7 @@ if TYPE_CHECKING:
 @check_hook(
     group="python",
     paths=[
+        CONFIG_PATH.gitignore,
         CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
         CONFIG_PATH.readme,
@@ -65,6 +73,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     _remove_black(session)
     _remove_flake8(session)
     _remove_isort(session, imports_on_top)
+    _ignore_nbqa_temporary_files(session)
     _remove_pydocstyle(session)
     _remove_pylint(session)
     _move_ruff_lint_config(config)
@@ -125,6 +134,17 @@ def _remove_isort(session: Session, /, imports_on_top: bool) -> None:
         precommit.remove_hook("nbqa-isort")
     vscode.remove_settings(session, ["isort.check", "isort.importStrategy"])
     remove_badge(session, r".*https://img\.shields\.io/badge/%20imports\-isort")
+
+
+def _ignore_nbqa_temporary_files(session: Session, /) -> None:
+    """Ignore the temporary Python files that nbQA hooks leave behind on interruption."""
+    if find_hook(session.precommit.document, r"^nbqa-") is None:
+        return
+    ignore_pattern = "*_nbqa_ipynb.py"
+    if append_safe(session, ignore_pattern, CONFIG_PATH.gitignore):
+        session.changelog.append(
+            f"Added {ignore_pattern} under {CONFIG_PATH.gitignore}"
+        )
 
 
 def __remove_nbqa_option(pyproject: ModifiablePyproject, option: str) -> None:
