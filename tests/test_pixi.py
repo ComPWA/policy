@@ -292,8 +292,9 @@ def describe_set_linkcheck():
         config_path = tmp_path / "pixi.toml"
         config_path.write_text(
             dedent("""
-                [feature.dev.tasks]
-                linkcheck = "sphinx-build -b linkcheck docs docs/_build/linkcheck"
+                [feature.dev.tasks.linkcheck]
+                cmd = "sphinx-build -b linkcheck docs docs/_build/linkcheck"
+                description = "Check external links"
             """).lstrip()
         )
         git_add(tmp_path)
@@ -302,7 +303,10 @@ def describe_set_linkcheck():
             _set_linkcheck(config)
 
         config = Pyproject.load(config_path)
-        assert config.get_table("feature.dev.tasks.linkcheck")["cmd"] == "lychee ."
+        assert config.get_table("feature.dev.tasks.linkcheck") == {
+            "cmd": "lychee .",
+            "description": "Check external links",
+        }
         assert config.get_table("feature.dev.dependencies")["lychee"] == ">=0.24.0"
         assert not config.has_table("tasks")
 
