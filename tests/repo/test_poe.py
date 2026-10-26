@@ -12,6 +12,8 @@ from compwa_policy.repo.poe import (
     _check_no_uv_run,
     _migrate_style_task_to_prek,
     _migrate_tasks_to_groups,
+    _remove_empty_dependency_groups,
+    _remove_undefined_executor_groups,
     _set_all_task,
     _set_doc_fail_on_warning,
     _set_upgrade_task,
@@ -174,7 +176,7 @@ def describe_main():
         with Session.load() as session:
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(tmp_path / "pyproject.toml")
-        assert pyproject.get_table("dependency-groups.doc") == []
+        assert not pyproject.has_table("dependency-groups.doc")
         assert "qmd" in pyproject.get_table("tool.lychee")["extensions"]
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck == {
@@ -370,7 +372,7 @@ def describe_main():
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck["cmd"] == ["uvx", "lychee@0.18", "--root-dir", ".", "."]
         assert linkcheck["executor"] == {"with": ["lychee-bin>=0.24.0"]}
-        assert pyproject.get_table("dependency-groups.doc") == []
+        assert not pyproject.has_table("dependency-groups.doc")
 
     def moves_lychee_from_doc_group_to_task(
         tmp_path: Path,
@@ -412,6 +414,51 @@ def describe_main():
             "executor": {"with": ["lychee-bin>=0.25"]},
             "help": "Check links",
             "cmd": "lychee .",
+        }
+
+    def removes_doc_group_that_only_contained_lychee(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                dev = [{ include-group = "doc" }, "ruff"]
+                doc = ["lychee-bin>=0.25"]
+
+                [tool.poe.groups.doc]
+                executor = { group = "doc", isolated = false }
+
+                [tool.poe.groups.doc.tasks.doc]
+                cmd = "quarto render"
+                executor = { group = "doc" }
+
+                [tool.poe.groups.doc.tasks.doclive]
+                cmd = "quarto preview"
+
+                [tool.poe.groups.doc.tasks.linkcheck]
+                executor = { group = "doc" }
+                help = "Check links"
+                cmd = "lychee ."
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        assert pyproject.get_table("dependency-groups") == {"dev": ["ruff"]}
+        doc_group = pyproject.get_table("tool.poe.groups.doc")
+        assert doc_group["executor"] == {"isolated": False}
+        assert "executor" not in doc_group["tasks"]["doc"]
+        assert doc_group["tasks"]["linkcheck"]["executor"] == {
+            "with": ["lychee-bin>=0.25"]
         }
 
     def preserves_existing_linkcheck_dependency_group(
@@ -493,6 +540,75 @@ def describe_main():
         assert pyproject.get_table("dependency-groups.linkcheck") == [
             "lychee-bin>=0.24.0"
         ]
+
+
+def describe_remove_empty_dependency_groups():
+    @pytest.mark.parametrize(
+        ("groups", "expected"),
+        [
+            ('dev = ["ruff"]', {"dev": ["ruff"]}),
+            ('dev = ["ruff"]\ndoc = []', {"dev": ["ruff"]}),
+            (
+                'dev = [{ include-group = "doc" }, "ruff"]\ndoc = []',
+                {"dev": ["ruff"]},
+            ),
+            ('dev = [{ include-group = "doc" }]\ndoc = []', None),
+        ],
+        ids=["no-empty-group", "empty-group", "included-group", "cascade"],
+    )
+    def removes_empty_groups(groups: str, expected: dict | None, tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(f"[dependency-groups]\n{groups}\n")
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _remove_empty_dependency_groups(pyproject)
+        result = Pyproject.load(config_path)
+        assert result.get_table("dependency-groups", fallback=None) == expected
+
+
+def describe_remove_undefined_executor_groups():
+    def removes_undefined_groups(tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                test = ["pytest"]
+
+                [tool.poe.executor]
+                no-group = "dev"
+                type = "uv"
+
+                [tool.poe.tasks.doc]
+                cmd = "sphinx-build docs docs/_build"
+                executor = { group = "doc" }
+
+                [tool.poe.groups.test.tasks.test]
+                cmd = "pytest"
+                executor = { group = ["doc", "test"] }
+            """).lstrip()
+        )
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _remove_undefined_executor_groups(pyproject)
+        result = Pyproject.load(config_path)
+        assert result.get_table("tool.poe.executor") == {"type": "uv"}
+        assert "executor" not in result.get_table("tool.poe.tasks.doc")
+        test_task = result.get_table("tool.poe.groups.test.tasks.test")
+        assert test_task["executor"] == {"group": "test"}
+
+    def is_noop_with_defined_groups(tmp_path: Path):
+        config = dedent("""
+            [dependency-groups]
+            doc = ["sphinx"]
+
+            [tool.poe.tasks.doc]
+            cmd = "sphinx-build docs docs/_build"
+            executor = { group = "doc" }
+        """).lstrip()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(config)
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _remove_undefined_executor_groups(pyproject)
+        assert not pyproject.changelog
+        assert config_path.read_text() == config
 
 
 def describe_update_doclive():
