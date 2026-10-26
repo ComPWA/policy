@@ -100,6 +100,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_upgrade_task(config, args.package_manager)
     if args.package_manager == "pixi+uv" and config.has_table("tool.poe"):
         _set_linkcheck(config)
+    _remove_unused_dependency_groups(config)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
@@ -290,6 +291,93 @@ def _remove_lychee_from_doc_group(pyproject: ModifiablePyproject, /) -> list[str
         )
         pyproject.changelog.append(msg)
     return lychee_dependencies
+
+
+def _remove_unused_dependency_groups(pyproject: ModifiablePyproject, /) -> None:
+    _remove_empty_dependency_groups(pyproject)
+    if pyproject.has_table("tool.poe"):
+        _remove_undefined_executor_groups(pyproject)
+
+
+def _remove_empty_dependency_groups(pyproject: ModifiablePyproject, /) -> None:
+    """Remove empty dependency groups and the ``include-group`` entries to them.
+
+    Removing an ``include-group`` entry can leave another group empty, so this repeats
+    until no empty group remains.
+    """
+    if not pyproject.has_table("dependency-groups"):
+        return
+    groups = pyproject.get_table("dependency-groups")
+    while empty_groups := [name for name, deps in groups.items() if not deps]:
+        for name in empty_groups:
+            del groups[name]
+            msg = f"Removed empty {name} dependency group from {CONFIG_PATH.pyproject}"
+            pyproject.changelog.append(msg)
+        for dependencies in groups.values():
+            for dependency in list(dependencies):
+                if isinstance(dependency, Mapping) and (
+                    dependency.get("include-group") in empty_groups
+                ):
+                    dependencies.remove(dependency)
+    if not groups:
+        del pyproject._document["dependency-groups"]  # ruff: ignore[private-member-access]
+
+
+def _remove_undefined_executor_groups(pyproject: ModifiablePyproject, /) -> None:
+    """Remove dependency groups that are not defined from Poe uv executors.
+
+    The uv executor fails when it selects or deselects an undefined dependency group,
+    for instance one that :func:`_remove_empty_dependency_groups` removed. An executor
+    that becomes empty is removed as well, so that the task falls back to the executor
+    of its task group or the global executor.
+    """
+    defined_groups = set(pyproject.get_table("dependency-groups", fallback={}))
+    poe_table = pyproject.get_table("tool.poe")
+    owners: list[MutableMapping[str, Any]] = [poe_table]
+    task_tables = [poe_table.get("tasks", {})]
+    for group in poe_table.get("groups", {}).values():
+        owners.append(group)
+        task_tables.append(group.get("tasks", {}))
+    owners.extend(
+        task
+        for tasks in task_tables
+        for task in tasks.values()
+        if isinstance(task, MutableMapping)
+    )
+    updated = False
+    for owner in owners:
+        executor = owner.get("executor")
+        if not isinstance(executor, MutableMapping):
+            continue
+        if __remove_undefined_groups(executor, defined_groups):
+            updated = True
+            if not executor:
+                del owner["executor"]
+    if updated:
+        msg = f"Removed undefined dependency groups from Poe the Poet executors in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def __remove_undefined_groups(
+    executor: MutableMapping[str, Any], defined_groups: set[str]
+) -> bool:
+    updated = False
+    for key in ("group", "no-group"):
+        if key not in executor:
+            continue
+        value = executor[key]
+        selected = [value] if isinstance(value, str) else list(value)
+        remaining = [name for name in selected if name in defined_groups]
+        if remaining == selected:
+            continue
+        updated = True
+        if not remaining:
+            del executor[key]
+        elif len(remaining) == 1:
+            executor[key] = remaining[0]
+        else:
+            executor[key] = to_toml_array(remaining)
+    return updated
 
 
 def _set_doc_fail_on_warning(pyproject: ModifiablePyproject, /) -> None:
