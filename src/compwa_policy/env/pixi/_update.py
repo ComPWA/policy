@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -73,6 +73,7 @@ def update_pixi_configuration(
         _update_docnb_and_doclive(config, "tasks")
         _update_docnb_and_doclive(config, "feature.dev.tasks")
     _clean_up_task_env(config)
+    _add_linkcheck_to_all_task(config)
     _migrate_style_task_to_prek(config)
     _set_upgrade_task(config, package_manager)
     vscode.update_settings(
@@ -123,6 +124,56 @@ def _define_combined_ci_job(config: ModifiablePyproject) -> None:
         ci["depends_on"] = to_toml_array(sorted(depends_on))
         msg = "Updated combined CI job for Pixi"
         config.changelog.append(msg)
+
+
+def _add_linkcheck_to_all_task(config: ModifiablePyproject) -> None:
+    task_tables = [
+        __get_table(config, key)
+        for key in ("tasks", "feature.dev.tasks")
+        if __has_table(config, key)
+    ]
+    if not any("linkcheck" in tasks for tasks in task_tables):
+        return
+    for tasks in task_tables:
+        all_task = tasks.get("all")
+        if not isinstance(all_task, Mapping):
+            continue
+        key = "depends-on" if "depends-on" in all_task else "depends_on"
+        depends_on = all_task.get(key)
+        if not isinstance(depends_on, list):
+            continue
+        if __depends_on_task(task_tables, depends_on, "linkcheck"):
+            continue
+        depends_on.append("linkcheck")
+        config.changelog.append("Added linkcheck to Pixi all task")
+
+
+def __depends_on_task(
+    task_tables: Sequence[Mapping],
+    depends_on: list,
+    target: str,
+    visited: set[str] | None = None,
+) -> bool:
+    """Check whether a task depends on a target task, directly or transitively."""
+    if visited is None:
+        visited = set()
+    for item in depends_on:
+        name = item if isinstance(item, str) else item.get("task")
+        if name == target:
+            return True
+        if not isinstance(name, str) or name in visited:
+            continue
+        visited.add(name)
+        for tasks in task_tables:
+            task = tasks.get(name)
+            if not isinstance(task, Mapping):
+                continue
+            sub_dependencies = task.get("depends-on", task.get("depends_on"))
+            if isinstance(sub_dependencies, list) and __depends_on_task(
+                task_tables, sub_dependencies, target, visited
+            ):
+                return True
+    return False
 
 
 def _rename_workspace_table(config: ModifiablePyproject) -> None:

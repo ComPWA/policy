@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
 
@@ -343,20 +343,71 @@ def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
         return
     all_task = cast("Table", task_table["all"])
     sequence = all_task.get("sequence")
-    delegates_to_tasks = isinstance(sequence, Sequence) and all(
+    is_updated = __safe_update(
+        all_task, "help", "Run all continuous integration (CI) tasks locally"
+    )
+    if __delegates_to_tasks(sequence):
+        is_updated |= _add_linkcheck_to_sequence(pyproject, sequence)
+    else:
+        is_updated |= __safe_update(all_task, "ignore_fail", "return_non_zero")
+    if is_updated:
+        msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def __delegates_to_tasks(
+    sequence: object,
+) -> TypeGuard[MutableSequence[str | Mapping[str, Any]]]:
+    return isinstance(sequence, MutableSequence) and all(
         isinstance(item, str) or (isinstance(item, Mapping) and "ref" in item)
         for item in sequence
     )
-    if any([
-        __safe_update(
-            all_task, "help", "Run all continuous integration (CI) tasks locally"
-        ),
-        __safe_update(all_task, "ignore_fail", "return_non_zero")
-        if not delegates_to_tasks
-        else False,
-    ]):
-        msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
-        pyproject.changelog.append(msg)
+
+
+def _add_linkcheck_to_sequence(
+    pyproject: ModifiablePyproject, sequence: MutableSequence[str | Mapping[str, Any]]
+) -> bool:
+    poe_table = pyproject.get_table("tool.poe")
+    if "linkcheck" not in _get_all_poe_tasks(poe_table):
+        return False
+    if __runs_poe_task(poe_table, sequence, "linkcheck"):
+        return False
+    sequence.append("linkcheck")
+    return True
+
+
+def __runs_poe_task(
+    poe_table: Mapping, sequence: Sequence, target: str, visited: set[str] | None = None
+) -> bool:
+    """Check whether a sequence references a task, directly or through sub-tasks."""
+    if visited is None:
+        visited = set()
+    task_definitions = __get_poe_task_definitions(poe_table)
+    for item in sequence:
+        reference = item if isinstance(item, str) else item.get("ref")
+        if not isinstance(reference, str):
+            continue
+        name = next(iter(reference.split()), "")
+        if name == target:
+            return True
+        if name in visited:
+            continue
+        visited.add(name)
+        definition = task_definitions.get(name)
+        if isinstance(definition, Mapping):
+            definition = definition.get("sequence")
+        if __delegates_to_tasks(definition) and __runs_poe_task(
+            poe_table, definition, target, visited
+        ):
+            return True
+    return False
+
+
+def __get_poe_task_definitions(poe_table: Mapping) -> dict[str, Any]:
+    definitions = dict(poe_table.get("tasks", {}))
+    for group_config in poe_table.get("groups", {}).values():
+        definitions.update(group_config.get("tasks", {}))
+    return definitions
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:

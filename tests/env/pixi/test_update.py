@@ -4,9 +4,12 @@ from textwrap import dedent
 
 import pytest
 
-from compwa_policy.env.pixi._update import update_pixi_configuration
+from compwa_policy.env.pixi._update import (
+    _add_linkcheck_to_all_task,
+    update_pixi_configuration,
+)
 from compwa_policy.repo.poe import check
-from compwa_policy.utilities.pyproject import Pyproject
+from compwa_policy.utilities.pyproject import ModifiablePyproject, Pyproject
 from compwa_policy.utilities.session import Session
 
 
@@ -179,3 +182,62 @@ def describe_update_pixi_configuration():
             assert not pixi.has_table("tasks.linkcheck")
             assert not pixi.has_table("pypi-dependencies.lychee-bin")
             assert not pixi.has_table("dependencies.lychee")
+
+
+def describe_add_linkcheck_to_all_task():
+    @pytest.mark.parametrize(
+        ("depends_on", "has_linkcheck_task", "is_updated"),
+        [
+            ('["style", "test"]', True, True),
+            ('["style", "linkcheck"]', True, False),
+            ('["style", { task = "linkcheck" }]', True, False),
+            ('["style", "test"]', False, False),
+        ],
+        ids=["appends", "already-string", "already-table", "no-linkcheck-task"],
+    )
+    @pytest.mark.parametrize("key", ["depends-on", "depends_on"])
+    def updates_depends_on(
+        depends_on: str,
+        has_linkcheck_task: bool,
+        is_updated: bool,
+        key: str,
+        *,
+        tmp_path: Path,
+    ):
+        pixi_path = tmp_path / "pixi.toml"
+        pixi_path.write_text(
+            f"[tasks.all]\n{key} = {depends_on}\n"
+            + (
+                '\n[feature.dev.tasks]\nlinkcheck = "lychee ."\n'
+                if has_linkcheck_task
+                else ""
+            )
+        )
+        original = pixi_path.read_text()
+        with ModifiablePyproject.load(pixi_path) as config:
+            _add_linkcheck_to_all_task(config)
+        assert bool(config.changelog) == is_updated
+        if is_updated:
+            all_task = Pyproject.load(pixi_path).get_table("tasks.all")
+            assert all_task[key] == ["style", "test", "linkcheck"]
+        else:
+            assert pixi_path.read_text() == original
+
+    def skips_linkcheck_in_sub_task(tmp_path: Path):
+        pixi_path = tmp_path / "pixi.toml"
+        pixi_path.write_text(
+            dedent("""
+                [tasks]
+                all = { depends-on = ["all-fast", "all-slow"] }
+                all-fast = { depends-on = [{ task = "checks" }] }
+                checks = { depends-on = ["style", "linkcheck"] }
+
+                [feature.dev.tasks]
+                linkcheck = "lychee ."
+            """).lstrip()
+        )
+        original = pixi_path.read_text()
+        with ModifiablePyproject.load(pixi_path) as config:
+            _add_linkcheck_to_all_task(config)
+        assert not config.changelog
+        assert pixi_path.read_text() == original

@@ -545,6 +545,65 @@ def describe_set_all_task():
         assert "ignore_fail" not in all_task
         assert all_task["help"] == "Run all continuous integration (CI) tasks locally"
 
+    @pytest.mark.parametrize(
+        ("sequence", "expected"),
+        [
+            ('["style", "doc"]', ["style", "doc", "linkcheck"]),
+            ('["style", "linkcheck"]', ["style", "linkcheck"]),
+            ('["style", { ref = "linkcheck" }]', ["style", {"ref": "linkcheck"}]),
+        ],
+        ids=["missing", "named reference", "configured reference"],
+    )
+    def adds_linkcheck_task(sequence: str, expected: list, tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent(f"""
+            [tool.poe.tasks.all]
+            sequence = {sequence}
+
+            [tool.poe.groups.doc.tasks.linkcheck]
+            cmd = "lychee ."
+        """).lstrip()
+        )
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_all_task(pyproject)
+
+        all_task = Pyproject.load(config_path).get_table("tool.poe.tasks.all")
+        assert all_task["sequence"] == expected
+
+    @pytest.mark.parametrize(
+        "sub_tasks",
+        [
+            '[tool.poe.tasks.all-fast]\nsequence = ["style", "linkcheck"]',
+            '[tool.poe.tasks]\nall-fast = ["style", "linkcheck"]',
+            (
+                '[tool.poe.tasks.all-fast]\nsequence = [{ ref = "checks" }]\n\n'
+                '[tool.poe.tasks.checks]\nsequence = ["linkcheck --verbose"]'
+            ),
+        ],
+        ids=["table", "shorthand", "nested"],
+    )
+    def skips_linkcheck_run_by_sub_task(sub_tasks: str, tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            sub_tasks
+            + dedent("""
+
+            [tool.poe.tasks.all]
+            sequence = ["all-fast", "all-slow"]
+
+            [tool.poe.groups.doc.tasks.linkcheck]
+            cmd = "lychee ."
+        """)
+        )
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_all_task(pyproject)
+
+        all_task = Pyproject.load(config_path).get_table("tool.poe.tasks.all")
+        assert all_task["sequence"] == ["all-fast", "all-slow"]
+
 
 def describe_migrate_style_task_to_prek():
     def rewrites_shorthand_precommit_command(
