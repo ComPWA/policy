@@ -65,6 +65,7 @@ dev = [
     { include-group = "test" },
 ]
 doc = [
+    "lychee-bin>=0.24.0",
     "myst-parser",
     "sphinx",
     "sphinx-api-relink",
