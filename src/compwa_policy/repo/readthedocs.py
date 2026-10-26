@@ -11,6 +11,7 @@ from typing import IO, TYPE_CHECKING, cast
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
+from compwa_policy.characterization import uses_quarto
 from compwa_policy.utilities import CONFIG_PATH, get_nested_dict
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.match import git_ls_files
@@ -56,11 +57,13 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         apt_packages = set(rtd.document.get("build", {}).get("apt_packages", []))
         pixi_packages = apt_packages & {"graphviz"}
         pixi_packages |= _get_existing_pixi_packages(rtd)
-        if "uv" in package_manager:
-            pixi_packages.add("uv")
-        _install_pixi(rtd, pixi_packages)
-        _remove_redundant_settings(rtd)
-        _update_build_step_for_uv(rtd)
+        pixi_packages.add("uv")
+        if _can_use_native_uv(rtd, pixi_packages):
+            _configure_native_uv(rtd, python_version, pixi_packages & {"graphviz"})
+        else:
+            _install_pixi(rtd, pixi_packages)
+            _remove_redundant_settings(rtd)
+            _update_build_step_for_uv(rtd)
     else:
         _update_post_install(rtd, python_version, package_manager)
     session.changelog += rtd.finalize()
@@ -76,6 +79,11 @@ def _set_sphinx_configuration(config: ReadTheDocs) -> None:
             config.document["sphinx"] = {}
         config.document["sphinx"]["configuration"] = conf_path
         msg = f"Set sphinx.configuration to {conf_path}"
+        config.changelog.append(msg)
+    sphinx = config.document["sphinx"]
+    if sphinx.get("fail_on_warning") is not True:
+        sphinx["fail_on_warning"] = True
+        msg = "Set sphinx.fail_on_warning to true"
         config.changelog.append(msg)
 
 
@@ -115,6 +123,45 @@ def _update_python_version(config: ReadTheDocs, python_version: PythonVersion) -
     tools["python"] = expected_version
     msg = f"Set build.tools.python to {python_version!r}"
     config.changelog.append(msg)
+
+
+def _can_use_native_uv(config: ReadTheDocs, pixi_packages: set[str]) -> bool:
+    """Check whether the default Sphinx build with Read the Docs' uv support suffices.
+
+    Quarto builds, extra Pixi packages, and custom build commands still require
+    :code:`build.commands`.
+    """
+    if uses_quarto() or pixi_packages - {"graphviz", "uv"}:
+        return False
+    commands = __get_commands(config, create=False)
+    return all("pixi" in cmd or "poe doc" in cmd or "sphinx" in cmd for cmd in commands)
+
+
+def _configure_native_uv(
+    config: ReadTheDocs, python_version: PythonVersion, apt_packages: set[str]
+) -> None:
+    build = config.document.setdefault("build", {})
+    removed_keys = [key for key in ("commands", "jobs") if build.pop(key, None)]
+    if removed_keys:
+        msg = f"Removed build.{' and build.'.join(removed_keys)} in favor of uv"
+        config.changelog.append(msg)
+    tools = build.setdefault("tools", {})
+    if "python" not in tools:
+        tools["python"] = DoubleQuotedScalarString(python_version)
+        msg = f"Set build.tools.python to {python_version!r}"
+        config.changelog.append(msg)
+    if apt_packages - set(build.get("apt_packages", [])):
+        build["apt_packages"] = sorted(
+            set(build.get("apt_packages", [])) | apt_packages
+        )
+        msg = f"Set build.apt_packages to {build['apt_packages']}"
+        config.changelog.append(msg)
+    expected_install = [{"method": "uv", "command": "sync", "groups": ["doc"]}]
+    python = config.document.setdefault("python", {})
+    if python.get("install") != expected_install:
+        python["install"] = expected_install
+        msg = "Install documentation dependencies with uv sync"
+        config.changelog.append(msg)
 
 
 def _get_existing_pixi_packages(config: ReadTheDocs) -> set[str]:

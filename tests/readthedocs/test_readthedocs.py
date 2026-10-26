@@ -80,6 +80,7 @@ def _good_extend() -> str:
               - ./bin/julia docs/InstallIJulia.jl
         sphinx:
           configuration: docs/conf.py
+          fail_on_warning: true
     """).lstrip()
 
 
@@ -96,12 +97,14 @@ def _good_overwrite(python_version: str) -> str:
               - python -m uv pip install -e .[doc]
         sphinx:
           configuration: docs/conf.py
+          fail_on_warning: true
     """).lstrip()
 
 
 def _expected_message(python_version: str, path: Path) -> str:
     return dedent(f"""
       Updated {path}:
+        - Set sphinx.fail_on_warning to true
         - Set build.os to ubuntu-24.04
         - Set build.tools.python to {python_version!r}
         - Updated pip install steps
@@ -212,9 +215,88 @@ def describe_main():
         changes = _main(run_check, "uv", python_version="3.12")
         assert changes  # something changed
         result = (rtd_repo / ".readthedocs.yml").read_text()
-        assert "pixi global install graphviz uv" in result
+        assert (
+            result
+            == dedent("""
+            version: 2
+            build:
+              os: ubuntu-24.04
+              apt_packages:
+                - graphviz
+              tools:
+                python: "3.12"
+            sphinx:
+              configuration: docs/conf.py
+              fail_on_warning: true
+            python:
+              install:
+                - method: uv
+                  command: sync
+                  groups:
+                    - doc
+            """).lstrip()
+        )
+        assert not _main(run_check, "uv", python_version="3.12")
+
+    def migrates_pixi_commands_to_native_uv(rtd_repo: Path, run_check):
+        (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        _write_rtd(
+            rtd_repo,
+            dedent("""
+            version: 2
+            build:
+              os: ubuntu-24.04
+              tools:
+                python: "3.12"
+              commands:
+                - |
+                  export PIXI_HOME=$READTHEDOCS_VIRTUALENV_PATH
+                  curl -fsSL https://pixi.sh/install.sh | bash
+                  pixi global install graphviz uv
+                - |
+                  export UV_LINK_MODE=copy
+                  uvx --from poethepoet poe doc
+                  mkdir -p $READTHEDOCS_OUTPUT
+                  mv docs/_build/html $READTHEDOCS_OUTPUT
+            sphinx:
+              configuration: docs/conf.py
+            """).lstrip(),
+        )
+        changes = _main(run_check, "uv", python_version="3.12")
+        assert changes  # something changed
+        result = (rtd_repo / ".readthedocs.yml").read_text()
+        assert "commands" not in result
+        assert "pixi" not in result
+        assert "- graphviz" in result
+        assert "method: uv" in result
+
+    @pytest.mark.parametrize(
+        ("quarto", "commands"),
+        [
+            (True, []),
+            (False, ["./bin/julia docs/InstallIJulia.jl"]),
+        ],
+        ids=["quarto", "custom-command"],
+    )
+    def keeps_build_commands_when_needed(
+        rtd_repo: Path, run_check, quarto: bool, commands: list[str]
+    ):
+        if quarto:
+            (rtd_repo / "docs" / "conf.py").unlink()
+            (rtd_repo / "_quarto.yml").touch()
+        (rtd_repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
+        command_lines = "".join(f"\n    - {cmd}" for cmd in commands)
+        commands_block = f"  commands:{command_lines}\n" if commands else ""
+        _write_rtd(
+            rtd_repo,
+            "version: 2\nbuild:\n  os: ubuntu-24.04\n" + commands_block,
+        )
+        _main(run_check, "uv", python_version="3.12")
+        result = (rtd_repo / ".readthedocs.yml").read_text()
+        assert "method: uv" not in result
         assert "uvx --from poethepoet poe doc" in result
-        assert "apt_packages" not in result
+        for cmd in commands:
+            assert cmd in result
 
     def configures_pixi_build_with_poe(rtd_repo: Path, run_check):
         (rtd_repo / "pyproject.toml").write_text(

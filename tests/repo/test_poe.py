@@ -12,6 +12,7 @@ from compwa_policy.repo.poe import (
     _check_no_uv_run,
     _migrate_style_task_to_prek,
     _set_all_task,
+    _set_doc_fail_on_warning,
     _set_upgrade_task,
     _update_doclive,
     check,
@@ -450,6 +451,32 @@ def describe_update_doclive():
         result = pyproject.dumps()
         assert "sphinx-autobuild" in result
         assert "executor" in result
+
+
+def describe_set_doc_fail_on_warning():
+    @pytest.mark.parametrize(
+        ("task", "expected"),
+        [
+            (
+                'cmd = "sphinx-build docs docs/_build/html"',
+                "sphinx-build --fail-on-warning docs docs/_build/html",
+            ),
+            (
+                'cmd = "sphinx-build -W docs docs/_build/html"',
+                "sphinx-build -W docs docs/_build/html",
+            ),
+            ('cmd = "quarto render docs"', "quarto render docs"),
+        ],
+        ids=["adds-flag", "keeps-short-flag", "ignores-non-sphinx"],
+    )
+    def updates_doc_task(tmp_path: Path, task: str, expected: str):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(f"[tool.poe.groups.doc.tasks.doc]\n{task}\n")
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_doc_fail_on_warning(pyproject)
+        result = Pyproject.load(config_path)
+        command = result.get_table("tool.poe.groups.doc.tasks.doc")["cmd"]
+        assert command == expected
 
 
 def describe_check_expected_sections():
