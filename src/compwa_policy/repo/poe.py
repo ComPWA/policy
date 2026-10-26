@@ -155,14 +155,17 @@ def _get_or_create_group_tasks(
 ) -> MutableMapping[str, Any]:
     """Get or create the tasks table for a Poe group as a super-table.
 
-    Using ``create=True`` on ``get_table`` creates the last element as a regular
-    table, which causes tomlkit to emit an explicit empty ``[...tasks]`` header.
-    Creating it manually as a super-table avoids that spurious header.
+    Using ``create=True`` on ``get_table`` creates the last element as a regular table,
+    which causes tomlkit to emit an explicit empty header for it. Creating ``groups``,
+    the group and its ``tasks`` table manually as super-tables avoids those spurious
+    headers.
     """
-    group = pyproject.get_table(f"tool.poe.groups.{group_name}", create=True)
-    if "tasks" not in group:
-        group["tasks"] = tomlkit.table(is_super_table=True)
-    return group["tasks"]
+    table = pyproject.get_table("tool.poe", create=True)
+    for key in ("groups", group_name, "tasks"):
+        if key not in table:
+            table[key] = tomlkit.table(is_super_table=True)
+        table = table[key]
+    return table
 
 
 def _migrate_tasks_to_groups(pyproject: ModifiablePyproject, /) -> None:

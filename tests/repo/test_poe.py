@@ -11,6 +11,7 @@ from compwa_policy.repo.poe import (
     _check_expected_sections,
     _check_no_uv_run,
     _migrate_style_task_to_prek,
+    _migrate_tasks_to_groups,
     _set_all_task,
     _set_doc_fail_on_warning,
     _set_upgrade_task,
@@ -790,3 +791,18 @@ def describe_set_upgrade_task():
         task = Pyproject.load(config_path).get_table("tool.poe.tasks._upgrade-julia")
         assert "git ls-files" in task["cmd"]
         assert "Pkg.activate(project)" in task["cmd"]
+
+
+def test_migrate_tasks_to_groups_without_empty_headers():
+    src = dedent("""
+        [tool.poe.tasks.linkcheck]
+        cmd = "lychee ."
+    """)
+    with ModifiablePyproject.load(src) as pyproject:
+        _migrate_tasks_to_groups(pyproject)
+        result = pyproject.dumps()
+        pyproject.changelog.clear()
+    assert "[tool.poe.groups]" not in result
+    assert "[tool.poe.groups.doc]" not in result
+    assert "[tool.poe.groups.doc.tasks]" not in result
+    assert "[tool.poe.groups.doc.tasks.linkcheck]" in result
