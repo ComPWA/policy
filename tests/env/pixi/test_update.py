@@ -222,3 +222,22 @@ def describe_add_linkcheck_to_all_task():
             assert all_task[key] == ["style", "test", "linkcheck"]
         else:
             assert pixi_path.read_text() == original
+
+    def skips_linkcheck_in_sub_task(tmp_path: Path):
+        pixi_path = tmp_path / "pixi.toml"
+        pixi_path.write_text(
+            dedent("""
+                [tasks]
+                all = { depends-on = ["all-fast", "all-slow"] }
+                all-fast = { depends-on = [{ task = "checks" }] }
+                checks = { depends-on = ["style", "linkcheck"] }
+
+                [feature.dev.tasks]
+                linkcheck = "lychee ."
+            """).lstrip()
+        )
+        original = pixi_path.read_text()
+        with ModifiablePyproject.load(pixi_path) as config:
+            _add_linkcheck_to_all_task(config)
+        assert not config.changelog
+        assert pixi_path.read_text() == original

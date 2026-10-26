@@ -370,13 +370,44 @@ def _add_linkcheck_to_sequence(
     poe_table = pyproject.get_table("tool.poe")
     if "linkcheck" not in _get_all_poe_tasks(poe_table):
         return False
-    references = {
-        item if isinstance(item, str) else item.get("ref") for item in sequence
-    }
-    if "linkcheck" in references:
+    if __runs_poe_task(poe_table, sequence, "linkcheck"):
         return False
     sequence.append("linkcheck")
     return True
+
+
+def __runs_poe_task(
+    poe_table: Mapping, sequence: Sequence, target: str, visited: set[str] | None = None
+) -> bool:
+    """Check whether a sequence references a task, directly or through sub-tasks."""
+    if visited is None:
+        visited = set()
+    task_definitions = __get_poe_task_definitions(poe_table)
+    for item in sequence:
+        reference = item if isinstance(item, str) else item.get("ref")
+        if not isinstance(reference, str):
+            continue
+        name = next(iter(reference.split()), "")
+        if name == target:
+            return True
+        if name in visited:
+            continue
+        visited.add(name)
+        definition = task_definitions.get(name)
+        if isinstance(definition, Mapping):
+            definition = definition.get("sequence")
+        if __delegates_to_tasks(definition) and __runs_poe_task(
+            poe_table, definition, target, visited
+        ):
+            return True
+    return False
+
+
+def __get_poe_task_definitions(poe_table: Mapping) -> dict[str, Any]:
+    definitions = dict(poe_table.get("tasks", {}))
+    for group_config in poe_table.get("groups", {}).values():
+        definitions.update(group_config.get("tasks", {}))
+    return definitions
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:

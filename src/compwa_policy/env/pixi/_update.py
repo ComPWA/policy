@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -142,13 +142,38 @@ def _add_linkcheck_to_all_task(config: ModifiablePyproject) -> None:
         depends_on = all_task.get(key)
         if not isinstance(depends_on, list):
             continue
-        references = {
-            item if isinstance(item, str) else item.get("task") for item in depends_on
-        }
-        if "linkcheck" in references:
+        if __depends_on_task(task_tables, depends_on, "linkcheck"):
             continue
         depends_on.append("linkcheck")
         config.changelog.append("Added linkcheck to Pixi all task")
+
+
+def __depends_on_task(
+    task_tables: Sequence[Mapping],
+    depends_on: list,
+    target: str,
+    visited: set[str] | None = None,
+) -> bool:
+    """Check whether a task depends on a target task, directly or transitively."""
+    if visited is None:
+        visited = set()
+    for item in depends_on:
+        name = item if isinstance(item, str) else item.get("task")
+        if name == target:
+            return True
+        if not isinstance(name, str) or name in visited:
+            continue
+        visited.add(name)
+        for tasks in task_tables:
+            task = tasks.get(name)
+            if not isinstance(task, Mapping):
+                continue
+            sub_dependencies = task.get("depends-on", task.get("depends_on"))
+            if isinstance(sub_dependencies, list) and __depends_on_task(
+                task_tables, sub_dependencies, target, visited
+            ):
+                return True
+    return False
 
 
 def _rename_workspace_table(config: ModifiablePyproject) -> None:
