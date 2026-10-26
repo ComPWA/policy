@@ -117,7 +117,7 @@ def describe_main():
             "group": "notebooks",
             "with": [
                 "pyproject-local-kernel",
-                "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@a4a7ec80cfb142105f3e02a7ca4ca1f755bda8de",
+                "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@6bd8b0f3d61dd430363966df586f4261f5a811ab",
             ],
         }
 

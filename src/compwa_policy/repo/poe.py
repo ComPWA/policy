@@ -428,7 +428,7 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
         pyproject.changelog.append(msg)
 
 
-__NB_PLUGIN = "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@a4a7ec80cfb142105f3e02a7ca4ca1f755bda8de"
+__NB_PLUGIN = "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@6bd8b0f3d61dd430363966df586f4261f5a811ab"
 __OBSOLETE_NB_PLUGINS = {"ipykernel", "nbclient", "nbmake"}
 
 
