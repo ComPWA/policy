@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
 from packaging.requirements import Requirement
+from tomlkit.items import InlineTable
 
 from compwa_policy.characterization import has_documentation
 from compwa_policy.errors import PolicyError
@@ -265,8 +266,8 @@ def _set_linkcheck(pyproject: ModifiablePyproject, /) -> None:
         expected = {**existing, "executor": expected_executor}
     else:
         expected = {
-            "executor": expected_executor,
             "help": "Check external links in the documentation (requires internet connection)",
+            "executor": expected_executor,
             "cmd": "lychee .",
         }
     if expected == existing:
@@ -353,6 +354,8 @@ def _remove_undefined_executor_groups(pyproject: ModifiablePyproject, /) -> None
             updated = True
             if not executor:
                 del owner["executor"]
+            elif isinstance(executor, InlineTable):
+                owner["executor"] = to_inline_table(executor)
     if updated:
         msg = f"Removed undefined dependency groups from Poe the Poet executors in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
@@ -367,7 +370,7 @@ def __remove_undefined_groups(
             continue
         value = executor[key]
         selected = [value] if isinstance(value, str) else list(value)
-        remaining = [name for name in selected if name in defined_groups]
+        remaining = [name for name in selected if not name or name in defined_groups]
         if remaining == selected:
             continue
         updated = True

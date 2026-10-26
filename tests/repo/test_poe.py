@@ -594,6 +594,21 @@ def describe_remove_undefined_executor_groups():
         test_task = result.get_table("tool.poe.groups.test.tasks.test")
         assert test_task["executor"] == {"group": "test"}
 
+    def keeps_empty_group_name_and_formatting(tmp_path: Path):
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [tool.poe.tasks.style]
+                cmd = "prek run --all-files"
+                executor = { isolated = false, no-group = "", group = "doc" }
+            """).lstrip()
+        )
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _remove_undefined_executor_groups(pyproject)
+        assert 'executor = { isolated = false, no-group = "" }\n' in (
+            config_path.read_text()
+        )
+
     def is_noop_with_defined_groups(tmp_path: Path):
         config = dedent("""
             [dependency-groups]

@@ -48,7 +48,7 @@ NOTEBOOK_REMAP = "^(.+)/n$ $1"
 """Strip the newline that lychee reads into URLs at the end of a notebook source line.
 
 Lychee scans notebooks as plain text, so a URL at the end of a line in the JSON source
-is followed by an escaped newline `` ``, which lychee normalizes to ``/n``.
+is followed by an escaped newline sequence, which lychee normalizes to ``/n``.
 """
 
 
