@@ -80,6 +80,11 @@ def _set_sphinx_configuration(config: ReadTheDocs) -> None:
         config.document["sphinx"]["configuration"] = conf_path
         msg = f"Set sphinx.configuration to {conf_path}"
         config.changelog.append(msg)
+    sphinx = config.document["sphinx"]
+    if sphinx.get("fail_on_warning") is not True:
+        sphinx["fail_on_warning"] = True
+        msg = "Set sphinx.fail_on_warning to true"
+        config.changelog.append(msg)
 
 
 def __get_sphinx_config_path() -> Path | None:

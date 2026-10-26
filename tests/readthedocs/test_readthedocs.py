@@ -80,6 +80,7 @@ def _good_extend() -> str:
               - ./bin/julia docs/InstallIJulia.jl
         sphinx:
           configuration: docs/conf.py
+          fail_on_warning: true
     """).lstrip()
 
 
@@ -96,12 +97,14 @@ def _good_overwrite(python_version: str) -> str:
               - python -m uv pip install -e .[doc]
         sphinx:
           configuration: docs/conf.py
+          fail_on_warning: true
     """).lstrip()
 
 
 def _expected_message(python_version: str, path: Path) -> str:
     return dedent(f"""
       Updated {path}:
+        - Set sphinx.fail_on_warning to true
         - Set build.os to ubuntu-24.04
         - Set build.tools.python to {python_version!r}
         - Updated pip install steps
@@ -224,6 +227,7 @@ def describe_main():
                 python: "3.12"
             sphinx:
               configuration: docs/conf.py
+              fail_on_warning: true
             python:
               install:
                 - method: uv

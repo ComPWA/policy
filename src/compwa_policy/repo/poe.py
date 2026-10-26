@@ -72,6 +72,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         config.changelog.append(msg)
     if config.has_table("tool.poe"):
         _check_expected_sections(config, ctx.has_notebooks)
+        _set_doc_fail_on_warning(config)
         if args.package_manager == "uv":
             _configure_uv_executor(config)
             _migrate_tasks_to_groups(config)
@@ -241,6 +242,48 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     }
     msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
     pyproject.changelog.append(msg)
+
+
+def _set_doc_fail_on_warning(pyproject: ModifiablePyproject, /) -> None:
+    for table_name in ("tool.poe.groups.doc.tasks", "tool.poe.tasks"):
+        tasks = pyproject.get_table(table_name, fallback={})
+        if "doc" not in tasks:
+            continue
+        task = tasks["doc"]
+        if isinstance(task, str):
+            command = task
+        elif isinstance(task, MutableMapping) and isinstance(task.get("cmd"), str):
+            command = task["cmd"]
+        else:
+            return
+        new_command = __add_fail_on_warning(command)
+        if new_command == command:
+            return
+        new_value = tomlkit.string(new_command, multiline="\n" in new_command)
+        if isinstance(task, str):
+            tasks["doc"] = new_value
+        else:
+            task["cmd"] = new_value
+        msg = f"Added --fail-on-warning to Poe the Poet doc task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+        return
+
+
+def __add_fail_on_warning(command: str) -> str:
+    """Make a :code:`sphinx-build` command treat warnings as errors.
+
+    >>> __add_fail_on_warning("sphinx-build docs docs/_build/html")
+    'sphinx-build --fail-on-warning docs docs/_build/html'
+    >>> __add_fail_on_warning("sphinx-build -W docs docs/_build/html")
+    'sphinx-build -W docs docs/_build/html'
+    >>> __add_fail_on_warning("quarto render docs")
+    'quarto render docs'
+    """
+    if "sphinx-build" not in command:
+        return command
+    if re.search(r"(^|\s)(-W|--fail-on-warning)(\s|$)", command):
+        return command
+    return command.replace("sphinx-build", "sphinx-build --fail-on-warning", 1)
 
 
 def _check_no_uv_run(pyproject: Pyproject) -> None:
