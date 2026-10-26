@@ -85,7 +85,12 @@ class Pyproject:
         return f"{src.strip()}\n"
 
     def get_table(
-        self, dotted_header: str, *, create: bool = False, fallback: Any = _NO_FALLBACK
+        self,
+        dotted_header: str,
+        /,
+        *,
+        create: bool = False,
+        fallback: Any = _NO_FALLBACK,
     ) -> Mapping[str, Any]:
         if create:
             msg = "Cannot create sub-tables in a read-only pyproject.toml"
@@ -98,7 +103,7 @@ class Pyproject:
             raise e from e
 
     @final
-    def has_table(self, dotted_header: str) -> bool:
+    def has_table(self, dotted_header: str, /) -> bool:
         return has_sub_table(self._document, dotted_header)
 
     @overload
@@ -209,7 +214,12 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
 
     @override
     def get_table(
-        self, dotted_header: str, *, create: bool = False, fallback: Any = _NO_FALLBACK
+        self,
+        dotted_header: str,
+        /,
+        *,
+        create: bool = False,
+        fallback: Any = _NO_FALLBACK,
     ) -> MutableMapping[str, Any]:
         self.__assert_is_in_context()
         if create:
