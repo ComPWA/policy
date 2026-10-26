@@ -214,7 +214,7 @@ def describe_main():
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck["cmd"] == "lychee ."
 
-    def keeps_sphinx_linkcheck_for_a_quarto_sub_site(
+    def replaces_sphinx_linkcheck_with_lychee(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         git_init: Callable[[Path], None],
@@ -224,8 +224,7 @@ def describe_main():
         git_init(tmp_path)
         (tmp_path / "docs").mkdir()
         (tmp_path / "docs" / "conf.py").touch()
-        (tmp_path / "docs" / "demo").mkdir()
-        (tmp_path / "docs" / "demo" / "_quarto.yml").touch()
+        (tmp_path / "docs" / "index.rst").touch()
         config_path = tmp_path / "pyproject.toml"
         config_path.write_text(
             dedent("""
@@ -248,10 +247,12 @@ def describe_main():
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(config_path)
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
-        assert linkcheck["cmd"] == (
-            "sphinx-build --builder=linkcheck docs docs/_build/linkcheck"
-        )
-        assert "lychee-bin" not in pyproject.get_table("dependency-groups.doc")
+        assert linkcheck["cmd"] == "lychee ."
+        assert pyproject.get_table("dependency-groups.doc") == [
+            "sphinx",
+            "lychee-bin>=0.24.0",
+        ]
+        assert "rst" in pyproject.get_table("tool.lychee")["extensions"]
 
     def preserves_custom_lychee_extensions(
         tmp_path: Path,

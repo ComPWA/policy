@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
 
-from compwa_policy.characterization import has_documentation, uses_quarto
+from compwa_policy.characterization import has_documentation
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo.lychee import configure_lychee, require_lychee
 from compwa_policy.repo.upgrade import (
@@ -79,7 +79,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_doc_group(config)
             _set_test_group(config)
             _set_notebook_group(config, ctx.has_notebooks)
-            _set_quarto_linkcheck(config)
+            _set_linkcheck(config)
             _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
                 _set_all_task(config)
@@ -94,7 +94,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _migrate_style_task_to_prek(config)
             _set_upgrade_task(config, args.package_manager)
     if args.package_manager == "pixi+uv" and config.has_table("tool.poe"):
-        _set_quarto_linkcheck(config)
+        _set_linkcheck(config)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
@@ -222,8 +222,8 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
         pyproject.changelog.append(msg)
 
 
-def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
-    if not uses_quarto():
+def _set_linkcheck(pyproject: ModifiablePyproject, /) -> None:
+    if not has_documentation():
         return
     configure_lychee(pyproject)
     tasks = pyproject.get_table("tool.poe.tasks", fallback={})

@@ -1,4 +1,4 @@
-"""Shared configuration for Quarto link checking."""
+"""Shared configuration for link checking with lychee."""
 
 from __future__ import annotations
 
@@ -37,13 +37,16 @@ DEFAULT_EXTENSIONS = (
     "xml",
 )
 """Lychee's default extensions, which an explicit extensions option replaces."""
+DOCUMENT_EXTENSIONS = ("ipynb", "qmd", "rst")
+"""Documentation source formats that lychee does not scan by default."""
 
 
 def configure_lychee(
     config: ModifiablePyproject, /, session: Session | None = None
 ) -> None:
     extra_extensions = {
-        Path(path).suffix.removeprefix(".") for path in git_ls_files("*.qmd")
+        Path(path).suffix.removeprefix(".")
+        for path in git_ls_files(*(f"*.{ext}" for ext in DOCUMENT_EXTENSIONS))
     }
     if not extra_extensions:
         return
