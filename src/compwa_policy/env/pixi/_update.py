@@ -127,7 +127,6 @@ def _define_combined_ci_job(config: ModifiablePyproject) -> None:
 
 
 def _add_linkcheck_to_all_task(config: ModifiablePyproject) -> None:
-    """Run the linkcheck task in the all task, as CI does."""
     task_tables = [
         __get_table(config, key)
         for key in ("tasks", "feature.dev.tasks")

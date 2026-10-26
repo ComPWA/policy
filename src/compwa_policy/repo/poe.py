@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import re
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
 
@@ -343,27 +343,32 @@ def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
         return
     all_task = cast("Table", task_table["all"])
     sequence = all_task.get("sequence")
-    delegates_to_tasks = isinstance(sequence, Sequence) and all(
-        isinstance(item, str) or (isinstance(item, Mapping) and "ref" in item)
-        for item in sequence
-    )
-    if any([
+    is_updated = [
         __safe_update(
             all_task, "help", "Run all continuous integration (CI) tasks locally"
-        ),
-        __safe_update(all_task, "ignore_fail", "return_non_zero")
-        if not delegates_to_tasks
-        else False,
-        _add_linkcheck_to_sequence(pyproject, sequence)
-        if delegates_to_tasks
-        else False,
-    ]):
+        )
+    ]
+    if __delegates_to_tasks(sequence):
+        is_updated.append(_add_linkcheck_to_sequence(pyproject, sequence))
+    else:
+        is_updated.append(__safe_update(all_task, "ignore_fail", "return_non_zero"))
+    if any(is_updated):
         msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 
 
-def _add_linkcheck_to_sequence(pyproject: ModifiablePyproject, sequence: Any) -> bool:
-    """Run the linkcheck task in the all task, as CI does."""
+def __delegates_to_tasks(
+    sequence: object,
+) -> TypeGuard[MutableSequence[str | Mapping[str, Any]]]:
+    return isinstance(sequence, MutableSequence) and all(
+        isinstance(item, str) or (isinstance(item, Mapping) and "ref" in item)
+        for item in sequence
+    )
+
+
+def _add_linkcheck_to_sequence(
+    pyproject: ModifiablePyproject, sequence: MutableSequence[str | Mapping[str, Any]]
+) -> bool:
     poe_table = pyproject.get_table("tool.poe")
     if "linkcheck" not in _get_all_poe_tasks(poe_table):
         return False
