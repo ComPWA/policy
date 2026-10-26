@@ -174,11 +174,11 @@ def describe_main():
         with Session.load() as session:
             run_check(check, session, has_notebooks=False, package_manager="uv")
         pyproject = Pyproject.load(tmp_path / "pyproject.toml")
-        assert "lychee-bin>=0.24.0" in pyproject.get_table("dependency-groups.doc")
+        assert pyproject.get_table("dependency-groups.doc") == []
         assert "qmd" in pyproject.get_table("tool.lychee")["extensions"]
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck == {
-            "executor": {"group": "doc"},
+            "executor": {"with": ["lychee-bin>=0.24.0"]},
             "help": (
                 "Check external links in the documentation (requires internet connection)"
             ),
@@ -248,10 +248,8 @@ def describe_main():
         pyproject = Pyproject.load(config_path)
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck["cmd"] == "lychee ."
-        assert pyproject.get_table("dependency-groups.doc") == [
-            "sphinx",
-            "lychee-bin>=0.24.0",
-        ]
+        assert pyproject.get_table("dependency-groups.doc") == ["sphinx"]
+        assert linkcheck["executor"] == {"with": ["lychee-bin>=0.24.0"]}
         assert "rst" in pyproject.get_table("tool.lychee")["extensions"]
 
     def preserves_custom_lychee_extensions(
@@ -287,6 +285,23 @@ def describe_main():
             "tool.poe.groups.doc.tasks.linkcheck"
         )
         assert linkcheck["cmd"] == "lychee --extensions md,qmd,typ ."
+
+    def preserves_isolated_lychee_command(poe_repo: Path, run_check):
+        config_path = poe_repo / "pyproject.toml"
+        command = "uvx --from lychee-bin lychee . --quiet"
+        with ModifiablePyproject.load(config_path) as pyproject:
+            pyproject.get_table("tool.poe.tasks", create=True)["linkcheck"] = {
+                "cmd": command,
+                "executor": {"type": "simple"},
+            }
+            pyproject.dump()
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        linkcheck = Pyproject.load(config_path).get_table(
+            "tool.poe.groups.doc.tasks.linkcheck"
+        )
+        assert linkcheck["cmd"] == command
+        assert linkcheck["executor"] == {"type": "simple"}
 
     def preserves_custom_lychee_shell(
         tmp_path: Path,
@@ -354,7 +369,50 @@ def describe_main():
         pyproject = Pyproject.load(config_path)
         linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
         assert linkcheck["cmd"] == ["uvx", "lychee@0.18", "--root-dir", ".", "."]
-        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin>=0.24.0"]
+        assert linkcheck["executor"] == {"with": ["lychee-bin>=0.24.0"]}
+        assert pyproject.get_table("dependency-groups.doc") == []
+
+    def moves_lychee_from_doc_group_to_task(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+        run_check,
+    ):
+        git_init(tmp_path)
+        (tmp_path / "_quarto.yml").touch()
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text(
+            dedent("""
+                [dependency-groups]
+                doc = ["lychee-bin>=0.25", "quarto-cli"]
+
+                [tool.poe.groups.doc.tasks.doc]
+                cmd = "quarto render"
+                executor = { group = "doc" }
+
+                [tool.poe.groups.doc.tasks.doclive]
+                cmd = "quarto preview"
+                executor = { group = "doc" }
+
+                [tool.poe.groups.doc.tasks.linkcheck]
+                executor = { group = "doc" }
+                help = "Check links"
+                cmd = "lychee ."
+            """).lstrip()
+        )
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=False, package_manager="uv")
+        pyproject = Pyproject.load(config_path)
+        assert pyproject.get_table("dependency-groups.doc") == ["quarto-cli"]
+        linkcheck = pyproject.get_table("tool.poe.groups.doc.tasks.linkcheck")
+        assert linkcheck == {
+            "executor": {"with": ["lychee-bin>=0.25"]},
+            "help": "Check links",
+            "cmd": "lychee .",
+        }
 
     def preserves_existing_linkcheck_dependency_group(
         tmp_path: Path,

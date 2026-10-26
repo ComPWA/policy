@@ -38,6 +38,8 @@ DEFAULT_EXTENSIONS = (
     "xml",
 )
 """Lychee's default extensions, which an explicit extensions option replaces."""
+LYCHEE_MINIMUM_VERSION = "0.24.0"
+LYCHEE_REQUIREMENT = f"lychee-bin>={LYCHEE_MINIMUM_VERSION}"
 DOCUMENT_EXTENSIONS = ("ipynb", "qmd", "rst")
 """Documentation source formats that lychee does not scan by default."""
 
@@ -46,7 +48,7 @@ NOTEBOOK_REMAP = "^(.+)/n$ $1"
 """Strip the newline that lychee reads into URLs at the end of a notebook source line.
 
 Lychee scans notebooks as plain text, so a URL at the end of a line in the JSON source
-is followed by an escaped newline ``\n``, which lychee normalizes to ``/n``.
+is followed by an escaped newline `` ``, which lychee normalizes to ``/n``.
 """
 
 
@@ -164,23 +166,56 @@ def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> Non
             if not isinstance(dependency, str):
                 found = update(dependency["include-group"]) or found
                 continue
-            requirement = Requirement(dependency)
-            if requirement.name != "lychee-bin":
+            if Requirement(dependency).name != "lychee-bin":
                 continue
             found = True
-            if any(
-                spec.operator in {">=", ">", "~=", "=="}
-                and Version(spec.version.rstrip(".*")) >= Version("0.24.0")
-                for spec in requirement.specifier
-            ):
-                continue
-            separator = "," if requirement.specifier else ""
-            requirement.specifier = type(requirement.specifier)(
-                f"{requirement.specifier}{separator}>=0.24.0"
-            )
-            dependencies[index] = str(requirement)
-            config.changelog.append("Required lychee-bin>=0.24.0")
+            required = _require_minimum_version(dependency)
+            if required != dependency:
+                dependencies[index] = required
+                config.changelog.append(f"Required {LYCHEE_REQUIREMENT}")
         return found
 
     if not update(dependency_group):
-        config.add_dependency("lychee-bin>=0.24.0", dependency_group=dependency_group)
+        config.add_dependency(LYCHEE_REQUIREMENT, dependency_group=dependency_group)
+
+
+def require_lychee_in_with(dependencies: str | Iterable[str] | None) -> list[str]:
+    """Require lychee in the ``with`` dependencies of a Poe task executor.
+
+    >>> require_lychee_in_with(None)
+    ['lychee-bin>=0.24.0']
+    >>> require_lychee_in_with("sphinx")
+    ['sphinx', 'lychee-bin>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.20,<1"])
+    ['lychee-bin<1,>=0.20,>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.25"])
+    ['lychee-bin>=0.25']
+    """
+    if dependencies is None:
+        dependencies = []
+    elif isinstance(dependencies, str):
+        dependencies = [dependencies]
+    required = [
+        _require_minimum_version(dependency)
+        if Requirement(dependency).name == "lychee-bin"
+        else dependency
+        for dependency in dependencies
+    ]
+    if not any(Requirement(dependency).name == "lychee-bin" for dependency in required):
+        required.append(LYCHEE_REQUIREMENT)
+    return required
+
+
+def _require_minimum_version(dependency: str) -> str:
+    requirement = Requirement(dependency)
+    if any(
+        spec.operator in {">=", ">", "~=", "=="}
+        and Version(spec.version.rstrip(".*")) >= Version(LYCHEE_MINIMUM_VERSION)
+        for spec in requirement.specifier
+    ):
+        return dependency
+    separator = "," if requirement.specifier else ""
+    requirement.specifier = type(requirement.specifier)(
+        f"{requirement.specifier}{separator}>={LYCHEE_MINIMUM_VERSION}"
+    )
+    return str(requirement)

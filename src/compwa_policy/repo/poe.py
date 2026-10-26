@@ -9,10 +9,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
+from packaging.requirements import Requirement
 
 from compwa_policy.characterization import has_documentation
 from compwa_policy.errors import PolicyError
-from compwa_policy.repo.lychee import configure_lychee, require_lychee
+from compwa_policy.repo.lychee import (
+    configure_lychee,
+    require_lychee,
+    require_lychee_in_with,
+)
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
     UV_UPGRADE_IMPORTS,
@@ -223,6 +228,12 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
 
 
 def _set_linkcheck(pyproject: ModifiablePyproject, /) -> None:
+    """Run lychee in a ``linkcheck`` task that installs only lychee.
+
+    A task that runs lychee in a dependency group other than ``doc`` keeps its executor,
+    otherwise lychee is moved from the ``doc`` group to the task's ``with``
+    dependencies, so that link checking does not install Sphinx.
+    """
     if not has_documentation():
         return
     configure_lychee(pyproject)
@@ -230,21 +241,55 @@ def _set_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     if "linkcheck" not in tasks:
         tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
-    if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
-        executor = existing.get("executor", {})
-        dependency_group = (
-            executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
-        )
-        require_lychee(pyproject, dependency_group)
+    executor = existing.get("executor", {})
+    if not isinstance(executor, Mapping):
+        executor = {}
+    runs_lychee = any(__mentions(existing.get(k), "lychee") for k in ("cmd", "shell"))
+    if executor.get("type") == "simple" and __mentions(existing.get("cmd"), "uvx"):
+        _remove_lychee_from_doc_group(pyproject)
         return
-    require_lychee(pyproject, "doc")
-    tasks["linkcheck"] = {
-        "executor": to_inline_table({"group": "doc"}),
-        "help": "Check external links in the documentation (requires internet connection)",
-        "cmd": "lychee .",
-    }
+    if runs_lychee and executor.get("group", "doc") != "doc":
+        require_lychee(pyproject, executor["group"])
+        return
+    with_dependencies = executor.get("with", [])
+    if isinstance(with_dependencies, str):
+        with_dependencies = [with_dependencies]
+    with_dependencies = [
+        *with_dependencies,
+        *_remove_lychee_from_doc_group(pyproject),
+    ]
+    expected_executor = {k: v for k, v in executor.items() if k != "group"}
+    expected_executor["with"] = require_lychee_in_with(with_dependencies)
+    if runs_lychee:
+        expected = {**existing, "executor": expected_executor}
+    else:
+        expected = {
+            "executor": expected_executor,
+            "help": "Check external links in the documentation (requires internet connection)",
+            "cmd": "lychee .",
+        }
+    if expected == existing:
+        return
+    expected["executor"] = to_inline_table(expected_executor)
+    tasks["linkcheck"] = expected
     msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
     pyproject.changelog.append(msg)
+
+
+def _remove_lychee_from_doc_group(pyproject: ModifiablePyproject, /) -> list[str]:
+    doc_group = pyproject.get_table("dependency-groups", fallback={}).get("doc", [])
+    lychee_dependencies = [
+        dependency
+        for dependency in doc_group
+        if isinstance(dependency, str) and Requirement(dependency).name == "lychee-bin"
+    ]
+    for dependency in lychee_dependencies:
+        doc_group.remove(dependency)
+        msg = (
+            "Moved lychee-bin from doc dependency group to Poe the Poet linkcheck task"
+        )
+        pyproject.changelog.append(msg)
+    return lychee_dependencies
 
 
 def _set_doc_fail_on_warning(pyproject: ModifiablePyproject, /) -> None:
