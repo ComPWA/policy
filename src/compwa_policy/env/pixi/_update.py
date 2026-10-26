@@ -348,24 +348,33 @@ def _set_linkcheck(
         command = existing.get("cmd", "")
     else:
         command = ""
-    if __has_table(config, "pypi-dependencies"):
-        pypi_dependencies = __get_table(config, "pypi-dependencies")
-        if "lychee-bin" in pypi_dependencies:
-            del pypi_dependencies["lychee-bin"]
-            if not pypi_dependencies:
-                if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
-                    del config._document["tool"]["pixi"]["pypi-dependencies"]  # ruff: ignore[private-member-access]
-                else:
-                    del config._document["pypi-dependencies"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
-            config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
+    __remove_lychee_pypi_dependency(config)
     dependencies = __get_table(config, f"{prefix}dependencies", create=True)
     if "lychee" not in dependencies:
         dependencies["lychee"] = ">=0.24.0"
         config.changelog.append("Added lychee to Pixi conda dependencies")
     if "lychee" in command:
         return
-    tasks["linkcheck"] = {"cmd": "lychee ."}
+    task = {"cmd": "lychee ."}
+    if isinstance(existing, Mapping) and "description" in existing:
+        task["description"] = existing["description"]
+    tasks["linkcheck"] = task
     config.changelog.append("Set Pixi linkcheck task")
+
+
+def __remove_lychee_pypi_dependency(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "pypi-dependencies"):
+        return
+    pypi_dependencies = __get_table(config, "pypi-dependencies")
+    if "lychee-bin" not in pypi_dependencies:
+        return
+    del pypi_dependencies["lychee-bin"]
+    if not pypi_dependencies:
+        if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
+            del config._document["tool"]["pixi"]["pypi-dependencies"]  # ruff: ignore[private-member-access]
+        else:
+            del config._document["pypi-dependencies"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
+    config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
 
 
 def __has_linkcheck_task(config: ModifiablePyproject, prefix: str) -> bool:
