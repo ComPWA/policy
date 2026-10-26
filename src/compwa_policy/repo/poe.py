@@ -343,16 +343,14 @@ def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
         return
     all_task = cast("Table", task_table["all"])
     sequence = all_task.get("sequence")
-    is_updated = [
-        __safe_update(
-            all_task, "help", "Run all continuous integration (CI) tasks locally"
-        )
-    ]
+    is_updated = __safe_update(
+        all_task, "help", "Run all continuous integration (CI) tasks locally"
+    )
     if __delegates_to_tasks(sequence):
-        is_updated.append(_add_linkcheck_to_sequence(pyproject, sequence))
+        is_updated |= _add_linkcheck_to_sequence(pyproject, sequence)
     else:
-        is_updated.append(__safe_update(all_task, "ignore_fail", "return_non_zero"))
-    if any(is_updated):
+        is_updated |= __safe_update(all_task, "ignore_fail", "return_non_zero")
+    if is_updated:
         msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
 
