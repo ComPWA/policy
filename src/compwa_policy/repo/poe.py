@@ -428,6 +428,15 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
         pyproject.changelog.append(msg)
 
 
+__NB_DEPENDENCIES = ("ipykernel", "nbclient")
+__NB_SHELL = (
+    "git ls-files -z --cached --others --exclude-standard -- ${paths}"
+    " | grep -z '\\.ipynb$'"
+    " | xargs -0 jupyter execute"
+)
+"""Execute tracked and untracked notebooks, skipping ignored ones like :file:`_build`."""
+
+
 def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Table", tasks.get("nb", {}))
@@ -440,24 +449,20 @@ def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
                 "positional": True,
             }
         ]),
-        "cmd": "pytest --nbmake --nbmake-timeout=0 ${paths}",
+        "shell": __NB_SHELL,
         "help": "Run all notebooks",
     }
+    if "jupyter execute" in existing.get("shell", ""):
+        expected["shell"] = existing["shell"]  # keep repository-specific filters
     executor = {}
     if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
         executor["group"] = "notebooks"
-    existing_executor_with = existing.get("executor", {}).get("with")
-    if existing_executor_with is not None and existing_executor_with not in (
-        "nbmake",
-        ["nbmake"],
-    ):
-        if isinstance(existing_executor_with, str):
-            existing_executor_with = [existing_executor_with]
-        if "nbmake" not in existing_executor_with:
-            existing_executor_with.append("nbmake")
-        executor["with"] = existing_executor_with
-    else:
-        executor["with"] = "nbmake"
+    existing_executor_with = existing.get("executor", {}).get("with", [])
+    if isinstance(existing_executor_with, str):
+        existing_executor_with = [existing_executor_with]
+    executor_with = [p for p in existing_executor_with if p != "nbmake"]
+    executor_with.extend(p for p in __NB_DEPENDENCIES if p not in executor_with)
+    executor["with"] = to_toml_array(executor_with)
     expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected
