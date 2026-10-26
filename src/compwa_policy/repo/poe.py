@@ -351,9 +351,26 @@ def _set_all_task(pyproject: ModifiablePyproject, /) -> None:
         __safe_update(all_task, "ignore_fail", "return_non_zero")
         if not delegates_to_tasks
         else False,
+        _add_linkcheck_to_sequence(pyproject, sequence)
+        if delegates_to_tasks
+        else False,
     ]):
         msg = f"Updated Poe the Poet all task in {CONFIG_PATH.pyproject}"
         pyproject.changelog.append(msg)
+
+
+def _add_linkcheck_to_sequence(pyproject: ModifiablePyproject, sequence: Any) -> bool:
+    """Run the linkcheck task in the all task, as CI does."""
+    poe_table = pyproject.get_table("tool.poe")
+    if "linkcheck" not in _get_all_poe_tasks(poe_table):
+        return False
+    references = {
+        item if isinstance(item, str) else item.get("ref") for item in sequence
+    }
+    if "linkcheck" in references:
+        return False
+    sequence.append("linkcheck")
+    return True
 
 
 def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
