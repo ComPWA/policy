@@ -1,3 +1,4 @@
+# cspell:ignore nbval
 from __future__ import annotations
 
 import io
@@ -120,6 +121,35 @@ def describe_main():
                 "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@6bd8b0f3d61dd430363966df586f4261f5a811ab",
             ],
         }
+
+    @pytest.mark.parametrize(
+        ("addopts", "expected"),
+        [
+            (
+                ["--color=yes", "--nbmake", "--nbmake-timeout=0"],
+                ["--color=yes"],
+            ),
+            ("--color=yes --nbclient --nbclient-timeout=60", "--color=yes"),
+            (["--color=yes", "--nbval-lax"], ["--color=yes"]),
+        ],
+        ids=["nbmake-array", "nbclient-string", "nbval"],
+    )
+    def removes_notebook_plugin_from_pytest(
+        poe_repo: Path, run_check, addopts: list[str] | str, expected: list[str] | str
+    ):
+        pyproject_path = poe_repo / "pyproject.toml"
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            pyproject.get_table("tool.pytest", create=True)["addopts"] = addopts
+            dependency_groups = pyproject.get_table("dependency-groups", create=True)
+            dependency_groups["test"] = ["pytest", "pytest-nbclient"]
+            pyproject.dump()
+
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=True, package_manager="uv")
+
+        pyproject = Pyproject.load(pyproject_path)
+        assert pyproject.get_table("tool.pytest")["addopts"] == expected
+        assert pyproject.get_table("dependency-groups")["test"] == ["pytest"]
 
     @pytest.mark.parametrize("existing_command", [None, "pixi upgrade", "pixi update"])
     def uses_pixi_update_command(

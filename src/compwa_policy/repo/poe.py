@@ -87,6 +87,8 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
                 _set_jupyter_lab_task(config)
             if ctx.has_notebooks:
                 config.remove_dependency("nbmake")  # cspell:ignore nbmake
+                config.remove_dependency("pytest-nbclient")
+                _remove_nb_plugin_options(config)
                 _set_nb_task(config)
             _set_test_all_task(config)
             _update_doclive(config)
@@ -467,6 +469,34 @@ def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
     if existing != expected:
         tasks["nb"] = expected
         msg = f"Set Poe the Poet nb task in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+__NB_PLUGIN_OPTIONS = ("--nbclient", "--nbmake", "--nbval")  # cspell:ignore nbval
+
+
+def _remove_nb_plugin_options(pyproject: ModifiablePyproject, /) -> None:
+    """Remove notebook plugin options from the pytest configuration.
+
+    The plugin is only installed for the ``nb`` task, so these options would make a
+    plain ``pytest`` run fail.
+    """
+    for table_key in ("tool.pytest", "tool.pytest.ini_options"):
+        if not pyproject.has_table(table_key):
+            continue
+        config = pyproject.get_table(table_key)
+        existing = config.get("addopts")
+        if existing is None:
+            continue
+        options = existing.split() if isinstance(existing, str) else list(existing)
+        remaining = [o for o in options if not o.startswith(__NB_PLUGIN_OPTIONS)]
+        if remaining == options:
+            continue
+        if isinstance(existing, str):
+            config["addopts"] = " ".join(remaining)
+        else:
+            config["addopts"] = to_toml_array(remaining)
+        msg = f"Removed notebook plugin options from [{table_key}]"
         pyproject.changelog.append(msg)
 
 
