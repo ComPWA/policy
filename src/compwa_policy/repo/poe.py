@@ -428,13 +428,8 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
         pyproject.changelog.append(msg)
 
 
-__NB_DEPENDENCIES = ("ipykernel", "nbclient")
-__NB_SHELL = (
-    "git ls-files -z --cached --others --exclude-standard -- ${paths}"
-    " | grep -z '\\.ipynb$'"
-    " | xargs -0 jupyter execute"
-)
-"""Execute tracked and untracked notebooks, skipping ignored ones like :file:`_build`."""
+__NB_PLUGIN = "pytest-nbclient @ git+ssh://git@github.com/redeboer/pytest-nbclient"
+__OBSOLETE_NB_PLUGINS = {"ipykernel", "nbclient", "nbmake"}
 
 
 def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
@@ -449,20 +444,25 @@ def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
                 "positional": True,
             }
         ]),
-        "shell": __NB_SHELL,
+        "cmd": "pytest --nbclient ${paths}",
         "help": "Run all notebooks",
     }
-    if "jupyter execute" in existing.get("shell", ""):
-        expected["shell"] = existing["shell"]  # keep repository-specific filters
     executor = {}
     if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
         executor["group"] = "notebooks"
     existing_executor_with = existing.get("executor", {}).get("with", [])
     if isinstance(existing_executor_with, str):
         existing_executor_with = [existing_executor_with]
-    executor_with = [p for p in existing_executor_with if p != "nbmake"]
-    executor_with.extend(p for p in __NB_DEPENDENCIES if p not in executor_with)
-    executor["with"] = to_toml_array(executor_with)
+    executor_with = [
+        p
+        for p in existing_executor_with
+        if p not in __OBSOLETE_NB_PLUGINS and not p.startswith("pytest-nbclient")
+    ]
+    executor_with.append(__NB_PLUGIN)
+    if len(executor_with) == 1:
+        executor["with"] = executor_with[0]
+    else:
+        executor["with"] = to_toml_array(executor_with)
     expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected

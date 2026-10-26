@@ -112,11 +112,13 @@ def describe_main():
         nb_task = Pyproject.load(pyproject_path).get_table(
             "tool.poe.groups.notebook.tasks.nb"
         )
-        assert "cmd" not in nb_task
-        assert "jupyter execute" in nb_task["shell"]
+        assert nb_task["cmd"] == "pytest --nbclient ${paths}"
         assert nb_task["executor"] == {
             "group": "notebooks",
-            "with": ["pyproject-local-kernel", "ipykernel", "nbclient"],
+            "with": [
+                "pyproject-local-kernel",
+                "pytest-nbclient @ git+ssh://git@github.com/redeboer/pytest-nbclient",
+            ],
         }
 
     @pytest.mark.parametrize("existing_command", [None, "pixi upgrade", "pixi update"])
