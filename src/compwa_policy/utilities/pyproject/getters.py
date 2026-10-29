@@ -1,4 +1,4 @@
-"""Getter implementations for :class:`.PyprojectTOML`."""
+"""Getter implementations for ``PyprojectTOML``."""
 
 from __future__ import annotations
 

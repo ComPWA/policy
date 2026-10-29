@@ -400,7 +400,7 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
 
     - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**, but
       does not preserve comments and formatting.
-    - `True`: uses :mod:`tomlkit`, which is **slower**, but preservers comments and
+    - `True`: uses `tomlkit`, which is **slower**, but preservers comments and
       formatting.
     """
     parser = tomlkit if modifiable else tomli

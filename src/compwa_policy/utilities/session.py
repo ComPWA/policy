@@ -5,12 +5,10 @@ The `Session` follows the `Unit of Work
 companion `Identity Map <https://martinfowler.com/eaaCatalog/identityMap.html>`_: every
 managed file is loaded once and, on exit, written back only if it changed. Each check
 reports its modifications either by mutating one of the managed containers (whose own
-changelog is collected here) or by appending to :attr:`Session.changelog` directly.
+changelog is collected here) or by appending to `Session.changelog` directly.
 
 Resources are discovered lazily through :meth:`Session.get`; adding another file type
-therefore requires implementing
-:class:`~compwa_policy.utilities.resource.ModifiableResource`, without modifying
-:class:`Session`.
+therefore requires implementing `.ModifiableResource`, without modifying `Session`.
 """
 
 from __future__ import annotations
