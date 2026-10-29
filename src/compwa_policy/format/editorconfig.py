@@ -1,8 +1,7 @@
 """Check existence of pre-commit hook for EditorConfig.
 
 If a repository has an ``.editorconfig`` file, it should have an `EditorConfig
-pre-commit hook
-<https://github.com/editorconfig-checker/editorconfig-checker.python>`_.
+pre-commit hook <https://github.com/editorconfig-checker/editorconfig-checker.python>`_.
 """
 
 from __future__ import annotations

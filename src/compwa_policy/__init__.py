@@ -1,12 +1,12 @@
 """Bundled developer configurations and tools for ComPWA repositories.
 
-This package provides the :code:`check-dev-files` `pre-commit <https://pre-commit.com>`_
+This package provides the ``check-dev-files`` `pre-commit <https://pre-commit.com>`_
 hook (and the :program:`policy` CLI) that standardize and synchronize the developer
 setup across the `ComPWA repositories <https://github.com/ComPWA>`_.
 
-The command-line interface lives in :mod:`compwa_policy.cli`. This module only defines
-the shared `Arguments` data model and a few string helpers; the `Arguments` object is
-what the CLI builds and hands to the check dispatch in ``compwa_policy.cli._checks``.
+The command-line interface lives in `compwa_policy.cli`. This module only defines the
+shared `Arguments` data model and a few string helpers; the `Arguments` object is what
+the CLI builds and hands to the check dispatch in ``compwa_policy.cli._checks``.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Helper functions for working with :mod:`tomlkit`."""
+"""Helper functions for working with `tomlkit`."""
 
 from __future__ import annotations
 

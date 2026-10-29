@@ -1,12 +1,12 @@
 """Layered configuration for the :program:`policy` command.
 
 A repository can declare its options once in a ``[tool.compwa.policy]`` table in
-:code:`pyproject.toml` instead of repeating them under ``args:`` in every
+``pyproject.toml`` instead of repeating them under ``args:`` in every
 ``.pre-commit-config.yaml``. Options are resolved with this precedence (first match
 wins):
 
 1. the option explicitly passed on the command line (e.g. under ``args:``);
-2. the ``[tool.compwa.policy]`` table in the repository's :code:`pyproject.toml`;
+2. the ``[tool.compwa.policy]`` table in the repository's ``pyproject.toml``;
 3. the built-in field default.
 
 The table is organized hierarchically, mirroring the subcommand tree: shared options
@@ -30,7 +30,7 @@ nested table under ``[tool.compwa.policy.setup.env]``:
 
 Both the native TOML form (arrays, tables, booleans) and the legacy command-line string
 form (``"mypy,pyright"``, ``"A=1,B=2"``) are accepted, so an ``args:`` list can be moved
-into :code:`pyproject.toml` verbatim.
+into ``pyproject.toml`` verbatim.
 """
 
 from __future__ import annotations
@@ -153,8 +153,8 @@ def _read_policy_config() -> dict[str, Any]:
     The top-level table and every subcommand sub-table are merged into a single flat
     mapping (since each option is owned by exactly one table, this cannot collide), with
     keys normalized from ``kebab-case`` to ``snake_case``. The environment-variable
-    table ``[tool.compwa.policy.setup.env]`` is folded into the ``environment_variables``
-    option.
+    table ``[tool.compwa.policy.setup.env]`` is folded into the
+    ``environment_variables`` option.
     """
     if not CONFIG_PATH.pyproject.exists():
         return {}
@@ -198,11 +198,11 @@ def _join(values: Any) -> str:
 
 
 class Settings(BaseSettings):
-    """Resolved :program:`policy` options, layering the CLI over :code:`pyproject.toml`.
+    """Resolved :program:`policy` options, layering the CLI over ``pyproject.toml``.
 
     Sources are restricted to the command line and ``[tool.compwa.policy]``: no
-    environment variables or user-level files, keeping the configuration committed to the
-    repository and reviewable.
+    environment variables or user-level files, keeping the configuration committed to
+    the repository and reviewable.
     """
 
     model_config = SettingsConfigDict(extra="forbid", use_attribute_docstrings=True)
@@ -360,7 +360,7 @@ class Settings(BaseSettings):
 
 
 def load_settings(**cli_overrides: Any) -> Settings:
-    """Resolve :program:`policy` options from the CLI and :code:`pyproject.toml`.
+    """Resolve :program:`policy` options from the CLI and ``pyproject.toml``.
 
     Command-line options that were not explicitly passed are dropped (they arrive as
     ``None``), so they do not shadow a value set in the ``[tool.compwa.policy]`` table.

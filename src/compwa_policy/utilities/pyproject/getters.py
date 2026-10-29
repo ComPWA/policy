@@ -1,4 +1,4 @@
-"""Getter implementations for :class:`.PyprojectTOML`."""
+"""Getter implementations for ``PyprojectTOML``."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def get_supported_python_versions(pyproject: PyprojectTOML) -> list[PythonVersio
 
 
 def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
-    """Extract Python versions from `PyPI classifiers <https://pypi.org/classifiers>`_.
+    """Extract Python versions from `PyPI classifiers <https://pypi.org/classifiers/>`_.
 
     >>> classifiers = [
     ...     "License :: OSI Approved :: MIT License",

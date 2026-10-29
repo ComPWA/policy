@@ -36,7 +36,9 @@ def main(precommit: Precommit | None = None) -> int:
         precommit_configs.append(Precommit.load(__PRECOMMIT_FIXTURE_FILE))
     for config in precommit_configs:
         hooks_updated = [
-            _check_hook_definition(hook, hook_definitions)
+            _check_hook_definition(
+                hook, hook_definitions, local=repo["repo"] == "local"
+            )
             for repo in config.document["repos"]
             for hook in repo["hooks"]
         ]
@@ -97,11 +99,16 @@ def _create_hook_manifest_parser() -> YAML:
     return parser
 
 
-def _check_hook_definition(hook: Hook, definitions: dict[str, Hook]) -> bool:
+def _check_hook_definition(
+    hook: Hook, definitions: dict[str, Hook], *, local: bool = False
+) -> bool:
     expected = definitions.get(hook["id"])
     if expected is None:
         return False
     expected_values = __reduce(expected)
+    if local:
+        expected_values["entry"] = f"uv run {expected['entry']}"
+        expected_values["language"] = "system"
     hook_values = cast("dict[str, object]", hook)
     args_are_last = "args" not in hook_values or next(reversed(hook_values)) == "args"
     if __reduce(hook) == expected_values and args_are_last:

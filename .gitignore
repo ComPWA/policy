@@ -10,6 +10,7 @@ version.py
 *.pyc
 .coverage
 .coverage.*
+.lycheecache
 .benchmarks/
 .pytest_cache/
 __pycache__/

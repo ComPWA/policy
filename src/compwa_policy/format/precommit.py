@@ -1,4 +1,4 @@
-"""Check content of :code:`.pre-commit-config.yaml` and related files."""
+"""Check content of ``.pre-commit-config.yaml`` and related files."""
 
 from __future__ import annotations
 
@@ -111,8 +111,8 @@ def migrate_notebook_hooks_to_nbhooks(
     The notebook hooks used to be served from ComPWA/policy itself, but they now live in
     `ComPWA/nbhooks <https://github.com/ComPWA/nbhooks>`_. Any notebook hook still
     listed under the ComPWA/policy repo is moved to a ComPWA/nbhooks repo entry. When
-    :code:`add_default_hooks` is set, the default notebook hooks are added as well (this
-    is what the ``check-dev-files`` hook does for repositories that contain notebooks).
+    ``add_default_hooks`` is set, the default notebook hooks are added as well (this is
+    what the ``check-dev-files`` hook does for repositories that contain notebooks).
     """
     migrated = _pop_policy_notebook_hooks(precommit)
     existing = _get_nbhooks_hooks(precommit)

@@ -33,7 +33,7 @@ T = TypeVar("T", bound="Precommit")
 
 
 class Precommit:
-    """Read-only representation of a :code:`.pre-commit-config.yaml` file."""
+    """Read-only representation of a ``.pre-commit-config.yaml`` file."""
 
     def __init__(
         self, document: PrecommitConfig, parser: YAML, source: IO | Path | None = None
@@ -56,7 +56,7 @@ class Precommit:
 
     @classmethod
     def load(cls, source: IO | Path | str = CONFIG_PATH.precommit) -> Self:
-        """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        """Load a ``pyproject.toml`` file from a file, I/O stream, or `str`."""
         config, parser = _load_roundtrip_precommit_config(source)
         if isinstance(source, str):
             return cls(config, parser)

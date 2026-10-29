@@ -93,8 +93,8 @@ def describe_update_precommit_hook():
     def appends_hook_to_repo_with_fewer_repos_than_hooks():
         """The separator used to be keyed on the hook index, not the repo index.
 
-        Indexing ``repos`` with a hook index raises `IndexError` as soon as the
-        hook lands beyond the last repo.
+        Indexing ``repos`` with a hook index raises `IndexError` as soon as the hook
+        lands beyond the last repo.
         """
         config = dedent("""
             repos:

@@ -18,7 +18,7 @@ PyprojectTOML = TypedDict(
 """Structure of a `pyproject.toml` file.
 
 See [pyproject.toml
-specification](https://packaging.python.org/en/latest/specifications/pyproject-toml).
+specification](https://packaging.python.org/en/latest/specifications/pyproject-toml/).
 """
 
 
@@ -47,7 +47,7 @@ Project = TypedDict(
 
 
 class ProjectURLs(TypedDict):
-    """Project  for PyPI."""
+    """Project for PyPI."""
 
     Changelog: NotRequired[str]
     Documentation: NotRequired[str]

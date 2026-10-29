@@ -86,7 +86,17 @@ def describe_main() -> None:
         assert self_check.main(precommit) == 0
         updated = Precommit.load(tmp_path / ".pre-commit-config.yaml")
         hook = updated.document["repos"][0]["hooks"][0]
-        assert hook == {**expected, "args": ["--no-github-actions"]}
+        assert hook == {
+            **expected,
+            "entry": "uv run check-dev-files",
+            "language": "system",
+            "args": ["--no-github-actions"],
+        }
+        assert self_check.main(updated) == 0
+        assert (
+            Precommit.load(tmp_path / ".pre-commit-config.yaml").document
+            == updated.document
+        )
 
     def updates_the_precommit_test_fixture(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch

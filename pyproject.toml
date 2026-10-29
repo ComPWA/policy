@@ -15,7 +15,7 @@ classifiers = [
 ]
 dependencies = [
     "PyYAML",
-    "attrs >=20.1.0",  # https://www.attrs.org/changelog.html#id82
+    "attrs >=20.1.0",  # https://github.com/python-attrs/attrs/releases/tag/20.1.0
     "html2text",
     "ini2toml",
     "jinja2",
@@ -41,7 +41,7 @@ content-type = "text/markdown"
 
 [project.urls]
 Changelog = "https://github.com/ComPWA/policy/releases"
-Documentation = "https://compwa.github.io/policy"
+Documentation = "https://compwa.github.io/policy/"
 Issues = "https://github.com/ComPWA/policy/issues"
 Source = "https://github.com/ComPWA/policy"
 
@@ -70,8 +70,8 @@ doc = [
     "sphinx-api-relink",
     "sphinx-book-theme",
     "sphinx-codeautolink",
+    "sphinx-config-schema",
     "sphinx-copybutton",
-    "sphinx-tippy",
     "sphinxcontrib-typer",
 ]
 style = [
@@ -127,6 +127,30 @@ omit = [
 ]
 source = ["src"]
 
+[tool.docstrfmt]
+docstring-trailing-line = false
+format-python-code-blocks = false
+
+[tool.lychee]
+cache = true
+exclude = [
+    "%7B\\w+%7D",  # These links are only complete when the code runs
+    "^https://(?:github|gitpod|img|stackoverflow)/$",  # Escaped dots in regex patterns
+    "^https://gitpod\\.io/#",
+    "^https://stackoverflow\\.com/",  # Rejects requests from link checkers
+]
+exclude_path = ["tests"]  # Test fixtures contain dummy URLs
+extensions = ["json", "md", "py", "toml", "yaml", "yml"]
+include_fragments = "anchor-only"
+include_verbatim = true
+max_cache_age = "2d"
+max_retries = 3
+remap = [
+    '^git\+(https://[^@]+)(@.*)?$ $1',  # Check the repository behind pip-style VCS requirements
+]
+retry_wait_time = 5
+timeout = 30
+
 [tool.poe.executor]
 isolated = true
 no-group = "dev"
@@ -171,15 +195,9 @@ executor = { group = "doc", with = "sphinx-autobuild" }
 help = "Set up a server to directly preview changes to the HTML pages"
 
 [tool.poe.groups.doc.tasks.linkcheck]
-cmd = """
-sphinx-build \
-    --builder=linkcheck \
-    --show-traceback \
-    docs/ \
-    docs/_build/linkcheck/
-"""
-executor = { group = "doc" }
-help = "Check external links in the documentation (requires internet connection)"
+cmd = "uvx --from lychee-bin lychee . --quiet"
+executor = { type = "simple" }
+help = "Check links and fragments in repository sources (requires internet connection)"
 
 [tool.poe.groups.test]
 heading = "Testing"
@@ -316,7 +334,6 @@ filterwarnings = [
 minversion = "9.0"
 testpaths = [
     "benchmarks",
-    "docs/_ext",
     "src",
     "tests",
 ]
@@ -392,8 +409,6 @@ split-on-trailing-comma = false
 "docs/*" = [
     "assert",
     "implicit-namespace-package",
-    "module-import-not-at-top-of-file",
-    "print",
     "request-without-timeout",
 ]
 "docs/conf.py" = [

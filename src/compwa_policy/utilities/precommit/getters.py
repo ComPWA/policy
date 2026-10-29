@@ -48,7 +48,7 @@ def find_repo_with_index(
 def get_latest_rev(repo_url: str, fallback: str = "PLEASE-UPDATE") -> str:
     """Fetch the latest release tag of a pre-commit hook repository.
 
-    Returns the highest version tag found through ``git ls-remote``, or :code:`fallback`
+    Returns the highest version tag found through ``git ls-remote``, or ``fallback``
     when the tags cannot be fetched (for example when there is no internet connection).
     """
     versions: list[tuple[Version, str]] = []

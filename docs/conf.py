@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 from sphinx_api_relink.helpers import get_branch_name, get_package_version
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 BRANCH = get_branch_name()
 ORGANIZATION = "ComPWA"
@@ -53,12 +48,11 @@ copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = f"2021, {ORGANIZATION}"
 default_role = "py:obj"
 extensions = [
-    "_ext.policy_settings",
     "myst_parser",
     "sphinx_api_relink",
     "sphinx_codeautolink",
+    "sphinx_config_schema",
     "sphinx_copybutton",
-    "sphinx_tippy",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
@@ -108,12 +102,9 @@ html_theme_options = {
 }
 html_title = REPO_TITLE
 intersphinx_mapping = {
-    "attrs": ("https://www.attrs.org/en/stable", None),
-    "click": ("https://click.palletsprojects.com/en/stable", None),
-    "nbformat": ("https://nbformat.readthedocs.io/en/stable", None),
-    "pydantic": ("https://pydantic.dev/docs/validation/latest", None),
-    "python": ("https://docs.python.org/3", None),
-    "tomlkit": ("https://tomlkit.readthedocs.io/en/stable", None),
+    "click": ("https://click.palletsprojects.com/en/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "tomlkit": ("https://tomlkit.readthedocs.io/en/stable/", None),
     "typer": ("https://typer.tiangolo.com", None),
 }
 myst_enable_extensions = [

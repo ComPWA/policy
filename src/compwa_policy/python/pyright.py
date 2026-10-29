@@ -1,4 +1,4 @@
-"""Check and update :code:`pyright` settings."""
+"""Check and update ``pyright`` settings."""
 
 from __future__ import annotations
 

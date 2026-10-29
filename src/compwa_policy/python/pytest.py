@@ -1,4 +1,4 @@
-"""Check and update :code:`pytest` settings."""
+"""Check and update ``pytest`` settings."""
 
 from __future__ import annotations
 
