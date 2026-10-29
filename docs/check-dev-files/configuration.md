@@ -12,8 +12,9 @@ Instead of repeating the same flags under `args:` in every `.pre-commit-config.y
 The table mirrors the {doc}`subcommand tree <../check-dev-files>`. Shared options live at the top level, while subcommand-specific options live in nested tables. The following copyable example is generated from the settings schema and shows every built-in default. Hover over an option to see what it does:
 
 ```{eval-rst}
-.. policy-settings::
+.. config-schema:: /../compwa-policy.schema.json
     :caption: pyproject.toml
+    :table: tool.compwa.policy
 ```
 
 The `env` subcommand maps to the `setup` table. Environment variables can be added as key-value pairs under `[tool.compwa.policy.setup.env]`.

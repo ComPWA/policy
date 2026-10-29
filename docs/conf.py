@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 from sphinx_api_relink.helpers import get_branch_name, get_package_version
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 BRANCH = get_branch_name()
 ORGANIZATION = "ComPWA"
@@ -53,12 +48,11 @@ copybutton_prompt_text = r">>> |\.\.\. "  # doctest
 copyright = f"2021, {ORGANIZATION}"
 default_role = "py:obj"
 extensions = [
-    "_ext.policy_settings",
     "myst_parser",
     "sphinx_api_relink",
     "sphinx_codeautolink",
+    "sphinx_config_schema",
     "sphinx_copybutton",
-    "sphinx_tippy",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",

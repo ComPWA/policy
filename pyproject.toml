@@ -70,8 +70,8 @@ doc = [
     "sphinx-api-relink",
     "sphinx-book-theme",
     "sphinx-codeautolink",
+    "sphinx-config-schema",
     "sphinx-copybutton",
-    "sphinx-tippy",
     "sphinxcontrib-typer",
 ]
 style = [
@@ -316,7 +316,6 @@ filterwarnings = [
 minversion = "9.0"
 testpaths = [
     "benchmarks",
-    "docs/_ext",
     "src",
     "tests",
 ]
@@ -392,8 +391,6 @@ split-on-trailing-comma = false
 "docs/*" = [
     "assert",
     "implicit-namespace-package",
-    "module-import-not-at-top-of-file",
-    "print",
     "request-without-timeout",
 ]
 "docs/conf.py" = [
