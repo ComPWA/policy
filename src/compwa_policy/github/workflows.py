@@ -349,6 +349,7 @@ def _recommend_vscode_extension(session: Session, /) -> None:
     # cspell:ignore cschleiden
     vscode.remove_extension_recommendation(session, "cschleiden.vscode-github-actions")
     vscode.add_extension_recommendation(session, "github.vscode-github-actions")
+    vscode.add_extension_recommendation(session, "github.vscode-pull-request-github")
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
