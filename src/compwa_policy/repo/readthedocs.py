@@ -129,7 +129,7 @@ def _can_use_native_uv(config: ReadTheDocs, pixi_packages: set[str]) -> bool:
     """Check whether the default Sphinx build with Read the Docs' uv support suffices.
 
     Quarto builds, extra Pixi packages, and custom build commands still require
-    :code:`build.commands`.
+    ``build.commands``.
     """
     if uses_quarto() or pixi_packages - {"graphviz", "uv"}:
         return False

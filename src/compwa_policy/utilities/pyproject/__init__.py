@@ -1,4 +1,4 @@
-"""Tools for loading, inspecting, and updating :code:`pyproject.toml`."""
+"""Tools for loading, inspecting, and updating ``pyproject.toml``."""
 
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ _NO_FALLBACK: Final = object()
 
 @frozen
 class Pyproject:
-    """Read-only representation of a :code:`pyproject.toml` file."""
+    """Read-only representation of a ``pyproject.toml`` file."""
 
     _document: PyprojectTOML
     _source: IO | Path | None = field(default=None)
@@ -70,7 +70,7 @@ class Pyproject:
         *,
         session: Session | None = None,
     ) -> Self:
-        """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        """Load a ``pyproject.toml`` file from a file, I/O stream, or `str`."""
         if cls is Pyproject and source == CONFIG_PATH.pyproject and session is not None:
             managed = session.pyproject
             if managed is not None:
@@ -132,9 +132,9 @@ class Pyproject:
 
 @frozen(slots=False)
 class ModifiablePyproject(Pyproject, ModifiableResource):
-    """Stateful representation of a :code:`pyproject.toml` file.
+    """Stateful representation of a ``pyproject.toml`` file.
 
-    Use this class to apply multiple modifications to a :code:`pyproject.toml` file in
+    Use this class to apply multiple modifications to a ``pyproject.toml`` file in
     separate sub-hooks. The modifications are dumped once the context is exited.
     """
 
@@ -149,7 +149,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         *,
         session: Session | None = None,
     ) -> Self:
-        """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`."""
+        """Load a ``pyproject.toml`` file from a file, I/O stream, or `str`."""
         _ = session
         if isinstance(source, Path):
             with open(source) as stream:
@@ -327,8 +327,8 @@ def has_dependency(
 ) -> bool:
     """Check whether a package is listed as a dependency.
 
-    If a :code:`dependency_group` is given, the search is limited to that group and the
-    groups it pulls in through :code:`include-group`.
+    If a ``dependency_group`` is given, the search is limited to that group and the
+    groups it pulls in through ``include-group``.
     """
     toml_document: PyprojectTOML = pyproject._document  # ruff: ignore[private-member-access]
     dependency_groups = toml_document.get("dependency-groups", {})
@@ -359,7 +359,7 @@ def has_dependency(
 def _resolve_dependency_group(
     dependency_groups: abc.Mapping[str, abc.Sequence], group_name: str
 ) -> set[str]:
-    """Collect the dependencies of a group, following :code:`include-group` entries.
+    """Collect the dependencies of a group, following ``include-group`` entries.
 
     >>> groups = {
     ...     "dev": [{"include-group": "doc"}, "pytest"],
@@ -394,9 +394,9 @@ def get_constraints_file(python_version: PythonVersion) -> Path | None:
 
 
 def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectTOML:
-    """Load a :code:`pyproject.toml` file from a file, I/O stream, or `str`.
+    """Load a ``pyproject.toml`` file from a file, I/O stream, or `str`.
 
-    The :code:`modifiable` flag determines which parser to use:
+    The ``modifiable`` flag determines which parser to use:
 
     - `False`: use `tomli <https://github.com/hukkin/tomli>`_, which is **faster**, but
       does not preserve comments and formatting.

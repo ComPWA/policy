@@ -171,7 +171,7 @@ def remove_lines(
 
 
 def add_to_gitignore(session: Session, /, pattern: str) -> None:
-    """Add a pattern to the :code:`.gitignore` file if it is not already present."""
+    """Add a pattern to the ``.gitignore`` file if it is not already present."""
     if append_safe(session, pattern, CONFIG_PATH.gitignore):
         session.changelog.append(f"Added {pattern} under {CONFIG_PATH.gitignore}")
 

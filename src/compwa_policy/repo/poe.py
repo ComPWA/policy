@@ -273,7 +273,7 @@ def _set_doc_fail_on_warning(pyproject: ModifiablePyproject, /) -> None:
 
 
 def __add_fail_on_warning(command: str) -> str:
-    """Make a :code:`sphinx-build` command treat warnings as errors.
+    """Make a ``sphinx-build`` command treat warnings as errors.
 
     >>> __add_fail_on_warning("sphinx-build docs docs/_build/html")
     'sphinx-build --fail-on-warning docs docs/_build/html'
@@ -670,8 +670,8 @@ def _update_doclive(pyproject: ModifiablePyproject, /) -> None:
 def __as_task_table(task: Any, /) -> Mapping:
     """Expand the shorthand notations for a Poe task into a task table.
 
-    A task defined as a string is a :code:`cmd` task, one defined as an array is a
-    :code:`sequence` task.
+    A task defined as a string is a ``cmd`` task, one defined as an array is a
+    ``sequence`` task.
 
     >>> __as_task_table("pytest -m slow")
     {'cmd': 'pytest -m slow'}

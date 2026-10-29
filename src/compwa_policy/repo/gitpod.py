@@ -1,4 +1,4 @@
-"""Extract :code:`.gitpod.yml` file from :code:`launch.json`."""
+"""Extract ``.gitpod.yml`` file from ``launch.json``."""
 
 from __future__ import annotations
 

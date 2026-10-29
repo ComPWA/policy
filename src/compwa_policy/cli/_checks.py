@@ -153,8 +153,8 @@ def run_checks(
     :data:`CHECK_HOOKS` is the single source of truth for which checks run and in what
     order. Running with every group (the default) reproduces the original flat
     ``check-dev-files`` dispatch exactly; a subcommand passes only its own group.
-    Keeping one ordered sequence means a subcommand can never order a shared config
-    file (such as ``.pre-commit-config.yaml``) differently from the full run.
+    Keeping one ordered sequence means a subcommand can never order a shared config file
+    (such as ``.pre-commit-config.yaml``) differently from the full run.
 
     Each check reports its modifications through the *session*: either by mutating a
     managed container (:attr:`~.Session.pyproject`, :attr:`~.Session.precommit`) or by

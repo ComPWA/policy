@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list[str]:
     """Filter patterns that match files.
 
-    If :code:`files` is not supplied, get the files with :func:`git_ls_files`.
+    If ``files`` is not supplied, get the files with :func:`git_ls_files`.
 
     >>> filter_patterns(["**/*.json", "**/*.txt"], ["file.json", "file.yaml"])
     ['**/*.json']

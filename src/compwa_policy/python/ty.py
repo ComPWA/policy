@@ -1,4 +1,4 @@
-"""Configuration of the :code:`ty` type checker."""
+"""Configuration of the ``ty`` type checker."""
 
 from __future__ import annotations
 

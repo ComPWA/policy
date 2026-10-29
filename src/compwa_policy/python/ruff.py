@@ -194,7 +194,7 @@ def _remove_pylint(session: Session, /) -> None:
 
 
 def _move_ruff_lint_config(pyproject: ModifiablePyproject) -> None:
-    """Migrate linting configuration to :code:`tool.ruff.lint`.
+    """Migrate linting configuration to ``tool.ruff.lint``.
 
     See `this blog <https://astral.sh/blog/ruff-v0.2.0>`_ for details.
     """
@@ -277,7 +277,7 @@ def __update_global_settings(
 
 
 def ___get_target_version(pyproject: Pyproject) -> str:
-    """Get minimal :code:`target-version` for Ruff.
+    """Get minimal ``target-version`` for Ruff.
 
     >>> pyproject = Pyproject.load()
     >>> ___get_target_version(pyproject)

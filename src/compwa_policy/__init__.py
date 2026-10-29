@@ -1,6 +1,6 @@
 """Bundled developer configurations and tools for ComPWA repositories.
 
-This package provides the :code:`check-dev-files` `pre-commit <https://pre-commit.com>`_
+This package provides the ``check-dev-files`` `pre-commit <https://pre-commit.com>`_
 hook (and the :program:`policy` CLI) that standardize and synchronize the developer
 setup across the `ComPWA repositories <https://github.com/ComPWA>`_.
 

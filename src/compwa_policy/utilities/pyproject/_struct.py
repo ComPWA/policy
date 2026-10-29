@@ -47,7 +47,7 @@ Project = TypedDict(
 
 
 class ProjectURLs(TypedDict):
-    """Project  for PyPI."""
+    """Project for PyPI."""
 
     Changelog: NotRequired[str]
     Documentation: NotRequired[str]

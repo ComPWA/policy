@@ -1,8 +1,7 @@
 """Update workflows that update pip constraints files.
 
-See Also:
-- https://github.com/ComPWA/update-pip-constraints
-- https://github.com/ComPWA/update-pre-commit
+See Also: - https://github.com/ComPWA/update-pip-constraints -
+https://github.com/ComPWA/update-pre-commit
 """
 
 from __future__ import annotations

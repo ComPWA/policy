@@ -384,9 +384,8 @@ def preserve_action_versions(expected: str, existing: str) -> str:
 
     An action that the repository does not call yet keeps the template version:
 
-    >>> print(preserve_action_versions("  - uses: actions/setup-uv@v7\n", existing))
-      - uses: actions/setup-uv@v7
-    <BLANKLINE>
+    >>> preserve_action_versions("  - uses: actions/setup-uv@v7\n", existing)
+    '  - uses: actions/setup-uv@v7\n'
     """
 
     def substitute(match: re.Match) -> str:

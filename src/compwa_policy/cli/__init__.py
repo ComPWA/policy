@@ -96,8 +96,8 @@ def run_everything(  # ruff: ignore[too-many-positional-arguments]
 ) -> None:
     """Run every check at once (this is what the ``check-dev-files`` hook does).
 
-    Only the options shared across the whole repository are accepted here, mirroring
-    the top-level ``[tool.compwa.policy]`` table. Options scoped to a single area are
+    Only the options shared across the whole repository are accepted here, mirroring the
+    top-level ``[tool.compwa.policy]`` table. Options scoped to a single area are
     configured in the matching ``[tool.compwa.policy.<group>]`` sub-table, or passed to
     the corresponding subcommand (e.g. ``policy github --no-pypi``).
     """

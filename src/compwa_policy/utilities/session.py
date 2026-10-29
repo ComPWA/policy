@@ -94,7 +94,7 @@ class Session(AbstractContextManager):
 
     @property
     def precommit(self) -> ModifiablePrecommit:
-        """The managed :code:`.pre-commit-config.yaml` file."""
+        """The managed ``.pre-commit-config.yaml`` file."""
         if (
             not CONFIG_PATH.precommit.exists()
             and (ModifiablePrecommit,) not in self._loaded
@@ -105,7 +105,7 @@ class Session(AbstractContextManager):
 
     @property
     def pyproject(self) -> ModifiablePyproject | None:
-        """The managed :code:`pyproject.toml` file, if the repository has one."""
+        """The managed ``pyproject.toml`` file, if the repository has one."""
         if (
             not CONFIG_PATH.pyproject.exists()
             and (ModifiablePyproject,) not in self._loaded
@@ -115,7 +115,7 @@ class Session(AbstractContextManager):
 
     @property
     def pixi(self) -> ModifiablePixi:
-        """The managed :code:`pixi.toml` file."""
+        """The managed ``pixi.toml`` file."""
         return self.get(ModifiablePixi)
 
     def collect_changes(self) -> Changelog:

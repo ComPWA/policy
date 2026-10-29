@@ -97,8 +97,8 @@ def __get_pixi_config(
 def __uses_poe(session: Session) -> bool:
     """Whether the ``pixi+uv`` repository defines its tasks with Poe the Poet.
 
-    Link checking is then configured as a Poe task in :code:`pyproject.toml` instead of
-    as a Pixi task.
+    Link checking is then configured as a Poe task in ``pyproject.toml`` instead of as a
+    Pixi task.
     """
     pyproject = session.pyproject
     return pyproject is not None and pyproject.has_table("tool.poe")

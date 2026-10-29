@@ -356,7 +356,7 @@ KeepIssueTemplates = Annotated[
 
 
 def build_arguments(**overrides: Any) -> Arguments:
-    """Create an :class:`.Arguments` object from the CLI and :code:`pyproject.toml`.
+    """Create an :class:`.Arguments` object from the CLI and ``pyproject.toml``.
 
     Subcommands only expose the options relevant to them; every other field falls back
     to the ``[tool.compwa.policy]`` table (if present) and then to the same default that
@@ -389,8 +389,8 @@ def _get_default_dev_python_version(excluded: set[str]) -> PythonVersion:
     """Fall back to the latest supported version if the default is not supported.
 
     Versions are taken from the classifiers or ``requires-python`` of
-    :code:`pyproject.toml`, without the ``excluded`` versions. The latest of these that
-    is not newer than :data:`.DEFAULT_DEV_PYTHON_VERSION` is preferred, so that a newer
+    ``pyproject.toml``, without the ``excluded`` versions. The latest of these that is
+    not newer than :data:`.DEFAULT_DEV_PYTHON_VERSION` is preferred, so that a newer
     version is only used if the project supports nothing older.
     """
     if not CONFIG_PATH.pyproject.exists():

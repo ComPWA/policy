@@ -127,6 +127,10 @@ omit = [
 ]
 source = ["src"]
 
+[tool.docstrfmt]
+docstring-trailing-line = false
+format-python-code-blocks = false
+
 [tool.lychee]
 cache = true
 exclude = [

@@ -51,11 +51,11 @@ def __find_repo_and_hook_idx(
 def update_single_hook_precommit_repo(
     precommit: ModifiablePrecommit, expected: Repo
 ) -> None:
-    """Update the repo definition in :code:`.pre-commit-config.yaml`.
+    """Update the repo definition in ``.pre-commit-config.yaml``.
 
-    If the repository is not yet listed under the :code:`repos` key, a new entry will
-    be automatically inserted. If the repository exists, but the definition is not the
-    same as expected, the entry in the YAML config will be updated.
+    If the repository is not yet listed under the ``repos`` key, a new entry will be
+    automatically inserted. If the repository exists, but the definition is not the same
+    as expected, the entry in the YAML config will be updated.
     """
     expected_yaml = CommentedMap(expected)
     repos = precommit.document.get("repos", [])
@@ -146,8 +146,8 @@ def update_precommit_hook(
 ) -> None:
     """Update the pre-commit hook definition of a specific pre-commit repo.
 
-    This function updates the :code:`.pre-commit-config.yaml` file, but does this only
-    for a specific hook definition *within* a pre-commit repository definition.
+    This function updates the ``.pre-commit-config.yaml`` file, but does this only for a
+    specific hook definition *within* a pre-commit repository definition.
     """
     idx_and_repo = find_repo_with_index(precommit.document, repo_url)
     if idx_and_repo is None:
