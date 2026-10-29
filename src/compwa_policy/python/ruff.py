@@ -477,7 +477,7 @@ def ___remove_empty_per_file_ignores(pyproject: ModifiablePyproject) -> None:
 
 
 def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
-    # https://docs.astral.sh/ruff/rules/
+    """https://docs.astral.sh/ruff/rules/."""
     deprecated_rules = {
         "ANN101",
         "ANN102",
