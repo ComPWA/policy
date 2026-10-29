@@ -19,7 +19,7 @@ repos:
           - --repo-name="short name for your repository"
 ```
 
-Then install and activate [`prek`](https://prek.j178.dev/installation):
+Then install and activate [`prek`](https://prek.j178.dev/installation/):
 
 ```shell
 uv tool install prek
@@ -41,7 +41,7 @@ The notebook formatting hooks that used to be served from this repository now li
 :hidden:
 Command-line interface <check-dev-files>
 API <api/compwa_policy>
-Continuous benchmarks <https://compwa.github.io/policy-benchmark-results>
+Continuous benchmarks <https://compwa.github.io/policy-benchmark-results/>
 Changelog <https://github.com/ComPWA/policy/releases>
 Upcoming features <https://github.com/ComPWA/policy/milestones?direction=asc&sort=title&state=open>
 Help developing <https://compwa.github.io/develop>

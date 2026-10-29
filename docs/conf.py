@@ -102,12 +102,12 @@ html_theme_options = {
 }
 html_title = REPO_TITLE
 intersphinx_mapping = {
-    "attrs": ("https://www.attrs.org/en/stable", None),
-    "click": ("https://click.palletsprojects.com/en/stable", None),
-    "nbformat": ("https://nbformat.readthedocs.io/en/stable", None),
+    "attrs": ("https://www.attrs.org/en/stable/", None),
+    "click": ("https://click.palletsprojects.com/en/stable/", None),
+    "nbformat": ("https://nbformat.readthedocs.io/en/stable/", None),
     "pydantic": ("https://pydantic.dev/docs/validation/latest", None),
-    "python": ("https://docs.python.org/3", None),
-    "tomlkit": ("https://tomlkit.readthedocs.io/en/stable", None),
+    "python": ("https://docs.python.org/3/", None),
+    "tomlkit": ("https://tomlkit.readthedocs.io/en/stable/", None),
     "typer": ("https://typer.tiangolo.com", None),
 }
 myst_enable_extensions = [

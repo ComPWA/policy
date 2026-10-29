@@ -41,7 +41,7 @@ content-type = "text/markdown"
 
 [project.urls]
 Changelog = "https://github.com/ComPWA/policy/releases"
-Documentation = "https://compwa.github.io/policy"
+Documentation = "https://compwa.github.io/policy/"
 Issues = "https://github.com/ComPWA/policy/issues"
 Source = "https://github.com/ComPWA/policy"
 
@@ -130,7 +130,7 @@ source = ["src"]
 [tool.lychee]
 cache = true
 exclude = [
-    "%7B(?:ORGANIZATION|REPO_NAME|revision)%7D",  # These links are only complete when the code runs
+    "%7B\\w+%7D",  # These links are only complete when the code runs
     "^https://(?:github|gitpod|img|stackoverflow)/$",  # Escaped dots in regex patterns
     "^https://gitpod\\.io/#",
     "^https://stackoverflow\\.com/",  # Rejects requests from link checkers

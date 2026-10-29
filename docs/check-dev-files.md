@@ -2,7 +2,7 @@
 
 The `check-dev-files` checks are also exposed through a short [Typer](https://typer.tiangolo.com)-based `policy` command. Running `policy` without a subcommand runs every check at once, exactly like the `check-dev-files` pre-commit hook. The subcommands group the checks by domain, so you can run just a subset.
 
-You do not need to install anything: with [`uv`](https://docs.astral.sh/uv), `uvx` fetches and runs the command on the fly. For example, to see which subcommands are available:
+You do not need to install anything: with [`uv`](https://docs.astral.sh/uv/), `uvx` fetches and runs the command on the fly. For example, to see which subcommands are available:
 
 ```shell
 uvx --from git+https://github.com/ComPWA/policy policy --help
@@ -12,7 +12,7 @@ uvx --from git+https://github.com/ComPWA/policy policy --help
 `uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
 :::
 
-If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
+If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools/) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
 ## Hook arguments
 

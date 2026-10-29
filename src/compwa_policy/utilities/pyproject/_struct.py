@@ -18,7 +18,7 @@ PyprojectTOML = TypedDict(
 """Structure of a `pyproject.toml` file.
 
 See [pyproject.toml
-specification](https://packaging.python.org/en/latest/specifications/pyproject-toml).
+specification](https://packaging.python.org/en/latest/specifications/pyproject-toml/).
 """
 
 
