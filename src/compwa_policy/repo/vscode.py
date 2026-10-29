@@ -38,7 +38,6 @@ def _update_extensions(session: Session, /) -> None:
     vscode.add_extension_recommendation(session, "eamodio.gitlens")
     vscode.add_extension_recommendation(session, "mhutchie.git-graph")
     vscode.add_extension_recommendation(session, "soulcode.vscode-unwanted-extensions")
-    vscode.add_extension_recommendation(session, "stkb.rewrap")
     vscode.remove_extension_recommendation(
         session,
         "garaioag.garaio-vscode-unwanted-recommendations",
