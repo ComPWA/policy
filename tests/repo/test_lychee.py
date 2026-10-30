@@ -6,6 +6,7 @@ import tomlkit
 
 from compwa_policy.repo.lychee import (
     DEFAULT_EXTENSIONS,
+    NOTEBOOK_REMAP,
     configure_lychee,
     require_lychee,
 )
@@ -99,6 +100,53 @@ def describe_configure_lychee():
             ]
         )
         assert not (tmp_path / "lychee.toml").exists()
+
+    def adds_documentation_source_extensions(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        for name in ("index.rst", "demo.ipynb", "module.py"):
+            (tmp_path / name).touch()
+        path = tmp_path / "pyproject.toml"
+        path.touch()
+        git_add(tmp_path)
+        with ModifiablePyproject.load(path) as config:
+            configure_lychee(config)
+        extensions = Pyproject.load(path).get_table("tool.lychee")["extensions"]
+        assert list(extensions) == [*DEFAULT_EXTENSIONS, "ipynb", "rst"]
+        assert Pyproject.load(path).get_table("tool.lychee")["remap"] == [
+            NOTEBOOK_REMAP
+        ]
+
+    @pytest.mark.parametrize("existing", [False, True], ids=["new", "existing"])
+    def migrates_sphinx_linkcheck_ignore(
+        existing: bool,
+        *,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").write_text(
+            'linkcheck_ignore = [\n    "https://example.org",\n    r"https://.*\\.pdf",\n]\n'
+        )
+        path = tmp_path / "pyproject.toml"
+        path.write_text('[tool.lychee]\nexclude = ["custom"]\n' if existing else "")
+        git_add(tmp_path)
+        with ModifiablePyproject.load(path) as config:
+            configure_lychee(config)
+        table = Pyproject.load(path).get_table("tool.lychee")
+        if existing:
+            assert table["exclude"] == ["custom"]
+        else:
+            assert table["exclude"] == ["https://example.org", r"https://.*\.pdf"]
 
 
 def describe_require_lychee():

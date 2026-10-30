@@ -1,7 +1,8 @@
-"""Shared configuration for Quarto link checking."""
+"""Shared configuration for link checking with lychee."""
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -15,12 +16,12 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping
+    from collections.abc import Iterable, MutableMapping
 
     from compwa_policy.utilities.session import Session
 
 
-# cspell:ignore mdwn mkdn mkdown
+# cspell:ignore elts mdwn mkdn mkdown
 DEFAULT_EXTENSIONS = (
     "css",
     "htm",
@@ -37,40 +38,70 @@ DEFAULT_EXTENSIONS = (
     "xml",
 )
 """Lychee's default extensions, which an explicit extensions option replaces."""
+LYCHEE_MINIMUM_VERSION = "0.24.0"
+LYCHEE_REQUIREMENT = f"lychee-bin>={LYCHEE_MINIMUM_VERSION}"
+DOCUMENT_EXTENSIONS = ("ipynb", "qmd", "rst")
+"""Documentation source formats that lychee does not scan by default."""
+
+
+NOTEBOOK_REMAP = "^(.+)/n$ $1"
+"""Strip the newline that lychee reads into URLs at the end of a notebook source line.
+
+Lychee scans notebooks as plain text, so a URL at the end of a line in the JSON source
+is followed by an escaped newline sequence, which lychee normalizes to ``/n``.
+"""
 
 
 def configure_lychee(
     config: ModifiablePyproject, /, session: Session | None = None
 ) -> None:
-    extra_extensions = {
-        Path(path).suffix.removeprefix(".") for path in git_ls_files("*.qmd")
-    }
-    if not extra_extensions:
-        return
     if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
-        _set_extensions(config, "tool.lychee", extra_extensions)
+        _configure_pyproject(config)
     elif CONFIG_PATH.pyproject.exists():
         if session is not None:
             pyproject = session.pyproject
             if pyproject is not None:
-                _set_extensions(pyproject, "tool.lychee", extra_extensions)
+                _configure_pyproject(pyproject)
         else:
             with ModifiablePyproject.load() as pyproject:
-                _set_extensions(pyproject, "tool.lychee", extra_extensions)
+                _configure_pyproject(pyproject)
     else:
         path = Path("lychee.toml")
         document = tomlkit.loads(path.read_text() if path.exists() else "")
-        if _add_extensions(document, extra_extensions):
+        changes = _update_options(document)
+        if changes:
             path.write_text(tomlkit.dumps(document))
-            config.changelog.append("Configured extensions in lychee.toml")
+            config.changelog.extend(f"{msg} in lychee.toml" for msg in changes)
 
 
-def _set_extensions(
-    config: ModifiablePyproject, table_name: str, extra_extensions: set[str]
-) -> None:
-    table = config.get_table(table_name, create=True)
+def _configure_pyproject(config: ModifiablePyproject) -> None:
+    if config.has_table("tool.lychee"):
+        config.changelog.extend(_update_options(config.get_table("tool.lychee")))
+        return
+    table = tomlkit.table()
+    changes = _update_options(table)
+    if changes:
+        config.get_table("tool", create=True)["lychee"] = table
+        config.changelog.extend(changes)
+
+
+def _update_options(table: MutableMapping[str, Any]) -> list[str]:
+    changes = []
+    extra_extensions = {
+        Path(path).suffix.removeprefix(".")
+        for path in git_ls_files(*(f"*.{ext}" for ext in DOCUMENT_EXTENSIONS))
+    }
     if _add_extensions(table, extra_extensions):
-        config.changelog.append("Configured lychee extensions")
+        changes.append("Configured lychee extensions")
+    if "ipynb" in table.get("extensions", []) and _add_to_array(
+        table, "remap", [NOTEBOOK_REMAP]
+    ):
+        changes.append("Remapped line breaks in notebook links for lychee")
+    if "exclude" not in table and _add_to_array(
+        table, "exclude", get_sphinx_linkcheck_ignore()
+    ):
+        changes.append("Excluded Sphinx linkcheck_ignore patterns from lychee")
+    return changes
 
 
 def _add_extensions(
@@ -82,6 +113,43 @@ def _add_extensions(
         return False
     table["extensions"] = to_toml_array([*existing, *sorted(missing)])
     return True
+
+
+def _add_to_array(
+    table: MutableMapping[str, Any], key: str, values: Iterable[str]
+) -> bool:
+    existing = list(table.get(key, []))
+    missing = [value for value in values if value not in existing]
+    if not missing:
+        return False
+    table[key] = to_toml_array([*existing, *missing])
+    return True
+
+
+def get_sphinx_linkcheck_ignore() -> list[str]:
+    """Get the string patterns of ``linkcheck_ignore`` in Sphinx configurations.
+
+    Both Sphinx and lychee interpret these patterns as regular expressions.
+    """
+    patterns: list[str] = []
+    for path in git_ls_files("conf.py", "**/conf.py", ":!:tests"):
+        module = ast.parse(Path(path).read_text())
+        for node in module.body:
+            if not isinstance(node, ast.Assign) or not isinstance(
+                node.value, (ast.List, ast.Tuple)
+            ):
+                continue
+            if not any(
+                isinstance(target, ast.Name) and target.id == "linkcheck_ignore"
+                for target in node.targets
+            ):
+                continue
+            patterns.extend(
+                element.value
+                for element in node.value.elts
+                if isinstance(element, ast.Constant) and isinstance(element.value, str)
+            )
+    return patterns
 
 
 def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> None:
@@ -98,23 +166,56 @@ def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> Non
             if not isinstance(dependency, str):
                 found = update(dependency["include-group"]) or found
                 continue
-            requirement = Requirement(dependency)
-            if requirement.name != "lychee-bin":
+            if Requirement(dependency).name != "lychee-bin":
                 continue
             found = True
-            if any(
-                spec.operator in {">=", ">", "~=", "=="}
-                and Version(spec.version.rstrip(".*")) >= Version("0.24.0")
-                for spec in requirement.specifier
-            ):
-                continue
-            separator = "," if requirement.specifier else ""
-            requirement.specifier = type(requirement.specifier)(
-                f"{requirement.specifier}{separator}>=0.24.0"
-            )
-            dependencies[index] = str(requirement)
-            config.changelog.append("Required lychee-bin>=0.24.0")
+            required = _require_minimum_version(dependency)
+            if required != dependency:
+                dependencies[index] = required
+                config.changelog.append(f"Required {LYCHEE_REQUIREMENT}")
         return found
 
     if not update(dependency_group):
-        config.add_dependency("lychee-bin>=0.24.0", dependency_group=dependency_group)
+        config.add_dependency(LYCHEE_REQUIREMENT, dependency_group=dependency_group)
+
+
+def require_lychee_in_with(dependencies: str | Iterable[str] | None) -> list[str]:
+    """Require lychee in the ``with`` dependencies of a Poe task executor.
+
+    >>> require_lychee_in_with(None)
+    ['lychee-bin>=0.24.0']
+    >>> require_lychee_in_with("sphinx")
+    ['sphinx', 'lychee-bin>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.20,<1"])
+    ['lychee-bin<1,>=0.20,>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.25"])
+    ['lychee-bin>=0.25']
+    """
+    if dependencies is None:
+        dependencies = []
+    elif isinstance(dependencies, str):
+        dependencies = [dependencies]
+    required = [
+        _require_minimum_version(dependency)
+        if Requirement(dependency).name == "lychee-bin"
+        else dependency
+        for dependency in dependencies
+    ]
+    if not any(Requirement(dependency).name == "lychee-bin" for dependency in required):
+        required.append(LYCHEE_REQUIREMENT)
+    return required
+
+
+def _require_minimum_version(dependency: str) -> str:
+    requirement = Requirement(dependency)
+    if any(
+        spec.operator in {">=", ">", "~=", "=="}
+        and Version(spec.version.rstrip(".*")) >= Version(LYCHEE_MINIMUM_VERSION)
+        for spec in requirement.specifier
+    ):
+        return dependency
+    separator = "," if requirement.specifier else ""
+    requirement.specifier = type(requirement.specifier)(
+        f"{requirement.specifier}{separator}>={LYCHEE_MINIMUM_VERSION}"
+    )
+    return str(requirement)

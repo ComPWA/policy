@@ -9,7 +9,7 @@ from compwa_policy.env.pixi._update import (
     _define_combined_ci_job,
     _migrate_style_task_to_prek,
     _set_dev_python_version,
-    _set_quarto_linkcheck,
+    _set_linkcheck,
     _set_upgrade_task,
     _update_dev_environment,
     _update_docnb_and_doclive,
@@ -213,7 +213,7 @@ def describe_set_dev_python_version():
         assert 'python = "3.12.*"' in config.dumps()
 
 
-def describe_set_quarto_linkcheck():
+def describe_set_linkcheck():
     @pytest.mark.parametrize(
         "config_case",
         [
@@ -244,7 +244,7 @@ def describe_set_quarto_linkcheck():
         else:
             config_resource = ModifiablePixi.load()
         with config_resource as config:
-            _set_quarto_linkcheck(config)
+            _set_linkcheck(config)
 
         config = Pyproject.load(config_path)
         assert config.get_table(dependencies_table)["lychee"] == ">=0.24.0"
@@ -275,9 +275,40 @@ def describe_set_quarto_linkcheck():
         git_add(tmp_path)
 
         with ModifiablePixi.load() as config:
-            _set_quarto_linkcheck(config)
+            _set_linkcheck(config)
 
         assert config_path.read_text() == original
+
+    def replaces_sphinx_task_in_feature_dev(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "conf.py").touch()
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text(
+            dedent("""
+                [feature.dev.tasks.linkcheck]
+                cmd = "sphinx-build -b linkcheck docs docs/_build/linkcheck"
+                description = "Check external links"
+            """).lstrip()
+        )
+        git_add(tmp_path)
+
+        with ModifiablePixi.load() as config:
+            _set_linkcheck(config)
+
+        config = Pyproject.load(config_path)
+        assert config.get_table("feature.dev.tasks.linkcheck") == {
+            "cmd": "lychee .",
+            "description": "Check external links",
+        }
+        assert config.get_table("feature.dev.dependencies")["lychee"] == ">=0.24.0"
+        assert not config.has_table("tasks")
 
 
 def describe_migrate_style_task_to_prek():

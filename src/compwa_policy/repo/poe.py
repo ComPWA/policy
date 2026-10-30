@@ -9,10 +9,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import tomlkit
+from packaging.requirements import Requirement
+from tomlkit.items import InlineTable
 
-from compwa_policy.characterization import has_documentation, uses_quarto
+from compwa_policy.characterization import has_documentation
 from compwa_policy.errors import PolicyError
-from compwa_policy.repo.lychee import configure_lychee, require_lychee
+from compwa_policy.repo.lychee import (
+    configure_lychee,
+    require_lychee,
+    require_lychee_in_with,
+)
 from compwa_policy.repo.upgrade import (
     UV_UPGRADE_EXPRESSION,
     UV_UPGRADE_IMPORTS,
@@ -79,7 +85,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _set_doc_group(config)
             _set_test_group(config)
             _set_notebook_group(config, ctx.has_notebooks)
-            _set_quarto_linkcheck(config)
+            _set_linkcheck(config)
             _check_no_uv_run(config)
             if config.has_table("tool.poe.tasks"):
                 _set_all_task(config)
@@ -94,7 +100,8 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
             _migrate_style_task_to_prek(config)
             _set_upgrade_task(config, args.package_manager)
     if args.package_manager == "pixi+uv" and config.has_table("tool.poe"):
-        _set_quarto_linkcheck(config)
+        _set_linkcheck(config)
+    _remove_unused_dependency_groups(config)
     remove_lines(session, CONFIG_PATH.gitignore, pattern=r"\.tox/?")
     config.remove_dependency("poethepoet")
     config.remove_dependency("tox")
@@ -222,29 +229,158 @@ def _set_notebook_group(pyproject: ModifiablePyproject, /, has_notebooks: bool) 
         pyproject.changelog.append(msg)
 
 
-def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
-    if not uses_quarto():
+def _set_linkcheck(pyproject: ModifiablePyproject, /) -> None:
+    """Run lychee in a ``linkcheck`` task that installs only lychee.
+
+    A task that runs lychee in a dependency group other than ``doc`` keeps its executor,
+    otherwise lychee is moved from the ``doc`` group to the task's ``with``
+    dependencies, so that link checking does not install Sphinx.
+    """
+    if not has_documentation():
         return
     configure_lychee(pyproject)
     tasks = pyproject.get_table("tool.poe.tasks", fallback={})
     if "linkcheck" not in tasks:
         tasks = _get_or_create_group_tasks(pyproject, "doc")
     existing = __as_task_table(tasks.get("linkcheck", {}))
-    if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
-        executor = existing.get("executor", {})
-        dependency_group = (
-            executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
-        )
-        require_lychee(pyproject, dependency_group)
+    executor = existing.get("executor", {})
+    if not isinstance(executor, Mapping):
+        executor = {}
+    runs_lychee = any(__mentions(existing.get(k), "lychee") for k in ("cmd", "shell"))
+    if executor.get("type") == "simple" and __mentions(existing.get("cmd"), "uvx"):
+        _remove_lychee_from_doc_group(pyproject)
         return
-    require_lychee(pyproject, "doc")
-    tasks["linkcheck"] = {
-        "executor": to_inline_table({"group": "doc"}),
-        "help": "Check external links in the documentation (requires internet connection)",
-        "cmd": "lychee .",
-    }
+    if runs_lychee and executor.get("group", "doc") != "doc":
+        require_lychee(pyproject, executor["group"])
+        return
+    with_dependencies = executor.get("with", [])
+    if isinstance(with_dependencies, str):
+        with_dependencies = [with_dependencies]
+    with_dependencies = [
+        *with_dependencies,
+        *_remove_lychee_from_doc_group(pyproject),
+    ]
+    expected_executor = {k: v for k, v in executor.items() if k != "group"}
+    expected_executor["with"] = require_lychee_in_with(with_dependencies)
+    if runs_lychee:
+        expected = {**existing, "executor": expected_executor}
+    else:
+        expected = {
+            "help": "Check external links in the documentation (requires internet connection)",
+            "executor": expected_executor,
+            "cmd": "lychee .",
+        }
+    if expected == existing:
+        return
+    expected["executor"] = to_inline_table(expected_executor)
+    tasks["linkcheck"] = expected
     msg = f"Set Poe the Poet linkcheck task in {CONFIG_PATH.pyproject}"
     pyproject.changelog.append(msg)
+
+
+def _remove_lychee_from_doc_group(pyproject: ModifiablePyproject, /) -> list[str]:
+    doc_group = pyproject.get_table("dependency-groups", fallback={}).get("doc", [])
+    lychee_dependencies = [
+        dependency
+        for dependency in doc_group
+        if isinstance(dependency, str) and Requirement(dependency).name == "lychee-bin"
+    ]
+    for dependency in lychee_dependencies:
+        doc_group.remove(dependency)
+        msg = (
+            "Moved lychee-bin from doc dependency group to Poe the Poet linkcheck task"
+        )
+        pyproject.changelog.append(msg)
+    return lychee_dependencies
+
+
+def _remove_unused_dependency_groups(pyproject: ModifiablePyproject, /) -> None:
+    _remove_empty_dependency_groups(pyproject)
+    if pyproject.has_table("tool.poe"):
+        _remove_undefined_executor_groups(pyproject)
+
+
+def _remove_empty_dependency_groups(pyproject: ModifiablePyproject, /) -> None:
+    """Remove empty dependency groups and the ``include-group`` entries to them.
+
+    Removing an ``include-group`` entry can leave another group empty, so this repeats
+    until no empty group remains.
+    """
+    if not pyproject.has_table("dependency-groups"):
+        return
+    groups = pyproject.get_table("dependency-groups")
+    while empty_groups := [name for name, deps in groups.items() if not deps]:
+        for name in empty_groups:
+            del groups[name]
+            msg = f"Removed empty {name} dependency group from {CONFIG_PATH.pyproject}"
+            pyproject.changelog.append(msg)
+        for dependencies in groups.values():
+            for dependency in list(dependencies):
+                if isinstance(dependency, Mapping) and (
+                    dependency.get("include-group") in empty_groups
+                ):
+                    dependencies.remove(dependency)
+    if not groups:
+        del pyproject._document["dependency-groups"]  # ruff: ignore[private-member-access]
+
+
+def _remove_undefined_executor_groups(pyproject: ModifiablePyproject, /) -> None:
+    """Remove dependency groups that are not defined from Poe uv executors.
+
+    The uv executor fails when it selects or deselects an undefined dependency group,
+    for instance one that :func:`_remove_empty_dependency_groups` removed. An executor
+    that becomes empty is removed as well, so that the task falls back to the executor
+    of its task group or the global executor.
+    """
+    defined_groups = set(pyproject.get_table("dependency-groups", fallback={}))
+    poe_table = pyproject.get_table("tool.poe")
+    owners: list[MutableMapping[str, Any]] = [poe_table]
+    task_tables = [poe_table.get("tasks", {})]
+    for group in poe_table.get("groups", {}).values():
+        owners.append(group)
+        task_tables.append(group.get("tasks", {}))
+    owners.extend(
+        task
+        for tasks in task_tables
+        for task in tasks.values()
+        if isinstance(task, MutableMapping)
+    )
+    updated = False
+    for owner in owners:
+        executor = owner.get("executor")
+        if not isinstance(executor, MutableMapping):
+            continue
+        if __remove_undefined_groups(executor, defined_groups):
+            updated = True
+            if not executor:
+                del owner["executor"]
+            elif isinstance(executor, InlineTable):
+                owner["executor"] = to_inline_table(executor)
+    if updated:
+        msg = f"Removed undefined dependency groups from Poe the Poet executors in {CONFIG_PATH.pyproject}"
+        pyproject.changelog.append(msg)
+
+
+def __remove_undefined_groups(
+    executor: MutableMapping[str, Any], defined_groups: set[str]
+) -> bool:
+    updated = False
+    for key in ("group", "no-group"):
+        if key not in executor:
+            continue
+        value = executor[key]
+        selected = [value] if isinstance(value, str) else list(value)
+        remaining = [name for name in selected if not name or name in defined_groups]
+        if remaining == selected:
+            continue
+        updated = True
+        if not remaining:
+            del executor[key]
+        elif len(remaining) == 1:
+            executor[key] = remaining[0]
+        else:
+            executor[key] = to_toml_array(remaining)
+    return updated
 
 
 def _set_doc_fail_on_warning(pyproject: ModifiablePyproject, /) -> None:

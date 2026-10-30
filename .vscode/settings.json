@@ -9,6 +9,9 @@
   "[jinja-md]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[jinja]": {
+    "editor.wordWrap": "on"
+  },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.wordWrap": "on"

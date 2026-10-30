@@ -154,8 +154,8 @@ def describe_update_pixi_configuration():
         assert task["cmd"] == (
             "lychee --exclude example.org ." if task_location else "lychee ."
         )
-        assert task["executor"] == {"group": "doc"}
-        assert pyproject.get_table("dependency-groups.doc") == ["lychee-bin>=0.24.0"]
+        assert task["executor"] == {"with": ["lychee-bin>=0.24.0"]}
+        assert not pyproject.has_table("dependency-groups.doc")
         assert "qmd" in pyproject.get_table("tool.lychee")["extensions"]
         if task_location == "tasks":
             assert not pyproject.has_table("tool.poe.groups.doc.tasks.linkcheck")

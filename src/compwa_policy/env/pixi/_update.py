@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 
-from compwa_policy.characterization import uses_quarto
+from compwa_policy.characterization import has_documentation
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.repo.lychee import configure_lychee
 from compwa_policy.repo.upgrade import (
@@ -63,9 +63,9 @@ def update_pixi_configuration(
     if package_manager == "pixi+uv":
         _define_combined_ci_job(config)
         if not __uses_poe(session):
-            _set_quarto_linkcheck(config, session)
+            _set_linkcheck(config, session)
     else:
-        _set_quarto_linkcheck(config, session)
+        _set_linkcheck(config, session)
         if is_python_package:
             _install_package_editable(config)
         _set_dev_python_version(config, dev_python_version)
@@ -333,13 +333,14 @@ def _set_dev_python_version(
         config.changelog.append(msg)
 
 
-def _set_quarto_linkcheck(
+def _set_linkcheck(
     config: ModifiablePyproject, /, session: Session | None = None
 ) -> None:
-    if not uses_quarto():
+    if not has_documentation():
         return
     configure_lychee(config, session)
-    tasks = __get_table(config, "tasks", create=True)
+    prefix = "feature.dev." if __has_linkcheck_task(config, "feature.dev.") else ""
+    tasks = __get_table(config, f"{prefix}tasks", create=True)
     existing = tasks.get("linkcheck", {})
     if isinstance(existing, str):
         command = existing
@@ -347,24 +348,39 @@ def _set_quarto_linkcheck(
         command = existing.get("cmd", "")
     else:
         command = ""
-    if __has_table(config, "pypi-dependencies"):
-        pypi_dependencies = __get_table(config, "pypi-dependencies")
-        if "lychee-bin" in pypi_dependencies:
-            del pypi_dependencies["lychee-bin"]
-            if not pypi_dependencies:
-                if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
-                    del config._document["tool"]["pixi"]["pypi-dependencies"]  # ruff: ignore[private-member-access]
-                else:
-                    del config._document["pypi-dependencies"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
-            config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
-    dependencies = __get_table(config, "dependencies", create=True)
+    __remove_lychee_pypi_dependency(config)
+    dependencies = __get_table(config, f"{prefix}dependencies", create=True)
     if "lychee" not in dependencies:
         dependencies["lychee"] = ">=0.24.0"
         config.changelog.append("Added lychee to Pixi conda dependencies")
     if "lychee" in command:
         return
-    tasks["linkcheck"] = {"cmd": "lychee ."}
+    task = {"cmd": "lychee ."}
+    if isinstance(existing, Mapping) and "description" in existing:
+        task["description"] = existing["description"]
+    tasks["linkcheck"] = task
     config.changelog.append("Set Pixi linkcheck task")
+
+
+def __remove_lychee_pypi_dependency(config: ModifiablePyproject) -> None:
+    if not __has_table(config, "pypi-dependencies"):
+        return
+    pypi_dependencies = __get_table(config, "pypi-dependencies")
+    if "lychee-bin" not in pypi_dependencies:
+        return
+    del pypi_dependencies["lychee-bin"]
+    if not pypi_dependencies:
+        if config._source == CONFIG_PATH.pyproject:  # ruff: ignore[private-member-access]
+            del config._document["tool"]["pixi"]["pypi-dependencies"]  # ruff: ignore[private-member-access]
+        else:
+            del config._document["pypi-dependencies"]  # ruff: ignore[private-member-access]  # ty:ignore[invalid-argument-type]
+    config.changelog.append("Removed lychee-bin from Pixi PyPI dependencies")
+
+
+def __has_linkcheck_task(config: ModifiablePyproject, prefix: str) -> bool:
+    if not __has_table(config, f"{prefix}tasks"):
+        return False
+    return "linkcheck" in __get_table(config, f"{prefix}tasks")
 
 
 def _migrate_style_task_to_prek(config: ModifiablePyproject) -> None:

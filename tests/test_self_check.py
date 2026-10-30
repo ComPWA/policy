@@ -98,6 +98,27 @@ def describe_main() -> None:
             == updated.document
         )
 
+    def preserves_how_a_local_hook_is_run(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        expected = _create_hook(CHECK_DEV_FILES_PATTERN)
+        local = {
+            **_create_hook(r"^wrong\.toml$"),
+            "entry": "uv run --locked check-dev-files",
+            "language": "system",
+        }
+        precommit, _ = _write_configuration(tmp_path, local, manifest_hook=expected)
+        monkeypatch.chdir(tmp_path)
+
+        assert self_check.main(precommit) == 0
+        updated = Precommit.load(tmp_path / ".pre-commit-config.yaml")
+        hook = updated.document["repos"][0]["hooks"][0]
+        assert hook == {
+            **expected,
+            "entry": "uv run --locked check-dev-files",
+            "language": "system",
+        }
+
     def updates_the_precommit_test_fixture(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -114,6 +135,8 @@ def describe_main() -> None:
                             "hooks": [
                                 {
                                     "id": "check-dev-files",
+                                    "entry": "outdated-runner",
+                                    "language": "system",
                                     "args": ["--no-prettierrc"],
                                 }
                             ],

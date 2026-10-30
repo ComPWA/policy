@@ -1,4 +1,4 @@
-"""Update `uv <https://docs.astral.sh/uv>`_ configuration."""
+"""Update `uv <https://docs.astral.sh/uv/>`_ configuration."""
 
 from __future__ import annotations
 
