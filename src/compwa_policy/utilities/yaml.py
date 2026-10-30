@@ -31,6 +31,7 @@ def create_prettier_round_trip_yaml() -> YAML:
     yaml_parser.map_indent = 2
     yaml_parser.indent = 4
     yaml_parser.block_seq_indent = 2
+    yaml_parser.width = 4096  # Prettier never folds plain scalars
     return yaml_parser
 
 
