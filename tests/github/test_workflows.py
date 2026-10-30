@@ -6,6 +6,7 @@ from textwrap import dedent
 
 import pytest
 
+from compwa_policy.config import MacosRunnerLabel, UbuntuRunnerLabel
 from compwa_policy.github.workflows import (
     check,
     preserve_action_versions,
@@ -50,7 +51,7 @@ def _run_main(
     github_pages: bool = False,
     keep_workflow: set[str] | None = None,
     macos_python_version: PythonVersion | None = None,
-    macos_runner: str = "",
+    macos_runner: MacosRunnerLabel | None = None,
     no_cd: bool = False,
     no_milestones: bool = False,
     no_pypi: bool = False,
@@ -61,7 +62,7 @@ def _run_main(
     repo_organization: str = "ComPWA",
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
-    ubuntu_runner: str = "",
+    ubuntu_runner: UbuntuRunnerLabel | None = None,
 ) -> list[str]:
     with Session.load(_precommit(precommit_content)) as session:
         run_check(

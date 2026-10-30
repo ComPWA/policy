@@ -20,6 +20,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Iterable": "typing.Iterable",
     "K": "typing.TypeVar",
     "Mapping": "collections.abc.Mapping",
+    "MacosRunnerLabel": ("obj", "compwa_policy.config.MacosRunnerLabel"),
     "NotRequired": ("obj", "typing.NotRequired"),
     "P.args": ("attr", "typing.ParamSpec.args"),
     "P.kwargs": ("attr", "typing.ParamSpec.kwargs"),
@@ -36,6 +37,7 @@ api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "TOMLDocument": "tomlkit.TOMLDocument",
     "typing_extensions.NotRequired": ("obj", "typing.NotRequired"),
     "UpgradeFrequency": "typing.Literal",
+    "UbuntuRunnerLabel": ("obj", "compwa_policy.config.UbuntuRunnerLabel"),
     "V": "typing.TypeVar",
 }
 author = ""
