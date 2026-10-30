@@ -99,6 +99,28 @@ def describe_main():
         assert "test-py311" in pyproject
         assert "[tool.poe.tasks.upgrade]" in pyproject  # upgrade task added
 
+    def runs_notebooks_with_nbclient(poe_repo: Path, run_check):
+        pyproject_path = poe_repo / "pyproject.toml"
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            nb_task = pyproject.get_table("tool.poe.tasks.nb")
+            nb_task["executor"] = {"with": ["nbmake", "pyproject-local-kernel"]}
+            pyproject.dump()
+
+        with Session.load() as session:
+            run_check(check, session, has_notebooks=True, package_manager="uv")
+
+        nb_task = Pyproject.load(pyproject_path).get_table(
+            "tool.poe.groups.notebook.tasks.nb"
+        )
+        assert nb_task["cmd"] == "pytest --nbclient ${paths}"
+        assert nb_task["executor"] == {
+            "group": "notebooks",
+            "with": [
+                "pyproject-local-kernel",
+                "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@6bd8b0f3d61dd430363966df586f4261f5a811ab",
+            ],
+        }
+
     @pytest.mark.parametrize("existing_command", [None, "pixi upgrade", "pixi update"])
     def uses_pixi_update_command(
         poe_repo: Path, run_check, existing_command: str | None
