@@ -50,6 +50,7 @@ def _run_main(
     github_pages: bool = False,
     keep_workflow: set[str] | None = None,
     macos_python_version: PythonVersion | None = None,
+    macos_runner: str = "",
     no_cd: bool = False,
     no_milestones: bool = False,
     no_pypi: bool = False,
@@ -60,6 +61,7 @@ def _run_main(
     repo_organization: str = "ComPWA",
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
+    ubuntu_runner: str = "",
 ) -> list[str]:
     with Session.load(_precommit(precommit_content)) as session:
         run_check(
@@ -72,6 +74,7 @@ def _run_main(
             keep_pr_linting=False,
             keep_workflow=keep_workflow or set(),
             macos_python_version=macos_python_version,
+            macos_runner=macos_runner,
             no_cd=no_cd,
             no_milestones=no_milestones,
             no_pypi=no_pypi,
@@ -81,6 +84,7 @@ def _run_main(
             repo_organization=repo_organization,
             pytest_single_threaded=single_threaded,
             ci_skipped_tests=",".join(skip_tests or []),
+            ubuntu_runner=ubuntu_runner,
         )
         return session.collect_changes()
 
@@ -146,6 +150,41 @@ def describe_main():
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "graphviz" in ci
         assert "PYTHONHASHSEED" in ci
+
+    @pytest.mark.parametrize("macos_python_version", ["3.12", "disable"])
+    def sets_runner_images(workflows_repo: Path, run_check, macos_python_version):
+        _run_main(
+            run_check,
+            macos_python_version=macos_python_version,
+            macos_runner="macos-26",
+            ubuntu_runner="ubuntu-26.04",
+        )
+        yaml = create_prettier_round_trip_yaml()
+        ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
+        cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
+        test_inputs = ci["jobs"]["test"]["with"]
+        assert test_inputs["ubuntu-runner"] == "ubuntu-26.04"
+        if macos_python_version == "disable":
+            assert "macos-runner" not in test_inputs
+        else:
+            assert test_inputs["macos-runner"] == "macos-26"
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
+        assert not _run_main(
+            run_check,
+            macos_python_version=macos_python_version,
+            macos_runner="macos-26",
+            ubuntu_runner="ubuntu-26.04",
+        )
+
+    def keeps_default_runner_images(workflows_repo: Path, run_check):
+        _run_main(run_check, macos_python_version="3.12")
+        yaml = create_prettier_round_trip_yaml()
+        ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
+        cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
+        test_inputs = ci["jobs"]["test"]["with"]
+        assert "macos-runner" not in test_inputs
+        assert "ubuntu-runner" not in test_inputs
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
 
     def skips_cd_workflow(workflows_repo: Path, run_check):
         changes = _run_main(run_check, no_cd=True)
