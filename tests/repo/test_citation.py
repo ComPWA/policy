@@ -200,7 +200,7 @@ def describe_main():
         assert (tmp_path / "CITATION.cff").exists()
         assert "check-jsonschema" in precommit.dumps()
 
-    def reports_vscode_settings_update(
+    def removes_schemastore_yaml_schemas(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
     ):
         monkeypatch.chdir(tmp_path)
@@ -209,6 +209,18 @@ def describe_main():
         vscode_dir.mkdir()
         (vscode_dir / "extensions.json").write_text(
             json.dumps({"recommendations": ["redhat.vscode-yaml"]})
+        )
+        (vscode_dir / "settings.json").write_text(
+            json.dumps({
+                "yaml.schemas": {
+                    "https://citation-file-format.github.io/1.2.0/schema.json": (
+                        "CITATION.cff"
+                    ),
+                    "https://json.schemastore.org/github-workflow.json": (
+                        ".github/workflows/requirements.yml"
+                    ),
+                }
+            })
         )
         precommit_config = dedent("""
             repos:
@@ -230,7 +242,8 @@ def describe_main():
             run_check(citation.check, session)
             changes = session.collect_changes()
         assert "Updated VS Code settings" in changes
-        assert (vscode_dir / "settings.json").exists()
+        settings = json.loads((vscode_dir / "settings.json").read_text())
+        assert "yaml.schemas" not in settings
 
     def removes_zenodo_when_citation_present(
         tmp_path: Path,
