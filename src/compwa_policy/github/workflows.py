@@ -52,7 +52,8 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
                 args.no_milestones,
                 args.no_pypi,
                 args.no_version_branches,
-                repository,
+                ubuntu_runner=args.ubuntu_runner,
+                repository=repository,
             )
     _update_ci_workflow(
         session,
@@ -62,6 +63,8 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         ctx.environment_variables,
         args.github_pages,
         args.macos_python_version,
+        args.macos_runner,
+        args.ubuntu_runner,
         args.dev_python_version,
         args.pytest_single_threaded,
         _to_list(args.ci_skipped_tests),
@@ -78,6 +81,8 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
     no_milestones: bool,
     no_pypi: bool,
     no_version_branches: bool,
+    *,
+    ubuntu_runner: str,
     repository: str,
 ) -> None:
     def update() -> Changelog:  # ruff: ignore[complex-structure]
@@ -96,6 +101,8 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
             return remove_workflow("cd.yml")
         for name in banned_jobs:
             expected_data["jobs"].pop(name, None)
+        if ubuntu_runner and "pypi" in expected_data["jobs"]:
+            expected_data["jobs"]["pypi"]["runs-on"] = ubuntu_runner
         if not expected_data["jobs"]:
             return remove_workflow("cd.yml")
         if not workflow_path.exists():
@@ -128,6 +135,8 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     environment_variables: dict[str, str],
     github_pages: bool,
     macos_python_version: PythonVersion | None,
+    macos_runner: str,
+    ubuntu_runner: str,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -142,6 +151,8 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             environment_variables,
             github_pages,
             macos_python_version,
+            macos_runner,
+            ubuntu_runner,
             python_version,
             single_threaded,
             skip_tests,
@@ -195,6 +206,8 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     environment_variables: dict[str, str],
     github_pages: bool,
     macos_python_version: PythonVersion | None,
+    macos_runner: str,
+    ubuntu_runner: str,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -203,7 +216,14 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     config = yaml.load(path)
     __update_env_section(config, environment_variables)
     __update_doc_section(config, doc_apt_packages, python_version, github_pages)
-    __update_pytest_section(config, macos_python_version, single_threaded, skip_tests)
+    __update_pytest_section(
+        config,
+        macos_python_version,
+        single_threaded,
+        skip_tests,
+        macos_runner=macos_runner,
+        ubuntu_runner=ubuntu_runner,
+    )
     __update_style_section(config, python_version, precommit)
     return yaml, config
 
@@ -264,6 +284,9 @@ def __update_pytest_section(
     macos_python_version: PythonVersion | None,
     single_threaded: bool,
     skip_tests: list[str],
+    *,
+    macos_runner: str,
+    ubuntu_runner: str,
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):
@@ -282,6 +305,10 @@ def __update_pytest_section(
             with_section["macos-python-version"] = DoubleQuotedScalarString(
                 macos_python_version
             )
+            if macos_runner:
+                with_section["macos-runner"] = macos_runner
+        if ubuntu_runner:
+            with_section["ubuntu-runner"] = ubuntu_runner
         if skip_tests:
             with_section["skipped-python-versions"] = " ".join(skip_tests)
         if single_threaded:
