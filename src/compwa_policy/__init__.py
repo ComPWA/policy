@@ -57,6 +57,7 @@ class Arguments:
     keep_pr_linting: bool
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
+    macos_runner: str
     no_binder: bool
     no_cd: bool
     no_cspell_update: bool
@@ -77,6 +78,7 @@ class Arguments:
     toml_formatter: TomlFormatter
     toml_formatter_configured: bool
     type_checker: set[TypeChecker]
+    ubuntu_runner: str
     upgrade_frequency: UpgradeFrequency
 
 

@@ -100,6 +100,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "keep_pr_linting",
         "keep_workflow",
         "macos_python_version",
+        "macos_runner",
         "no_cd",
         "no_github_actions",
         "no_milestones",
@@ -107,6 +108,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "no_version_branches",
         "release_name_template",
         "tag_prefix",
+        "ubuntu_runner",
         "upgrade_frequency",
     }),
     "nb": frozenset({
@@ -249,6 +251,10 @@ class Settings(BaseSettings):
     """Do not overwrite the pull-request linting workflow."""
     macos_python_version: str = "3.11"
     """Python version for the macOS test job; use ``disable`` to omit the job."""
+    macos_runner: str = ""
+    """Runner label for the macOS test job; empty keeps the ComPWA/actions default."""
+    ubuntu_runner: str = ""
+    """Runner label for the Linux test and PyPI jobs; empty keeps the default."""
     no_cd: bool = False
     """Do not add continuous-deployment workflows."""
     no_milestones: bool = False

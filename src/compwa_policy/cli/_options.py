@@ -205,6 +205,20 @@ MacosPythonVersion = Annotated[
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
     ),
 ]
+MacosRunner = Annotated[
+    str | None,
+    typer.Option(
+        "--macos-runner",
+        help="GitHub Actions runner label for the macOS test job, such as 'macos-26' or 'macos-26-intel'. Leave empty to use the default of ComPWA/actions. Requires ComPWA/actions v4.2.0 or later.",
+    ),
+]
+UbuntuRunner = Annotated[
+    str | None,
+    typer.Option(
+        "--ubuntu-runner",
+        help="GitHub Actions runner label for the Linux test jobs and the PyPI publish job, such as 'ubuntu-26.04'. Leave empty to use the default. Requires ComPWA/actions v4.2.0 or later.",
+    ),
+]
 NoCd = Annotated[
     bool | None,
     typer.Option(

@@ -115,6 +115,12 @@
           "title": "Macos Python Version",
           "type": "string"
         },
+        "macos-runner": {
+          "default": "",
+          "description": "Runner label for the macOS test job; empty keeps the ComPWA/actions default.",
+          "title": "Macos Runner",
+          "type": "string"
+        },
         "no-cd": {
           "default": false,
           "description": "Do not add continuous-deployment workflows.",
@@ -155,6 +161,12 @@
           "default": "",
           "description": "Prefix applied to release tags, such as ``v`` in ``v1.2.3``.",
           "title": "Tag Prefix",
+          "type": "string"
+        },
+        "ubuntu-runner": {
+          "default": "",
+          "description": "Runner label for the Linux test and PyPI jobs; empty keeps the default.",
+          "title": "Ubuntu Runner",
           "type": "string"
         },
         "upgrade-frequency": {
