@@ -219,7 +219,7 @@ MacosRunner = Annotated[
     typer.Option(
         "--macos-runner",
         click_type=TyperChoice(get_args(MacosRunnerLabel.__value__)),
-        help="GitHub Actions runner label for the macOS test job, such as 'macos-26' or 'macos-26-intel'. Omit to use the default of ComPWA/actions. Requires ComPWA/actions v4.2.0 or later.",
+        help="GitHub Actions runner label for the macOS test job, such as 'macos-26' or 'macos-26-intel'. Omit to use the default of ComPWA/actions. Requires ComPWA/actions v4.1.8 or later.",
     ),
 ]
 UbuntuRunner = Annotated[
@@ -227,7 +227,7 @@ UbuntuRunner = Annotated[
     typer.Option(
         "--ubuntu-runner",
         click_type=TyperChoice(get_args(UbuntuRunnerLabel.__value__)),
-        help="GitHub Actions runner label for the Linux test jobs and the PyPI publish job, such as 'ubuntu-26.04'. Omit to use the default. Requires ComPWA/actions v4.2.0 or later.",
+        help="GitHub Actions runner label for the Linux test jobs and the PyPI publish job, such as 'ubuntu-26.04'. Omit to use the default. Requires ComPWA/actions v4.1.8 or later.",
     ),
 ]
 NoCd = Annotated[
