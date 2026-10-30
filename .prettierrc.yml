@@ -1,4 +1,7 @@
 overrides:
+  - files: "*.jsonc"
+    options:
+      trailingComma: none
   - files: "**.md.jinja"
     options:
       parser: markdown

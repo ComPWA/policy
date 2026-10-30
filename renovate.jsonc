@@ -7,6 +7,7 @@
   "enabledManagers": ["github-actions"],
   "includePaths": ["src/compwa_policy/.github/workflows/**"],
   "ignorePaths": [
+    // Symlinks to .github/workflows/, where Dependabot updates the actions.
     "src/compwa_policy/.github/workflows/clean-caches.yml",
     "src/compwa_policy/.github/workflows/pr-linting.yml",
     "src/compwa_policy/.github/workflows/release-drafter.yml"
