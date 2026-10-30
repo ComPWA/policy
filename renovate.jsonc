@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "assignees": ["redeboer"],
+  "labels": ["⬆️ Lock"],
+  "dependencyDashboard": false,
+  "enabledManagers": ["github-actions"],
+  "includePaths": ["src/compwa_policy/.github/workflows/**"],
+  "ignorePaths": [
+    // Symlinks to .github/workflows/, where Dependabot updates the actions.
+    "src/compwa_policy/.github/workflows/clean-caches.yml",
+    "src/compwa_policy/.github/workflows/pr-linting.yml",
+    "src/compwa_policy/.github/workflows/release-drafter.yml"
+  ],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "MAINT",
+  "semanticCommitScope": "",
+  "commitMessageAction": "update",
+  "commitMessageLowerCase": "never",
+  "pinDigest": { "commitMessageAction": "pin" },
+  "packageRules": [
+    {
+      "description": "Group updates of the GitHub Actions in the workflow templates",
+      "groupName": "GitHub Actions in workflow templates",
+      "matchManagers": ["github-actions"]
+    }
+  ]
+}
