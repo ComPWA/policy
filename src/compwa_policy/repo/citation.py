@@ -226,13 +226,13 @@ def add_json_schema_precommit(precommit: ModifiablePrecommit) -> None:
 
 
 def update_vscode_settings(session: Session, /) -> None:
-    vscode.update_settings(
+    # The YAML extension matches CITATION.cff and workflows through SchemaStore
+    vscode.remove_settings(
         session,
         {
             "yaml.schemas": {
-                "https://citation-file-format.github.io/1.2.0/schema.json": (
-                    "CITATION.cff"
-                )
+                "https://citation-file-format.github.io/1.2.0/schema.json",
+                "https://json.schemastore.org/github-workflow.json",
             }
         },
     )
