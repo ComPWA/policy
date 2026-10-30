@@ -51,9 +51,11 @@ from compwa_policy import TomlFormatter, _to_list
 from compwa_policy.config import (
     DEFAULT_DEV_PYTHON_VERSION,
     DependabotEcosystem,
+    MacosRunnerLabel,
     PackageManagerChoice,
     PythonVersion,
     TypeChecker,
+    UbuntuRunnerLabel,
     UpgradeFrequency,
 )
 from compwa_policy.utilities import CONFIG_PATH
@@ -254,10 +256,12 @@ class Settings(BaseSettings):
     """Do not overwrite the pull-request linting workflow."""
     macos_python_version: str = "3.11"
     """Python version for the macOS test job; use ``disable`` to omit the job."""
-    macos_runner: str = ""
-    """Runner label for the macOS test job; empty keeps the ComPWA/actions default."""
-    ubuntu_runner: str = ""
-    """Runner label for the Linux test and PyPI jobs; empty keeps the default."""
+    macos_runner: MacosRunnerLabel | None = Field(default=None, examples=["macos-26"])
+    """Runner label for the macOS test job; omitting it keeps the ComPWA/actions default."""
+    ubuntu_runner: UbuntuRunnerLabel | None = Field(
+        default=None, examples=["ubuntu-26.04"]
+    )
+    """Runner label for the Linux test and PyPI jobs; omitting it keeps the default."""
     no_cd: bool = False
     """Do not add continuous-deployment workflows."""
     no_milestones: bool = False

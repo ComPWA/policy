@@ -9,7 +9,7 @@ Instead of repeating the same flags under `args:` in every `.pre-commit-config.y
 2. the `[tool.compwa.policy]` table in `pyproject.toml`;
 3. the built-in default.
 
-The table mirrors the {doc}`subcommand tree <../check-dev-files>`. Shared options live at the top level, while subcommand-specific options live in nested tables. The following copyable example is generated from the settings schema and shows every built-in default. Hover over an option to see what it does:
+The table mirrors the {doc}`subcommand tree <../check-dev-files>`. Shared options live at the top level, while subcommand-specific options live in nested tables. The following copyable example is generated from the settings schema and shows defaults and examples. Hover over an option to see what it does:
 
 ```{eval-rst}
 .. config-schema:: /../compwa-policy.schema.json

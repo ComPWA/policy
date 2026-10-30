@@ -116,10 +116,17 @@
           "type": "string"
         },
         "macos-runner": {
-          "default": "",
-          "description": "Runner label for the macOS test job; empty keeps the ComPWA/actions default.",
-          "title": "Macos Runner",
-          "type": "string"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MacosRunnerLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default.",
+          "examples": ["macos-26"]
         },
         "no-cd": {
           "default": false,
@@ -164,10 +171,17 @@
           "type": "string"
         },
         "ubuntu-runner": {
-          "default": "",
-          "description": "Runner label for the Linux test and PyPI jobs; empty keeps the default.",
-          "title": "Ubuntu Runner",
-          "type": "string"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UbuntuRunnerLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default.",
+          "examples": ["ubuntu-26.04"]
         },
         "upgrade-frequency": {
           "default": "quarterly",
@@ -348,5 +362,38 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "MacosRunnerLabel": {
+      "enum": [
+        "macos-14",
+        "macos-14-large",
+        "macos-14-xlarge",
+        "macos-15",
+        "macos-15-intel",
+        "macos-15-large",
+        "macos-15-xlarge",
+        "macos-26",
+        "macos-26-intel",
+        "macos-26-large",
+        "macos-26-xlarge",
+        "macos-latest",
+        "macos-latest-large"
+      ],
+      "type": "string"
+    },
+    "UbuntuRunnerLabel": {
+      "enum": [
+        "ubuntu-22.04",
+        "ubuntu-22.04-arm",
+        "ubuntu-24.04",
+        "ubuntu-24.04-arm",
+        "ubuntu-26.04",
+        "ubuntu-26.04-arm",
+        "ubuntu-latest",
+        "ubuntu-slim"
+      ],
+      "type": "string"
+    }
+  }
 }

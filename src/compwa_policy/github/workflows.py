@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from ruamel.yaml.main import YAML
 
     from compwa_policy import Arguments
+    from compwa_policy.config import MacosRunnerLabel, UbuntuRunnerLabel
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import Precommit
     from compwa_policy.utilities.session import Changelog, Session
@@ -82,7 +83,7 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
     no_pypi: bool,
     no_version_branches: bool,
     *,
-    ubuntu_runner: str,
+    ubuntu_runner: UbuntuRunnerLabel | None,
     repository: str,
 ) -> None:
     def update() -> Changelog:  # ruff: ignore[complex-structure]
@@ -135,8 +136,8 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     environment_variables: dict[str, str],
     github_pages: bool,
     macos_python_version: PythonVersion | None,
-    macos_runner: str,
-    ubuntu_runner: str,
+    macos_runner: MacosRunnerLabel | None,
+    ubuntu_runner: UbuntuRunnerLabel | None,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -206,8 +207,8 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     environment_variables: dict[str, str],
     github_pages: bool,
     macos_python_version: PythonVersion | None,
-    macos_runner: str,
-    ubuntu_runner: str,
+    macos_runner: MacosRunnerLabel | None,
+    ubuntu_runner: UbuntuRunnerLabel | None,
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
@@ -285,8 +286,8 @@ def __update_pytest_section(
     single_threaded: bool,
     skip_tests: list[str],
     *,
-    macos_runner: str,
-    ubuntu_runner: str,
+    macos_runner: MacosRunnerLabel | None,
+    ubuntu_runner: UbuntuRunnerLabel | None,
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):
