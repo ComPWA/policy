@@ -102,9 +102,7 @@
         "keep-workflow": {
           "default": [],
           "description": "GitHub Actions workflow files that policy must not update or remove.",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "title": "Keep Workflow",
           "type": "array",
           "x-tombi-array-values-order": "ascending"
@@ -116,14 +114,7 @@
           "type": "string"
         },
         "macos-runner": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/MacosRunnerLabel"
-            },
-            {
-              "type": "null"
-            }
-          ],
+          "anyOf": [{ "$ref": "#/$defs/MacosRunnerLabel" }, { "type": "null" }],
           "default": null,
           "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default.",
           "examples": ["macos-26"]
@@ -172,12 +163,8 @@
         },
         "ubuntu-runner": {
           "anyOf": [
-            {
-              "$ref": "#/$defs/UbuntuRunnerLabel"
-            },
-            {
-              "type": "null"
-            }
+            { "$ref": "#/$defs/UbuntuRunnerLabel" },
+            { "type": "null" }
           ],
           "default": null,
           "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default.",
@@ -206,9 +193,7 @@
         "excluded-dependencies": {
           "default": [],
           "description": "Notebook dependencies that policy must not install.",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "title": "Excluded Dependencies",
           "type": "array",
           "x-tombi-array-values-order": "ascending"
@@ -288,10 +273,7 @@
         "type-checker": {
           "default": [],
           "description": "Type checkers used by the project.",
-          "items": {
-            "enum": ["mypy", "pyright", "ty"],
-            "type": "string"
-          },
+          "items": { "enum": ["mypy", "pyright", "ty"], "type": "string" },
           "title": "Type Checker",
           "type": "array",
           "x-tombi-array-values-order": "ascending"
@@ -342,9 +324,7 @@
       "properties": {
         "env": {
           "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+          "additionalProperties": { "type": "string" }
         },
         "keep-contributing-md": {
           "default": false,
