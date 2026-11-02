@@ -164,7 +164,7 @@ def describe_main():
         changes = _run_main(run_check)
         assert changes
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
-        assert "CODECOV_TOKEN" in ci
+        assert "CODECOV_TOKEN" not in ci  # public repositories need no token
         assert "3.11" in ci  # coverage python version from .python-version
 
     def removes_style_job_when_outsourced(workflows_repo: Path, run_check):
