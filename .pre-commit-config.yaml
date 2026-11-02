@@ -130,7 +130,6 @@ repos:
     rev: v2.2.1
     hooks:
       - id: docstrfmt
-        types: [python]
 
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
     rev: 3.11.1
