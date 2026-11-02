@@ -14,7 +14,6 @@ from compwa_policy.python.pytest import (
     _merge_pytest_into_pyproject,
     _migrate_coverage_threshold,
     _update_codecov_settings,
-    _update_codecov_targets,
     _update_settings,
     _update_vscode_settings,
     check,
@@ -229,12 +228,9 @@ def describe_main():
             )
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.coverage.run]" in result
-        assert tomli.loads(result)["tool"]["coverage"]["report"]["fail_under"] == 95
+        assert tomli.loads(result)["tool"]["coverage"]["report"]["fail_under"] == 90
         codecov = yaml.safe_load((tmp_path / "codecov.yml").read_text())
-        assert codecov["coverage"]["status"]["project"]["default"] == {
-            "target": "auto",
-            "threshold": "0.5%",
-        }
+        assert codecov["coverage"]["status"]["project"]["default"] == {}
 
     def adds_xdist_when_multithreaded(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
@@ -400,29 +396,52 @@ def describe_migrate_coverage_threshold():
         assert path.read_text() == contents
 
 
-def describe_update_codecov_targets():
-    def sets_relative_targets_and_preserves_other_settings(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def describe_migrate_codecov_threshold():
+    @pytest.mark.parametrize(
+        ("target", "task_floor", "existing_floor", "expected"),
+        [
+            ("95%", 90, 80, 95),
+            (95, 90, None, 95),
+            (92.5, None, None, 92.5),
+            ("92.5%", 90, None, 92.5),
+            (0, 90, 80, 0),
+            ("auto", 90, 80, 90),
+            ("auto", None, 80, 80),
+            ("auto", None, None, None),
+            (None, 90, None, 90),
+            (None, None, None, None),
+        ],
+    )
+    def imports_codecov_first_and_removes_old_settings(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        *,
+        target,
+        task_floor,
+        existing_floor,
+        expected,
     ):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(
-            "[tool.coverage.report]\nfail_under = 85\n"
-        )
-        path = tmp_path / "codecov.yml"
-        path.write_text(
+        path = tmp_path / "pyproject.toml"
+        contents = '[dependency-groups]\ntest = ["pytest-cov"]\n'
+        if existing_floor is not None:
+            contents += f"[tool.coverage.report]\nfail_under = {existing_floor}\n"
+        if task_floor is not None:
+            contents += (
+                "[tool.poe.tasks]\n"
+                f'cov = "pytest --cov=src --cov-fail-under={task_floor}"\n'
+            )
+        path.write_text(contents)
+        codecov = tmp_path / "codecov.yml"
+        codecov.write_text(
             dedent("""\
-            # Keep repository-specific settings
+            # Keep other repository settings
             coverage:
               status:
                 project:
                   default:
-                    target: 85%
                     threshold: 1%
                     paths: [src/]
-                  unit:
-                    target: 90%
-                    flags: [unit]
-                  disabled: false
                 patch:
                   default:
                     target: 80%
@@ -430,52 +449,38 @@ def describe_update_codecov_targets():
             comment: false
         """)
         )
+        if target is not None:
+            codecov.write_text(
+                codecov.read_text().replace(
+                    "threshold: 1%", f"target: {target}\n        threshold: 1%"
+                )
+            )
         with Session.load() as session:
-            _update_codecov_targets(session)
-        result = yaml.safe_load(path.read_text())
-        project = result["coverage"]["status"]["project"]
-        assert project["default"] == {
-            "target": "auto",
-            "threshold": "0.5%",
-            "paths": ["src/"],
-        }
-        assert project["unit"] == {
-            "target": "auto",
-            "threshold": "0.5%",
-            "flags": ["unit"],
-        }
-        assert project["disabled"] is False
-        assert result["coverage"]["status"]["patch"]["default"]["target"] == "80%"
-        assert "paths: null" in path.read_text()
-        assert result["comment"] is False
-        assert "# Keep repository-specific settings" in path.read_text()
-        contents = path.read_text()
-        with Session.load() as session:
-            _update_codecov_targets(session)
-            assert session.collect_changes() == []
-        assert path.read_text() == contents
-
-    @pytest.mark.parametrize(
-        "floor",
-        ["", "[tool.coverage.report]\n", "[tool.coverage.report]\nprecision = 2\n"],
-    )
-    def preserves_targets_without_a_floor(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, floor
-    ):
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(floor)
-        path = tmp_path / "codecov.yml"
-        contents = (
-            "coverage:\n  status:\n    project:\n      default:\n        target: 95%\n"
+            _migrate_coverage_threshold(session)
+        result = tomli.loads(path.read_text())
+        assert (
+            result
+            .get("tool", {})
+            .get("coverage", {})
+            .get("report", {})
+            .get("fail_under")
+            == expected
         )
-        path.write_text(contents)
+        assert "--cov-fail-under" not in path.read_text()
+        config = yaml.safe_load(codecov.read_text())
+        assert config["coverage"]["status"]["project"]["default"] == {"paths": ["src/"]}
+        assert config["coverage"]["status"]["patch"]["default"]["target"] == "80%"
+        assert "paths: null" in codecov.read_text()
+        assert "# Keep other repository settings" in codecov.read_text()
+        assert config["comment"] is False
+        original = (path.read_text(), codecov.read_text())
         with Session.load() as session:
-            _update_codecov_targets(session)
+            _migrate_coverage_threshold(session)
             assert session.collect_changes() == []
-        assert path.read_text() == contents
+        assert (path.read_text(), codecov.read_text()) == original
 
-    @pytest.mark.parametrize("project", ["false", "{default: false}"])
-    def preserves_disabled_checks(
+    @pytest.mark.parametrize("project", ["false", "{default: false}", "true"])
+    def leaves_checks_without_settings_unchanged(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, project
     ):
         monkeypatch.chdir(tmp_path)
@@ -486,44 +491,6 @@ def describe_update_codecov_targets():
         contents = f"coverage:\n  status:\n    project: {project}\n"
         path.write_text(contents)
         with Session.load() as session:
-            _update_codecov_targets(session)
+            _migrate_coverage_threshold(session)
             assert session.collect_changes() == []
         assert path.read_text() == contents
-
-    @pytest.mark.parametrize(
-        "contents",
-        [
-            "",
-            "comment: false\n",
-            "coverage:\n  status:\n    project: true\n",
-            "coverage:\n  status:\n    project:\n      default: true\n",
-        ],
-    )
-    def configures_implicit_or_enabled_checks(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, contents
-    ):
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(
-            "[tool.coverage.report]\nfail_under = 0\n"
-        )
-        path = tmp_path / "codecov.yml"
-        path.write_text(contents)
-        with Session.load() as session:
-            _update_codecov_targets(session)
-        result = yaml.safe_load(path.read_text())
-        assert result["coverage"]["status"]["project"]["default"] == {
-            "target": "auto",
-            "threshold": "0.5%",
-        }
-
-    def leaves_missing_codecov_file_absent(
-        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ):
-        monkeypatch.chdir(tmp_path)
-        (tmp_path / "pyproject.toml").write_text(
-            "[tool.coverage.report]\nfail_under = 85\n"
-        )
-        with Session.load() as session:
-            _update_codecov_targets(session)
-            assert session.collect_changes() == []
-        assert not (tmp_path / "codecov.yml").exists()

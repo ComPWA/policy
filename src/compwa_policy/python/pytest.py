@@ -49,7 +49,6 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _deny_ini_options(config)
     _update_codecov_settings(config, args.branch_coverage)
     _migrate_coverage_threshold(session)
-    _update_codecov_targets(session)
     _update_settings(config)
     _update_vscode_settings(
         session, args.allow_vscode_coverage_gutters, args.pytest_single_threaded
@@ -178,9 +177,11 @@ def _update_codecov_settings(
 
 
 def _migrate_coverage_threshold(session: Session) -> None:
+    """Prefer Codecov's default project target over coverage task thresholds."""
     pyproject = session.pyproject
-    if pyproject is None or not has_dependency(pyproject, ("coverage", "pytest-cov")):
+    if pyproject is None:
         return
+    codecov_threshold = _migrate_codecov_threshold(session)
     roots = [
         pyproject.get_table(f"tool.{tool}", fallback={}) for tool in ("poe", "pixi")
     ]
@@ -201,54 +202,38 @@ def _migrate_coverage_threshold(session: Session) -> None:
             command = pattern.sub("", task)
             command = re.sub(r"(?m)^[ \t]*\\\n", "", command)
             replacements.append((container, key, command))
-    if not thresholds:
+    if not thresholds and codecov_threshold is None:
         return
-    if len(thresholds) > 1:
+    if codecov_threshold is None and len(thresholds) > 1:
         msg = "Coverage tasks have conflicting --cov-fail-under values; migrate them manually"
         raise PolicyError(msg)
-    threshold = thresholds.pop()
+    threshold = codecov_threshold if codecov_threshold is not None else thresholds.pop()
     report = pyproject.get_table("tool.coverage.report", create=True)
     report["fail_under"] = int(threshold) if threshold % 1 == 0 else threshold
     for container, key, command in replacements:
         container[key] = command
-    message = "Migrated --cov-fail-under to tool.coverage.report.fail_under"
+    message = "Migrated coverage threshold to tool.coverage.report.fail_under"
     pyproject.changelog.append(message)
     if CONFIG_PATH.pixi_toml.exists():
         session.pixi.changelog.append(message)
 
 
-def _update_codecov_targets(session: Session) -> None:
-    """Use coverage.py's floor while Codecov checks relative project regressions."""
-    pyproject = session.pyproject
-    if (
-        pyproject is None
-        or pyproject.get_table("tool.coverage.report", fallback={}).get("fail_under")
-        is None
-    ):
-        return
+def _migrate_codecov_threshold(session: Session) -> float | None:
     resource = session.get_path(CONFIG_PATH.codecov)
     if not resource.exists:
-        return
+        return None
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(resource.read_text()) or {}
-    status = config.setdefault("coverage", {}).setdefault("status", {})
-    project = status.get("project", {})
-    if project is False:
-        return
-    if project is True or project is None:
-        project = {}
-    if not project:
-        project["default"] = {}
-    updated = False
-    for name, settings in project.items():
-        if settings is False:
-            continue
-        if settings is True or settings is None:
-            settings = {}
-            project[name] = settings
-        updated |= __update_settings(settings, target="auto", threshold="0.5%")
-    if updated:
-        status["project"] = project
+    project = config.get("coverage", {}).get("status", {}).get("project", {})
+    if not isinstance(project, MutableMapping):
+        return None
+    settings = project.get("default", {})
+    if not isinstance(settings, MutableMapping):
+        return None
+    target = settings.get("target")
+    if "target" in settings or "threshold" in settings:
+        settings.pop("target", None)
+        settings.pop("threshold", None)
         yaml.representer.yaml_representers = {
             **yaml.representer.yaml_representers,
             type(None): lambda representer, _value: representer.represent_scalar(
@@ -257,7 +242,13 @@ def _update_codecov_targets(session: Session) -> None:
         }
         stream = io.StringIO()
         yaml.dump(config, stream)
-        resource.write_text(stream.getvalue(), "Set relative Codecov project targets")
+        resource.write_text(
+            stream.getvalue(), "Removed Codecov project coverage threshold"
+        )
+    try:
+        return float(str(target).removesuffix("%"))
+    except ValueError:
+        return None
 
 
 def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
