@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import io
+import re
+from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Any
 
 import tomli
+import tomlkit
 from ini2toml.api import Translator
+from tomlkit.items import String
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
@@ -13,10 +18,12 @@ from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
 from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, MutableMapping
+    from collections.abc import Iterable, Iterator
 
+    from ruamel.yaml import YAML
     from tomlkit.items import Array
 
     from compwa_policy import Arguments
@@ -27,8 +34,10 @@ if TYPE_CHECKING:
 @check_hook(
     group="python",
     paths=[
+        CONFIG_PATH.codecov,
         CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
+        CONFIG_PATH.pixi_toml,
         CONFIG_PATH.pytest_ini,
         CONFIG_PATH.vscode_settings,
     ],
@@ -42,6 +51,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _merge_pytest_into_pyproject(config)
     _deny_ini_options(config)
     _update_codecov_settings(config, args.branch_coverage)
+    _migrate_coverage_threshold(session)
     _update_settings(config)
     _update_vscode_settings(
         session, args.allow_vscode_coverage_gutters, args.pytest_single_threaded
@@ -167,6 +177,150 @@ def _update_codecov_settings(
     if updated:
         msg = "Updated pytest coverage settings"
         pyproject.changelog.append(msg)
+
+
+def _migrate_coverage_threshold(session: Session) -> None:
+    """Prefer Codecov's default project target over coverage task thresholds."""
+    pyproject = session.pyproject
+    if pyproject is None:
+        return
+    codecov_threshold = _migrate_codecov_threshold(session)
+    roots: list[tuple[ModifiablePyproject, MutableMapping]] = [
+        (pyproject, pyproject.get_table(f"tool.{tool}", fallback={}))
+        for tool in ("poe", "pixi")
+    ]
+    if CONFIG_PATH.pixi_toml.exists():
+        pixi = session.pixi
+        roots.append((
+            pixi,
+            {
+                key: pixi.get_table(key, fallback={})
+                for key in ("tasks", "feature", "target")
+            },
+        ))
+    replacements = []
+    modified_documents = []
+    thresholds: set[float] = set()
+    for document, root in roots:
+        for container, key, task in _coverage_task_commands(root):
+            matches = list(_COV_FAIL_UNDER.finditer(task))
+            if not matches:
+                continue
+            thresholds.add(float(matches[-1][1]))
+            replacements.append((container, key, _remove_cov_fail_under(task)))
+            modified_documents.append(document)
+    if not thresholds and codecov_threshold is None:
+        return
+    if codecov_threshold is None and len(thresholds) > 1:
+        msg = "Coverage tasks have conflicting --cov-fail-under values; migrate them manually"
+        raise PolicyError(msg)
+    threshold = codecov_threshold if codecov_threshold is not None else thresholds.pop()
+    report = pyproject.get_table("tool.coverage.report", create=True)
+    report["fail_under"] = int(threshold) if threshold % 1 == 0 else threshold
+    for container, key, command in replacements:
+        container[key] = command
+    message = "Migrated coverage threshold to tool.coverage.report.fail_under"
+    for document in {id(d): d for d in [pyproject, *modified_documents]}.values():
+        document.changelog.append(message)
+
+
+_COV_FAIL_UNDER = re.compile(
+    r"""[ \t]*(?<![^\s"'])--cov-fail-under(?:=|\s+)(\d+(?:\.\d+)?)(?=[\s"']|$)"""
+)
+
+
+def _remove_cov_fail_under(command: String) -> String:
+    r'''Remove ``--cov-fail-under`` from the TOML source of a task command.
+
+    Editing the source rather than the parsed value keeps the quoting and the line
+    continuations of a multiline string, which the parsed value has already joined.
+
+    >>> source = 'x = """\npytest \\\n  --cov-fail-under=90 \\\n  --cov=src\n"""'
+    >>> print(_remove_cov_fail_under(tomlkit.parse(source)["x"]).as_string())
+    """
+    pytest \
+      --cov=src
+    """
+    '''
+    source = _COV_FAIL_UNDER.sub("", command.as_string())
+    source = re.sub(r"(?m)^[ \t]*\\\n", "", source)
+    return tomlkit.parse(f"x = {source}")["x"]
+
+
+def _migrate_codecov_threshold(session: Session) -> float | None:
+    resource = session.get_path(CONFIG_PATH.codecov)
+    if not resource.exists:
+        return None
+    yaml = create_prettier_round_trip_yaml()
+    config = yaml.load(resource.read_text()) or {}
+    project = config.get("coverage", {}).get("status", {}).get("project", {})
+    if not isinstance(project, MutableMapping):
+        return None
+    settings = project.get("default", {})
+    if not isinstance(settings, MutableMapping):
+        return None
+    target = settings.get("target")
+    if "target" in settings or "threshold" in settings:
+        settings.pop("target", None)
+        settings.pop("threshold", None)
+        resource.write_text(
+            _dump_codecov_yaml(yaml, config),
+            "Removed Codecov project coverage threshold",
+        )
+    try:
+        return float(str(target).removesuffix("%"))
+    except ValueError:
+        return None
+
+
+def _dump_codecov_yaml(yaml_parser: YAML, data: Any) -> str:
+    """Dump :file:`codecov.yml`, writing `None` as an explicit ``null``.
+
+    Codecov configs spell out ``null`` on purpose, for instance ``paths: null``, so the
+    empty-value default of ``ruamel.yaml`` is wrong for this file. Other YAML files,
+    such as GitHub workflows, rely on empty values like ``workflow_dispatch:``.
+
+    The parser's representer class is shared, so the override is applied to this
+    parser's representer instance only.
+
+    >>> yaml_parser = create_prettier_round_trip_yaml()
+    >>> print(_dump_codecov_yaml(yaml_parser, yaml_parser.load("paths: null")), end="")
+    paths: null
+    """
+    representer = yaml_parser.representer
+    representer.yaml_representers = {
+        **representer.yaml_representers,
+        type(None): lambda r, _: r.represent_scalar("tag:yaml.org,2002:null", "null"),
+    }
+    stream = io.StringIO()
+    yaml_parser.dump(data, stream)
+    return stream.getvalue()
+
+
+def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
+    for key, value in config.items():
+        if not isinstance(value, MutableMapping):
+            continue
+        if key == "tasks":
+            if "cov" in value:
+                yield value
+        else:
+            yield from _coverage_task_tables(value)
+
+
+def _coverage_task_commands(
+    config: MutableMapping,
+) -> Iterator[tuple[MutableMapping, str, String]]:
+    for tasks in _coverage_task_tables(config):
+        task = tasks["cov"]
+        container = tasks
+        key = "cov"
+        if isinstance(task, MutableMapping):
+            container = task
+            key = "cmd" if "cmd" in task else "shell"
+            task = task.get(key)
+        if isinstance(task, String):
+            yield container, key, task
 
 
 def __update_settings(config: MutableMapping, **expected: Any) -> bool:

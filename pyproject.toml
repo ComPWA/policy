@@ -115,6 +115,7 @@ type-checker = ["ty"]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:"]
+fail_under = 85
 
 [tool.coverage.run]
 branch = false
@@ -223,7 +224,6 @@ required = true
 cmd = """
 pytest \
     --cov=compwa_policy \
-    --cov-fail-under=85 \
     --cov-report=html \
     --cov-report=xml \
     ${paths}

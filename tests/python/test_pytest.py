@@ -4,12 +4,15 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+import tomli
+import yaml
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.python.pytest import (
     _deny_ini_options,
     _merge_coverage_into_pyproject,
     _merge_pytest_into_pyproject,
+    _migrate_coverage_threshold,
     _update_codecov_settings,
     _update_settings,
     _update_vscode_settings,
@@ -208,7 +211,19 @@ def describe_main():
 
             [tool.pytest]
             addopts = "--color=no"
+
+            [tool.poe.tasks]
+            cov = "pytest --cov=my_package --cov-fail-under=95"
             """).lstrip()
+        )
+        (tmp_path / "codecov.yml").write_text(
+            dedent("""\
+                coverage:
+                  status:
+                    project:
+                      default:
+                        target: 90%
+            """)
         )
         with Session.load() as session:
             run_check(
@@ -219,6 +234,9 @@ def describe_main():
             )
         result = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.coverage.run]" in result
+        assert tomli.loads(result)["tool"]["coverage"]["report"]["fail_under"] == 90
+        codecov = yaml.safe_load((tmp_path / "codecov.yml").read_text())
+        assert codecov["coverage"]["status"]["project"]["default"] == {}
 
     def adds_xdist_when_multithreaded(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
@@ -257,3 +275,281 @@ def describe_main():
                 allow_vscode_coverage_gutters=False,
                 pytest_single_threaded=True,
             )
+
+
+def describe_migrate_coverage_threshold():
+    @pytest.mark.parametrize(
+        "table",
+        [
+            "tool.poe.tasks",
+            "tool.poe.groups.test.tasks",
+            "tool.pixi.tasks",
+            "tool.pixi.feature.test.tasks",
+            "tool.pixi.target.linux-64.tasks",
+        ],
+    )
+    @pytest.mark.parametrize("option", ["--cov-fail-under=95", "--cov-fail-under 95"])
+    @pytest.mark.parametrize("as_table", [False, True], ids=["string", "cmd"])
+    def migrates_task_forms(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, table, option, as_table
+    ):
+        monkeypatch.chdir(tmp_path)
+        task = f'"pytest {option} --cov=src"'
+        if as_table:
+            task = "{cmd = " + task + "}"
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent(f"""\
+                [dependency-groups]
+                test = ["pytest-cov"]
+                [tool.coverage.report]
+                fail_under = 80
+                [{table}]
+                cov = {task}
+                test = "pytest"
+            """)
+        )
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+        result = tomli.loads(path.read_text())
+        assert result["tool"]["coverage"]["report"]["fail_under"] == 95
+        assert "--cov-fail-under" not in path.read_text()
+        assert "--cov=src" in path.read_text()
+        original = path.read_text()
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.collect_changes() == []
+        assert path.read_text() == original
+
+    @pytest.mark.parametrize("threshold", [0, 92.5, 100])
+    def migrates_standalone_pixi(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, threshold
+    ):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent("""\
+                [dependency-groups]
+                test = ["pytest-cov"]
+            """)
+        )
+        pixi = tmp_path / "pixi.toml"
+        pixi.write_text(
+            dedent(f"""\
+                [feature.test.tasks]
+                cov = "pytest --cov-fail-under={threshold} --cov=src"
+            """)
+        )
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+        assert (
+            tomli.loads(path.read_text())["tool"]["coverage"]["report"]["fail_under"]
+            == threshold
+        )
+        assert "--cov-fail-under" not in pixi.read_text()
+
+    def leaves_unchanged_pixi_out_of_changelog(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""\
+                [tool.poe.tasks]
+                cov = "pytest --cov-fail-under=95"
+            """)
+        )
+        pixi = tmp_path / "pixi.toml"
+        pixi.write_text(
+            dedent("""\
+                [tasks]
+                test = "pytest"
+            """)
+        )
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.pixi.changelog == []
+            assert session.pyproject is not None
+            assert session.pyproject.changelog != []
+
+    def preserves_multiline_command(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent(r'''
+                [dependency-groups]
+                test = ["pytest-cov"]
+                [tool.poe.groups.test.tasks.cov]
+                cmd = """
+                pytest \
+                    --cov=src \
+                    --cov-fail-under=95 \
+                    --cov-report=xml
+                """
+            ''').lstrip()
+        )
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+        assert (
+            dedent(r'''
+            cmd = """
+            pytest \
+                --cov=src \
+                --cov-report=xml
+            """
+        ''')
+            in path.read_text()
+        )
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "pytest --cov=src",
+            "pytest --cov-fail-under=${floor}",
+            "pytest --cov-fail-under=95suffix",
+        ],
+    )
+    def leaves_unmatched_tasks_unchanged(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, command
+    ):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        contents = dedent(f"""\
+            [dependency-groups]
+            test = ["pytest-cov"]
+            [tool.poe.tasks]
+            cov = "{command}"
+        """)
+        path.write_text(contents)
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.collect_changes() == []
+        assert path.read_text() == contents
+
+    def rejects_conflicting_tasks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        contents = dedent("""\
+            [dependency-groups]
+            test = ["pytest-cov"]
+            [tool.poe.tasks]
+            cov = "pytest --cov-fail-under=90"
+            [tool.poe.groups.test.tasks]
+            cov = "pytest --cov-fail-under=95"
+        """)
+        path.write_text(contents)
+        with pytest.raises(PolicyError, match="conflicting"), Session.load() as session:
+            _migrate_coverage_threshold(session)
+        assert path.read_text() == contents
+
+
+def describe_migrate_codecov_threshold():
+    @pytest.mark.parametrize(
+        ("target", "task_floor", "existing_floor", "expected"),
+        [
+            ("95%", 90, 80, 95),
+            (95, 90, None, 95),
+            (92.5, None, None, 92.5),
+            ("92.5%", 90, None, 92.5),
+            (0, 90, 80, 0),
+            ("auto", 90, 80, 90),
+            ("auto", None, 80, 80),
+            ("auto", None, None, None),
+            (None, 90, None, 90),
+            (None, None, None, None),
+        ],
+    )
+    def imports_codecov_first_and_removes_old_settings(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        *,
+        target,
+        task_floor,
+        existing_floor,
+        expected,
+    ):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        contents = dedent("""\
+            [dependency-groups]
+            test = ["pytest-cov"]
+        """)
+        if existing_floor is not None:
+            contents += dedent(f"""\
+                [tool.coverage.report]
+                fail_under = {existing_floor}
+            """)
+        if task_floor is not None:
+            contents += dedent(f"""\
+                [tool.poe.tasks]
+                cov = "pytest --cov=src --cov-fail-under={task_floor}"
+            """)
+        path.write_text(contents)
+        codecov = tmp_path / "codecov.yml"
+        codecov.write_text(
+            dedent("""\
+            # Keep other repository settings
+            coverage:
+              status:
+                project:
+                  default:
+                    threshold: 1%
+                    paths: [src/]
+                patch:
+                  default:
+                    target: 80%
+                    paths: null
+            comment: false
+        """)
+        )
+        if target is not None:
+            codecov.write_text(
+                codecov.read_text().replace(
+                    "threshold: 1%", f"target: {target}\n        threshold: 1%"
+                )
+            )
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+        result = tomli.loads(path.read_text())
+        assert (
+            result
+            .get("tool", {})
+            .get("coverage", {})
+            .get("report", {})
+            .get("fail_under")
+            == expected
+        )
+        assert "--cov-fail-under" not in path.read_text()
+        config = yaml.safe_load(codecov.read_text())
+        assert config["coverage"]["status"]["project"]["default"] == {"paths": ["src/"]}
+        assert config["coverage"]["status"]["patch"]["default"]["target"] == "80%"
+        assert "paths: null" in codecov.read_text()
+        assert "# Keep other repository settings" in codecov.read_text()
+        assert config["comment"] is False
+        original = (path.read_text(), codecov.read_text())
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.collect_changes() == []
+        assert (path.read_text(), codecov.read_text()) == original
+
+    @pytest.mark.parametrize("project", ["false", "{default: false}", "true"])
+    def leaves_checks_without_settings_unchanged(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, project
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""\
+                [tool.coverage.report]
+                fail_under = 85
+            """)
+        )
+        path = tmp_path / "codecov.yml"
+        contents = dedent(f"""\
+            coverage:
+              status:
+                project: {project}
+        """)
+        path.write_text(contents)
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.collect_changes() == []
+        assert path.read_text() == contents
