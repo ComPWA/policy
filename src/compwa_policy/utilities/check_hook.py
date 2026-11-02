@@ -98,7 +98,7 @@ class CheckHook:
     run: Check
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled
     tool: Tool | None = None
-    """Tool that the check manages, which skips the check when listed in ``disable``."""
+    """Tool that the check manages; the check is skipped when policy does not manage it."""
 
     def __call__(
         self,
@@ -106,7 +106,7 @@ class CheckHook:
         args: Arguments,
         context: CheckContext,
     ) -> None:
-        if self.tool in args.disable:
+        if self.tool is not None and not args.manages(self.tool):
             return
         if self.enabled(args, context):
             self.run(session, args, context)

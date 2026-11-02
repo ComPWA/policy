@@ -25,7 +25,8 @@ if TYPE_CHECKING:
     group="github",
     paths=[CONFIG_PATH.readthedocs],
     directories=(CONFIG_PATH.github_workflow_dir.parent,),
-    enabled=lambda args, ctx: ctx.is_python_repo and (not args.no_github_actions),
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+    tool="github-actions",
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
     if args.no_cd:

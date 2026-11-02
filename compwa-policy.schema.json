@@ -25,9 +25,20 @@
     },
     "disable": {
       "default": [],
-      "description": "Tools that policy must not install or configure.",
+      "description": "Tools that policy must not install or configure; takes precedence over ``enable``.",
       "items": {
-        "enum": ["binder", "ruff"],
+        "enum": [
+          "binder",
+          "cspell",
+          "editorconfig",
+          "github-actions",
+          "gitpod",
+          "labels",
+          "nbstripout",
+          "prettier",
+          "pyupgrade",
+          "ruff"
+        ],
         "type": "string"
       },
       "title": "Disable",
@@ -40,16 +51,32 @@
       "title": "Doc Apt Packages",
       "type": "string"
     },
+    "enable": {
+      "default": [],
+      "description": "Tools that policy should install and configure, even if they are off by default.",
+      "items": {
+        "enum": [
+          "binder",
+          "cspell",
+          "editorconfig",
+          "github-actions",
+          "gitpod",
+          "labels",
+          "nbstripout",
+          "prettier",
+          "pyupgrade",
+          "ruff"
+        ],
+        "type": "string"
+      },
+      "title": "Enable",
+      "type": "array",
+      "x-tombi-array-values-order": "ascending"
+    },
     "format": {
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
       "properties": {
-        "no-cspell-update": {
-          "default": false,
-          "description": "Do not enforce the shared cSpell configuration.",
-          "title": "No Cspell Update",
-          "type": "boolean"
-        },
         "tombi-errors-on-warnings": {
           "default": true,
           "description": "Make the Tombi lint hook fail when it emits warnings.",
@@ -74,12 +101,6 @@
           "default": false,
           "description": "Allow deprecated continuous-integration workflows.",
           "title": "Allow Deprecated Workflows",
-          "type": "boolean"
-        },
-        "allow-labels": {
-          "default": false,
-          "description": "Do not enforce the shared ``labels.toml`` configuration.",
-          "title": "Allow Labels",
           "type": "boolean"
         },
         "ci-skipped-tests": {
@@ -130,12 +151,6 @@
           "default": false,
           "description": "Do not add continuous-deployment workflows.",
           "title": "No Cd",
-          "type": "boolean"
-        },
-        "no-github-actions": {
-          "default": false,
-          "description": "Do not add the standard ComPWA GitHub Actions workflows.",
-          "title": "No Github Actions",
           "type": "boolean"
         },
         "no-milestones": {
@@ -276,12 +291,6 @@
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
       "properties": {
-        "gitpod": {
-          "default": false,
-          "description": "Create and maintain a Gitpod configuration file.",
-          "title": "Gitpod",
-          "type": "boolean"
-        },
         "keep-issue-templates": {
           "default": false,
           "description": "Do not remove the GitHub issue-template directory.",

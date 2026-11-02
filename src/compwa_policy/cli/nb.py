@@ -9,8 +9,6 @@ from compwa_policy.cli._options import (
     Disable,
     DocAptPackages,
     ExcludeDependency,
-    NoBinder,
-    NoRuff,
     PackageManager,
     build_arguments,
 )
@@ -19,9 +17,7 @@ from compwa_policy.cli._options import (
 def nb(  # ruff: ignore[too-many-positional-arguments]
     package_manager: PackageManager = None,
     dev_python_version: DevPythonVersion = None,
-    no_binder: NoBinder = None,
     disable: Disable = None,
-    no_ruff: NoRuff = None,
     allowed_cell_metadata: AllowedCellMetadata = None,
     doc_apt_packages: DocAptPackages = None,
     exclude_dependency: ExcludeDependency = None,
@@ -30,9 +26,7 @@ def nb(  # ruff: ignore[too-many-positional-arguments]
     args = build_arguments(
         package_manager=package_manager,
         dev_python_version=dev_python_version,
-        no_binder=no_binder,
         disable=disable,
-        no_ruff=no_ruff,
         allowed_cell_metadata=allowed_cell_metadata,
         doc_apt_packages=doc_apt_packages,
         excluded_dependencies=exclude_dependency,

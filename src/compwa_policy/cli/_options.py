@@ -44,7 +44,7 @@ class TypeChecker(StrEnum):
 
 
 Tool = StrEnum("Tool", {name: name for name in get_args(ToolLiteral)})
-"""Tools that can be passed to ``--disable``, generated from :data:`.config.Tool`."""
+"""Tools for ``--enable`` and ``--disable``, generated from :data:`.config.Tool`."""
 
 
 class DependabotEcosystem(StrEnum):
@@ -139,9 +139,12 @@ Disable = Annotated[
         help="Tool that policy must not install or configure. Can be repeated.",
     ),
 ]
-NoRuff = Annotated[
-    bool | None,
-    typer.Option("--no-ruff", hidden=True, help="Deprecated: use --disable=ruff."),
+Enable = Annotated[
+    list[Tool] | None,
+    typer.Option(
+        "--enable",
+        help="Tool that policy should install and configure, even if it is off by default. Can be repeated.",
+    ),
 ]
 ImportsOnTop = Annotated[
     bool | None,
@@ -178,27 +181,11 @@ AllowVscodeCoverageGutters = Annotated[
 ]
 
 # GitHub group ----------------------------------------------------------------
-AllowLabels = Annotated[
-    bool | None,
-    typer.Option("--allow-labels", help="Do not perform the check on labels.toml."),
-]
 AllowDeprecatedWorkflows = Annotated[
     bool | None,
     typer.Option(
         "--allow-deprecated-workflows",
         help="Allow deprecated CI workflows, such as ci-docs.yml.",
-    ),
-]
-NoGithubActions = Annotated[
-    bool | None,
-    typer.Option(
-        "--no-github-actions",
-        help=(
-            "Do not add standard GitHub Actions workflows that are used across ComPWA"
-            " repositories. This can be useful if you already have your own CI"
-            " workflows that do the same as the workflows enforced by the"
-            " check-dev-files hook."
-        ),
     ),
 ]
 GithubPages = Annotated[
@@ -299,10 +286,6 @@ UpgradeFrequency = Annotated[
 ]
 
 # Notebook group --------------------------------------------------------------
-NoBinder = Annotated[
-    bool | None,
-    typer.Option("--no-binder", hidden=True, help="Deprecated: use --disable=binder."),
-]
 AllowedCellMetadata = Annotated[
     str | None,
     typer.Option(
@@ -334,23 +317,8 @@ TomlFormatterOption = Annotated[
         help="Choose the TOML formatter",
     ),
 ]
-NoCspellUpdate = Annotated[
-    bool | None,
-    typer.Option(
-        "--no-cspell-update",
-        help=(
-            "Do not enforce same cSpell configuration as other ComPWA repositories."
-            " This can be useful if you have a more advanced configuration, like using"
-            " different dictionaries for different file types."
-        ),
-    ),
-]
 
 # Repo group ------------------------------------------------------------------
-Gitpod = Annotated[
-    bool | None,
-    typer.Option("--gitpod", help="Create a GitPod config file."),
-]
 KeepContributingMd = Annotated[
     bool | None,
     typer.Option(
@@ -391,6 +359,7 @@ def build_arguments(**overrides: Any) -> Arguments:
     settings["repo_title"] = settings["repo_title"] or settings["repo_name"]
     settings["type_checker"] = set(settings["type_checker"])
     settings["disable"] = set(settings["disable"])
+    settings["enable"] = set(settings["enable"])
     if settings["dependabot_ecosystems"] is not None:
         settings["dependabot_ecosystems"] = {
             str(ecosystem) for ecosystem in settings["dependabot_ecosystems"]

@@ -24,7 +24,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _update_dev_requirements(
         session,
         excluded_dependencies=args.excluded_dependencies,
-        no_ruff="ruff" in args.disable,
+        no_ruff=not args.manages("ruff"),
     )
     # cspell:ignore toolsai
     vscode.add_extension_recommendation(session, "ms-toolsai.jupyter")

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @check_hook(
     group="python",
     paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject, CONFIG_PATH.vscode_settings],
-    enabled=lambda args, ctx: ctx.is_python_repo and "ruff" in args.disable,
+    enabled=lambda args, ctx: ctx.is_python_repo and not args.manages("ruff"),
 )
 def check(session: Session, _: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit

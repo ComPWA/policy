@@ -29,7 +29,7 @@ from compwa_policy.cli._options import (
     DevPythonVersion,
     Disable,
     DocAptPackages,
-    NoRuff,
+    Enable,
     PackageManager,
     PytestSingleThreaded,
     Python,
@@ -92,7 +92,7 @@ def run_everything(  # ruff: ignore[too-many-positional-arguments]
     repo_organization: RepoOrganization = None,
     repo_title: RepoTitle = None,
     disable: Disable = None,
-    no_ruff: NoRuff = None,
+    enable: Enable = None,
     pytest_single_threaded: PytestSingleThreaded = None,
     doc_apt_packages: DocAptPackages = None,
 ) -> None:
@@ -113,7 +113,7 @@ def run_everything(  # ruff: ignore[too-many-positional-arguments]
         repo_organization=repo_organization,
         repo_title=repo_title,
         disable=disable,
-        no_ruff=no_ruff,
+        enable=enable,
         pytest_single_threaded=pytest_single_threaded,
         doc_apt_packages=doc_apt_packages,
     )

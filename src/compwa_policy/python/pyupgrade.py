@@ -22,10 +22,11 @@ if TYPE_CHECKING:
     group="python",
     paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject],
     enabled=lambda _args, ctx: ctx.is_python_repo,
+    tool="pyupgrade",
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
     precommit = session.precommit
-    if "ruff" in args.disable:
+    if not args.manages("ruff"):
         _update_precommit_repo(session)
         _update_precommit_nbqa_hook(session)
     else:
