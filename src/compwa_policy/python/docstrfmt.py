@@ -14,7 +14,6 @@ from compwa_policy.utilities.check_hook import check_hook
 if TYPE_CHECKING:
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
-    from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
 __FILE_TYPE_OVERRIDES = ("files", "types", "types_or")
@@ -26,11 +25,8 @@ __FILE_TYPE_OVERRIDES = ("files", "types", "types_or")
     enabled=lambda _args, ctx: ctx.is_python_repo,
 )
 def check(session: Session, _args: Arguments, _: CheckContext) -> None:
-    _remove_file_type_overrides(session.precommit)
-
-
-def _remove_file_type_overrides(precommit: ModifiablePrecommit) -> None:
     """Let the upstream ``types_or: [python, rst]`` filter decide which files to format."""
+    precommit = session.precommit
     repo = precommit.find_repo(r"^https://github\.com/LilSpazJoekp/docstrfmt$")
     if repo is None:
         return
