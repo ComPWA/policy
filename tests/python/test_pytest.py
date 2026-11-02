@@ -217,7 +217,13 @@ def describe_main():
             """).lstrip()
         )
         (tmp_path / "codecov.yml").write_text(
-            "coverage:\n  status:\n    project:\n      default:\n        target: 90%\n"
+            dedent("""\
+                coverage:
+                  status:
+                    project:
+                      default:
+                        target: 90%
+            """)
         )
         with Session.load() as session:
             run_check(
@@ -293,11 +299,15 @@ def describe_migrate_coverage_threshold():
             task = "{cmd = " + task + "}"
         path = tmp_path / "pyproject.toml"
         path.write_text(
-            '[dependency-groups]\ntest = ["pytest-cov"]\n'
-            "[tool.coverage.report]\nfail_under = 80\n"
-            f"[{table}]\n"
-            f"cov = {task}\n"
-            'test = "pytest"\n'
+            dedent(f"""\
+                [dependency-groups]
+                test = ["pytest-cov"]
+                [tool.coverage.report]
+                fail_under = 80
+                [{table}]
+                cov = {task}
+                test = "pytest"
+            """)
         )
         with Session.load() as session:
             _migrate_coverage_threshold(session)
@@ -317,11 +327,18 @@ def describe_migrate_coverage_threshold():
     ):
         monkeypatch.chdir(tmp_path)
         path = tmp_path / "pyproject.toml"
-        path.write_text('[dependency-groups]\ntest = ["pytest-cov"]\n')
+        path.write_text(
+            dedent("""\
+                [dependency-groups]
+                test = ["pytest-cov"]
+            """)
+        )
         pixi = tmp_path / "pixi.toml"
         pixi.write_text(
-            "[feature.test.tasks]\n"
-            f'cov = "pytest --cov-fail-under={threshold} --cov=src"\n'
+            dedent(f"""\
+                [feature.test.tasks]
+                cov = "pytest --cov-fail-under={threshold} --cov=src"
+            """)
         )
         with Session.load() as session:
             _migrate_coverage_threshold(session)
@@ -342,7 +359,12 @@ def describe_migrate_coverage_threshold():
             """)
         )
         pixi = tmp_path / "pixi.toml"
-        pixi.write_text('[tasks]\ntest = "pytest"\n')
+        pixi.write_text(
+            dedent("""\
+                [tasks]
+                test = "pytest"
+            """)
+        )
         with Session.load() as session:
             _migrate_coverage_threshold(session)
             assert session.pixi.changelog == []
@@ -353,16 +375,17 @@ def describe_migrate_coverage_threshold():
         monkeypatch.chdir(tmp_path)
         path = tmp_path / "pyproject.toml"
         path.write_text(
-            dedent(r'''            [dependency-groups]
-            test = ["pytest-cov"]
-            [tool.poe.groups.test.tasks.cov]
-            cmd = """
-            pytest \
-                --cov=src \
-                --cov-fail-under=95 \
-                --cov-report=xml
-            """
-        ''').lstrip()
+            dedent(r'''
+                [dependency-groups]
+                test = ["pytest-cov"]
+                [tool.poe.groups.test.tasks.cov]
+                cmd = """
+                pytest \
+                    --cov=src \
+                    --cov-fail-under=95 \
+                    --cov-report=xml
+                """
+            ''').lstrip()
         )
         with Session.load() as session:
             _migrate_coverage_threshold(session)
@@ -390,11 +413,12 @@ def describe_migrate_coverage_threshold():
     ):
         monkeypatch.chdir(tmp_path)
         path = tmp_path / "pyproject.toml"
-        contents = (
-            '[dependency-groups]\ntest = ["pytest-cov"]\n'
-            "[tool.poe.tasks]\n"
-            f'cov = "{command}"\n'
-        )
+        contents = dedent(f"""\
+            [dependency-groups]
+            test = ["pytest-cov"]
+            [tool.poe.tasks]
+            cov = "{command}"
+        """)
         path.write_text(contents)
         with Session.load() as session:
             _migrate_coverage_threshold(session)
@@ -445,14 +469,20 @@ def describe_migrate_codecov_threshold():
     ):
         monkeypatch.chdir(tmp_path)
         path = tmp_path / "pyproject.toml"
-        contents = '[dependency-groups]\ntest = ["pytest-cov"]\n'
+        contents = dedent("""\
+            [dependency-groups]
+            test = ["pytest-cov"]
+        """)
         if existing_floor is not None:
-            contents += f"[tool.coverage.report]\nfail_under = {existing_floor}\n"
+            contents += dedent(f"""\
+                [tool.coverage.report]
+                fail_under = {existing_floor}
+            """)
         if task_floor is not None:
-            contents += (
-                "[tool.poe.tasks]\n"
-                f'cov = "pytest --cov=src --cov-fail-under={task_floor}"\n'
-            )
+            contents += dedent(f"""\
+                [tool.poe.tasks]
+                cov = "pytest --cov=src --cov-fail-under={task_floor}"
+            """)
         path.write_text(contents)
         codecov = tmp_path / "codecov.yml"
         codecov.write_text(
@@ -507,10 +537,17 @@ def describe_migrate_codecov_threshold():
     ):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(
-            "[tool.coverage.report]\nfail_under = 85\n"
+            dedent("""\
+                [tool.coverage.report]
+                fail_under = 85
+            """)
         )
         path = tmp_path / "codecov.yml"
-        contents = f"coverage:\n  status:\n    project: {project}\n"
+        contents = dedent(f"""\
+            coverage:
+              status:
+                project: {project}
+        """)
         path.write_text(contents)
         with Session.load() as session:
             _migrate_coverage_threshold(session)
