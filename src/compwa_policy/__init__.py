@@ -15,11 +15,14 @@ from typing import TYPE_CHECKING, Literal
 
 from attrs import field, frozen
 
+from compwa_policy.config import OPT_IN_TOOLS
+
 if TYPE_CHECKING:
     from compwa_policy.config import (
         DependabotEcosystem,
         PackageManagerChoice,
         PythonVersion,
+        Tool,
         TypeChecker,
         UpgradeFrequency,
     )
@@ -38,32 +41,28 @@ class Arguments:
     """
 
     allow_deprecated_workflows: bool
-    allow_labels: bool
     allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
     branch_coverage: bool
     ci_skipped_tests: str
     dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
+    disable: set[Tool] = field(converter=set)
     doc_apt_packages: str
+    enable: set[Tool] = field(converter=set)
     environment_variables: str
     excluded_dependencies: set[str] = field(converter=set)
     excluded_python_versions: set[PythonVersion]
     github_pages: bool
-    gitpod: bool
     imports_on_top: bool
     keep_contributing_md: bool
     keep_issue_templates: bool
     keep_pr_linting: bool
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
-    no_binder: bool
     no_cd: bool
-    no_cspell_update: bool
-    no_github_actions: bool
     no_milestones: bool
     no_pypi: bool
-    no_ruff: bool
     no_version_branches: bool
     package_manager: PackageManagerChoice
     pytest_single_threaded: bool
@@ -78,6 +77,12 @@ class Arguments:
     toml_formatter_configured: bool
     type_checker: set[TypeChecker]
     upgrade_frequency: UpgradeFrequency
+
+    def manages(self, tool: Tool) -> bool:
+        """Whether policy installs and configures *tool*; ``disable`` wins over ``enable``."""
+        if tool in self.disable:
+            return False
+        return tool in self.enable or tool not in OPT_IN_TOOLS
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:

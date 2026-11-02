@@ -26,7 +26,7 @@ __LABELS_CONFIG_FILE = "labels.toml"
     group="github",
     paths=[__LABELS_CONFIG_FILE],
     patterns=("(.*/)?requirements.*\\.(in|txt)",),
-    enabled=lambda args, _ctx: not args.allow_labels,
+    tool="labels",
 )
 def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     if os.path.exists(__LABELS_CONFIG_FILE):

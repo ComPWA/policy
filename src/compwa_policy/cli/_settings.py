@@ -53,6 +53,7 @@ from compwa_policy.config import (
     DependabotEcosystem,
     PackageManagerChoice,
     PythonVersion,
+    Tool,
     TypeChecker,
     UpgradeFrequency,
 )
@@ -93,7 +94,6 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     }),
     "github": frozenset({
         "allow_deprecated_workflows",
-        "allow_labels",
         "ci_skipped_tests",
         "dependabot_ecosystems",
         "github_pages",
@@ -101,7 +101,6 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "keep_workflow",
         "macos_python_version",
         "no_cd",
-        "no_github_actions",
         "no_milestones",
         "no_pypi",
         "no_version_branches",
@@ -112,14 +111,12 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "nb": frozenset({
         "allowed_cell_metadata",
         "excluded_dependencies",
-        "no_binder",
     }),
     "format": frozenset({
-        "no_cspell_update",
         "tombi_errors_on_warnings",
         "toml_formatter",
     }),
-    "repo": frozenset({"gitpod", "keep_issue_templates"}),
+    "repo": frozenset({"keep_issue_templates"}),
     "setup": frozenset({"keep_contributing_md"}),
 }
 
@@ -197,6 +194,19 @@ def _join(values: Any) -> str:
     return str(values)
 
 
+def _as_list(value: Any) -> list[str]:
+    """Accept a comma/space string or an iterable of strings or enum members.
+
+    >>> _as_list("mypy, pyright")
+    ['mypy', 'pyright']
+    >>> _as_list(("ruff",))
+    ['ruff']
+    """
+    if isinstance(value, str):
+        return _to_list(value)
+    return [item.value if isinstance(item, Enum) else str(item) for item in value]
+
+
 class Settings(BaseSettings):
     """Resolved :program:`policy` options, layering the CLI over ``pyproject.toml``.
 
@@ -225,8 +235,10 @@ class Settings(BaseSettings):
     """Python versions that the project does not support."""
     excluded_dependencies: SortedArray[str] = []
     """Notebook dependencies that policy must not install."""
-    no_ruff: bool = False
-    """Do not enforce Ruff as a linter."""
+    disable: SortedArray[Tool] = []
+    """Tools that policy must not install or configure; takes precedence over ``enable``."""
+    enable: SortedArray[Tool] = []
+    """Tools that policy should install and configure, even if they are off by default."""
     imports_on_top: bool = False
     """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
@@ -237,12 +249,8 @@ class Settings(BaseSettings):
     """Run pytest without the parallel ``-n`` argument."""
     allow_vscode_coverage_gutters: bool = False
     """Keep and recommend the VS Code Coverage Gutters extension."""
-    allow_labels: bool = False
-    """Do not enforce the shared ``labels.toml`` configuration."""
     allow_deprecated_workflows: bool = False
     """Allow deprecated continuous-integration workflows."""
-    no_github_actions: bool = False
-    """Do not add the standard ComPWA GitHub Actions workflows."""
     github_pages: bool = False
     """Publish the documentation through GitHub Pages."""
     keep_pr_linting: bool = False
@@ -273,18 +281,12 @@ class Settings(BaseSettings):
     """Package ecosystems that Dependabot updates; derived from the repository files if unset."""
     upgrade_frequency: UpgradeFrequency = "quarterly"
     """Frequency of the workflow that upgrades lock and constraint files."""
-    no_binder: bool = False
-    """Do not update the Binder configuration."""
     allowed_cell_metadata: str = ""
     """Metadata keys allowed in Jupyter notebook cells."""
-    no_cspell_update: bool = False
-    """Do not enforce the shared cSpell configuration."""
     tombi_errors_on_warnings: bool = True
     """Make the Tombi lint hook fail when it emits warnings."""
     toml_formatter: TomlFormatter = "tombi"
     """TOML formatter configured for the repository."""
-    gitpod: bool = False
-    """Create and maintain a Gitpod configuration file."""
     keep_contributing_md: bool = False
     """Do not update or remove ``CONTRIBUTING.md``."""
     keep_issue_templates: bool = False
@@ -340,6 +342,8 @@ class Settings(BaseSettings):
         return _join(value)
 
     @field_validator(
+        "disable",
+        "enable",
         "excluded_dependencies",
         "type_checker",
         "keep_workflow",
@@ -354,9 +358,7 @@ class Settings(BaseSettings):
         >>> Settings(type_checker=["mypy", "pyright"]).type_checker
         ['mypy', 'pyright']
         """
-        if isinstance(value, str):
-            return _to_list(value)
-        return [item.value if isinstance(item, Enum) else str(item) for item in value]
+        return _as_list(value)
 
 
 def load_settings(**cli_overrides: Any) -> Settings:

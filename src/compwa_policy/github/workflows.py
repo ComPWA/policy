@@ -38,7 +38,7 @@ if TYPE_CHECKING:
         ".python-version",
     ],
     directories=(CONFIG_PATH.github_workflow_dir.parent, CONFIG_PATH.pip_constraints),
-    enabled=lambda args, _ctx: not args.no_github_actions,
+    tool="github-actions",
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     repository = f"{args.repo_organization}/{args.repo_name}"

@@ -5,10 +5,10 @@ from __future__ import annotations
 from compwa_policy.cli import _checks
 from compwa_policy.cli._options import (
     AllowDeprecatedWorkflows,
-    AllowLabels,
     CiSkippedTests,
     DependabotEcosystems,
     DevPythonVersion,
+    Disable,
     DocAptPackages,
     EnvironmentVariables,
     GithubPages,
@@ -16,7 +16,6 @@ from compwa_policy.cli._options import (
     KeepWorkflow,
     MacosPythonVersion,
     NoCd,
-    NoGithubActions,
     NoMilestones,
     NoPypi,
     NoVersionBranches,
@@ -35,8 +34,6 @@ from compwa_policy.cli._options import (
 def github(  # ruff: ignore[too-many-positional-arguments]
     python: Python = None,
     dev_python_version: DevPythonVersion = None,
-    allow_labels: AllowLabels = None,
-    no_github_actions: NoGithubActions = None,
     allow_deprecated_workflows: AllowDeprecatedWorkflows = None,
     github_pages: GithubPages = None,
     keep_pr_linting: KeepPrLinting = None,
@@ -57,13 +54,13 @@ def github(  # ruff: ignore[too-many-positional-arguments]
     repo_name: RepoName = None,
     repo_organization: RepoOrganization = None,
     repo_title: RepoTitle = None,
+    disable: Disable = None,
 ) -> None:
     """Standardize GitHub config: workflows, labels, Dependabot, Release Drafter, lock upgrades."""
     args = build_arguments(
+        disable=disable,
         python=python,
         dev_python_version=dev_python_version,
-        allow_labels=allow_labels,
-        no_github_actions=no_github_actions,
         allow_deprecated_workflows=allow_deprecated_workflows,
         github_pages=github_pages,
         keep_pr_linting=keep_pr_linting,
