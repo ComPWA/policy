@@ -52,6 +52,7 @@ _EXPECTED_CHECK_HOOKS = (
     ("poe", "repo"),
     ("prettier", "format"),
     ("black", "python"),
+    ("docstrfmt", "python"),
     ("release_drafter", "github"),
     ("pyproject", "python"),
     ("mypy", "python"),
