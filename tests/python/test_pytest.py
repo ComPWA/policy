@@ -366,12 +366,16 @@ def describe_migrate_coverage_threshold():
         )
         with Session.load() as session:
             _migrate_coverage_threshold(session)
-        command = tomli.loads(path.read_text())["tool"]["poe"]["groups"]["test"][
-            "tasks"
-        ]["cov"]["cmd"]
-        assert "--cov-fail-under" not in command
-        assert not any(line.strip() == "\\" for line in command.splitlines())
-        assert "--cov-report=xml" in command
+        assert (
+            dedent(r'''
+            cmd = """
+            pytest \
+                --cov=src \
+                --cov-report=xml
+            """
+        ''')
+            in path.read_text()
+        )
 
     @pytest.mark.parametrize(
         "command",

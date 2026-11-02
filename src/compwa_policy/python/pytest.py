@@ -8,7 +8,9 @@ from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Any
 
 import tomli
+import tomlkit
 from ini2toml.api import Translator
+from tomlkit.items import String
 
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH, vscode
@@ -196,19 +198,16 @@ def _migrate_coverage_threshold(session: Session) -> None:
                 for key in ("tasks", "feature", "target")
             },
         ))
-    pattern = re.compile(r"(?<!\S)--cov-fail-under(?:=|\s+)(\d+(?:\.\d+)?)(?=\s|$)")
     replacements = []
     modified_documents = []
     thresholds: set[float] = set()
     for document, root in roots:
         for container, key, task in _coverage_task_commands(root):
-            matches = list(pattern.finditer(task))
+            matches = list(_COV_FAIL_UNDER.finditer(task))
             if not matches:
                 continue
             thresholds.add(float(matches[-1][1]))
-            command = pattern.sub("", task)
-            command = re.sub(r"(?m)^[ \t]*\\\n", "", command)
-            replacements.append((container, key, command))
+            replacements.append((container, key, _remove_cov_fail_under(task)))
             modified_documents.append(document)
     if not thresholds and codecov_threshold is None:
         return
@@ -223,6 +222,30 @@ def _migrate_coverage_threshold(session: Session) -> None:
     message = "Migrated coverage threshold to tool.coverage.report.fail_under"
     for document in {id(d): d for d in [pyproject, *modified_documents]}.values():
         document.changelog.append(message)
+
+
+_COV_FAIL_UNDER = re.compile(
+    r"""[ \t]*(?<![^\s"'])--cov-fail-under(?:=|\s+)(\d+(?:\.\d+)?)(?=[\s"']|$)"""
+)
+
+
+def _remove_cov_fail_under(command: str) -> String:
+    r'''Remove ``--cov-fail-under`` from the TOML source of a task command.
+
+    Editing the source rather than the parsed value keeps the quoting and the line
+    continuations of a multiline string, which the parsed value has already joined.
+
+    >>> source = 'x = """\npytest \\\n  --cov-fail-under=90 \\\n  --cov=src\n"""'
+    >>> print(_remove_cov_fail_under(tomlkit.parse(source)["x"]).as_string())
+    """
+    pytest \
+      --cov=src
+    """
+    '''
+    item = command if isinstance(command, String) else tomlkit.string(command)
+    source = _COV_FAIL_UNDER.sub("", item.as_string())
+    source = re.sub(r"(?m)^[ \t]*\\\n", "", source)
+    return tomlkit.parse(f"x = {source}")["x"]
 
 
 def _migrate_codecov_threshold(session: Session) -> float | None:
