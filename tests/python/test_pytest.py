@@ -331,6 +331,24 @@ def describe_migrate_coverage_threshold():
         )
         assert "--cov-fail-under" not in pixi.read_text()
 
+    def leaves_unchanged_pixi_out_of_changelog(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            dedent("""\
+                [tool.poe.tasks]
+                cov = "pytest --cov-fail-under=95"
+            """)
+        )
+        pixi = tmp_path / "pixi.toml"
+        pixi.write_text('[tasks]\ntest = "pytest"\n')
+        with Session.load() as session:
+            _migrate_coverage_threshold(session)
+            assert session.pixi.changelog == []
+            assert session.pyproject is not None
+            assert session.pyproject.changelog != []
+
     def preserves_multiline_command(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         path = tmp_path / "pyproject.toml"

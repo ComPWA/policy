@@ -21,6 +21,7 @@ from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
+    from ruamel.yaml import YAML
     from tomlkit.items import Array
 
     from compwa_policy import Arguments
@@ -182,18 +183,24 @@ def _migrate_coverage_threshold(session: Session) -> None:
     if pyproject is None:
         return
     codecov_threshold = _migrate_codecov_threshold(session)
-    roots = [
-        pyproject.get_table(f"tool.{tool}", fallback={}) for tool in ("poe", "pixi")
+    roots: list[tuple[ModifiablePyproject, MutableMapping]] = [
+        (pyproject, pyproject.get_table(f"tool.{tool}", fallback={}))
+        for tool in ("poe", "pixi")
     ]
     if CONFIG_PATH.pixi_toml.exists():
-        roots.append({
-            key: session.pixi.get_table(key, fallback={})
-            for key in ("tasks", "feature", "target")
-        })
+        pixi = session.pixi
+        roots.append((
+            pixi,
+            {
+                key: pixi.get_table(key, fallback={})
+                for key in ("tasks", "feature", "target")
+            },
+        ))
     pattern = re.compile(r"(?<!\S)--cov-fail-under(?:=|\s+)(\d+(?:\.\d+)?)(?=\s|$)")
     replacements = []
+    modified_documents = []
     thresholds: set[float] = set()
-    for root in roots:
+    for document, root in roots:
         for container, key, task in _coverage_task_commands(root):
             matches = list(pattern.finditer(task))
             if not matches:
@@ -202,6 +209,7 @@ def _migrate_coverage_threshold(session: Session) -> None:
             command = pattern.sub("", task)
             command = re.sub(r"(?m)^[ \t]*\\\n", "", command)
             replacements.append((container, key, command))
+            modified_documents.append(document)
     if not thresholds and codecov_threshold is None:
         return
     if codecov_threshold is None and len(thresholds) > 1:
@@ -213,9 +221,8 @@ def _migrate_coverage_threshold(session: Session) -> None:
     for container, key, command in replacements:
         container[key] = command
     message = "Migrated coverage threshold to tool.coverage.report.fail_under"
-    pyproject.changelog.append(message)
-    if CONFIG_PATH.pixi_toml.exists():
-        session.pixi.changelog.append(message)
+    for document in {id(d): d for d in [pyproject, *modified_documents]}.values():
+        document.changelog.append(message)
 
 
 def _migrate_codecov_threshold(session: Session) -> float | None:
@@ -234,21 +241,38 @@ def _migrate_codecov_threshold(session: Session) -> float | None:
     if "target" in settings or "threshold" in settings:
         settings.pop("target", None)
         settings.pop("threshold", None)
-        yaml.representer.yaml_representers = {
-            **yaml.representer.yaml_representers,
-            type(None): lambda representer, _value: representer.represent_scalar(
-                "tag:yaml.org,2002:null", "null"
-            ),
-        }
-        stream = io.StringIO()
-        yaml.dump(config, stream)
         resource.write_text(
-            stream.getvalue(), "Removed Codecov project coverage threshold"
+            _dump_codecov_yaml(yaml, config),
+            "Removed Codecov project coverage threshold",
         )
     try:
         return float(str(target).removesuffix("%"))
     except ValueError:
         return None
+
+
+def _dump_codecov_yaml(yaml_parser: YAML, data: Any) -> str:
+    """Dump :file:`codecov.yml`, writing `None` as an explicit ``null``.
+
+    Codecov configs spell out ``null`` on purpose, for instance ``paths: null``, so the
+    empty-value default of ``ruamel.yaml`` is wrong for this file. Other YAML files,
+    such as GitHub workflows, rely on empty values like ``workflow_dispatch:``.
+
+    The parser's representer class is shared, so the override is applied to this
+    parser's representer instance only.
+
+    >>> yaml_parser = create_prettier_round_trip_yaml()
+    >>> print(_dump_codecov_yaml(yaml_parser, yaml_parser.load("paths: null")), end="")
+    paths: null
+    """
+    representer = yaml_parser.representer
+    representer.yaml_representers = {
+        **representer.yaml_representers,
+        type(None): lambda r, _: r.represent_scalar("tag:yaml.org,2002:null", "null"),
+    }
+    stream = io.StringIO()
+    yaml_parser.dump(data, stream)
+    return stream.getvalue()
 
 
 def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
