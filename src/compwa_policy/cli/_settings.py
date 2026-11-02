@@ -253,11 +253,9 @@ class Settings(BaseSettings):
     """Do not overwrite the pull-request linting workflow."""
     macos_python_version: str = "3.11"
     """Python version for the macOS test job; use ``disable`` to omit the job."""
-    macos_runner: MacosRunnerLabel | None = Field(default=None, examples=["macos-26"])
+    macos_runner: MacosRunnerLabel | None = None
     """Runner label for the macOS test job; omitting it keeps the ComPWA/actions default."""
-    ubuntu_runner: UbuntuRunnerLabel | None = Field(
-        default=None, examples=["ubuntu-26.04"]
-    )
+    ubuntu_runner: UbuntuRunnerLabel | None = None
     """Runner label for the Linux test and PyPI jobs; omitting it keeps the default."""
     no_cd: bool = False
     """Do not add continuous-deployment workflows."""

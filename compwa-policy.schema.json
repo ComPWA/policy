@@ -116,8 +116,7 @@
         "macos-runner": {
           "anyOf": [{ "$ref": "#/$defs/MacosRunnerLabel" }, { "type": "null" }],
           "default": null,
-          "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default.",
-          "examples": ["macos-26"]
+          "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default."
         },
         "no-cd": {
           "default": false,
@@ -167,8 +166,7 @@
             { "type": "null" }
           ],
           "default": null,
-          "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default.",
-          "examples": ["ubuntu-26.04"]
+          "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default."
         },
         "upgrade-frequency": {
           "default": "quarterly",
