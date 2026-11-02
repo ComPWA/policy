@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, get_args
 
 import typer
 
@@ -21,6 +21,7 @@ from compwa_policy.config import (
     PackageManagerChoice,
     PythonVersion,
 )
+from compwa_policy.config import Tool as ToolLiteral
 from compwa_policy.config import UpgradeFrequency as Frequency
 from compwa_policy.errors import PolicyError
 from compwa_policy.utilities import CONFIG_PATH
@@ -40,6 +41,10 @@ class TypeChecker(StrEnum):
     mypy = "mypy"
     pyright = "pyright"
     ty = "ty"
+
+
+Tool = StrEnum("Tool", {name: name for name in get_args(ToolLiteral)})
+"""Tools that can be passed to ``--disable``, generated from :data:`.config.Tool`."""
 
 
 class DependabotEcosystem(StrEnum):
@@ -127,9 +132,16 @@ ExcludedPythonVersions = Annotated[
         help="Python version you do NOT want to support. Can be repeated.",
     ),
 ]
+Disable = Annotated[
+    list[Tool] | None,
+    typer.Option(
+        "--disable",
+        help="Tool that policy must not install or configure. Can be repeated.",
+    ),
+]
 NoRuff = Annotated[
     bool | None,
-    typer.Option("--no-ruff", help="Do not enforce Ruff as a linter."),
+    typer.Option("--no-ruff", hidden=True, help="Deprecated: use --disable=ruff."),
 ]
 ImportsOnTop = Annotated[
     bool | None,
@@ -289,7 +301,7 @@ UpgradeFrequency = Annotated[
 # Notebook group --------------------------------------------------------------
 NoBinder = Annotated[
     bool | None,
-    typer.Option("--no-binder", help="Do not update the Binder configuration."),
+    typer.Option("--no-binder", hidden=True, help="Deprecated: use --disable=binder."),
 ]
 AllowedCellMetadata = Annotated[
     str | None,
@@ -378,6 +390,7 @@ def build_arguments(**overrides: Any) -> Arguments:
     settings["repo_name"] = settings["repo_name"] or os.path.basename(os.getcwd())
     settings["repo_title"] = settings["repo_title"] or settings["repo_name"]
     settings["type_checker"] = set(settings["type_checker"])
+    settings["disable"] = set(settings["disable"])
     if settings["dependabot_ecosystems"] is not None:
         settings["dependabot_ecosystems"] = {
             str(ecosystem) for ecosystem in settings["dependabot_ecosystems"]

@@ -39,7 +39,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, TypeVar
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic.json_schema import SkipJsonSchema  # ruff: ignore[typing-only-third-party-import]
 from pydantic_settings import (
     BaseSettings,
@@ -53,6 +53,7 @@ from compwa_policy.config import (
     DependabotEcosystem,
     PackageManagerChoice,
     PythonVersion,
+    Tool,
     TypeChecker,
     UpgradeFrequency,
 )
@@ -112,7 +113,6 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "nb": frozenset({
         "allowed_cell_metadata",
         "excluded_dependencies",
-        "no_binder",
     }),
     "format": frozenset({
         "no_cspell_update",
@@ -121,6 +121,13 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     }),
     "repo": frozenset({"gitpod", "keep_issue_templates"}),
     "setup": frozenset({"keep_contributing_md"}),
+}
+
+
+#: Former boolean options, now expressed as an entry in the ``disable`` list.
+DEPRECATED_TOOL_SWITCHES: dict[str, Tool] = {
+    "no_binder": "binder",
+    "no_ruff": "ruff",
 }
 
 
@@ -197,6 +204,19 @@ def _join(values: Any) -> str:
     return str(values)
 
 
+def _as_list(value: Any) -> list[str]:
+    """Accept a comma/space string or an iterable of strings or enum members.
+
+    >>> _as_list("mypy, pyright")
+    ['mypy', 'pyright']
+    >>> _as_list(("ruff",))
+    ['ruff']
+    """
+    if isinstance(value, str):
+        return _to_list(value)
+    return [item.value if isinstance(item, Enum) else str(item) for item in value]
+
+
 class Settings(BaseSettings):
     """Resolved :program:`policy` options, layering the CLI over ``pyproject.toml``.
 
@@ -225,8 +245,8 @@ class Settings(BaseSettings):
     """Python versions that the project does not support."""
     excluded_dependencies: SortedArray[str] = []
     """Notebook dependencies that policy must not install."""
-    no_ruff: bool = False
-    """Do not enforce Ruff as a linter."""
+    disable: SortedArray[Tool] = []
+    """Tools that policy must not install or configure."""
     imports_on_top: bool = False
     """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
@@ -273,8 +293,6 @@ class Settings(BaseSettings):
     """Package ecosystems that Dependabot updates; derived from the repository files if unset."""
     upgrade_frequency: UpgradeFrequency = "quarterly"
     """Frequency of the workflow that upgrades lock and constraint files."""
-    no_binder: bool = False
-    """Do not update the Binder configuration."""
     allowed_cell_metadata: str = ""
     """Metadata keys allowed in Jupyter notebook cells."""
     no_cspell_update: bool = False
@@ -308,6 +326,27 @@ class Settings(BaseSettings):
         del settings_cls, env_settings, dotenv_settings, file_secret_settings
         return (init_settings,)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _convert_deprecated_tool_switches(cls, data: Any) -> Any:
+        """Fold the deprecated ``no-<tool>`` switches into ``disable``.
+
+        >>> Settings(no_ruff=True, disable=["binder"]).disable
+        ['binder', 'ruff']
+        >>> Settings(no_binder=False).disable
+        []
+        """
+        if not isinstance(data, Mapping):
+            return data
+        data = dict(data)
+        disabled = _as_list(data.get("disable", []))
+        for key, tool in DEPRECATED_TOOL_SWITCHES.items():
+            if data.pop(key, False) and tool not in disabled:
+                disabled.append(tool)
+        if disabled:
+            data["disable"] = sorted(disabled)
+        return data
+
     @field_validator("environment_variables", mode="before")
     @classmethod
     def _normalize_environment_variables(cls, value: Any) -> str:
@@ -340,6 +379,7 @@ class Settings(BaseSettings):
         return _join(value)
 
     @field_validator(
+        "disable",
         "excluded_dependencies",
         "type_checker",
         "keep_workflow",
@@ -354,9 +394,7 @@ class Settings(BaseSettings):
         >>> Settings(type_checker=["mypy", "pyright"]).type_checker
         ['mypy', 'pyright']
         """
-        if isinstance(value, str):
-            return _to_list(value)
-        return [item.value if isinstance(item, Enum) else str(item) for item in value]
+        return _as_list(value)
 
 
 def load_settings(**cli_overrides: Any) -> Settings:

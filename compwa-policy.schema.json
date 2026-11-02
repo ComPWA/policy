@@ -23,6 +23,17 @@
       "title": "Dev Python Version",
       "type": "string"
     },
+    "disable": {
+      "default": [],
+      "description": "Tools that policy must not install or configure.",
+      "items": {
+        "enum": ["binder", "ruff"],
+        "type": "string"
+      },
+      "title": "Disable",
+      "type": "array",
+      "x-tombi-array-values-order": "ascending"
+    },
     "doc-apt-packages": {
       "default": "",
       "description": "APT packages required to build the documentation.",
@@ -186,21 +197,9 @@
           "title": "Excluded Dependencies",
           "type": "array",
           "x-tombi-array-values-order": "ascending"
-        },
-        "no-binder": {
-          "default": false,
-          "description": "Do not update the Binder configuration.",
-          "title": "No Binder",
-          "type": "boolean"
         }
       },
       "additionalProperties": false
-    },
-    "no-ruff": {
-      "default": false,
-      "description": "Do not enforce Ruff as a linter.",
-      "title": "No Ruff",
-      "type": "boolean"
     },
     "package-manager": {
       "default": "uv",

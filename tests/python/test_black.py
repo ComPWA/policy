@@ -121,7 +121,7 @@ def describe_main():
                 check,
                 session,
                 has_notebooks=False,
-                no_ruff=True,
+                disable={"ruff"},
             )  # no pyproject.toml -> no-op
 
     def replaces_black_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
@@ -144,7 +144,7 @@ def describe_main():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            run_check(check, session, has_notebooks=False, no_ruff=True)
+            run_check(check, session, has_notebooks=False, disable={"ruff"})
         result = precommit.dumps()
         assert "https://github.com/psf/black\n" not in result
         assert "https://github.com/psf/black-pre-commit-mirror" in result

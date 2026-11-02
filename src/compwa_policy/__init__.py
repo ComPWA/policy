@@ -20,6 +20,7 @@ if TYPE_CHECKING:
         DependabotEcosystem,
         PackageManagerChoice,
         PythonVersion,
+        Tool,
         TypeChecker,
         UpgradeFrequency,
     )
@@ -45,6 +46,7 @@ class Arguments:
     ci_skipped_tests: str
     dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
+    disable: set[Tool] = field(converter=set)
     doc_apt_packages: str
     environment_variables: str
     excluded_dependencies: set[str] = field(converter=set)
@@ -57,13 +59,11 @@ class Arguments:
     keep_pr_linting: bool
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
-    no_binder: bool
     no_cd: bool
     no_cspell_update: bool
     no_github_actions: bool
     no_milestones: bool
     no_pypi: bool
-    no_ruff: bool
     no_version_branches: bool
     package_manager: PackageManagerChoice
     pytest_single_threaded: bool

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
     precommit = session.precommit
-    if args.no_ruff:
+    if "ruff" in args.disable:
         _update_precommit_repo(session)
         _update_precommit_nbqa_hook(session)
     else:

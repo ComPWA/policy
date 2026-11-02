@@ -24,7 +24,12 @@ import typer
 from rich.syntax import Syntax
 
 from compwa_policy import _get_environment_variables, _to_list
-from compwa_policy.cli._settings import POLICY_TABLE, Settings, policy_sub_table
+from compwa_policy.cli._settings import (
+    DEPRECATED_TOOL_SWITCHES,
+    POLICY_TABLE,
+    Settings,
+    policy_sub_table,
+)
 from compwa_policy.errors import PolicyError
 from compwa_policy.format.precommit import (
     __NBHOOKS_REPO_URL,
@@ -59,7 +64,6 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--excluded-python-versions",
         "--imports-on-top",
         "--no-branch-coverage",
-        "--no-ruff",
         "--pytest-single-threaded",
         "--type-checker",
     ),
@@ -89,7 +93,6 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
     "nb": (
         "--allowed-cell-metadata",
         "--exclude-dependency",
-        "--no-binder",
     ),
     "format": ("--no-cspell-update",),
     "repo": (
@@ -100,15 +103,23 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
 #: Flags that are shared by several groups and stay on the run-all hook.
 _SHARED_FLAGS = (
     "--dev-python-version",
+    "--disable",
     "--python",
     "--no-python",
     "--repo-name",
     "--repo-organization",
     "--repo-title",
 )
+#: Deprecated ``--no-<tool>`` flags, which migrate to an entry in ``disable``.
+_DEPRECATED_TOOL_FLAGS = {
+    f"--{field.replace('_', '-')}": tool
+    for field, tool in DEPRECATED_TOOL_SWITCHES.items()
+}
 #: Every flag the ``check-dev-files`` hook still accepts.
-_KNOWN_FLAGS = {flag for flags in GROUP_FLAGS.values() for flag in flags} | set(
-    _SHARED_FLAGS
+_KNOWN_FLAGS = (
+    {flag for flags in GROUP_FLAGS.values() for flag in flags}
+    | set(_SHARED_FLAGS)
+    | set(_DEPRECATED_TOOL_FLAGS)
 )
 
 
@@ -213,6 +224,8 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
     {'python': False, 'setup': {'env': {'A': '1', 'B': '2'}}}
     >>> _build_policy(["--excluded-python-versions=3.14,3.15"])
     {'python': {'excluded-python-versions': ['3.14', '3.15']}}
+    >>> _build_policy(["--no-ruff", "--disable=binder"])
+    {'disable': ['binder', 'ruff']}
     """
     policy: dict[str, Any] = {}
     environment_variables: dict[str, str] = {}
@@ -221,6 +234,9 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
         raw_value = _unquote_cli_value(raw_value)
         if flag in {"--python", "--no-python"}:
             policy["python"] = flag == "--python"
+            continue
+        if flag in _DEPRECATED_TOOL_FLAGS:
+            policy.setdefault("disable", []).append(_DEPRECATED_TOOL_FLAGS[flag])
             continue
         if flag in {"--branch-coverage", "--no-branch-coverage"}:
             sub_table = policy_sub_table("branch_coverage")
@@ -242,6 +258,8 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
             target[key] = raw_value
     if environment_variables:
         policy.setdefault("setup", {})["env"] = environment_variables
+    if "disable" in policy:
+        policy["disable"] = sorted(set(policy["disable"]))
     return policy
 
 
