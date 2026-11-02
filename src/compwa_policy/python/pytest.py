@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import re
 from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Any
@@ -15,6 +16,7 @@ from compwa_policy.utilities.cfg import open_config
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependency
 from compwa_policy.utilities.toml import to_toml_array
+from compwa_policy.utilities.yaml import create_prettier_round_trip_yaml
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
 @check_hook(
     group="python",
     paths=[
+        CONFIG_PATH.codecov,
         CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
         CONFIG_PATH.pixi_toml,
@@ -46,6 +49,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _deny_ini_options(config)
     _update_codecov_settings(config, args.branch_coverage)
     _migrate_coverage_threshold(session)
+    _update_codecov_targets(session)
     _update_settings(config)
     _update_vscode_settings(
         session, args.allow_vscode_coverage_gutters, args.pytest_single_threaded
@@ -211,6 +215,49 @@ def _migrate_coverage_threshold(session: Session) -> None:
     pyproject.changelog.append(message)
     if CONFIG_PATH.pixi_toml.exists():
         session.pixi.changelog.append(message)
+
+
+def _update_codecov_targets(session: Session) -> None:
+    """Use coverage.py's floor while Codecov checks relative project regressions."""
+    pyproject = session.pyproject
+    if (
+        pyproject is None
+        or pyproject.get_table("tool.coverage.report", fallback={}).get("fail_under")
+        is None
+    ):
+        return
+    resource = session.get_path(CONFIG_PATH.codecov)
+    if not resource.exists:
+        return
+    yaml = create_prettier_round_trip_yaml()
+    config = yaml.load(resource.read_text()) or {}
+    status = config.setdefault("coverage", {}).setdefault("status", {})
+    project = status.get("project", {})
+    if project is False:
+        return
+    if project is True or project is None:
+        project = {}
+    if not project:
+        project["default"] = {}
+    updated = False
+    for name, settings in project.items():
+        if settings is False:
+            continue
+        if settings is True or settings is None:
+            settings = {}
+            project[name] = settings
+        updated |= __update_settings(settings, target="auto", threshold="0.5%")
+    if updated:
+        status["project"] = project
+        yaml.representer.yaml_representers = {
+            **yaml.representer.yaml_representers,
+            type(None): lambda representer, _value: representer.represent_scalar(
+                "tag:yaml.org,2002:null", "null"
+            ),
+        }
+        stream = io.StringIO()
+        yaml.dump(config, stream)
+        resource.write_text(stream.getvalue(), "Set relative Codecov project targets")
 
 
 def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
