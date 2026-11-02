@@ -26,12 +26,13 @@ __DEFAULT_SETTINGS = {
     group="python",
     paths=[CONFIG_PATH.precommit, CONFIG_PATH.pyproject],
     enabled=lambda _args, ctx: ctx.is_python_repo,
+    tool="docstrfmt",
 )
-def check(session: Session, args: Arguments, _: CheckContext) -> None:
-    """Install docstrfmt, or remove it if disabled or there are no Python files."""
+def check(session: Session, _args: Arguments, _: CheckContext) -> None:
+    """Install docstrfmt, or remove it if there are no Python files."""
     precommit = session.precommit
     pyproject = session.pyproject
-    if args.docstrfmt and is_committed("*.py", "*.pyi", untracked=True):
+    if is_committed("*.py", "*.pyi", untracked=True):
         precommit.update_single_hook_repo(
             Repo(
                 repo="https://github.com/LilSpazJoekp/docstrfmt",

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.session import Session
 
 
-@check_hook(group="nb", paths=[CONFIG_PATH.precommit])
+@check_hook(group="nb", paths=[CONFIG_PATH.precommit], tool="nbstripout")
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     precommit = session.precommit
     if not ctx.has_notebooks:

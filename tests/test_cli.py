@@ -106,7 +106,6 @@ def describe_pyproject_config():
 
             [tool.compwa.policy.nb]
             excluded-dependencies = ["python-lsp-server"]
-            no-binder = true
 
             [tool.compwa.policy.setup]
             keep-contributing-md = true
@@ -124,7 +123,6 @@ def describe_pyproject_config():
             "type_checker": ["mypy", "pyright"],
             "release_name_template": "{{ ORGANIZATION }}/{{ REPO_NAME }}@{{ TAG_PREFIX }}$NEXT_PATCH_VERSION",
             "tag_prefix": "v",
-            "no_binder": True,
             "excluded_dependencies": ["python-lsp-server"],
             "keep_contributing_md": True,
             "environment_variables": {
@@ -188,7 +186,7 @@ def describe_pyproject_config():
         )
         assert load_settings(branch_coverage=True).branch_coverage is True
 
-    def folds_deprecated_tool_switches_into_disable(
+    def reads_enabled_and_disabled_tools(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         _write_policy(
@@ -196,11 +194,13 @@ def describe_pyproject_config():
             monkeypatch,
             """
             [tool.compwa.policy]
-            disable = ["binder"]
-            no-ruff = true
+            disable = ["ruff"]
+            enable = ["gitpod"]
             """,
         )
-        assert build_arguments().disable == {"binder", "ruff"}
+        args = build_arguments()
+        assert args.disable == {"ruff"}
+        assert args.enable == {"gitpod"}
 
     def rejects_unknown_tool(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
@@ -259,7 +259,7 @@ def describe_pyproject_config():
 def describe_build_policy():
     def groups_into_sub_tables() -> None:
         policy = _build_policy([
-            "--allow-labels",
+            "--disable=labels",
             "--no-branch-coverage",
             "--no-pypi",
             "--pytest-single-threaded",
@@ -269,8 +269,8 @@ def describe_build_policy():
             "--type-checker=ty",
         ])
         assert policy == {
+            "disable": ["labels"],
             "github": {
-                "allow-labels": True,
                 "no-pypi": True,
                 "tag-prefix": "v",
             },
@@ -316,7 +316,7 @@ def describe_build_policy():
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         args = [
-            "--allow-labels",
+            "--disable=labels",
             "--no-pypi",
             "--repo-name=policy",
             "--type-checker=ty",
@@ -325,7 +325,7 @@ def describe_build_policy():
         _write_policy(tmp_path, monkeypatch, _render(policy))
         settings = load_settings()
         assert settings.repo_name == "policy"
-        assert settings.allow_labels is True
+        assert settings.disable == ["labels"]
         assert settings.no_pypi is True
         assert settings.type_checker == ["ty"]
 

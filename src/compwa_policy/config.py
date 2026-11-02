@@ -9,12 +9,26 @@ DEFAULT_DEV_PYTHON_VERSION: PythonVersion = "3.14"
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers supported by the policy framework."""
 
-Tool = Literal["binder", "ruff"]
-"""Tools that a repository can exclude from policy through the ``disable`` setting.
+Tool = Literal[
+    "binder",
+    "cspell",
+    "docstrfmt",
+    "editorconfig",
+    "github-actions",
+    "gitpod",
+    "labels",
+    "nbstripout",
+    "prettier",
+    "pyupgrade",
+    "ruff",
+]
+"""Tools that a repository can switch on or off through ``enable`` and ``disable``.
 
-A check opts in by passing its tool name to
+A check declares the tool it manages by passing its name to
 `~compwa_policy.utilities.check_hook.check_hook`.
 """
+OPT_IN_TOOLS: frozenset[Tool] = frozenset({"gitpod"})
+"""Tools that policy only manages when they are listed under ``enable``."""
 
 TypeChecker = Literal["mypy", "pyright", "ty"]
 """Type checkers supported by the policy framework."""

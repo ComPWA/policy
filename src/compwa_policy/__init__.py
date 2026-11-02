@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Literal
 
 from attrs import field, frozen
 
+from compwa_policy.config import OPT_IN_TOOLS
+
 if TYPE_CHECKING:
     from compwa_policy.config import (
         DependabotEcosystem,
@@ -41,7 +43,6 @@ class Arguments:
     """
 
     allow_deprecated_workflows: bool
-    allow_labels: bool
     allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
     autofix_ci: bool
@@ -52,12 +53,11 @@ class Arguments:
     dev_python_version: PythonVersion
     disable: set[Tool] = field(converter=set)
     doc_apt_packages: str
-    docstrfmt: bool
+    enable: set[Tool] = field(converter=set)
     environment_variables: str
     excluded_dependencies: set[str] = field(converter=set)
     excluded_python_versions: set[PythonVersion]
     github_pages: bool
-    gitpod: bool
     imports_on_top: bool
     keep_contributing_md: bool
     keep_issue_templates: bool
@@ -66,8 +66,6 @@ class Arguments:
     macos_python_version: PythonVersion | None
     macos_runner: MacosRunnerLabel | None
     no_cd: bool
-    no_cspell_update: bool
-    no_github_actions: bool
     no_milestones: bool
     no_pypi: bool
     no_version_branches: bool
@@ -85,6 +83,12 @@ class Arguments:
     type_checker: set[TypeChecker]
     ubuntu_runner: UbuntuRunnerLabel | None
     upgrade_frequency: UpgradeFrequency
+
+    def manages(self, tool: Tool) -> bool:
+        """Whether policy installs and configures *tool*; ``disable`` wins over ``enable``."""
+        if tool in self.disable:
+            return False
+        return tool in self.enable or tool not in OPT_IN_TOOLS
 
 
 def _get_environment_variables(arg: str) -> dict[str, str]:

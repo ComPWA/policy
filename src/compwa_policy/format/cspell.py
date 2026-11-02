@@ -48,8 +48,9 @@ with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
         CONFIG_PATH.vscode_extensions,
         "cspell.json",
     ],
+    tool="cspell",
 )
-def check(session: Session, args: Arguments, _: CheckContext) -> None:
+def check(session: Session, _args: Arguments, _: CheckContext) -> None:
     precommit = session.precommit
     rename_file(session, "cspell.json", str(CONFIG_PATH.cspell))
     _update_cspell_repo_url(precommit)
@@ -60,8 +61,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         _remove_configuration(session)
     else:
         _update_precommit_repo(precommit)
-        if not args.no_cspell_update:
-            session.changelog += _update_config_content()
+        session.changelog += _update_config_content()
         session.changelog += _sort_config_entries()
         add_badge(
             session,

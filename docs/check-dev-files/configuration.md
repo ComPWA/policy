@@ -18,7 +18,7 @@ The table mirrors the {doc}`subcommand tree <../check-dev-files>`. Shared option
     :header-titles:
 ```
 
-Policy installs and configures a set of tools by default. To keep it from managing one of them, list it under `disable` in the top-level table, for example `disable = ["binder", "ruff"]`, or pass `--disable` on the command line. The deprecated `no-ruff` and `no-binder` options are still accepted and are folded into this list, and `policy migrate` rewrites the matching `--no-ruff` and `--no-binder` hook arguments.
+Policy installs and configures a set of tools by default. To keep it from managing one of them, list it under `disable` in the top-level table, for example `disable = ["binder", "ruff"]`, or pass `--disable` on the command line. Some tools, such as Gitpod, are off by default; list them under `enable` to have policy manage them, for example `enable = ["gitpod"]`. Both lists take the same tool names, and `disable` wins when a tool appears in both.
 
 The `env` subcommand maps to the {cfg}`.setup` table. Environment variables can be added as key-value pairs under {cfg}`.setup.env`.
 

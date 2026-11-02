@@ -39,7 +39,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, TypeVar
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator
 from pydantic.json_schema import SkipJsonSchema  # ruff: ignore[typing-only-third-party-import]
 from pydantic_settings import (
     BaseSettings,
@@ -90,14 +90,12 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "python": frozenset({
         "allow_vscode_coverage_gutters",
         "branch_coverage",
-        "docstrfmt",
         "excluded_python_versions",
         "imports_on_top",
         "type_checker",
     }),
     "github": frozenset({
         "allow_deprecated_workflows",
-        "allow_labels",
         "autofix_ci",
         "ci_skipped_tests",
         "dependabot_assignees",
@@ -108,7 +106,6 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "macos_python_version",
         "macos_runner",
         "no_cd",
-        "no_github_actions",
         "no_milestones",
         "no_pypi",
         "no_version_branches",
@@ -122,19 +119,11 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "excluded_dependencies",
     }),
     "format": frozenset({
-        "no_cspell_update",
         "tombi_errors_on_warnings",
         "toml_formatter",
     }),
-    "repo": frozenset({"gitpod", "keep_issue_templates"}),
+    "repo": frozenset({"keep_issue_templates"}),
     "setup": frozenset({"keep_contributing_md"}),
-}
-
-
-#: Former boolean options, now expressed as an entry in the ``disable`` list.
-DEPRECATED_TOOL_SWITCHES: dict[str, Tool] = {
-    "no_binder": "binder",
-    "no_ruff": "ruff",
 }
 
 
@@ -253,27 +242,23 @@ class Settings(BaseSettings):
     excluded_dependencies: SortedArray[str] = []
     """Notebook dependencies that policy must not install."""
     disable: SortedArray[Tool] = []
-    """Tools that policy must not install or configure."""
+    """Tools that policy must not install or configure; takes precedence over ``enable``."""
+    enable: SortedArray[Tool] = []
+    """Tools that policy should install and configure, even if they are off by default."""
     imports_on_top: bool = False
     """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
     """Enable branch coverage in the Coverage.py pytest configuration."""
-    docstrfmt: bool = True
-    """Format docstrings with docstrfmt."""
     type_checker: SortedArray[TypeChecker] = []
     """Type checkers used by the project."""
     pytest_single_threaded: bool = False
     """Run pytest without the parallel ``-n`` argument."""
     allow_vscode_coverage_gutters: bool = False
     """Keep and recommend the VS Code Coverage Gutters extension."""
-    allow_labels: bool = False
-    """Do not enforce the shared ``labels.toml`` configuration."""
     allow_deprecated_workflows: bool = False
     """Allow deprecated continuous-integration workflows."""
     autofix_ci: bool = False
     """Let the autofix.ci GitHub App commit style fixes and lock upgrades to PRs."""
-    no_github_actions: bool = False
-    """Do not add the standard ComPWA GitHub Actions workflows."""
     github_pages: bool = False
     """Publish the documentation through GitHub Pages."""
     keep_pr_linting: bool = False
@@ -312,14 +297,10 @@ class Settings(BaseSettings):
     """Frequency of the workflow that upgrades lock and constraint files."""
     allowed_cell_metadata: str = ""
     """Metadata keys allowed in Jupyter notebook cells."""
-    no_cspell_update: bool = False
-    """Do not enforce the shared cSpell configuration."""
     tombi_errors_on_warnings: bool = True
     """Make the Tombi lint hook fail when it emits warnings."""
     toml_formatter: TomlFormatter = "tombi"
     """TOML formatter configured for the repository."""
-    gitpod: bool = False
-    """Create and maintain a Gitpod configuration file."""
     keep_contributing_md: bool = False
     """Do not update or remove ``CONTRIBUTING.md``."""
     keep_issue_templates: bool = False
@@ -342,27 +323,6 @@ class Settings(BaseSettings):
         """
         del settings_cls, env_settings, dotenv_settings, file_secret_settings
         return (init_settings,)
-
-    @model_validator(mode="before")
-    @classmethod
-    def _convert_deprecated_tool_switches(cls, data: Any) -> Any:
-        """Fold the deprecated ``no-<tool>`` switches into ``disable``.
-
-        >>> Settings(no_ruff=True, disable=["binder"]).disable
-        ['binder', 'ruff']
-        >>> Settings(no_binder=False).disable
-        []
-        """
-        if not isinstance(data, Mapping):
-            return data
-        data = dict(data)
-        disabled = _as_list(data.get("disable", []))
-        for key, tool in DEPRECATED_TOOL_SWITCHES.items():
-            if data.pop(key, False) and tool not in disabled:
-                disabled.append(tool)
-        if disabled:
-            data["disable"] = sorted(disabled)
-        return data
 
     @field_validator("environment_variables", mode="before")
     @classmethod
@@ -397,6 +357,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "disable",
+        "enable",
         "excluded_dependencies",
         "type_checker",
         "keep_workflow",

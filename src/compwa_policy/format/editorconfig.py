@@ -23,7 +23,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.session import Session
 
 
-@check_hook(group="format", paths=[CONFIG_PATH.editorconfig, CONFIG_PATH.precommit])
+@check_hook(
+    group="format",
+    paths=[CONFIG_PATH.editorconfig, CONFIG_PATH.precommit],
+    tool="editorconfig",
+)
 def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     if CONFIG_PATH.editorconfig.exists():
         _update_precommit_config(session.precommit)

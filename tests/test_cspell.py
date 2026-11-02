@@ -151,7 +151,7 @@ def describe_check():
         )
         precommit = ModifiablePrecommit.load(config)
         with Session.load(precommit) as session:
-            run_check(check, session, no_cspell_update=True)
+            run_check(check, session)
             changes = session.collect_changes()
         assert changes or precommit.changelog  # something changed
         result = json.loads((tmp_path / ".cspell.json").read_text())
@@ -165,7 +165,7 @@ def describe_check():
         config = _write_precommit(tmp_path, "repos: []\n")
         precommit = ModifiablePrecommit.load(config)
         with Session.load(precommit) as session:
-            run_check(check, session, no_cspell_update=False)
+            run_check(check, session)
             changes = session.collect_changes()
         assert any("no longer required" in m for m in changes)
         assert not (tmp_path / ".cspell.json").exists()

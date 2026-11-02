@@ -38,8 +38,6 @@ def describe_migrate():
             tmp_path,
             [
                 "--no-cd",
-                "--no-github-actions",
-                "--no-cspell-update",
                 "--environment-variables=A=1,B=2",
             ],
         )

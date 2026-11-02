@@ -75,7 +75,7 @@ def describe_main() -> None:
     ) -> None:
         expected = _create_hook(CHECK_DEV_FILES_PATTERN)
         local = _create_hook(r"^wrong\.toml$")
-        local["args"] = ["--no-github-actions"]
+        local["args"] = ["--no-pypi"]
         precommit, _ = _write_configuration(
             tmp_path,
             local,
@@ -90,7 +90,7 @@ def describe_main() -> None:
             **expected,
             "entry": "uv run check-dev-files",
             "language": "system",
-            "args": ["--no-github-actions"],
+            "args": ["--no-pypi"],
         }
         assert self_check.main(updated) == 0
         assert (

@@ -5,7 +5,7 @@ from __future__ import annotations
 from compwa_policy.cli import _checks
 from compwa_policy.cli._options import (
     DevPythonVersion,
-    Gitpod,
+    Enable,
     KeepIssueTemplates,
     PackageManager,
     Python,
@@ -17,7 +17,7 @@ def repo(
     python: Python = None,
     package_manager: PackageManager = None,
     dev_python_version: DevPythonVersion = None,
-    gitpod: Gitpod = None,
+    enable: Enable = None,
     keep_issue_templates: KeepIssueTemplates = None,
 ) -> None:
     """Standardize miscellaneous repo files: citation, commitlint, VS Code, GitPod, Poe, Read the Docs."""
@@ -25,7 +25,7 @@ def repo(
         python=python,
         package_manager=package_manager,
         dev_python_version=dev_python_version,
-        gitpod=gitpod,
+        enable=enable,
         keep_issue_templates=keep_issue_templates,
     )
     _checks.dispatch(args, "repo")
