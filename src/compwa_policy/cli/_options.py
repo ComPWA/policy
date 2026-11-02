@@ -135,6 +135,12 @@ ImportsOnTop = Annotated[
     bool | None,
     typer.Option("--imports-on-top", help="Sort notebook imports on the top."),
 ]
+Docstrfmt = Annotated[
+    bool | None,
+    typer.Option(
+        "--docstrfmt/--no-docstrfmt", help="Format docstrings with docstrfmt."
+    ),
+]
 BranchCoverage = Annotated[
     bool | None,
     typer.Option(

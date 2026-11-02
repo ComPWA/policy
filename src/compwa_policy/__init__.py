@@ -46,6 +46,7 @@ class Arguments:
     dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
     doc_apt_packages: str
+    docstrfmt: bool
     environment_variables: str
     excluded_dependencies: set[str] = field(converter=set)
     excluded_python_versions: set[PythonVersion]

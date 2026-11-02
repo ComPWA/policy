@@ -1,4 +1,4 @@
-"""``policy python`` — checks for pyproject, Ruff, Black, mypy, pyright, ty, pytest, pyupgrade."""
+"""``policy python`` — checks for pyproject, Ruff, Black, docstrfmt, mypy, pyright, ty, pytest, pyupgrade."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from compwa_policy.cli._options import (
     AllowVscodeCoverageGutters,
     BranchCoverage,
     DevPythonVersion,
+    Docstrfmt,
     ExcludedPythonVersions,
     ImportsOnTop,
     NoRuff,
@@ -25,10 +26,11 @@ def python(  # ruff: ignore[too-many-positional-arguments]
     no_ruff: NoRuff = None,
     imports_on_top: ImportsOnTop = None,
     branch_coverage: BranchCoverage = None,
+    docstrfmt: Docstrfmt = None,
     pytest_single_threaded: PytestSingleThreaded = None,
     allow_vscode_coverage_gutters: AllowVscodeCoverageGutters = None,
 ) -> None:
-    """Standardize Python tooling: pyproject, Ruff, Black, mypy, pyright, ty, pytest, pyupgrade."""
+    """Standardize Python tooling: pyproject, Ruff, Black, docstrfmt, mypy, pyright, ty, pytest, pyupgrade."""
     args = build_arguments(
         python=python,
         dev_python_version=dev_python_version,
@@ -37,6 +39,7 @@ def python(  # ruff: ignore[too-many-positional-arguments]
         no_ruff=no_ruff,
         imports_on_top=imports_on_top,
         branch_coverage=branch_coverage,
+        docstrfmt=docstrfmt,
         pytest_single_threaded=pytest_single_threaded,
         allow_vscode_coverage_gutters=allow_vscode_coverage_gutters,
     )

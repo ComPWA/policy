@@ -231,6 +231,12 @@
           "title": "Branch Coverage",
           "type": "boolean"
         },
+        "docstrfmt": {
+          "default": true,
+          "description": "Format docstrings with docstrfmt.",
+          "title": "Docstrfmt",
+          "type": "boolean"
+        },
         "excluded-python-versions": {
           "default": [],
           "description": "Python versions that the project does not support.",

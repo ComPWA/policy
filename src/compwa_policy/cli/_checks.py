@@ -28,6 +28,7 @@ from compwa_policy.github import (
 from compwa_policy.nb import binder, jupyter, nbstripout
 from compwa_policy.python import (
     black,
+    docstrfmt,
     mypy,
     pyproject,
     pyright,
@@ -91,6 +92,7 @@ CHECK_HOOKS = (
     poe.check,
     prettier.check,
     black.check,
+    docstrfmt.check,
     release_drafter.check,
     pyproject.check,
     mypy.check,

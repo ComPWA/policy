@@ -87,6 +87,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "python": frozenset({
         "allow_vscode_coverage_gutters",
         "branch_coverage",
+        "docstrfmt",
         "excluded_python_versions",
         "imports_on_top",
         "type_checker",
@@ -231,6 +232,8 @@ class Settings(BaseSettings):
     """Move notebook imports to the top of the notebook."""
     branch_coverage: bool = True
     """Enable branch coverage in the Coverage.py pytest configuration."""
+    docstrfmt: bool = True
+    """Format docstrings with docstrfmt."""
     type_checker: SortedArray[TypeChecker] = []
     """Type checkers used by the project."""
     pytest_single_threaded: bool = False
