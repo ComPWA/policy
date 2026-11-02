@@ -188,6 +188,32 @@ def describe_pyproject_config():
         )
         assert load_settings(branch_coverage=True).branch_coverage is True
 
+    def folds_deprecated_tool_switches_into_disable(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _write_policy(
+            tmp_path,
+            monkeypatch,
+            """
+            [tool.compwa.policy]
+            disable = ["binder"]
+            no-ruff = true
+            """,
+        )
+        assert build_arguments().disable == {"binder", "ruff"}
+
+    def rejects_unknown_tool(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        _write_policy(
+            tmp_path,
+            monkeypatch,
+            """
+            [tool.compwa.policy]
+            disable = ["not-a-tool"]
+            """,
+        )
+        with pytest.raises(ValueError, match="disable"):
+            build_arguments()
+
     def rejects_unknown_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _write_policy(
             tmp_path,

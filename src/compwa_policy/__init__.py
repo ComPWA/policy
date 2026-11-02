@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         MacosRunnerLabel,
         PackageManagerChoice,
         PythonVersion,
+        Tool,
         TypeChecker,
         UbuntuRunnerLabel,
         UpgradeFrequency,
@@ -49,6 +50,7 @@ class Arguments:
     dependabot_assignees: list[str]
     dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
+    disable: set[Tool] = field(converter=set)
     doc_apt_packages: str
     docstrfmt: bool
     environment_variables: str
@@ -63,13 +65,11 @@ class Arguments:
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
     macos_runner: MacosRunnerLabel | None
-    no_binder: bool
     no_cd: bool
     no_cspell_update: bool
     no_github_actions: bool
     no_milestones: bool
     no_pypi: bool
-    no_ruff: bool
     no_version_branches: bool
     package_manager: PackageManagerChoice
     pytest_single_threaded: bool

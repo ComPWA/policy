@@ -27,7 +27,8 @@ if TYPE_CHECKING:
     group="nb",
     paths=[CONFIG_PATH.pixi_toml, CONFIG_PATH.pyproject],
     directories=(CONFIG_PATH.binder,),
-    enabled=lambda args, ctx: ctx.has_notebooks and (not args.no_binder),
+    enabled=lambda _args, ctx: ctx.has_notebooks,
+    tool="binder",
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     session.changelog += _update_apt_txt(ctx.doc_apt_packages)

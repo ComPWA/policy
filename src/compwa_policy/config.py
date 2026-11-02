@@ -9,6 +9,13 @@ DEFAULT_DEV_PYTHON_VERSION: PythonVersion = "3.14"
 PackageManagerChoice = Literal["none", "uv", "conda", "pixi+uv", "pixi", "venv"]
 """Package managers supported by the policy framework."""
 
+Tool = Literal["binder", "ruff"]
+"""Tools that a repository can exclude from policy through the ``disable`` setting.
+
+A check opts in by passing its tool name to
+`~compwa_policy.utilities.check_hook.check_hook`.
+"""
+
 TypeChecker = Literal["mypy", "pyright", "ty"]
 """Type checkers supported by the policy framework."""
 

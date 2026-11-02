@@ -57,7 +57,8 @@ if TYPE_CHECKING:
         "docs/.pydocstyle",
         "tests/.pydocstyle",
     ],
-    enabled=lambda args, ctx: ctx.is_python_repo and (not args.no_ruff),
+    enabled=lambda _args, ctx: ctx.is_python_repo,
+    tool="ruff",
 )
 def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     has_notebooks = ctx.has_notebooks
