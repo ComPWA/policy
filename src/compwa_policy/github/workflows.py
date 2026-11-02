@@ -274,10 +274,6 @@ def __update_pytest_section(
             with_section["coverage-python-version"] = DoubleQuotedScalarString(
                 __get_coverage_python_version()
             )
-            secrets = {
-                "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}",
-            }
-            config["jobs"]["test"]["secrets"] = secrets
         if macos_python_version is not None:
             with_section["macos-python-version"] = DoubleQuotedScalarString(
                 macos_python_version
