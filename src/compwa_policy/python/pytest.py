@@ -229,7 +229,7 @@ _COV_FAIL_UNDER = re.compile(
 )
 
 
-def _remove_cov_fail_under(command: str) -> String:
+def _remove_cov_fail_under(command: String) -> String:
     r'''Remove ``--cov-fail-under`` from the TOML source of a task command.
 
     Editing the source rather than the parsed value keeps the quoting and the line
@@ -242,8 +242,7 @@ def _remove_cov_fail_under(command: str) -> String:
       --cov=src
     """
     '''
-    item = command if isinstance(command, String) else tomlkit.string(command)
-    source = _COV_FAIL_UNDER.sub("", item.as_string())
+    source = _COV_FAIL_UNDER.sub("", command.as_string())
     source = re.sub(r"(?m)^[ \t]*\\\n", "", source)
     return tomlkit.parse(f"x = {source}")["x"]
 
@@ -311,7 +310,7 @@ def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
 
 def _coverage_task_commands(
     config: MutableMapping,
-) -> Iterator[tuple[MutableMapping, str, str]]:
+) -> Iterator[tuple[MutableMapping, str, String]]:
     for tasks in _coverage_task_tables(config):
         task = tasks["cov"]
         container = tasks
@@ -320,7 +319,7 @@ def _coverage_task_commands(
             container = task
             key = "cmd" if "cmd" in task else "shell"
             task = task.get(key)
-        if isinstance(task, str):
+        if isinstance(task, String):
             yield container, key, task
 
 
