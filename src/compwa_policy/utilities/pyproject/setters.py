@@ -110,7 +110,7 @@ def _sort_taplo(items: Iterable[str]) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
 
-def create_sub_table(config: Mapping[str, Any], dotted_header: str) -> Table:
+def create_sub_table(config: Mapping[str, Any], /, dotted_header: str) -> Table:
     """Create a TOML sub-table through a dotted header key."""
     current_table = cast("Any", config)
     header_hierarchy = dotted_header.split(".")
@@ -123,7 +123,7 @@ def create_sub_table(config: Mapping[str, Any], dotted_header: str) -> Table:
 
 
 def get_sub_table(
-    config: Mapping[str, Any], dotted_header: str
+    config: Mapping[str, Any], /, dotted_header: str
 ) -> MutableMapping[str, Any]:
     create_sub_table(config, dotted_header)
     table = get_immutable_sub_table(config, dotted_header)

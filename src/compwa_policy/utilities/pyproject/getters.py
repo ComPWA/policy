@@ -158,7 +158,9 @@ def __sort_version(version: str) -> tuple[int, ...]:
     return tuple(int(i) for i in version.split("."))
 
 
-def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str, Any]:
+def get_sub_table(
+    config: Mapping[str, Any], /, dotted_header: str
+) -> Mapping[str, Any]:
     """Get a TOML sub-table through a dotted header key."""
     current_table = config
     for header in dotted_header.split("."):
@@ -169,7 +171,7 @@ def get_sub_table(config: Mapping[str, Any], dotted_header: str) -> Mapping[str,
     return current_table
 
 
-def has_sub_table(config: Mapping[str, Any], dotted_header: str) -> bool:
+def has_sub_table(config: Mapping[str, Any], /, dotted_header: str) -> bool:
     current_table: Any = config
     for header in dotted_header.split("."):
         if header in current_table:
