@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Any
 
 import tomli
@@ -15,7 +17,7 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject, has_dependenc
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, MutableMapping
+    from collections.abc import Iterable, Iterator
 
     from tomlkit.items import Array
 
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
     paths=[
         CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
+        CONFIG_PATH.pixi_toml,
         CONFIG_PATH.pytest_ini,
         CONFIG_PATH.vscode_settings,
     ],
@@ -42,6 +45,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _merge_pytest_into_pyproject(config)
     _deny_ini_options(config)
     _update_codecov_settings(config, args.branch_coverage)
+    _migrate_coverage_threshold(session)
     _update_settings(config)
     _update_vscode_settings(
         session, args.allow_vscode_coverage_gutters, args.pytest_single_threaded
@@ -167,6 +171,72 @@ def _update_codecov_settings(
     if updated:
         msg = "Updated pytest coverage settings"
         pyproject.changelog.append(msg)
+
+
+def _migrate_coverage_threshold(session: Session) -> None:
+    pyproject = session.pyproject
+    if pyproject is None or not has_dependency(pyproject, ("coverage", "pytest-cov")):
+        return
+    roots = [
+        pyproject.get_table(f"tool.{tool}", fallback={}) for tool in ("poe", "pixi")
+    ]
+    if CONFIG_PATH.pixi_toml.exists():
+        roots.append({
+            key: session.pixi.get_table(key, fallback={})
+            for key in ("tasks", "feature", "target")
+        })
+    pattern = re.compile(r"(?<!\S)--cov-fail-under(?:=|\s+)(\d+(?:\.\d+)?)(?=\s|$)")
+    replacements = []
+    thresholds: set[float] = set()
+    for root in roots:
+        for container, key, task in _coverage_task_commands(root):
+            matches = list(pattern.finditer(task))
+            if not matches:
+                continue
+            thresholds.add(float(matches[-1][1]))
+            command = pattern.sub("", task)
+            command = re.sub(r"(?m)^[ \t]*\\\n", "", command)
+            replacements.append((container, key, command))
+    if not thresholds:
+        return
+    if len(thresholds) > 1:
+        msg = "Coverage tasks have conflicting --cov-fail-under values; migrate them manually"
+        raise PolicyError(msg)
+    threshold = thresholds.pop()
+    report = pyproject.get_table("tool.coverage.report", create=True)
+    report["fail_under"] = int(threshold) if threshold % 1 == 0 else threshold
+    for container, key, command in replacements:
+        container[key] = command
+    message = "Migrated --cov-fail-under to tool.coverage.report.fail_under"
+    pyproject.changelog.append(message)
+    if CONFIG_PATH.pixi_toml.exists():
+        session.pixi.changelog.append(message)
+
+
+def _coverage_task_tables(config: MutableMapping) -> Iterator[MutableMapping]:
+    for key, value in config.items():
+        if not isinstance(value, MutableMapping):
+            continue
+        if key == "tasks":
+            if "cov" in value:
+                yield value
+        else:
+            yield from _coverage_task_tables(value)
+
+
+def _coverage_task_commands(
+    config: MutableMapping,
+) -> Iterator[tuple[MutableMapping, str, str]]:
+    for tasks in _coverage_task_tables(config):
+        task = tasks["cov"]
+        container = tasks
+        key = "cov"
+        if isinstance(task, MutableMapping):
+            container = task
+            key = "cmd" if "cmd" in task else "shell"
+            task = task.get(key)
+        if isinstance(task, str):
+            yield container, key, task
 
 
 def __update_settings(config: MutableMapping, **expected: Any) -> bool:
