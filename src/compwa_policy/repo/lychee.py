@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -50,6 +51,41 @@ NOTEBOOK_REMAP = "^(.+)/n$ $1"
 Lychee scans notebooks as plain text, so a URL at the end of a line in the JSON source
 is followed by an escaped newline sequence, which lychee normalizes to ``/n``.
 """
+
+
+def uses_lychee(session: Session) -> bool:
+    """Detect lychee configuration or a Poe/Pixi linkcheck task in this session."""
+    if any(Path(name).exists() for name in ("lychee.toml", ".lychee.toml")):
+        return True
+    pyproject = session.pyproject
+    if pyproject is not None and pyproject.has_table("tool.lychee"):
+        return True
+    task_configs = []
+    if pyproject is not None:
+        task_configs.extend([
+            pyproject.get_table("tool.poe", fallback={}),
+            pyproject.get_table("tool.pixi", fallback={}),
+        ])
+    if CONFIG_PATH.pixi_toml.exists():
+        task_configs.append({
+            "tasks": session.pixi.get_table("tasks", fallback={}),
+            "feature": session.pixi.get_table("feature", fallback={}),
+        })
+    for config in task_configs:
+        tables = [
+            config.get("tasks", {}),
+            *(group.get("tasks", {}) for group in config.get("groups", {}).values()),
+            *(
+                feature.get("tasks", {})
+                for feature in config.get("feature", {}).values()
+            ),
+        ]
+        if any(
+            re.search(r"\blychee\b", str(table.get("linkcheck", "")))
+            for table in tables
+        ):
+            return True
+    return False
 
 
 def configure_lychee(

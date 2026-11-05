@@ -37,6 +37,7 @@ repos:
             \.github/.*|
             \.gitignore|
             \.gitpod\.yml|
+            \.lychee\.toml|
             \.markdownlint\.json|
             \.markdownlint\.yaml|
             \.pre\-commit\-config\.yaml|
@@ -60,6 +61,7 @@ repos:
             docs/conf\.py|
             environment\.yml|
             labels\.toml|
+            lychee\.toml|
             pixi\.lock|
             pixi\.toml|
             pyproject\.toml|

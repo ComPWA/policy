@@ -26,6 +26,8 @@ jobs:
       id-token: write
     with:
       gh-pages: true
+  linkcheck:
+    uses: ComPWA/actions/.github/workflows/ci-linkcheck.yml@37d2cdae974a8c53abad06e18009f14565009ef6
   style:
     secrets:
       token: ${{ secrets.PAT }}
