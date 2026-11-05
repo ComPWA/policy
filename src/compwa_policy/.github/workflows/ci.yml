@@ -23,15 +23,15 @@ on:
 
 jobs:
   doc:
-    uses: ComPWA/actions/.github/workflows/ci-docs.yml@a024afbb9e182bea4924a73fc60ae59462849ebb # v4.2.0
+    uses: ComPWA/actions/.github/workflows/ci-docs.yml@847c8b2dea7471eea5ebe9918f71d7441aa58ca0
     permissions:
       pages: write
       id-token: write
   linkcheck:
-    uses: ComPWA/actions/.github/workflows/ci-linkcheck.yml@37d2cdae974a8c53abad06e18009f14565009ef6
+    uses: ComPWA/actions/.github/workflows/ci-linkcheck.yml@847c8b2dea7471eea5ebe9918f71d7441aa58ca0
   style:
     secrets:
       token: ${{ secrets.PAT }}
-    uses: ComPWA/actions/.github/workflows/style.yml@a024afbb9e182bea4924a73fc60ae59462849ebb # v4.2.0
+    uses: ComPWA/actions/.github/workflows/style.yml@847c8b2dea7471eea5ebe9918f71d7441aa58ca0
   test:
-    uses: ComPWA/actions/.github/workflows/test.yml@a024afbb9e182bea4924a73fc60ae59462849ebb # v4.2.0
+    uses: ComPWA/actions/.github/workflows/test.yml@847c8b2dea7471eea5ebe9918f71d7441aa58ca0

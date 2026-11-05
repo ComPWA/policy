@@ -1,4 +1,5 @@
 import io
+import json
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -104,7 +105,7 @@ def describe_check():
         assert "linkcheck" in jobs
         assert "doc" not in jobs
 
-    def skips_lychee_for_sphinx_linkcheck(workflows_repo: Path, run_check):
+    def calls_sphinx_linkcheck_workflow(workflows_repo: Path, run_check):
         path = workflows_repo / "pyproject.toml"
         path.write_text(
             path.read_text()
@@ -116,8 +117,32 @@ def describe_check():
         _run_main(run_check)
         yaml = create_prettier_round_trip_yaml()
         jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
-        assert "linkcheck" not in jobs
+        assert "/linkcheck.yml@" in jobs["linkcheck"]["uses"]
         assert "doc" in jobs
+
+    def writes_repository_facts_as_inputs(workflows_repo: Path, run_check, git_add):
+        path = workflows_repo / "pyproject.toml"
+        path.write_text(path.read_text() + '[tool.pixi.tasks]\ntest = "pytest"\n')
+        (workflows_repo / "docs" / "nb.ipynb").write_text("{}")
+        (workflows_repo / _WORKFLOW_DIR).mkdir(parents=True)
+        (workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml").touch()
+        git_add(workflows_repo)
+        precommit = "ci:\n  skip: [ty, uv-lock]\nrepos: []\n"
+        _run_main(run_check, precommit_content=precommit, macos_python_version="3.11")
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert jobs["doc"]["with"]["task-runner"] == "pixi"
+        assert dict(jobs["style"]["with"]) == {
+            "autofix-ci": True,
+            "hooks": "ty uv-lock",
+            "notebooks": True,
+            "python-version": "3.13",
+        }
+        assert jobs["test"]["with"]["task-runner"] == "pixi"
+        matrix = json.loads(jobs["test"]["with"]["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-24.04"]
+        assert matrix["python-version"][0] == "3.10"
+        assert matrix["include"] == [{"python-version": "3.11", "runs-on": "macos-15"}]
 
     @pytest.mark.parametrize(
         ("filename", "content"),
@@ -265,23 +290,26 @@ def describe_check():
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-24.04",
+            ubuntu_runner="ubuntu-26.04",
         )
         yaml = create_prettier_round_trip_yaml()
         ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
         cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
         test_inputs = ci["jobs"]["test"]["with"]
-        assert test_inputs["ubuntu-runner"] == "ubuntu-24.04"
+        matrix = json.loads(test_inputs["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-26.04"]
         if macos_python_version == "disable":
-            assert "macos-runner" not in test_inputs
+            assert "include" not in matrix
         else:
-            assert test_inputs["macos-runner"] == "macos-26"
-        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
+            assert matrix["include"] == [
+                {"python-version": "3.12", "runs-on": "macos-26"}
+            ]
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
         assert not _run_main(
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-24.04",
+            ubuntu_runner="ubuntu-26.04",
         )
 
     def keeps_default_runner_images(workflows_repo: Path, run_check):
@@ -290,8 +318,9 @@ def describe_check():
         ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
         cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
         test_inputs = ci["jobs"]["test"]["with"]
-        assert "macos-runner" not in test_inputs
-        assert "ubuntu-runner" not in test_inputs
+        matrix = json.loads(test_inputs["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-24.04"]
+        assert matrix["include"] == [{"python-version": "3.12", "runs-on": "macos-15"}]
         assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
 
     def skips_cd_workflow(workflows_repo: Path, run_check):
@@ -492,7 +521,7 @@ def describe_action_pins():
         (workflows_repo / "codecov.yml").touch()
         _run_main(run_check)
         ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
-        assert 'coverage-python-version: "3.14"' in ci_path.read_text()
+        assert '"codecov": "codecov"' in ci_path.read_text()
         pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
         ci_path.write_text(pinned)
         assert not _run_main(run_check)

@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+import tomli
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, LiteralScalarString
 
 from compwa_policy import _to_list
 from compwa_policy.characterization import has_documentation, has_notebooks
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
+from compwa_policy.errors import PolicyError
 from compwa_policy.repo.lychee import uses_lychee
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
@@ -28,6 +33,11 @@ if TYPE_CHECKING:
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import Precommit
     from compwa_policy.utilities.session import Changelog, Session
+
+
+_DEFAULT_TASK_RUNNER = "poe"
+_MACOS_RUNNER = "macos-15"
+_UBUNTU_RUNNER = "ubuntu-24.04"
 
 
 @check_hook(
@@ -173,8 +183,12 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             autofix_ci=autofix_ci,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
-        if not uses_lychee(session):
-            del expected_data["jobs"]["linkcheck"]
+        __update_linkcheck_section(
+            expected_data,
+            uses_lychee(session),
+            doc_apt_packages,
+            python_version,
+        )
         if not workflow_path.exists():
             if not expected_data.get("jobs"):
                 return []
@@ -238,6 +252,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     __update_pytest_section(
         config,
         macos_python_version,
+        python_version,
         single_threaded,
         skip_tests,
         macos_runner=macos_runner,
@@ -273,6 +288,9 @@ def __update_doc_section(
             with_section["apt-packages"] = " ".join(apt_packages)
         if not CONFIG_PATH.readthedocs.exists() or github_pages:
             with_section["gh-pages"] = True
+        task_runner = __get_task_runner()
+        if task_runner != _DEFAULT_TASK_RUNNER:
+            with_section["task-runner"] = task_runner
         if with_section:
             config["jobs"]["doc"]["with"] = with_section
         __update_with_section(config, job_name="doc")
@@ -287,14 +305,24 @@ def __update_style_section(
     *,
     autofix_ci: bool,
 ) -> None:
-    if autofix_ci:
-        del config["jobs"]["style"]["secrets"]
-    if python_version != DEFAULT_DEV_PYTHON_VERSION:
-        config["jobs"]["style"]["with"] = {
-            "python-version": DoubleQuotedScalarString(python_version)
-        }
     if __is_remove_style_job(precommit):
         del config["jobs"]["style"]
+        return
+    if autofix_ci:
+        config["jobs"]["style"].pop("secrets", None)
+    with_section: dict[str, Any] = {}
+    if autofix_ci or (CONFIG_PATH.github_workflow_dir / "autofix.ci.yml").exists():
+        with_section["autofix-ci"] = True
+    precommit_ci = precommit.document.get("ci")
+    if precommit_ci is not None:
+        hooks = precommit_ci.get("skip", [])
+        with_section["hooks"] = DoubleQuotedScalarString(" ".join(hooks))
+    if has_notebooks():
+        with_section["notebooks"] = True
+    if python_version != DEFAULT_DEV_PYTHON_VERSION:
+        with_section["python-version"] = DoubleQuotedScalarString(python_version)
+    if with_section:
+        config["jobs"]["style"]["with"] = with_section
 
 
 def _update_autofix_workflow(
@@ -338,6 +366,7 @@ def __is_remove_style_job(precommit: Precommit) -> bool:
 def __update_pytest_section(
     config: CommentedMap,
     macos_python_version: PythonVersion | None,
+    python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
     *,
@@ -348,21 +377,26 @@ def __update_pytest_section(
     if not os.path.exists(test_dir):
         del config["jobs"]["test"]
     else:
-        with_section = {}
+        coverage_python_version = None
         if CONFIG_PATH.codecov.exists():
-            with_section["coverage-python-version"] = DoubleQuotedScalarString(
-                __get_coverage_python_version()
-            )
-        if macos_python_version is not None:
-            with_section["macos-python-version"] = DoubleQuotedScalarString(
-                macos_python_version
-            )
-            if macos_runner:
-                with_section["macos-runner"] = macos_runner
-        if ubuntu_runner:
-            with_section["ubuntu-runner"] = ubuntu_runner
-        if skip_tests:
-            with_section["skipped-python-versions"] = " ".join(skip_tests)
+            coverage_python_version = __get_coverage_python_version()
+        matrix = _create_test_matrix(
+            __get_supported_python_versions(python_version),
+            coverage_python_version,
+            macos_python_version,
+            skip_tests,
+            macos_runner=macos_runner,
+            ubuntu_runner=ubuntu_runner,
+        )
+        if not matrix:
+            del config["jobs"]["test"]
+            return
+        with_section: dict[str, Any] = {
+            "matrix": LiteralScalarString(json.dumps(matrix, indent=2) + "\n")
+        }
+        task_runner = __get_task_runner()
+        if task_runner not in {_DEFAULT_TASK_RUNNER, "none"}:
+            with_section["task-runner"] = task_runner
         if single_threaded:
             with_section["multithreaded"] = False
         output_path = f"{test_dir}/output/"
@@ -371,6 +405,145 @@ def __update_pytest_section(
         if with_section:
             config["jobs"]["test"]["with"] = with_section
         __update_with_section(config, job_name="test")
+
+
+def __update_linkcheck_section(
+    config: dict,
+    has_lychee: bool,
+    apt_packages: list[str],
+    python_version: PythonVersion,
+) -> None:
+    """Call the workflow that fits the link checker of the repository, if any."""
+    if has_lychee:
+        return
+    if not __runs_sphinx_linkcheck():
+        del config["jobs"]["linkcheck"]
+        return
+    job = config["jobs"]["linkcheck"]
+    job["uses"] = job["uses"].replace("ci-linkcheck.yml", "linkcheck.yml")
+    with_section: dict[str, Any] = {}
+    if apt_packages:
+        with_section["apt-packages"] = " ".join(apt_packages)
+    if python_version != DEFAULT_DEV_PYTHON_VERSION:
+        with_section["python-version"] = DoubleQuotedScalarString(python_version)
+    task_runner = __get_task_runner()
+    if task_runner != _DEFAULT_TASK_RUNNER:
+        with_section["task-runner"] = task_runner
+    if with_section:
+        job["with"] = with_section
+
+
+def __runs_sphinx_linkcheck() -> bool:
+    tool = __load_toml(CONFIG_PATH.pyproject).get("tool", {})
+    poe = tool.get("poe", {})
+    pixi = tool.get("pixi", {}) or __load_toml(CONFIG_PATH.pixi_toml)
+    task_tables = [
+        poe.get("tasks", {}),
+        *(group.get("tasks", {}) for group in poe.get("groups", {}).values()),
+        pixi.get("tasks", {}),
+        *(feature.get("tasks", {}) for feature in pixi.get("feature", {}).values()),
+    ]
+    tasks = [table["linkcheck"] for table in task_tables if "linkcheck" in table]
+    return any("sphinx" in str(task) for task in tasks)
+
+
+def __get_task_runner() -> str:
+    tool = __load_toml(CONFIG_PATH.pyproject).get("tool", {})
+    if tool.get("poe", {}).get("tasks"):
+        return "poe"
+    if tool.get("pixi", {}).get("tasks"):
+        return "pixi"
+    if __load_toml(CONFIG_PATH.pixi_toml).get("tasks"):
+        return "pixi"
+    return "none"
+
+
+def __load_toml(path: Path | str) -> dict[str, Any]:
+    if not os.path.exists(path):
+        return {}
+    with open(path, "rb") as stream:
+        return tomli.load(stream)
+
+
+def __get_supported_python_versions(fallback: PythonVersion) -> list[str]:
+    project = __load_toml(CONFIG_PATH.pyproject).get("project", {})
+    prefix = "Programming Language :: Python :: "
+    versions = [
+        classifier.removeprefix(prefix)
+        for classifier in project.get("classifiers", [])
+        if classifier.startswith(f"{prefix}3.")
+    ]
+    if versions:
+        return versions
+    requires_python = project.get("requires-python")
+    if requires_python is None:
+        return [fallback]
+    return _get_allowed_python_versions(requires_python)
+
+
+def _get_allowed_python_versions(version_range: str) -> list[str]:
+    """Get the Python versions that a version range specifier allows.
+
+    >>> _get_allowed_python_versions(">=3.9,<3.13")
+    ['3.9', '3.10', '3.11', '3.12']
+    """
+    specifier = SpecifierSet(version_range)
+    versions = [f"3.{minor}" for minor in range(6, 15)]
+    return [version for version in versions if Version(version) in specifier]
+
+
+def _create_test_matrix(
+    supported_versions: list[str],
+    coverage_python_version: str | None,
+    macos_python_version: str | None,
+    skip_tests: list[str],
+    *,
+    macos_runner: MacosRunnerLabel | None = None,
+    ubuntu_runner: UbuntuRunnerLabel | None = None,
+) -> dict[str, Any]:
+    """Create the job matrix of the test workflow.
+
+    >>> _create_test_matrix(["3.11", "3.12", "3.13"], "3.12", "3.11", ["3.13"])
+    ... # doctest: +NORMALIZE_WHITESPACE
+    {'python-version': ['3.11'], 'runs-on': ['ubuntu-24.04'],
+     'include': [{'codecov': 'codecov', 'python-version': '3.12', 'runs-on': 'ubuntu-24.04'},
+                 {'python-version': '3.11', 'runs-on': 'macos-15'}]}
+    >>> _create_test_matrix(["3.11"], None, None, ["all"])
+    {}
+    """
+    for version in filter(None, [coverage_python_version, macos_python_version]):
+        if version not in supported_versions:
+            supported = ", ".join(supported_versions)
+            msg = f"Selected Python {version} for CI, but the package only supports Python {supported}"
+            raise PolicyError(msg)
+    if "all" in skip_tests:
+        versions = []
+    else:
+        excluded = {*skip_tests, coverage_python_version}
+        versions = sorted(
+            (v for v in supported_versions if v not in excluded), key=Version
+        )
+    matrix: dict[str, Any] = {}
+    if versions:
+        matrix = {
+            "python-version": versions,
+            "runs-on": [ubuntu_runner or _UBUNTU_RUNNER],
+        }
+    includes: list[dict[str, str]] = []
+    if coverage_python_version:
+        includes.append({
+            "codecov": "codecov",
+            "python-version": coverage_python_version,
+            "runs-on": ubuntu_runner or _UBUNTU_RUNNER,
+        })
+    if macos_python_version:
+        includes.append({
+            "python-version": macos_python_version,
+            "runs-on": macos_runner or _MACOS_RUNNER,
+        })
+    if includes:
+        matrix["include"] = includes
+    return matrix
 
 
 def __update_with_section(config: dict, job_name: str) -> None:
