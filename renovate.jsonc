@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
-  "assignees": ["redeboer"],
+  "assigneesFromCodeOwners": true,
   "labels": ["⬆️ Lock"],
   "dependencyDashboard": false,
   "enabledManagers": ["github-actions"],
