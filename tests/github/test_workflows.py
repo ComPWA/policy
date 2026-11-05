@@ -93,6 +93,111 @@ def _run_main(
 
 
 def describe_check():
+    def checks_links_without_documentation(workflows_repo: Path, run_check, git_add):
+        (workflows_repo / "docs" / "conf.py").unlink()
+        (workflows_repo / "docs").rmdir()
+        git_add(workflows_repo)
+        (workflows_repo / "lychee.toml").touch()
+        _run_main(run_check)
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert "linkcheck" in jobs
+        assert "doc" not in jobs
+
+    def skips_lychee_for_sphinx_linkcheck(workflows_repo: Path, run_check):
+        path = workflows_repo / "pyproject.toml"
+        path.write_text(
+            path.read_text()
+            + dedent("""\
+            [tool.poe.tasks]
+            linkcheck = "sphinx-build -b linkcheck docs docs/_build"
+            """)
+        )
+        _run_main(run_check)
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert "linkcheck" not in jobs
+        assert "doc" in jobs
+
+    @pytest.mark.parametrize(
+        ("filename", "content"),
+        [
+            ("lychee.toml", ""),
+            (".lychee.toml", ""),
+            ("pyproject.toml", "[tool.lychee]"),
+            (
+                "pyproject.toml",
+                dedent('''\
+                [tool.poe.tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pyproject.toml",
+                dedent("""\
+                    [tool.poe.groups.doc.tasks]
+                    linkcheck = {cmd = "lychee ."}"""),
+            ),
+            (
+                "pyproject.toml",
+                dedent('''\
+                [tool.pixi.tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pixi.toml",
+                dedent('''\
+                [tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pixi.toml",
+                dedent("""\
+                [feature.doc.tasks]
+                linkcheck = {cmd = "lychee ."}"""),
+            ),
+        ],
+        ids=[
+            "config",
+            "hidden-config",
+            "pyproject",
+            "poe",
+            "poe-group",
+            "pixi-pyproject",
+            "pixi",
+            "pixi-feature",
+        ],
+    )
+    def manages_lychee_job(
+        workflows_repo: Path, run_check, filename: str, content: str
+    ):
+        path = workflows_repo / filename
+        original = path.read_text() if path.exists() else ""
+        path.write_text(original + content)
+        _run_main(run_check, python_version="3.12", doc_apt_packages=["graphviz"])
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        yaml = create_prettier_round_trip_yaml()
+        job = yaml.load(ci_path)["jobs"]["linkcheck"]
+        assert set(job) == {"uses"}
+        assert job["uses"].startswith(
+            "ComPWA/actions/.github/workflows/ci-linkcheck.yml@"
+        )
+        pinned = re.sub(
+            r"ci-linkcheck.yml@\S+",
+            "ci-linkcheck.yml@0123456789abcdef",
+            ci_path.read_text(),
+        )
+        ci_path.write_text(pinned)
+        assert not _run_main(
+            run_check, python_version="3.12", doc_apt_packages=["graphviz"]
+        )
+        assert ci_path.read_text() == pinned
+        if filename == "pyproject.toml":
+            path.write_text(original)
+        else:
+            path.unlink()
+        _run_main(run_check)
+        assert "linkcheck" not in yaml.load(ci_path)["jobs"]
+
     @pytest.mark.parametrize("existing", [False, True], ids=["new", "migration"])
     def grants_version_branch_permissions_without_secrets(
         workflows_repo: Path, run_check, existing: bool

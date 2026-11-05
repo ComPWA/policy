@@ -109,6 +109,19 @@ LYCHEE_MINIMUM_VERSION = "0.24.0"
 LYCHEE_REQUIREMENT = f"lychee-bin>={LYCHEE_MINIMUM_VERSION}"
 
 
+def uses_lychee(session: Session) -> bool:
+    """Detect lychee configuration or a Poe/Pixi linkcheck task in this session."""
+    if any(Path(name).exists() for name in ("lychee.toml", ".lychee.toml")):
+        return True
+    configs = [session.pyproject] if session.pyproject is not None else []
+    if CONFIG_PATH.pixi_toml.exists():
+        configs.append(session.pixi)
+    return any(
+        config.has_table("tool.lychee") or _has_lychee_task(config)
+        for config in configs
+    )
+
+
 def configure_lychee(
     config: ModifiablePyproject, /, session: Session | None = None
 ) -> None:

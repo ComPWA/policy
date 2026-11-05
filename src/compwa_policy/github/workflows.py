@@ -13,6 +13,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from compwa_policy import _to_list
 from compwa_policy.characterization import has_documentation, has_notebooks
 from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
+from compwa_policy.repo.lychee import uses_lychee
 from compwa_policy.utilities import COMPWA_POLICY_DIR, CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.pyproject import PythonVersion, has_pyproject_package_name
@@ -35,7 +36,10 @@ if TYPE_CHECKING:
         CONFIG_PATH.codecov,
         CONFIG_PATH.precommit,
         CONFIG_PATH.pyproject,
+        CONFIG_PATH.pixi_toml,
         CONFIG_PATH.readthedocs,
+        "lychee.toml",
+        ".lychee.toml",
         ".python-version",
     ],
     directories=(CONFIG_PATH.github_workflow_dir.parent, CONFIG_PATH.pip_constraints),
@@ -169,6 +173,8 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             autofix_ci=autofix_ci,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
+        if not uses_lychee(session):
+            del expected_data["jobs"]["linkcheck"]
         if not workflow_path.exists():
             if not expected_data.get("jobs"):
                 return []
