@@ -44,8 +44,11 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     rt_yaml = create_prettier_round_trip_yaml()
 
     expected = rt_yaml.load(template_path)
+    lock_group = expected["multi-ecosystem-groups"]["lock"]
+    if args.dependabot_assignees:
+        lock_group.insert(0, "assignees", list(args.dependabot_assignees))
     if frequency is not None:
-        expected["multi-ecosystem-groups"]["lock"]["schedule"]["interval"] = frequency
+        lock_group["schedule"]["interval"] = frequency
     template_ecosystem = cast("dict[str, Any]", expected["updates"][0])
     ecosystems = args.dependabot_ecosystems
     if ecosystems is None:
