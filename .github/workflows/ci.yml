@@ -20,7 +20,7 @@ on:
 
 jobs:
   doc:
-    uses: ComPWA/actions/.github/workflows/ci-docs.yml@826112415aa683bb2d73df87e84444a047f8cad7 # v4.1.8
+    uses: ComPWA/actions/.github/workflows/ci-docs.yml@37d2cdae974a8c53abad06e18009f14565009ef6
     permissions:
       pages: write
       id-token: write
