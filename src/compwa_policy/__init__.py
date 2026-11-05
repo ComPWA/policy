@@ -43,6 +43,7 @@ class Arguments:
     allowed_cell_metadata: str
     branch_coverage: bool
     ci_skipped_tests: str
+    dependabot_assignees: list[str]
     dependabot_ecosystems: set[DependabotEcosystem] | None
     dev_python_version: PythonVersion
     doc_apt_packages: str

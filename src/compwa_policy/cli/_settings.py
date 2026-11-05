@@ -96,6 +96,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "allow_deprecated_workflows",
         "allow_labels",
         "ci_skipped_tests",
+        "dependabot_assignees",
         "dependabot_ecosystems",
         "github_pages",
         "keep_pr_linting",
@@ -270,6 +271,8 @@ class Settings(BaseSettings):
     """APT packages required to build the documentation."""
     keep_workflow: SortedArray[str] = []
     """GitHub Actions workflow files that policy must not update or remove."""
+    dependabot_assignees: SortedArray[str] = []
+    """GitHub users assigned to Dependabot lock upgrade PRs; none by default, so that review requests follow CODEOWNERS."""
     dependabot_ecosystems: SortedArray[DependabotEcosystem] | SkipJsonSchema[None] = (
         Field(default=None, json_schema_extra=_omit_default)
     )

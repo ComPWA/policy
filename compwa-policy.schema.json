@@ -77,6 +77,16 @@
           "title": "Ci Skipped Tests",
           "type": "string"
         },
+        "dependabot-assignees": {
+          "default": [],
+          "description": "GitHub users assigned to Dependabot lock upgrade PRs; none by default, so that review requests follow CODEOWNERS.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependabot Assignees",
+          "type": "array",
+          "x-tombi-array-values-order": "ascending"
+        },
         "dependabot-ecosystems": {
           "description": "Package ecosystems that Dependabot updates; derived from the repository files if unset.",
           "items": {
