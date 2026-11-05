@@ -20,14 +20,14 @@ on:
 
 jobs:
   doc:
-    uses: ComPWA/actions/.github/workflows/ci-docs.yml@55ce5b11cd46b5de9b78168399eaa289b8ba37d5
+    uses: ComPWA/actions/.github/workflows/ci-docs.yml@b24e7f576962d043cf710692c57b1e78f2e15b61
     permissions:
       pages: write
       id-token: write
     with:
       gh-pages: true
   linkcheck:
-    uses: ComPWA/actions/.github/workflows/ci-linkcheck.yml@55ce5b11cd46b5de9b78168399eaa289b8ba37d5
+    uses: ComPWA/actions/.github/workflows/ci-linkcheck.yml@b24e7f576962d043cf710692c57b1e78f2e15b61
   style:
     secrets:
       token: ${{ secrets.PAT }}
