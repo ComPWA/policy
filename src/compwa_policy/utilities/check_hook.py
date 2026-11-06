@@ -5,13 +5,16 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, Self
+from typing import TYPE_CHECKING, Literal, Self, TypeAlias
 
 from attrs import frozen
 
 from compwa_policy import Arguments
-from compwa_policy.utilities.collections import ExplicitCollection  # ruff: ignore[typing-only-first-party-import] Sphinx resolves signatures at runtime
 from compwa_policy.utilities.session import Session
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.collections import ExplicitCollection
+
 
 Group = Literal["python", "github", "env", "nb", "format", "repo"]
 
@@ -86,7 +89,8 @@ def _always_enabled(_args: Arguments, _ctx: CheckContext) -> bool:
     return True
 
 
-Check = Callable[[Session, Arguments, CheckContext], None]
+Check: TypeAlias = Callable[[Session, Arguments, CheckContext], None]
+"""A policy transformation that shares a session, arguments, and check context."""
 
 
 @frozen
