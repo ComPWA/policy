@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import abc
-from collections.abc import Collection, Sized
+from collections.abc import Sized
 from functools import cache
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -22,7 +22,9 @@ V = TypeVar("V")
 T = TypeVar("T", dict, list, Any)
 
 
-RemovedKeys = Collection[str] | dict[str, "RemovedKeys"]
+RemovedKeys = (
+    list[str] | tuple[str, ...] | set[str] | frozenset[str] | dict[str, "RemovedKeys"]
+)
 """Type for keys to be removed from a (nested) dictionary."""
 
 

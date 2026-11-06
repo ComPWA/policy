@@ -10,8 +10,6 @@ from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
     from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -130,7 +128,9 @@ def __get_existing_lines() -> list[str]:
         return f.read().split("\n")
 
 
-def __write_lines(lines: Iterable[str]) -> None:
+def __write_lines(
+    lines: list[str] | tuple[str, ...] | set[str] | frozenset[str],
+) -> None:
     content = "\n".join(sorted(set(lines) - {""})) + "\n"
     with open(CONFIG_PATH.prettier_ignore, "w") as f:
         f.write(content)

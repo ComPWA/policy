@@ -17,7 +17,7 @@ from compwa_policy.utilities.precommit.struct import Hook, Repo
 from compwa_policy.utilities.readme import add_badge, remove_badge
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable
     from pathlib import Path
 
     from compwa_policy import Arguments
@@ -195,7 +195,7 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
     raise NotImplementedError(msg)
 
 
-def __express_list_of_sections(sections: Sequence[str]) -> str:
+def __express_list_of_sections(sections: list[str] | tuple[str, ...]) -> str:
     """Convert list of sections into natural language.
 
     >>> __express_list_of_sections(["one"])

@@ -4,12 +4,8 @@ from __future__ import annotations
 
 import subprocess  # ruff: ignore[suspicious-subprocess-import]
 from functools import cache
-from typing import TYPE_CHECKING
 
 from pathspec import PathSpec
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 
 def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list[str]:
@@ -58,7 +54,9 @@ def matches_files(pattern: str, files: list[str]) -> bool:
     return any(spec.match_file(file) for file in files)
 
 
-def matches_patterns(filename: str, patterns: Iterable[str]) -> bool:
+def matches_patterns(
+    filename: str, patterns: list[str] | tuple[str, ...] | set[str] | frozenset[str]
+) -> bool:
     """Use git wild-match patterns to match a filename.
 
     >>> matches_patterns(".cspell.json", patterns=["**/*.json"])

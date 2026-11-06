@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, Self
 
@@ -31,8 +31,11 @@ class FileSet:
     def create(
         cls,
         *paths: Path | str,
-        directories: Iterable[Path | str] = (),
-        patterns: Iterable[str] = (),
+        directories: list[Path | str]
+        | tuple[Path | str, ...]
+        | set[Path | str]
+        | frozenset[Path | str] = (),
+        patterns: list[str] | tuple[str, ...] | set[str] | frozenset[str] = (),
     ) -> Self:
         return cls(
             paths=tuple(Path(path) for path in paths),
@@ -110,9 +113,15 @@ class CheckHook:
 def check_hook(
     *,
     group: Group,
-    paths: Iterable[Path | str] = (),
-    directories: Iterable[Path | str] = (),
-    patterns: Iterable[str] = (),
+    paths: list[Path | str]
+    | tuple[Path | str, ...]
+    | set[Path | str]
+    | frozenset[Path | str] = (),
+    directories: list[Path | str]
+    | tuple[Path | str, ...]
+    | set[Path | str]
+    | frozenset[Path | str] = (),
+    patterns: list[str] | tuple[str, ...] | set[str] | frozenset[str] = (),
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled,
 ) -> Callable[[Check], CheckHook]:
     """Attach dispatch and trigger metadata to a ``check`` function."""
