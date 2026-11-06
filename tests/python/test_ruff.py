@@ -35,11 +35,8 @@ _PRECOMMIT_TO_CLEAN = dedent("""
 
 
 def describe_precommit_hook():
-    @pytest.mark.parametrize("has_notebooks", [False, True])
-    @pytest.mark.parametrize("revision", ["v0.15.0", "v0.16.0", "v0.17.3", "a" * 40])
-    def formats_markdown_and_preserves_lint_inputs(
-        tmp_path: Path, has_notebooks: bool, revision: str
-    ):
+    @pytest.mark.parametrize("revision", ["v0.15.0", "v0.17.3", "a" * 40])
+    def removes_file_type_overrides(tmp_path: Path, revision: str):
         path = tmp_path / ".pre-commit-config.yaml"
         path.write_text(
             dedent(f"""\
@@ -48,24 +45,21 @@ def describe_precommit_hook():
                 rev: {revision}
                 hooks:
                   - id: ruff-check
+                    types_or: [python, pyi, jupyter]
                   - id: ruff-format
+                    types_or: [python, pyi, jupyter]
             """)
         )
         with ModifiablePrecommit.load(path) as precommit:
-            _update_precommit_hook(precommit, has_notebooks)
+            _update_precommit_hook(precommit)
         repo = ModifiablePrecommit.load(path).document["repos"][0]
         lint, formatter = repo["hooks"]
-        expected_types = ["python", "pyi"]
-        if has_notebooks:
-            expected_types.append("jupyter")
-            assert lint["types_or"] == expected_types
-        else:
-            assert "types_or" not in lint
-        assert formatter["types_or"] == [*expected_types, "markdown"]
-        assert repo["rev"] == ("v0.16.0" if revision == "v0.15.0" else revision)
+        assert "types_or" not in lint
+        assert "types_or" not in formatter
+        assert repo["rev"] == revision
         first_result = path.read_text()
         with ModifiablePrecommit.load(path) as precommit:
-            _update_precommit_hook(precommit, has_notebooks)
+            _update_precommit_hook(precommit)
             assert not precommit.changelog
         assert path.read_text() == first_result
 
