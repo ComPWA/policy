@@ -231,8 +231,8 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         self,
         requirement: str,
         /,
-        group: str | Sequence[str] | None = None,
         extra: str | Sequence[str] | None = None,
+        group: str | Sequence[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
         updated = add_dependency(self._document, requirement, group, extra)
