@@ -134,6 +134,7 @@ format-python-code-blocks = false
 
 [tool.lychee]
 cache = true
+cache_exclude_status = "400.."
 exclude = [
     "%7B\\w+%7D",  # These links are only complete when the code runs
     "^https://(?:github|gitpod|img|stackoverflow)/$",  # Escaped dots in regex patterns
@@ -142,15 +143,13 @@ exclude = [
 ]
 exclude_path = ["tests"]  # Test fixtures contain dummy URLs
 extensions = ["json", "md", "py", "toml", "yaml", "yml"]
+hidden = true
 include_fragments = "anchor-only"
 include_verbatim = true
-max_cache_age = "2d"
-max_retries = 3
+max_cache_age = "7d"
 remap = [
     '^git\+(https://[^@]+)(@.*)?$ $1',  # Check the repository behind pip-style VCS requirements
 ]
-retry_wait_time = 5
-timeout = 30
 
 [tool.poe.executor]
 isolated = true

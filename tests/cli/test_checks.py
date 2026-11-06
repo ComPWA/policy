@@ -50,6 +50,7 @@ _EXPECTED_CHECK_HOOKS = (
     ("direnv", "env"),
     ("toml", "format"),
     ("poe", "repo"),
+    ("lychee", "repo"),
     ("prettier", "format"),
     ("black", "python"),
     ("docstrfmt", "python"),
