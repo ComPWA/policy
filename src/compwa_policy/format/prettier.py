@@ -129,9 +129,7 @@ def __get_existing_lines() -> list[str]:
         return f.read().split("\n")
 
 
-def __write_lines(
-    lines: ExplicitCollection[str],
-) -> None:
+def __write_lines(lines: ExplicitCollection[str]) -> None:
     content = "\n".join(sorted(set(lines) - {""})) + "\n"
     with open(CONFIG_PATH.prettier_ignore, "w") as f:
         f.write(content)

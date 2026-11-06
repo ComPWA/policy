@@ -545,8 +545,7 @@ def ___get_per_file_ignores(
 
 
 def ___ban_rules(
-    rules: ExplicitCollection[str],
-    banned_rules: ExplicitCollection[str],
+    rules: ExplicitCollection[str], banned_rules: ExplicitCollection[str]
 ) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
@@ -561,9 +560,7 @@ def ___ban_rules(
     return {rule for rule in rules if not any(rule.startswith(r) for r in banned_set)}
 
 
-def ___merge_rules(
-    *rule_sets: ExplicitCollection[str],
-) -> set[str]:
+def ___merge_rules(*rule_sets: ExplicitCollection[str]) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
     >>> sorted(___merge_rules(["C90", "B018"], ["D10", "C"]))

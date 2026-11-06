@@ -107,9 +107,7 @@ def _add_to_optional_dependencies(
     raise NotImplementedError(msg)
 
 
-def _sort_taplo(
-    items: ExplicitCollection[str],
-) -> list[str]:
+def _sort_taplo(items: ExplicitCollection[str]) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
 
