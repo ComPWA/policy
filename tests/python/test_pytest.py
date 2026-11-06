@@ -248,6 +248,7 @@ def describe_check():
             name = "my-package"
 
             [dependency-groups]
+            dev = []
             test = ["pytest"]
 
             [tool.pytest]
@@ -261,7 +262,12 @@ def describe_check():
                 allow_vscode_coverage_gutters=True,
                 pytest_single_threaded=False,
             )
-        assert "pytest-xdist" in (tmp_path / "pyproject.toml").read_text()
+        result = tomli.loads((tmp_path / "pyproject.toml").read_text())
+        assert result["dependency-groups"] == {
+            "dev": [{"include-group": "test"}],
+            "test": ["pytest", "pytest-xdist"],
+        }
+        assert "optional-dependencies" not in result["project"]
 
     def is_noop_without_pytest(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check

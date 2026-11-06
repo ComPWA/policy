@@ -231,6 +231,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         self,
         requirement: str,
         /,
+        *,
         extra: str | Sequence[str] | None = None,
         group: str | Sequence[str] | None = None,
     ) -> None:
