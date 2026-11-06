@@ -34,7 +34,7 @@ _PRECOMMIT_TO_CLEAN = dedent("""
 """).lstrip()
 
 
-def describe_precommit_hook():
+def describe_update_precommit_hook():
     @pytest.mark.parametrize("revision", ["v0.15.0", "v0.17.3", "a" * 40])
     def removes_file_type_overrides(tmp_path: Path, revision: str):
         path = tmp_path / ".pre-commit-config.yaml"
