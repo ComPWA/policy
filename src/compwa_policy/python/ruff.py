@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
@@ -544,8 +545,8 @@ def ___get_per_file_ignores(
 
 
 def ___ban_rules(
-    rules: list[str] | tuple[str, ...] | set[str] | frozenset[str],
-    banned_rules: list[str] | tuple[str, ...] | set[str] | frozenset[str],
+    rules: ExplicitCollection[str],
+    banned_rules: ExplicitCollection[str],
 ) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
@@ -561,7 +562,7 @@ def ___ban_rules(
 
 
 def ___merge_rules(
-    *rule_sets: list[str] | tuple[str, ...] | set[str] | frozenset[str],
+    *rule_sets: ExplicitCollection[str],
 ) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 

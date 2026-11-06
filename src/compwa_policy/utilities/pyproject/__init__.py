@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, MutableMapping, Sequence
     from types import TracebackType
 
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
     from compwa_policy.utilities.session import Session
 
@@ -245,11 +246,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         self,
         package: str,
         /,
-        ignored_sections: list[str]
-        | tuple[str, ...]
-        | set[str]
-        | frozenset[str]
-        | None = None,
+        ignored_sections: ExplicitCollection[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
         updated = remove_dependency(self._document, package, ignored_sections)

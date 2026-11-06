@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
+    from compwa_policy.utilities.collections import OrderedCollection
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Changelog, Session
 
@@ -195,7 +196,7 @@ def __get_expected_content(config: dict, section: str, *, extend: bool = False) 
     raise NotImplementedError(msg)
 
 
-def __express_list_of_sections(sections: list[str] | tuple[str, ...]) -> str:
+def __express_list_of_sections(sections: OrderedCollection[str]) -> str:
     """Convert list of sections into natural language.
 
     >>> __express_list_of_sections(["one"])

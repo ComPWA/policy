@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
     from tomlkit.items import Table
 
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
@@ -107,7 +108,7 @@ def _add_to_optional_dependencies(
 
 
 def _sort_taplo(
-    items: list[str] | tuple[str, ...] | set[str] | frozenset[str],
+    items: ExplicitCollection[str],
 ) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
@@ -135,11 +136,7 @@ def get_sub_table(
 def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
     pyproject: PyprojectTOML,
     package: str,
-    ignored_sections: list[str]
-    | tuple[str, ...]
-    | set[str]
-    | frozenset[str]
-    | None = None,
+    ignored_sections: ExplicitCollection[str] | None = None,
 ) -> bool:
     project = pyproject.get("project")
     if project is None:

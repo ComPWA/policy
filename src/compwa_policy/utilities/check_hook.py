@@ -10,6 +10,7 @@ from typing import Literal, Self
 from attrs import frozen
 
 from compwa_policy import Arguments
+from compwa_policy.utilities.collections import ExplicitCollection  # ruff: ignore[typing-only-first-party-import] Sphinx resolves signatures at runtime
 from compwa_policy.utilities.session import Session
 
 Group = Literal["python", "github", "env", "nb", "format", "repo"]
@@ -31,11 +32,8 @@ class FileSet:
     def create(
         cls,
         *paths: Path | str,
-        directories: list[Path | str]
-        | tuple[Path | str, ...]
-        | set[Path | str]
-        | frozenset[Path | str] = (),
-        patterns: list[str] | tuple[str, ...] | set[str] | frozenset[str] = (),
+        directories: ExplicitCollection[Path | str] = (),
+        patterns: ExplicitCollection[str] = (),
     ) -> Self:
         return cls(
             paths=tuple(Path(path) for path in paths),
@@ -113,15 +111,9 @@ class CheckHook:
 def check_hook(
     *,
     group: Group,
-    paths: list[Path | str]
-    | tuple[Path | str, ...]
-    | set[Path | str]
-    | frozenset[Path | str] = (),
-    directories: list[Path | str]
-    | tuple[Path | str, ...]
-    | set[Path | str]
-    | frozenset[Path | str] = (),
-    patterns: list[str] | tuple[str, ...] | set[str] | frozenset[str] = (),
+    paths: ExplicitCollection[Path | str] = (),
+    directories: ExplicitCollection[Path | str] = (),
+    patterns: ExplicitCollection[str] = (),
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled,
 ) -> Callable[[Check], CheckHook]:
     """Attach dispatch and trigger metadata to a ``check`` function."""
