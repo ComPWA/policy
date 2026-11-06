@@ -230,19 +230,35 @@ def describe_remove_ty():
 
 
 def describe_check():
+    @pytest.mark.parametrize("group", ["dev", "style", "types", None])
     def configures_everything_when_selected(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         run_check,
+        group: str | None,
     ):
         monkeypatch.chdir(tmp_path)
-        _write_pyproject(tmp_path, '[project]\nname = "x"\n')
+        _write_pyproject(
+            tmp_path,
+            f"""\
+            [project]
+            name = "x"
+
+            [dependency-groups]
+            {group or "dev"} = {'["ty>=0.0.1"]' if group else "[]"}
+            """,
+        )
         precommit_path = _write_precommit(tmp_path, "repos: []\n")
         precommit = ModifiablePrecommit.load(precommit_path)
         with Session.load(precommit) as session:
             run_check(check, session, type_checker={"ty"})
         pyproject_text = (tmp_path / "pyproject.toml").read_text()
         assert "[tool.ty.rules]" in pyproject_text
+        with ModifiablePyproject.load(tmp_path / "pyproject.toml") as pyproject:
+            groups = pyproject.get_table("dependency-groups")
+            assert list(groups["dev"]) == ["ty>=0.0.1" if group else "ty"]
+            if group is not None and group != "dev":
+                assert list(groups[group]) == []
         assert "id: ty" in precommit.dumps()
         extensions = json.loads((tmp_path / ".vscode" / "extensions.json").read_text())
         assert "astral-sh.ty" in extensions["recommendations"]

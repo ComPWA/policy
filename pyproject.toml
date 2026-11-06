@@ -60,6 +60,7 @@ policy = "compwa_policy.cli:get_click_command"
 dev = [
     "labels",
     "ruff",
+    "ty",
     { include-group = "doc" },
     { include-group = "style" },
     { include-group = "test" },
@@ -75,7 +76,6 @@ doc = [
     "sphinxcontrib-typer",
 ]
 style = [
-    "ty",
     { include-group = "types" },
 ]
 test = [

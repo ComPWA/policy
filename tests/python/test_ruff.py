@@ -248,6 +248,41 @@ def describe_update_lint_dependencies():
             assert pyproject.changelog  # something changed
             assert "ruff" in pyproject.dumps()
 
+    @pytest.mark.parametrize(
+        ("section", "group"),
+        [
+            ("dependency-groups", "dev"),
+            ("dependency-groups", "style"),
+            ("dependency-groups", "types"),
+            ("project.optional-dependencies", "style"),
+        ],
+    )
+    def preserves_existing_constraints(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, section: str, group: str
+    ):
+        monkeypatch.chdir(tmp_path)
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent(f"""\
+            [project]
+            name = "my-package"
+
+            [{section}]
+            {group} = ["ruff>=0.1; python_version >= '3.10'"]
+            """)
+        )
+        with Session() as session:
+            _update_lint_dependencies(session)
+        with ModifiablePyproject.load(path) as pyproject:
+            groups = pyproject.get_table("dependency-groups")
+            assert list(groups["dev"]) == ["ruff>=0.1; python_version >= '3.10'"]
+            if section != "dependency-groups" or group != "dev":
+                assert list(pyproject.get_table(section)[group]) == []
+        previous_content = path.read_text()
+        with Session() as session:
+            _update_lint_dependencies(session)
+        assert path.read_text() == previous_content
+
     def pins_python_version_for_legacy_python(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ):

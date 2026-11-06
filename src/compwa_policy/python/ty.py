@@ -9,6 +9,7 @@ from compwa_policy.utilities import CONFIG_PATH, vscode
 from compwa_policy.utilities.check_hook import check_hook
 from compwa_policy.utilities.precommit.getters import find_hook
 from compwa_policy.utilities.precommit.struct import Hook, Repo
+from compwa_policy.utilities.pyproject import has_dependency
 from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
@@ -39,7 +40,9 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         return
     if "ty" in args.type_checker:
         _update_configuration(config)
-        config.add_dependency("ty", group=["style", "dev"])
+        config.move_dependencies_to_group(["ty"], "dev")
+        if not has_dependency(config, "ty"):
+            config.add_dependency("ty", group="dev")
         _update_precommit_config(session)
         add_badge(
             session,
