@@ -136,10 +136,10 @@ format-python-code-blocks = false
 cache = true
 cache_exclude_status = "400.."
 exclude = [
-    "%7B\\w+%7D",  # These links are only complete when the code runs
-    "^https://(?:github|gitpod|img|stackoverflow)/$",  # Escaped dots in regex patterns
-    "^https://gitpod\\.io/#",
-    "^https://stackoverflow\\.com/",  # Rejects requests from link checkers
+    '%7B\w+%7D',  # These links are only complete when the code runs
+    "^https://(?:github|img)/$",  # Escaped dots in regex patterns in the source code
+    '^https[:]//gitpod\.io/#',
+    '^https[:]//stackoverflow\.com/',  # Rejects requests from link checkers
 ]
 exclude_path = ["tests"]  # Test fixtures contain dummy URLs
 extensions = ["json", "md", "py", "toml", "yaml", "yml"]
