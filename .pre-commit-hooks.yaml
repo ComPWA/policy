@@ -41,6 +41,7 @@
       docs/conf\.py|
       environment\.yml|
       labels\.toml|
+      lychee\.toml|
       pixi\.lock|
       pixi\.toml|
       pyproject\.toml|
