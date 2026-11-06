@@ -22,7 +22,7 @@ def _write_pyproject(directory: Path) -> None:
     (directory / "pyproject.toml").write_text('[project]\nname = "my-package"\n')
 
 
-def describe_main():
+def describe_check():
     def creates_environment_for_conda(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
     ):

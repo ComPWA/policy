@@ -110,7 +110,7 @@ def describe_update_precommit_repo():
         assert ("black-jupyter" in result) is has_notebooks
 
 
-def describe_main():
+def describe_check():
     def is_noop_without_pyproject(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
     ):

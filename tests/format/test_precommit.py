@@ -361,7 +361,7 @@ def describe_update_conda_environment():
         assert "PRETTIER_LEGACY_CLI" not in (tmp_path / "environment.yml").read_text()
 
 
-def describe_main():
+def describe_check():
     def reports_standalone_pyproject_changes(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

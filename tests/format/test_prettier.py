@@ -101,7 +101,7 @@ def describe_update_prettier_ignore():
         assert not (tmp_path / ".prettierignore").exists()
 
 
-def describe_main():
+def describe_check():
     def updates_readme_with_prettier_repo(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

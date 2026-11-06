@@ -6,7 +6,7 @@ from compwa_policy.repo.commitlint import check
 from compwa_policy.utilities.session import Session
 
 
-def describe_main():
+def describe_check():
     def is_noop_without_config(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
     ):

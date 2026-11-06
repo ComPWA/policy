@@ -112,7 +112,7 @@ def describe_update_vscode_settings():
         assert "ms-python.mypy-type-checker" in extensions["unwantedRecommendations"]
 
 
-def describe_main():
+def describe_check():
     def activates_mypy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')

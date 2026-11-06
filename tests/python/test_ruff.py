@@ -101,7 +101,7 @@ def ruff_repo(
     return tmp_path
 
 
-def describe_main():
+def describe_check():
     def migrates_config_with_notebooks(ruff_repo: Path, run_check):
         precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
         with Session.load(precommit) as session:

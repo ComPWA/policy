@@ -196,7 +196,7 @@ def describe_update_vscode_settings():
         assert "ryanluker.vscode-coverage-gutters" in extensions["recommendations"]
 
 
-def describe_main():
+def describe_check():
     def writes_coverage_config(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check
     ):

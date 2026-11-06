@@ -424,7 +424,7 @@ def describe_tombi_configuration():
         assert pyproject_path.read_text() == before
 
 
-def describe_main():
+def describe_check():
     def runs_when_triggered(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
