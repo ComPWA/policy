@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 from collections import abc
-from collections.abc import Collection, Sized
+from collections.abc import Sized
 from functools import cache
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 from compwa_policy.utilities import CONFIG_PATH
+from compwa_policy.utilities.collections import ExplicitCollection
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ V = TypeVar("V")
 T = TypeVar("T", dict, list, Any)
 
 
-RemovedKeys = Collection[str] | dict[str, "RemovedKeys"]
+RemovedKeys: TypeAlias = ExplicitCollection[str] | dict[str, "RemovedKeys"]
 """Type for keys to be removed from a (nested) dictionary."""
 
 

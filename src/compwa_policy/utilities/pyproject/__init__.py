@@ -46,9 +46,10 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+    from collections.abc import Mapping, MutableMapping, Sequence
     from types import TracebackType
 
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
     from compwa_policy.utilities.session import Session
 
@@ -242,7 +243,10 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             self._changelog.append(msg)
 
     def remove_dependency(
-        self, package: str, /, ignored_sections: Iterable[str] | None = None
+        self,
+        package: str,
+        /,
+        ignored_sections: ExplicitCollection[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
         updated = remove_dependency(self._document, package, ignored_sections)

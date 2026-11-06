@@ -31,12 +31,13 @@ from compwa_policy.utilities.toml import to_toml_array
 from compwa_policy.utilities.yaml import read_preserved_yaml
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Mapping
 
     from tomlkit.items import Array
 
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.precommit import ModifiablePrecommit
     from compwa_policy.utilities.session import Session
 
@@ -543,7 +544,9 @@ def ___get_per_file_ignores(
     return to_toml_array(sorted(expected_ignores))
 
 
-def ___ban_rules(rules: Iterable[str], banned_rules: Iterable[str]) -> set[str]:
+def ___ban_rules(
+    rules: ExplicitCollection[str], banned_rules: ExplicitCollection[str]
+) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
     >>> result = ___ban_rules(
@@ -557,7 +560,7 @@ def ___ban_rules(rules: Iterable[str], banned_rules: Iterable[str]) -> set[str]:
     return {rule for rule in rules if not any(rule.startswith(r) for r in banned_set)}
 
 
-def ___merge_rules(*rule_sets: Iterable[str]) -> set[str]:
+def ___merge_rules(*rule_sets: ExplicitCollection[str]) -> set[str]:
     """Extend Ruff rules with new rules and filter out redundant ones.
 
     >>> sorted(___merge_rules(["C90", "B018"], ["D10", "C"]))

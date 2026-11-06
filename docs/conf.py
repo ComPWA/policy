@@ -12,15 +12,24 @@ add_module_names = False
 api_github_repo = f"{ORGANIZATION}/{REPO_NAME}"
 api_target_substitutions: dict[str, str | tuple[str, str]] = {
     "Array": "tomlkit.items.Array",
+    "Check": ("obj", "compwa_policy.utilities.check_hook.Check"),
     "Command": "click.Command",
     "config.UpgradeFrequency": ("obj", "compwa_policy.config.UpgradeFrequency"),
     "ConfigParser": "configparser.ConfigParser",
+    "ExplicitCollection": (
+        "obj",
+        "compwa_policy.utilities.collections.ExplicitCollection",
+    ),
     "InlineTable": "tomlkit.items.InlineTable",
     "IO": "typing.IO",
     "Iterable": "typing.Iterable",
     "K": "typing.TypeVar",
     "Mapping": "collections.abc.Mapping",
     "NotRequired": ("obj", "typing.NotRequired"),
+    "OrderedCollection": (
+        "obj",
+        "compwa_policy.utilities.collections.OrderedCollection",
+    ),
     "P.args": ("attr", "typing.ParamSpec.args"),
     "P.kwargs": ("attr", "typing.ParamSpec.kwargs"),
     "P": "typing.ParamSpec",

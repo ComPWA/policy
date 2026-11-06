@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, Self
+from typing import TYPE_CHECKING, Literal, Self, TypeAlias
 
 from attrs import frozen
 
 from compwa_policy import Arguments
 from compwa_policy.utilities.session import Session
+
+if TYPE_CHECKING:
+    from compwa_policy.utilities.collections import ExplicitCollection
+
 
 Group = Literal["python", "github", "env", "nb", "format", "repo"]
 
@@ -31,8 +35,8 @@ class FileSet:
     def create(
         cls,
         *paths: Path | str,
-        directories: Iterable[Path | str] = (),
-        patterns: Iterable[str] = (),
+        directories: ExplicitCollection[Path | str] = (),
+        patterns: ExplicitCollection[str] = (),
     ) -> Self:
         return cls(
             paths=tuple(Path(path) for path in paths),
@@ -85,7 +89,8 @@ def _always_enabled(_args: Arguments, _ctx: CheckContext) -> bool:
     return True
 
 
-Check = Callable[[Session, Arguments, CheckContext], None]
+Check: TypeAlias = Callable[[Session, Arguments, CheckContext], None]
+"""A policy transformation that shares a session, arguments, and check context."""
 
 
 @frozen
@@ -110,9 +115,9 @@ class CheckHook:
 def check_hook(
     *,
     group: Group,
-    paths: Iterable[Path | str] = (),
-    directories: Iterable[Path | str] = (),
-    patterns: Iterable[str] = (),
+    paths: ExplicitCollection[Path | str] = (),
+    directories: ExplicitCollection[Path | str] = (),
+    patterns: ExplicitCollection[str] = (),
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled,
 ) -> Callable[[Check], CheckHook]:
     """Attach dispatch and trigger metadata to a ``check`` function."""

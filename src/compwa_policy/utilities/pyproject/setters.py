@@ -16,10 +16,11 @@ from compwa_policy.utilities.pyproject.getters import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, MutableMapping, Sequence
+    from collections.abc import Mapping, MutableMapping, Sequence
 
     from tomlkit.items import Table
 
+    from compwa_policy.utilities.collections import ExplicitCollection
     from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
@@ -106,7 +107,7 @@ def _add_to_optional_dependencies(
     raise NotImplementedError(msg)
 
 
-def _sort_taplo(items: Iterable[str]) -> list[str]:
+def _sort_taplo(items: ExplicitCollection[str]) -> list[str]:
     return sorted(items, key=lambda s: ('"' in s, s))
 
 
@@ -133,7 +134,7 @@ def get_sub_table(
 def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
     pyproject: PyprojectTOML,
     package: str,
-    ignored_sections: Iterable[str] | None = None,
+    ignored_sections: ExplicitCollection[str] | None = None,
 ) -> bool:
     project = pyproject.get("project")
     if project is None:

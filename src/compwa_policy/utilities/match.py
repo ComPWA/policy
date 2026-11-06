@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from pathspec import PathSpec
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from compwa_policy.utilities.collections import ExplicitCollection
 
 
 def filter_patterns(patterns: list[str], files: list[str] | None = None) -> list[str]:
@@ -58,7 +58,7 @@ def matches_files(pattern: str, files: list[str]) -> bool:
     return any(spec.match_file(file) for file in files)
 
 
-def matches_patterns(filename: str, patterns: Iterable[str]) -> bool:
+def matches_patterns(filename: str, patterns: ExplicitCollection[str]) -> bool:
     """Use git wild-match patterns to match a filename.
 
     >>> matches_patterns(".cspell.json", patterns=["**/*.json"])
