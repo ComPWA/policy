@@ -16,11 +16,14 @@ from compwa_policy.utilities.pyproject.getters import (
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, MutableMapping, Sequence
+    from collections.abc import Mapping, MutableMapping
 
     from tomlkit.items import Table
 
-    from compwa_policy.utilities.collections import ExplicitCollection
+    from compwa_policy.utilities.collections import (
+        ExplicitCollection,
+        OrderedCollection,
+    )
     from compwa_policy.utilities.pyproject._struct import IncludeGroup, PyprojectTOML
 
 
@@ -28,8 +31,9 @@ def add_dependency(
     pyproject: PyprojectTOML,
     /,
     requirement: str,
-    group: str | Sequence[str] | None = None,
-    extra: str | Sequence[str] | None = None,
+    *,
+    extra: str | OrderedCollection[str] | None = None,
+    group: str | OrderedCollection[str] | None = None,
 ) -> bool:
     if extra is None and group is None:
         return _add_direct_dependency(pyproject, requirement)
@@ -51,7 +55,7 @@ def _add_direct_dependency(pyproject: PyprojectTOML, requirement: str) -> bool:
 
 
 def _add_to_dependency_group(
-    pyproject: PyprojectTOML, requirement: str, group: str | Sequence[str]
+    pyproject: PyprojectTOML, requirement: str, group: str | OrderedCollection[str]
 ) -> bool:
     if "dependency-groups" not in pyproject:
         pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
@@ -64,7 +68,7 @@ def _add_to_dependency_group(
         dependency_groups[group] = to_toml_array(dependencies)
         return True
     if isinstance(group, abc.Sequence) and len(group):
-        updated = add_dependency(pyproject, requirement, group[0])
+        updated = add_dependency(pyproject, requirement, group=group[0])
         for previous, current in pairwise(group):
             dependencies = dependency_groups.get(current, [])
             expected: IncludeGroup = {"include-group": previous}
@@ -78,7 +82,7 @@ def _add_to_dependency_group(
 
 
 def _add_to_optional_dependencies(
-    pyproject: PyprojectTOML, requirement: str, extra: str | Sequence[str]
+    pyproject: PyprojectTOML, requirement: str, extra: str | OrderedCollection[str]
 ) -> bool:
     if isinstance(extra, str):
         table_key = "project.optional-dependencies"

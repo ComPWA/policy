@@ -46,10 +46,13 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 if TYPE_CHECKING:
-    from collections.abc import Mapping, MutableMapping, Sequence
+    from collections.abc import Mapping, MutableMapping
     from types import TracebackType
 
-    from compwa_policy.utilities.collections import ExplicitCollection
+    from compwa_policy.utilities.collections import (
+        ExplicitCollection,
+        OrderedCollection,
+    )
     from compwa_policy.utilities.pyproject._struct import PyprojectTOML
     from compwa_policy.utilities.session import Session
 
@@ -232,11 +235,11 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         requirement: str,
         /,
         *,
-        extra: str | Sequence[str] | None = None,
-        group: str | Sequence[str] | None = None,
+        extra: str | OrderedCollection[str] | None = None,
+        group: str | OrderedCollection[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
-        updated = add_dependency(self._document, requirement, group, extra)
+        updated = add_dependency(self._document, requirement, extra=extra, group=group)
         if updated:
             msg = f"Listed {requirement} as a dependency"
             self._changelog.append(msg)
@@ -336,7 +339,7 @@ def has_pyproject_package_name(session: Session, /) -> bool:
 def has_dependency(
     pyproject: Pyproject,
     package: str | tuple[str, ...],
-    group: str | abc.Sequence[str] | None = None,
+    group: str | ExplicitCollection[str] | None = None,
 ) -> bool:
     """Check whether a package is listed as a dependency.
 
