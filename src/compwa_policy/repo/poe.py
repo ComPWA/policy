@@ -232,10 +232,8 @@ def _set_quarto_linkcheck(pyproject: ModifiablePyproject, /) -> None:
     existing = __as_task_table(tasks.get("linkcheck", {}))
     if any(__mentions(existing.get(key), "lychee") for key in ("cmd", "shell")):
         executor = existing.get("executor", {})
-        dependency_group = (
-            executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
-        )
-        require_lychee(pyproject, dependency_group)
+        group = executor.get("group", "doc") if isinstance(executor, Mapping) else "doc"
+        require_lychee(pyproject, group)
         return
     require_lychee(pyproject, "doc")
     tasks["linkcheck"] = {

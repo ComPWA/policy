@@ -84,15 +84,15 @@ def _add_extensions(
     return True
 
 
-def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> None:
+def require_lychee(config: ModifiablePyproject, /, group: str) -> None:
     groups = config.get_table("dependency-groups", fallback={})
     visited: set[str] = set()
 
-    def update(group: str) -> bool:
-        if group in visited:
+    def update(group_name: str) -> bool:
+        if group_name in visited:
             return False
-        visited.add(group)
-        dependencies = groups.get(group, [])
+        visited.add(group_name)
+        dependencies = groups.get(group_name, [])
         found = False
         for index, dependency in enumerate(dependencies):
             if not isinstance(dependency, str):
@@ -116,5 +116,5 @@ def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> Non
             config.changelog.append("Required lychee-bin>=0.24.0")
         return found
 
-    if not update(dependency_group):
-        config.add_dependency("lychee-bin>=0.24.0", group=dependency_group)
+    if not update(group):
+        config.add_dependency("lychee-bin>=0.24.0", group=group)

@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 def add_dependency(
     pyproject: PyprojectTOML,
+    /,
     requirement: str,
     group: str | Sequence[str] | None = None,
     extra: str | Sequence[str] | None = None,
@@ -131,6 +132,7 @@ def get_sub_table(
 
 def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
     pyproject: PyprojectTOML,
+    /,
     package: str,
     ignored_sections: ExplicitCollection[str] | None = None,
 ) -> bool:
@@ -187,8 +189,8 @@ def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
     return updated
 
 
-def split_dependency_definition(definition: str) -> tuple[str, str, str]:
-    """Get the package name, operator, and version from a PyPI dependency definition.
+def split_dependency_definition(requirement: str) -> tuple[str, str, str]:
+    """Get the package name, operator, and version from a PyPI dependency requirement.
 
     >>> split_dependency_definition("julia")
     ('julia', '', '')
@@ -207,9 +209,9 @@ def split_dependency_definition(definition: str) -> tuple[str, str, str]:
     >>> split_dependency_definition("python-lsp-server[rope]")
     ('python-lsp-server[rope]', '', '')
     """
-    matches = re.match(r"^([a-zA-Z0-9_\[\]-]+)([\!<=>~\s]*)([^ ^#]*)", definition)
+    matches = re.match(r"^([a-zA-Z0-9_\[\]-]+)([\!<=>~\s]*)([^ ^#]*)", requirement)
     if not matches:
-        msg = f"Could not extract package name and version from {definition}"
+        msg = f"Could not extract package name and version from {requirement}"
         raise ValueError(msg)
     package, operator, version = matches.groups()
     return package.strip(), operator.strip(), version.strip()
