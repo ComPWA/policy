@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import abc
 from collections.abc import Sized
 from functools import cache
@@ -58,17 +59,86 @@ class ModifiableVscodeSettings(_ModifiableJsonResource):
 
     path = CONFIG_PATH.vscode_settings
 
+    def __init__(self, document: dict, *, exists: bool) -> None:
+        super().__init__(document, exists=exists)
+        self._original_document = document
+
+    @property
+    def changelog(self) -> Changelog:
+        if _consolidate_formatters(self._document) == self._original_document:
+            return []
+        return ["Updated VS Code settings"]
+
+    def dump(self) -> None:
+        if not self.changed:
+            return
+        self.path.parent.mkdir(exist_ok=True)
+        _dump_config(_consolidate_formatters(self._document), self.path)
+
     def remove(self, keys: RemovedKeys) -> None:
-        updated = _remove_keys(self._document, keys)
-        if updated != self._document:
-            self._document = updated
-            self._changelog.append("Updated VS Code settings")
+        self._document = _remove_keys(self._document, keys)
 
     def update(self, new_settings: dict) -> None:
-        updated = _update_dict_recursively(self._document, new_settings)
-        if updated != self._document:
-            self._document = updated
-            self._changelog.append("Updated VS Code settings")
+        self._document = _update_dict_recursively(self._document, new_settings)
+
+
+def _consolidate_formatters(settings: dict) -> dict:
+    """Group equal formatters while preserving conflicting language overrides.
+
+    Only formatter entries move; other settings retain their original selectors.
+    Conflicting overlaps stay intact because single-language overrides take precedence
+    over combined selectors in VS Code.
+    """
+    formatter_key = "editor.defaultFormatter"
+    entries, blocked_languages = _collect_language_formatters(settings)
+    grouped: dict[str, set[str]] = {}
+    result = dict(settings)
+    for selector, (languages, formatter) in entries.items():
+        if blocked_languages.intersection(languages):
+            continue
+        grouped.setdefault(formatter, set()).update(languages)
+        remaining = dict(settings[selector])
+        del remaining[formatter_key]
+        if remaining:
+            result[selector] = remaining
+        else:
+            del result[selector]
+    for formatter, languages in grouped.items():
+        selector = "".join(f"[{language}]" for language in sorted(languages))
+        result[selector] = {**result.get(selector, {}), formatter_key: formatter}
+    return result
+
+
+def _collect_language_formatters(
+    settings: dict,
+) -> tuple[dict[str, tuple[list[str], str]], set[str]]:
+    formatter_key = "editor.defaultFormatter"
+    entries: dict[str, tuple[list[str], str]] = {}
+    language_formatters: dict[str, set[str]] = {}
+    blocked_languages: set[str] = set()
+    for selector, block in settings.items():
+        if not re.fullmatch(r"(?:\[[^\[\]]+\])+", selector):
+            continue
+        languages = re.findall(r"\[([^\[\]]+)\]", selector)
+        if not isinstance(block, dict):
+            blocked_languages.update(languages)
+            continue
+        if formatter_key not in block:
+            continue
+        formatter = block[formatter_key]
+        if not isinstance(formatter, str):
+            blocked_languages.update(languages)
+            continue
+        entries[selector] = languages, formatter
+        for language in languages:
+            language_formatters.setdefault(language, set()).add(formatter)
+
+    blocked_languages.update(
+        language
+        for language, formatters in language_formatters.items()
+        if len(formatters) > 1
+    )
+    return entries, blocked_languages
 
 
 class ModifiableVscodeExtensions(_ModifiableJsonResource):
