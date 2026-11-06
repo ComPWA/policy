@@ -723,7 +723,7 @@ def _update_lint_dependencies(session: Session, /) -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    pyproject.add_dependency(ruff, dependency_group="dev")
+    pyproject.add_dependency(ruff, group="dev")
     pyproject.remove_dependency(ruff, ignored_sections=["dev"])
 
 

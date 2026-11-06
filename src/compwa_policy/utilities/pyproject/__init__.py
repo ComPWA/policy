@@ -229,17 +229,15 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
 
     def add_dependency(
         self,
-        package: str,
+        requirement: str,
         /,
-        dependency_group: str | Sequence[str] | None = None,
-        optional_key: str | Sequence[str] | None = None,
+        group: str | Sequence[str] | None = None,
+        extra: str | Sequence[str] | None = None,
     ) -> None:
         self.__assert_is_in_context()
-        updated = add_dependency(
-            self._document, package, dependency_group, optional_key
-        )
+        updated = add_dependency(self._document, requirement, group, extra)
         if updated:
-            msg = f"Listed {package} as a dependency"
+            msg = f"Listed {requirement} as a dependency"
             self._changelog.append(msg)
 
     def remove_dependency(
@@ -337,25 +335,21 @@ def has_pyproject_package_name(session: Session, /) -> bool:
 def has_dependency(
     pyproject: Pyproject,
     package: str | tuple[str, ...],
-    dependency_group: str | abc.Sequence[str] | None = None,
+    group: str | abc.Sequence[str] | None = None,
 ) -> bool:
     """Check whether a package is listed as a dependency.
 
-    If a ``dependency_group`` is given, the search is limited to that group and the
-    groups it pulls in through ``include-group``.
+    If a ``group`` is given, the search is limited to that group and the groups it pulls
+    in through ``include-group``.
     """
     toml_document: PyprojectTOML = pyproject._document  # ruff: ignore[private-member-access]
     dependency_groups = toml_document.get("dependency-groups", {})
-    if dependency_group is None:
+    if group is None:
         dependencies = set(toml_document.get("project", {}).get("dependencies", []))
-        for group in dependency_groups.values():
-            dependencies |= {x for x in group if isinstance(x, str)}
+        for group_dependencies in dependency_groups.values():
+            dependencies |= {x for x in group_dependencies if isinstance(x, str)}
     else:
-        group_names = (
-            [dependency_group]
-            if isinstance(dependency_group, str)
-            else list(dependency_group)
-        )
+        group_names = [group] if isinstance(group, str) else list(group)
         dependencies = set()
         for group_name in group_names:
             dependencies |= _resolve_dependency_group(dependency_groups, group_name)

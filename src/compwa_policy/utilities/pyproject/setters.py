@@ -26,45 +26,45 @@ if TYPE_CHECKING:
 
 def add_dependency(
     pyproject: PyprojectTOML,
-    package: str,
-    dependency_group: str | Sequence[str] | None = None,
-    optional_key: str | Sequence[str] | None = None,
+    requirement: str,
+    group: str | Sequence[str] | None = None,
+    extra: str | Sequence[str] | None = None,
 ) -> bool:
-    if optional_key is None and dependency_group is None:
-        return _add_direct_dependency(pyproject, package)
-    if dependency_group is not None:
-        return _add_to_dependency_group(pyproject, package, dependency_group)
-    if optional_key is not None:
-        return _add_to_optional_dependencies(pyproject, package, optional_key)
+    if extra is None and group is None:
+        return _add_direct_dependency(pyproject, requirement)
+    if group is not None:
+        return _add_to_dependency_group(pyproject, requirement, group)
+    if extra is not None:
+        return _add_to_optional_dependencies(pyproject, requirement, extra)
     return False
 
 
-def _add_direct_dependency(pyproject: PyprojectTOML, package: str) -> bool:
+def _add_direct_dependency(pyproject: PyprojectTOML, requirement: str) -> bool:
     project = get_sub_table(pyproject, "project")
     existing_dependencies = set(project.get("dependencies", []))
-    if package in existing_dependencies:
+    if requirement in existing_dependencies:
         return False
-    existing_dependencies.add(package)
+    existing_dependencies.add(requirement)
     project["dependencies"] = to_toml_array(_sort_taplo(existing_dependencies))
     return True
 
 
 def _add_to_dependency_group(
-    pyproject: PyprojectTOML, package: str, dependency_group: str | Sequence[str]
+    pyproject: PyprojectTOML, requirement: str, group: str | Sequence[str]
 ) -> bool:
     if "dependency-groups" not in pyproject:
         pyproject["dependency-groups"] = tomlkit.table(is_super_table=False)
     dependency_groups = pyproject["dependency-groups"]
-    if isinstance(dependency_group, str):
-        dependencies = dependency_groups.get(dependency_group, [])
-        if package in dependencies:
+    if isinstance(group, str):
+        dependencies = dependency_groups.get(group, [])
+        if requirement in dependencies:
             return False
-        dependencies.append(package)
-        dependency_groups[dependency_group] = to_toml_array(dependencies)
+        dependencies.append(requirement)
+        dependency_groups[group] = to_toml_array(dependencies)
         return True
-    if isinstance(dependency_group, abc.Sequence) and len(dependency_group):
-        updated = add_dependency(pyproject, package, dependency_group[0])
-        for previous, current in pairwise(dependency_group):
+    if isinstance(group, abc.Sequence) and len(group):
+        updated = add_dependency(pyproject, requirement, group[0])
+        for previous, current in pairwise(group):
             dependencies = dependency_groups.get(current, [])
             expected: IncludeGroup = {"include-group": previous}
             if expected in dependencies:
@@ -72,38 +72,36 @@ def _add_to_dependency_group(
             updated &= True
             dependencies.append(expected)
         return updated
-    msg = f"Unsupported type for dependency group: {type(dependency_group)}"
+    msg = f"Unsupported type for dependency group: {type(group)}"
     raise NotImplementedError(msg)
 
 
 def _add_to_optional_dependencies(
-    pyproject: PyprojectTOML, package: str, optional_key: str | Sequence[str]
+    pyproject: PyprojectTOML, requirement: str, extra: str | Sequence[str]
 ) -> bool:
-    if isinstance(optional_key, str):
+    if isinstance(extra, str):
         table_key = "project.optional-dependencies"
         optional_dependencies = get_sub_table(pyproject, table_key)
-        existing_dependencies = set(optional_dependencies.get(optional_key, []))
-        if package in existing_dependencies:
+        existing_dependencies = set(optional_dependencies.get(extra, []))
+        if requirement in existing_dependencies:
             return False
-        existing_dependencies.add(package)
+        existing_dependencies.add(requirement)
         existing_dependencies = set(existing_dependencies)
-        optional_dependencies[optional_key] = to_toml_array(
-            _sort_taplo(existing_dependencies)
-        )
+        optional_dependencies[extra] = to_toml_array(_sort_taplo(existing_dependencies))
         return True
-    if isinstance(optional_key, abc.Sequence):
-        if len(optional_key) == 0:
+    if isinstance(extra, abc.Sequence):
+        if len(extra) == 0:
             msg = "Need at least one key to define nested optional dependencies"
             raise ValueError(msg)
         this_package = get_package_name(pyproject, raise_on_missing=True)
         updated = False
-        updated &= add_dependency(pyproject, package, optional_key=optional_key[0])
-        for previous, key in pairwise(optional_key):
+        updated &= add_dependency(pyproject, requirement, extra=extra[0])
+        for previous, key in pairwise(extra):
             updated &= add_dependency(
-                pyproject, f"{this_package}[{previous}]", optional_key=key
+                pyproject, f"{this_package}[{previous}]", extra=key
             )
         return updated
-    msg = f"Unsupported type for optional_key: {type(optional_key)}"
+    msg = f"Unsupported type for extra: {type(extra)}"
     raise NotImplementedError(msg)
 
 

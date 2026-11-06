@@ -117,4 +117,4 @@ def require_lychee(config: ModifiablePyproject, /, dependency_group: str) -> Non
         return found
 
     if not update(dependency_group):
-        config.add_dependency("lychee-bin>=0.24.0", dependency_group=dependency_group)
+        config.add_dependency("lychee-bin>=0.24.0", group=dependency_group)

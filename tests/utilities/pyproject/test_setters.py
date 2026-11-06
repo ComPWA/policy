@@ -58,16 +58,16 @@ def describe_add_dependency():
         updated = add_dependency(pyproject, "attrs")
         assert updated is False
 
-        updated = add_dependency(pyproject, "ruff", optional_key="lint")
+        updated = add_dependency(pyproject, "ruff", extra="lint")
         assert updated is False
 
-    def chains_nested_optional_keys():
+    def chains_nested_extras():
         src = dedent("""
             [project]
             name = "my-package"
         """)
         pyproject = load_pyproject_toml(src, modifiable=True)
-        add_dependency(pyproject, "ruff", optional_key=["lint", "style", "dev"])
+        add_dependency(pyproject, "ruff", extra=["lint", "style", "dev"])
         new_content = tomlkit.dumps(pyproject)
         expected = dedent("""
             [project]
@@ -81,7 +81,7 @@ def describe_add_dependency():
         assert new_content == expected
 
         pyproject = load_pyproject_toml(src, modifiable=True)
-        add_dependency(pyproject, "ruff", optional_key=["lint"])
+        add_dependency(pyproject, "ruff", extra=["lint"])
         new_content = tomlkit.dumps(pyproject)
         expected = dedent("""
             [project]
@@ -98,7 +98,7 @@ def describe_add_dependency():
             name = "my-package"
         """)
         pyproject = load_pyproject_toml(src, modifiable=True)
-        add_dependency(pyproject, "ruff", optional_key="lint")
+        add_dependency(pyproject, "ruff", extra="lint")
 
         new_content = tomlkit.dumps(pyproject)
         expected = dedent("""

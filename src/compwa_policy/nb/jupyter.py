@@ -84,4 +84,4 @@ def _update_dev_requirements(
     for package in sorted(excluded_dependencies):
         pyproject.remove_dependency(package)
     for package in sorted(packages):
-        pyproject.add_dependency(package, dependency_group=["jupyter", "dev"])
+        pyproject.add_dependency(package, group=["jupyter", "dev"])
