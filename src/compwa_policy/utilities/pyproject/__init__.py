@@ -244,6 +244,38 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             msg = f"Listed {requirement} as a dependency"
             self._changelog.append(msg)
 
+    def move_dependencies_to_group(
+        self, packages: OrderedCollection[str], group: str
+    ) -> None:
+        """Move existing declarations without dropping constraints or included groups."""
+        self.__assert_is_in_context()
+        for package in packages:
+            project = self._document.get("project", {})
+            sections = [project.get("dependencies", [])]
+            sections.extend(project.get("optional-dependencies", {}).values())
+            sections.extend(self._document.get("dependency-groups", {}).values())
+            definitions = [
+                str(definition)
+                for dependencies in sections
+                for definition in dependencies
+                if isinstance(definition, str)
+                and split_dependency_definition(definition)[0].lower()
+                == package.lower()
+            ]
+            target = self._document.get("dependency-groups", {}).get(group, [])
+            if not definitions or all(
+                section is target or not any(d in definitions for d in section)
+                for section in sections
+            ):
+                continue
+            for dependencies in sections:
+                for definition in list(dependencies):
+                    if definition in definitions:
+                        dependencies.remove(definition)
+            for definition in dict.fromkeys(definitions):
+                self.add_dependency(definition, group=group)
+            self._changelog.append(f"Moved {package} to dependency group {group}")
+
     def remove_dependency(
         self,
         package: str,
@@ -338,6 +370,7 @@ def has_pyproject_package_name(session: Session, /) -> bool:
 
 def has_dependency(
     pyproject: Pyproject,
+    /,
     package: str | tuple[str, ...],
     group: str | ExplicitCollection[str] | None = None,
 ) -> bool:

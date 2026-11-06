@@ -82,8 +82,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         _sort_imports_on_top(precommit, config)
     _update_ruff_config(precommit, config, has_notebooks)
     _update_precommit_hook(precommit)
-    if not has_dependency(config, "ruff"):
-        _update_lint_dependencies(session)
+    _update_lint_dependencies(session)
     _update_vscode_settings(session)
 
 
@@ -527,6 +526,7 @@ def __remove_deprecated_rules(pyproject: ModifiablePyproject) -> None:
 
 def ___get_per_file_ignores(
     pyproject: Pyproject,
+    /,
     key: str,
     expected_ignores: set[str],
     banned_ignores: set[str] | None = None,
@@ -723,8 +723,9 @@ def _update_lint_dependencies(session: Session, /) -> None:
         ruff = 'ruff; python_version >="3.7.0"'
     else:
         ruff = "ruff"
-    pyproject.add_dependency(ruff, group="dev")
-    pyproject.remove_dependency(ruff, ignored_sections=["dev"])
+    pyproject.move_dependencies_to_group(["ruff"], "dev")
+    if not has_dependency(pyproject, "ruff"):
+        pyproject.add_dependency(ruff, group="dev")
 
 
 def _update_vscode_settings(session: Session, /) -> None:

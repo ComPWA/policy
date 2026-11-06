@@ -114,3 +114,76 @@ def describe_edit_and_dump():
             ]
         """)
         assert new_content.strip() == expected.strip()
+
+
+def describe_move_dependencies_to_group():
+    def leaves_missing_packages_unchanged(tmp_path: Path):
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent("""\
+            [project]
+            name = "x"
+            """)
+        )
+        with ModifiablePyproject.load(path) as pyproject:
+            pyproject.move_dependencies_to_group(["ruff", "ty"], "dev")
+            assert not pyproject.changelog
+            assert "dependency-groups" not in pyproject.dumps()
+
+    def moves_packages_from_different_sections(tmp_path: Path):
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent("""\
+            [project]
+            name = "x"
+            dependencies = ["ruff>=0.1", "attrs"]
+
+            [project.optional-dependencies]
+            style = ["ty>=0.2"]
+
+            [dependency-groups]
+            dev = [{ include-group = "style" }]
+            style = []
+            """)
+        )
+        with ModifiablePyproject.load(path) as pyproject:
+            pyproject.move_dependencies_to_group(("ruff", "ty"), "dev")
+        with ModifiablePyproject.load(path) as pyproject:
+            assert list(pyproject.get_table("project")["dependencies"]) == ["attrs"]
+            assert (
+                list(pyproject.get_table("project.optional-dependencies")["style"])
+                == []
+            )
+            assert list(pyproject.get_table("dependency-groups")["dev"]) == [
+                {"include-group": "style"},
+                "ruff>=0.1",
+                "ty>=0.2",
+            ]
+            pyproject.move_dependencies_to_group(["ruff", "ty"], "dev")
+            assert not pyproject.changelog
+
+
+def describe_move_single_dependency_to_group():
+    @pytest.mark.parametrize("tool", ["ruff", "ty"])
+    def moves_tools_to_dev_preserving_constraints(tmp_path: Path, tool: str):
+        path = tmp_path / "pyproject.toml"
+        path.write_text(
+            dedent(f"""\
+            [project]
+            name = "x"
+
+            [dependency-groups]
+            dev = [{{ include-group = "style" }}]
+            style = ["{tool}>=0.1"]
+            types = ["{tool}>=0.1", "types-PyYAML"]
+            """)
+        )
+        with ModifiablePyproject.load(path) as pyproject:
+            pyproject.move_dependencies_to_group([tool], "dev")
+        with ModifiablePyproject.load(path) as pyproject:
+            groups = pyproject.get_table("dependency-groups")
+            assert list(groups["dev"]) == [{"include-group": "style"}, f"{tool}>=0.1"]
+            assert list(groups["style"]) == []
+            assert list(groups["types"]) == ["types-PyYAML"]
+            pyproject.move_dependencies_to_group([tool], "dev")
+            assert not pyproject.changelog
