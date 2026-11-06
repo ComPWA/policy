@@ -10,6 +10,7 @@ from compwa_policy.python.ruff import (
     _ignore_nbqa_temporary_files,
     _move_ruff_lint_config,
     _update_lint_dependencies,
+    _update_precommit_hook,
     check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -31,6 +32,42 @@ _PRECOMMIT_TO_CLEAN = dedent("""
         hooks:
           - id: nbqa-isort
 """).lstrip()
+
+
+def describe_precommit_hook():
+    @pytest.mark.parametrize("has_notebooks", [False, True])
+    @pytest.mark.parametrize("revision", ["v0.15.0", "v0.16.0", "v0.17.3", "a" * 40])
+    def formats_markdown_and_preserves_lint_inputs(
+        tmp_path: Path, has_notebooks: bool, revision: str
+    ):
+        path = tmp_path / ".pre-commit-config.yaml"
+        path.write_text(
+            dedent(f"""\
+            repos:
+              - repo: https://github.com/astral-sh/ruff-pre-commit
+                rev: {revision}
+                hooks:
+                  - id: ruff-check
+                  - id: ruff-format
+            """)
+        )
+        with ModifiablePrecommit.load(path) as precommit:
+            _update_precommit_hook(precommit, has_notebooks)
+        repo = ModifiablePrecommit.load(path).document["repos"][0]
+        lint, formatter = repo["hooks"]
+        expected_types = ["python", "pyi"]
+        if has_notebooks:
+            expected_types.append("jupyter")
+            assert lint["types_or"] == expected_types
+        else:
+            assert "types_or" not in lint
+        assert formatter["types_or"] == [*expected_types, "markdown"]
+        assert repo["rev"] == ("v0.16.0" if revision == "v0.15.0" else revision)
+        first_result = path.read_text()
+        with ModifiablePrecommit.load(path) as precommit:
+            _update_precommit_hook(precommit, has_notebooks)
+            assert not precommit.changelog
+        assert path.read_text() == first_result
 
 
 @pytest.fixture
