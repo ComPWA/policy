@@ -59,7 +59,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     if args.pytest_single_threaded:
         config.remove_dependency("pytest-xdist")
     else:
-        config.add_dependency("pytest-xdist", ["test", "dev"])
+        config.add_dependency("pytest-xdist", group=["test", "dev"])
 
 
 def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:

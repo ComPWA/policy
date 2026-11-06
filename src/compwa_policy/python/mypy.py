@@ -41,7 +41,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     if config is None:
         return
     if activate:
-        config.add_dependency("mypy", dependency_group=["style", "dev"])
+        config.add_dependency("mypy", group=["style", "dev"])
         _merge_mypy_into_pyproject(config)
         _update_precommit_config(session.precommit)
         remove_badge(session, r"http://(www\.)?mypy\-lang\.org/")

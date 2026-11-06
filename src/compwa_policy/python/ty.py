@@ -39,7 +39,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
         return
     if "ty" in args.type_checker:
         _update_configuration(config)
-        config.add_dependency("ty", dependency_group=["style", "dev"])
+        config.add_dependency("ty", group=["style", "dev"])
         _update_precommit_config(session)
         add_badge(
             session,
