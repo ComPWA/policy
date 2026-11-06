@@ -10,7 +10,7 @@ from compwa_policy.utilities.session import Session
 # cspell:ignore nenv
 
 
-def describe_main():
+def describe_check():
     def configures_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         with Session() as session:

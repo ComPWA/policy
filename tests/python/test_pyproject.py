@@ -238,7 +238,7 @@ def describe_update_python_version_classifiers():
             )  # no classifiers and no tests/ dir -> no-op
 
 
-def describe_main():
+def describe_check():
     def runs_all_updates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "pyproject.toml").write_text(

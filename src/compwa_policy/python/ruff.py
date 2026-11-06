@@ -80,7 +80,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     if has_notebooks and imports_on_top:
         _sort_imports_on_top(precommit, config)
     _update_ruff_config(precommit, config, has_notebooks)
-    _update_precommit_hook(precommit, has_notebooks)
+    _update_precommit_hook(precommit)
     if not has_dependency(config, "ruff"):
         _update_lint_dependencies(session)
     _update_vscode_settings(session)
@@ -659,14 +659,10 @@ def ___remove_nbqa_settings(pyproject: ModifiablePyproject) -> None:
         pyproject.changelog.append(msg)
 
 
-def _update_precommit_hook(precommit: ModifiablePrecommit, has_notebooks: bool) -> None:
+def _update_precommit_hook(precommit: ModifiablePrecommit) -> None:
     yaml = YAML(typ="rt")
     lint_hook = Hook(id="ruff-check", args=yaml.load("[--fix]"))
     format_hook = Hook(id="ruff-format")
-    if has_notebooks:
-        types_str = "[python, pyi, jupyter]"
-        lint_hook["types_or"] = yaml.load(types_str)  # use twice to avoid YAML anchor
-        format_hook["types_or"] = yaml.load(types_str)
     expected_repo = Repo(
         repo="https://github.com/astral-sh/ruff-pre-commit",
         rev="",

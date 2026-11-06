@@ -178,7 +178,7 @@ def describe_add_json_schema_precommit():
         assert "Check CITATION.cff" in result  # new hook appended
 
 
-def describe_main():
+def describe_check():
     def processes_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_check):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "CITATION.cff").write_text(_VALID_CITATION)

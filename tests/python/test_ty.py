@@ -229,7 +229,7 @@ def describe_remove_ty():
         assert "id: ty" not in precommit.dumps()
 
 
-def describe_main():
+def describe_check():
     def configures_everything_when_selected(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

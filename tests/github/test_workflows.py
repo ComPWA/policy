@@ -85,7 +85,7 @@ def _run_main(
         return session.collect_changes()
 
 
-def describe_main():
+def describe_check():
     @pytest.mark.parametrize("existing", [False, True], ids=["new", "migration"])
     def grants_version_branch_permissions_without_secrets(
         workflows_repo: Path, run_check, existing: bool

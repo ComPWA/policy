@@ -204,7 +204,7 @@ def describe_remove_pyright():
         assert "id: pyright" not in precommit.dumps()
 
 
-def describe_main():
+def describe_check():
     def configures_everything_when_active(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

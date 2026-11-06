@@ -85,7 +85,7 @@ def poe_repo(
     return tmp_path
 
 
-def describe_main():
+def describe_check():
     def configures_groups_and_tasks(poe_repo: Path, run_check):
         with Session.load() as session:
             run_check(check, session, has_notebooks=True, package_manager="uv")

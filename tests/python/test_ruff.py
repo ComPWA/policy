@@ -10,6 +10,7 @@ from compwa_policy.python.ruff import (
     _ignore_nbqa_temporary_files,
     _move_ruff_lint_config,
     _update_lint_dependencies,
+    _update_precommit_hook,
     check,
 )
 from compwa_policy.utilities.precommit import ModifiablePrecommit
@@ -31,6 +32,36 @@ _PRECOMMIT_TO_CLEAN = dedent("""
         hooks:
           - id: nbqa-isort
 """).lstrip()
+
+
+def describe_update_precommit_hook():
+    @pytest.mark.parametrize("revision", ["v0.15.0", "v0.17.3", "a" * 40])
+    def removes_file_type_overrides(tmp_path: Path, revision: str):
+        path = tmp_path / ".pre-commit-config.yaml"
+        path.write_text(
+            dedent(f"""\
+            repos:
+              - repo: https://github.com/astral-sh/ruff-pre-commit
+                rev: {revision}
+                hooks:
+                  - id: ruff-check
+                    types_or: [python, pyi, jupyter]
+                  - id: ruff-format
+                    types_or: [python, pyi, jupyter]
+            """)
+        )
+        with ModifiablePrecommit.load(path) as precommit:
+            _update_precommit_hook(precommit)
+        repo = ModifiablePrecommit.load(path).document["repos"][0]
+        lint, formatter = repo["hooks"]
+        assert "types_or" not in lint
+        assert "types_or" not in formatter
+        assert repo["rev"] == revision
+        first_result = path.read_text()
+        with ModifiablePrecommit.load(path) as precommit:
+            _update_precommit_hook(precommit)
+            assert not precommit.changelog
+        assert path.read_text() == first_result
 
 
 @pytest.fixture
@@ -70,7 +101,7 @@ def ruff_repo(
     return tmp_path
 
 
-def describe_main():
+def describe_check():
     def migrates_config_with_notebooks(ruff_repo: Path, run_check):
         precommit = ModifiablePrecommit.load(io.StringIO(_PRECOMMIT_TO_CLEAN))
         with Session.load(precommit) as session:

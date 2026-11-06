@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def describe_uv_upgrade_script():
+def describe_get_uv_upgrade_script():
     @pytest.mark.parametrize("return_codes", [(0, 0, 0), (1, 0, 0), (0, 1, 0)])
     def upgrades_every_project(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch, return_codes: tuple[int, ...]

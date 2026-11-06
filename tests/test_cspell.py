@@ -128,7 +128,7 @@ def describe_sort_config_entries():
         assert config["words"] == ["apple", "mango", "zebra"]
 
 
-def describe_main():
+def describe_check():
     def updates_existing_config(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,

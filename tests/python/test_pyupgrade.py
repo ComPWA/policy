@@ -24,7 +24,7 @@ def _project_with_classifiers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     )
 
 
-def describe_main():
+def describe_check():
     @pytest.mark.usefixtures("_project_with_classifiers")
     def installs_pyupgrade(run_check):
         config = dedent("""

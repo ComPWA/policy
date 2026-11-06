@@ -117,7 +117,7 @@ def _write_rtd(tmp_path: Path, content: str) -> Path:
     return path
 
 
-def describe_main():
+def describe_check():
     def updates_extend_style_config(tmp_path: Path, run_check):
         bad_config = dedent("""
             version: 2

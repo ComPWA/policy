@@ -153,7 +153,7 @@ def describe_update_contributing_file():
         assert "Poe the Poet" in result  # runner instructions from tool.poe.tasks
 
 
-def describe_main():
+def describe_check():
     def configures_uv(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
