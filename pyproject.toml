@@ -71,7 +71,7 @@ doc = [
     "sphinx-api-relink",
     "sphinx-book-theme",
     "sphinx-codeautolink",
-    "sphinx-config-schema",
+    "sphinx-config-schema>=0.0.4",
     "sphinx-copybutton",
     "sphinxcontrib-typer",
 ]
