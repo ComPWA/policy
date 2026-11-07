@@ -8,9 +8,8 @@ You do not need to install anything: with [`uv`](https://docs.astral.sh/uv/), `u
 uvx --from git+https://github.com/ComPWA/policy policy --help
 ```
 
-:::{tip}
-`uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
-:::
+> [!TIP]
+> `uvx` caches the Git checkout, so add `--refresh` directly after `uvx` to pull the latest commit from the default branch.
 
 If you run the command often, you can install it as a persistent tool with [`uv tool install`](https://docs.astral.sh/uv/concepts/tools/) (or `pipx install`) and call `policy` directly, updating it with `uv tool upgrade --reinstall compwa-policy`. When the `pwa` command is installed alongside this package, the same command is also available as `pwa policy ...` through a `pwa.commands` entry point.
 
