@@ -233,7 +233,7 @@ executor = { group = "test" }
 help = "Compute how much of the source code is covered by tests"
 
 [[tool.poe.groups.test.tasks.cov.args]]
-default = "src tests"
+default = ".github/workflows src tests"
 multiple = true
 name = "paths"
 positional = true
@@ -244,7 +244,7 @@ executor = { group = "test" }
 help = "Run all unit tests"
 
 [[tool.poe.groups.test.tasks.test.args]]
-default = "src tests"
+default = ".github/workflows src tests"
 multiple = true
 name = "paths"
 positional = true
@@ -309,6 +309,11 @@ parallel = [
     "_upgrade-uv",
 ]
 
+[tool.poe.tasks.update-runner-labels]
+cmd = "uv run --no-sync python .github/workflows/update_runner_labels.py"
+executor = "simple"
+help = "Refresh GitHub runner label choices and the configuration schema"
+
 [tool.poe.tasks._upgrade-precommit]
 cmd = "prek autoupdate"
 executor = { type = "simple" }
@@ -334,6 +339,7 @@ filterwarnings = [
 ]
 minversion = "9.0"
 testpaths = [
+    ".github/workflows",
     "benchmarks",
     "src",
     "tests",
@@ -391,6 +397,7 @@ ban-relative-imports = "all"
 split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
+".github/workflows/*.py" = ["implicit-namespace-package"]
 "benchmarks/*" = [
     "ANN",
     "D",
