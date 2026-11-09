@@ -52,7 +52,8 @@ def update_pixi_configuration(
     config = __get_pixi_config(session, package_manager)
     if config is None:
         return
-    remove_badge(session, r"\[!\[Pixi Badge\]\(.*\)\]\(https://pixi\.sh/?\)")
+    # Spell the scheme as a character class so link checkers skip this regex.
+    remove_badge(session, r"\[!\[Pixi Badge\]\(.*\)\]\(https[:]//pixi\.sh/?\)")
     add_badge(
         session,
         "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.prefix.dev)",
