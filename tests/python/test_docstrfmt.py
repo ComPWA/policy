@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
 
@@ -9,8 +10,14 @@ from compwa_policy.utilities.session import Session
 
 
 @pytest.fixture
-def pyproject_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+def pyproject_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    git_init: Callable[[Path], None],
+) -> Path:
+    git_init(tmp_path)
     monkeypatch.chdir(tmp_path)
+    (tmp_path / "module.py").touch()
     path = tmp_path / "pyproject.toml"
     path.write_text('[project]\nname = "my-package"\n')
     return path
@@ -96,9 +103,12 @@ def describe_check():
         assert not precommit.changelog
         assert pyproject_path.read_text() == original
 
-    def removes_hook_and_settings_when_disabled(
-        run_check, tmp_path: Path, pyproject_path: Path
+    @pytest.mark.parametrize("disable", ["option", "no-python-files"])
+    def removes_hook_and_settings(
+        run_check, tmp_path: Path, pyproject_path: Path, disable: str
     ):
+        if disable == "no-python-files":
+            (tmp_path / "module.py").unlink()
         pyproject_path.write_text(
             dedent("""
             [project]
@@ -120,7 +130,7 @@ def describe_check():
         )
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
-            run_check(check, session, docstrfmt=False)
+            run_check(check, session, docstrfmt=disable == "no-python-files")
 
         assert "docstrfmt" not in path.read_text()
         assert "docstrfmt" not in pyproject_path.read_text()
