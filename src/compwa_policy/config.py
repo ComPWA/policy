@@ -28,8 +28,6 @@ MacosRunnerLabel = TypeAliasType(
     "MacosRunnerLabel",
     Literal[
         "macos-14",
-        "macos-14-large",
-        "macos-14-xlarge",
         "macos-15",
         "macos-15-intel",
         "macos-15-large",
