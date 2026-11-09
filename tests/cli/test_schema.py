@@ -1,11 +1,13 @@
 from pathlib import Path
 from textwrap import dedent
+from typing import get_args
 
 import pytest
 from pydantic import ValidationError
 
 from compwa_policy.cli._schema import create_policy_schema, render_policy_schema
 from compwa_policy.cli._settings import load_settings
+from compwa_policy.config import MacosRunnerLabel, UbuntuRunnerLabel
 
 
 def describe_create_policy_schema() -> None:
@@ -63,15 +65,14 @@ def describe_create_policy_schema() -> None:
         assert '  "title": "ComPWA policy configuration"' in rendered
 
     @pytest.mark.parametrize(
-        ("option", "alias"),
-        [("macos-runner", "MacosRunnerLabel"), ("ubuntu-runner", "UbuntuRunnerLabel")],
+        ("option", "labels"),
+        [("macos-runner", MacosRunnerLabel), ("ubuntu-runner", UbuntuRunnerLabel)],
     )
-    def references_named_runner_definitions(option: str, alias: str) -> None:
+    def lists_supported_runner_labels(option: str, labels: object) -> None:
         schema = create_policy_schema()
         field = schema["properties"]["github"]["properties"][option]
-        assert field["anyOf"] == [{"$ref": f"#/$defs/{alias}"}, {"type": "null"}]
-        assert schema["$defs"][alias]["type"] == "string"
-        assert schema["$defs"][alias]["enum"]
+        assert field["anyOf"][0]["enum"] == list(get_args(labels))
+        assert field["anyOf"][1] == {"type": "null"}
 
 
 def describe_runner_labels() -> None:
