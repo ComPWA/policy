@@ -46,6 +46,7 @@ def workflows_repo(
 def _run_main(
     run_check,
     *,
+    autofix_ci: bool = False,
     doc_apt_packages: list[str] | None = None,
     environment_variables: dict[str, str] | None = None,
     github_pages: bool = False,
@@ -69,6 +70,7 @@ def _run_main(
             check,
             session,
             allow_deprecated_workflows=False,
+            autofix_ci=autofix_ci,
             doc_apt_packages=doc_apt_packages or [],
             environment_variables=environment_variables or {},
             github_pages=github_pages,
@@ -273,6 +275,56 @@ def describe_check():
         workflow_path.write_text("custom: true\n")
         _run_main(run_check, keep_workflow={"cd.yml"}, no_cd=True)
         assert workflow_path.exists()
+
+
+def describe_autofix_ci():
+    def is_opt_in(workflows_repo: Path, run_check):
+        _run_main(run_check)
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "token: ${{ secrets.PAT }}" in ci
+        assert not (workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml").exists()
+
+    def replaces_style_token(workflows_repo: Path, run_check):
+        assert _run_main(run_check, autofix_ci=True)
+        yaml = create_prettier_round_trip_yaml()
+        ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
+        assert "secrets" not in ci["jobs"]["style"]
+        autofix = yaml.load(workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml")
+        assert autofix["name"] == "autofix.ci"
+        assert "labeled" in autofix["on"]["pull_request"]["types"]
+        assert autofix["permissions"] == {"contents": "read", "pull-requests": "read"}
+        assert "secrets" not in autofix["jobs"]["autofix"]
+        assert not _run_main(run_check, autofix_ci=True)
+
+    @pytest.mark.parametrize("python_version", ["3.12", "3.14"])
+    def sets_python_version(
+        workflows_repo: Path, run_check, python_version: PythonVersion
+    ):
+        _run_main(run_check, autofix_ci=True, python_version=python_version)
+        yaml = create_prettier_round_trip_yaml()
+        autofix = yaml.load(workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml")
+        if python_version == "3.14":
+            assert "with" not in autofix["jobs"]["autofix"]
+        else:
+            assert autofix["jobs"]["autofix"]["with"] == {"python-version": "3.12"}
+
+    @pytest.mark.usefixtures("workflows_repo")
+    def disables_precommit_ci_autofix(run_check):
+        precommit = dedent("""\
+            ci:
+              autofix_prs: true
+              skip: [ty]
+            repos: []
+        """)
+        changes = _run_main(run_check, autofix_ci=True, precommit_content=precommit)
+        assert any("ci.autofix_prs" in change for change in changes)
+
+    def keeps_workflow(workflows_repo: Path, run_check):
+        workflow_path = workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml"
+        workflow_path.parent.mkdir(parents=True)
+        workflow_path.write_text("custom: true\n")
+        _run_main(run_check, autofix_ci=True, keep_workflow={"autofix.ci.yml"})
+        assert workflow_path.read_text() == "custom: true\n"
 
 
 def describe_remove_workflow():

@@ -1,0 +1,24 @@
+name: autofix.ci
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+    branches:
+      - main
+      - epic/*
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  autofix:
+    uses: ComPWA/actions/.github/workflows/autofix.ci.yml@920e87b6b34c2575e5c6053d0fbb0bcc5be8ec2e # shared-autofix

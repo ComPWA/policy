@@ -45,7 +45,9 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _update_precommit_schedule(precommit, frequency)
     session.changelog += _remove_script("pin_requirements.py")
     session.changelog += _remove_script("upgrade.sh")
-    _update_lock_workflow(session, frequency, args.keep_workflow)
+    _update_lock_workflow(
+        session, frequency, args.keep_workflow, autofix_ci=args.autofix_ci
+    )
 
 
 def _remove_script(script_name: str) -> Changelog:
@@ -58,7 +60,12 @@ def _remove_script(script_name: str) -> Changelog:
 
 
 def _update_lock_workflow(
-    session: Session, /, frequency: UpgradeFrequency, keep_workflow: set[str]
+    session: Session,
+    /,
+    frequency: UpgradeFrequency,
+    keep_workflow: set[str],
+    *,
+    autofix_ci: bool = False,
 ) -> None:
     precommit = session.precommit
 
@@ -77,6 +84,8 @@ def _update_lock_workflow(
             )
             raise ValueError(msg)
         expected_data["on"]["pull_request"]["paths"] = existing_paths
+        if autofix_ci:
+            del expected_data["on"]["pull_request"]
         if (
             get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS
             or "autoupdate_schedule" in precommit.document.get("ci", {})

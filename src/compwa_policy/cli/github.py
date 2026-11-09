@@ -6,6 +6,7 @@ from compwa_policy.cli import _checks
 from compwa_policy.cli._options import (
     AllowDeprecatedWorkflows,
     AllowLabels,
+    AutofixCi,
     CiSkippedTests,
     DependabotAssignees,
     DependabotEcosystems,
@@ -39,6 +40,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
     python: Python = None,
     dev_python_version: DevPythonVersion = None,
     allow_labels: AllowLabels = None,
+    autofix_ci: AutofixCi = None,
     no_github_actions: NoGithubActions = None,
     allow_deprecated_workflows: AllowDeprecatedWorkflows = None,
     github_pages: GithubPages = None,
@@ -69,6 +71,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
         python=python,
         dev_python_version=dev_python_version,
         allow_labels=allow_labels,
+        autofix_ci=autofix_ci,
         no_github_actions=no_github_actions,
         allow_deprecated_workflows=allow_deprecated_workflows,
         github_pages=github_pages,

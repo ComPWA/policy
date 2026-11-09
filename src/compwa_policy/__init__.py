@@ -43,6 +43,7 @@ class Arguments:
     allow_labels: bool
     allow_vscode_coverage_gutters: bool
     allowed_cell_metadata: str
+    autofix_ci: bool
     branch_coverage: bool
     ci_skipped_tests: str
     dependabot_assignees: list[str]
