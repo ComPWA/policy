@@ -113,7 +113,8 @@
     "tomlsort",
     "unittests",
     "usefixtures",
-    "venv"
+    "venv",
+    "xlarge"
   ],
   "language": "en-US",
   "useGitignore": true,
