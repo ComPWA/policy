@@ -97,6 +97,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
     "github": frozenset({
         "allow_deprecated_workflows",
         "allow_labels",
+        "autofix_ci",
         "ci_skipped_tests",
         "dependabot_assignees",
         "dependabot_ecosystems",
@@ -249,6 +250,8 @@ class Settings(BaseSettings):
     """Do not enforce the shared ``labels.toml`` configuration."""
     allow_deprecated_workflows: bool = False
     """Allow deprecated continuous-integration workflows."""
+    autofix_ci: bool = False
+    """Let the autofix.ci GitHub App commit style fixes and lock upgrades to PRs."""
     no_github_actions: bool = False
     """Do not add the standard ComPWA GitHub Actions workflows."""
     github_pages: bool = False

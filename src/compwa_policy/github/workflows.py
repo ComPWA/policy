@@ -70,7 +70,14 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         args.pytest_single_threaded,
         _to_list(args.ci_skipped_tests),
         repository,
+        autofix_ci=args.autofix_ci,
     )
+    if args.autofix_ci and "autofix.ci.yml" not in keep:
+        _update_autofix_workflow(
+            session,
+            python_version=args.dev_python_version,
+            repository=repository,
+        )
     if not args.keep_pr_linting and "pr-linting.yml" not in keep:
         copy_workflow_file(session, filename="pr-linting.yml", repository=repository)
     _recommend_vscode_extension(session)
@@ -142,6 +149,8 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     single_threaded: bool,
     skip_tests: list[str],
     repository: str,
+    *,
+    autofix_ci: bool,
 ) -> None:
     def update() -> Changelog:
         precommit = session.precommit
@@ -157,6 +166,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             python_version,
             single_threaded,
             skip_tests,
+            autofix_ci=autofix_ci,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not workflow_path.exists():
@@ -212,6 +222,8 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     python_version: PythonVersion,
     single_threaded: bool,
     skip_tests: list[str],
+    *,
+    autofix_ci: bool = False,
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
@@ -225,7 +237,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
         macos_runner=macos_runner,
         ubuntu_runner=ubuntu_runner,
     )
-    __update_style_section(config, python_version, precommit)
+    __update_style_section(config, python_version, precommit, autofix_ci=autofix_ci)
     return yaml, config
 
 
@@ -263,14 +275,51 @@ def __update_doc_section(
 
 
 def __update_style_section(
-    config: CommentedMap, python_version: PythonVersion, precommit: Precommit
+    config: CommentedMap,
+    python_version: PythonVersion,
+    precommit: Precommit,
+    *,
+    autofix_ci: bool,
 ) -> None:
+    if autofix_ci:
+        del config["jobs"]["style"]["secrets"]
     if python_version != DEFAULT_DEV_PYTHON_VERSION:
         config["jobs"]["style"]["with"] = {
             "python-version": DoubleQuotedScalarString(python_version)
         }
     if __is_remove_style_job(precommit):
         del config["jobs"]["style"]
+
+
+def _update_autofix_workflow(
+    session: Session,
+    /,
+    *,
+    python_version: PythonVersion,
+    repository: str,
+) -> None:
+    """Let the autofix.ci GitHub App commit fixes instead of a personal access token.
+
+    The app takes over the automatic fix commits of pre-commit.ci, so that both do not
+    push the same fixes to a PR.
+    """
+    yaml = create_prettier_round_trip_yaml()
+    template = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "autofix.ci.yml"
+    config = yaml.load(template)
+    if python_version != DEFAULT_DEV_PYTHON_VERSION:
+        config["jobs"]["autofix"]["with"] = {
+            "python-version": DoubleQuotedScalarString(python_version)
+        }
+    workflow_path = CONFIG_PATH.github_workflow_dir / "autofix.ci.yml"
+    session.changelog += update_workflow(
+        yaml, config, workflow_path, repository=repository
+    )
+    precommit_ci = session.precommit.document.get("ci")
+    if precommit_ci is not None and precommit_ci.get("autofix_prs") is not False:
+        precommit_ci["autofix_prs"] = False
+        session.precommit.changelog.append(
+            "Set ci.autofix_prs to false, because autofix.ci commits the fixes"
+        )
 
 
 def __is_remove_style_job(precommit: Precommit) -> bool:
