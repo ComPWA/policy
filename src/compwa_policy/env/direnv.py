@@ -63,7 +63,11 @@ def __get_pixi_direnv(session: Session, /) -> str:
     dev_environment = __determine_pixi_dev_environment(session)
     if dev_environment is not None:
         environment_flag = f" --environment {dev_environment}"
-    return f"layout pixi{environment_flag}"
+    # No layout pixi, because that requires developers to call direnv allow after every change to pixi.lock
+    return dedent(f"""
+        watch_file pixi.lock
+        eval "$(pixi shell-hook{environment_flag})"
+    """).strip()
 
 
 def __get_uv_direnv(session: Session, variables: dict[str, str]) -> str:

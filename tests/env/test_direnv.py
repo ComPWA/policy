@@ -72,8 +72,43 @@ def describe_check():
         envrc = (tmp_path / ".envrc").read_text()
         expected_lines = []
         if package_manager == "pixi+uv":
-            expected_lines.append("layout pixi")
+            expected_lines.extend([
+                "watch_file pixi.lock",
+                'eval "$(pixi shell-hook)"',
+            ])
         if not tracked_lock:
             expected_lines.append("uv lock --quiet")
         expected_lines.extend([expected_layout, "export EXAMPLE=value"])
         assert envrc.splitlines() == expected_lines
+
+    @pytest.mark.parametrize(
+        ("environment", "expected_flag"),
+        [
+            ("dev", " --environment dev"),
+            ("my-package", " --environment my-package"),
+            ("default", ""),
+        ],
+    )
+    def keeps_pixi_shell_hook(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
+        environment: str,
+        expected_flag: str,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(
+            dedent(f"""
+            [project]
+            name = "my-package"
+
+            [tool.pixi.environments]
+            {environment} = []
+        """)
+        )
+        with Session() as session:
+            run_check(direnv.check, session, package_manager="pixi")
+        assert (tmp_path / ".envrc").read_text() == dedent(f"""\
+            watch_file pixi.lock
+            eval "$(pixi shell-hook{expected_flag})"
+        """)
