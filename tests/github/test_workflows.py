@@ -495,8 +495,24 @@ def describe_preserve_action_versions():
                 "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
                 "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
             ),
+            (
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha2 # v4.1.8\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+            ),
+            (
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha4 # v5.1.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha4 # v5.1.0\n",
+            ),
         ],
-        ids=["repeated-action", "unknown-action", "reusable-workflow"],
+        ids=[
+            "repeated-action",
+            "unknown-action",
+            "reusable-workflow",
+            "older-major",
+            "newer-minor",
+        ],
     )
     def substitutes_references(expected: str, existing: str, output: str):
         assert preserve_action_versions(expected, existing) == output

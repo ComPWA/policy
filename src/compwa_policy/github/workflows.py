@@ -638,16 +638,47 @@ def preserve_action_versions(expected: str, existing: str) -> str:
 
     >>> preserve_action_versions("  - uses: actions/setup-uv@v7\n", existing)
     '  - uses: actions/setup-uv@v7\n'
+
+    A pin to an older major version than the template is replaced, because the template
+    may rely on inputs that the older version does not accept:
+
+    >>> preserve_action_versions("  - uses: actions/checkout@v8\n", existing)
+    '  - uses: actions/checkout@v8\n'
     """
 
     def substitute(match: re.Match) -> str:
         references = available.get(__get_action_name(match["reference"]))
         if not references:
             return match[0]
-        return match["prefix"] + references.pop(0)
+        reference = references.pop(0)
+        template_major = _get_major_version(match["reference"] + match["comment"])
+        existing_major = _get_major_version(reference)
+        if (
+            template_major is not None
+            and existing_major is not None
+            and existing_major < template_major
+        ):
+            return match[0]
+        return match["prefix"] + reference
 
     available = __collect_action_references(existing)
     return _USES_PATTERN.sub(substitute, expected)
+
+
+def _get_major_version(reference: str) -> int | None:
+    """Get the major version from a ``uses:`` reference or its version comment.
+
+    >>> _get_major_version("ComPWA/actions/.github/workflows/ci.yml@v4.0")
+    4
+    >>> _get_major_version("actions/checkout@3d3c42e # v7.0.1")
+    7
+    >>> _get_major_version("actions/checkout@3d3c42e") is None
+    True
+    """
+    match = re.search(r"(?:#\s*|@)v?(\d+)(?:\.\d+)*\s*$", reference)
+    if match is None:
+        return None
+    return int(match[1])
 
 
 def resolve_self_references(workflow: str, repository: str) -> str:
