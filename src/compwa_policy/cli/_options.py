@@ -186,6 +186,17 @@ AllowDeprecatedWorkflows = Annotated[
         help="Allow deprecated CI workflows, such as ci-docs.yml.",
     ),
 ]
+AutofixCi = Annotated[
+    bool | None,
+    typer.Option(
+        "--autofix-ci",
+        help=(
+            "Let the autofix.ci GitHub App commit style fixes and lock upgrades to PRs"
+            " through the shared autofix.ci workflow, so that these no longer need a"
+            " personal access token. The app has to be installed for the repository."
+        ),
+    ),
+]
 NoGithubActions = Annotated[
     bool | None,
     typer.Option(

@@ -71,6 +71,12 @@
           "title": "Allow Labels",
           "type": "boolean"
         },
+        "autofix-ci": {
+          "default": false,
+          "description": "Let the autofix.ci GitHub App commit style fixes and lock upgrades to PRs.",
+          "title": "Autofix Ci",
+          "type": "boolean"
+        },
         "ci-skipped-tests": {
           "default": "",
           "description": "Python versions for which the CI test job is skipped.",
