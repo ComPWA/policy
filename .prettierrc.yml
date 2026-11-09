@@ -5,3 +5,6 @@ overrides:
   - files: "**.md.jinja"
     options:
       parser: markdown
+  - files: ["*.schema.json"]
+    options:
+      objectWrap: collapse

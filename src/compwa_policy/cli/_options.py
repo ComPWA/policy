@@ -10,16 +10,19 @@ from __future__ import annotations
 
 import os
 from enum import StrEnum
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, get_args
 
 import typer
+from typer.main import TyperChoice
 
 from compwa_policy import Arguments, TomlFormatter
 from compwa_policy.cli._settings import load_settings
 from compwa_policy.config import (
     DEFAULT_DEV_PYTHON_VERSION,
+    MacosRunnerLabel,
     PackageManagerChoice,
     PythonVersion,
+    UbuntuRunnerLabel,
 )
 from compwa_policy.config import UpgradeFrequency as Frequency
 from compwa_policy.errors import PolicyError
@@ -209,6 +212,22 @@ MacosPythonVersion = Annotated[
         "--macos-python-version",
         show_default="3.11",
         help="Run the test job in MacOS on a specific Python version. Use 'disable' to not run the tests on MacOS.",
+    ),
+]
+MacosRunner = Annotated[
+    MacosRunnerLabel | None,
+    typer.Option(
+        "--macos-runner",
+        click_type=TyperChoice(get_args(MacosRunnerLabel.__value__)),
+        help="GitHub Actions runner label for the macOS test job, such as 'macos-26' or 'macos-26-intel'. Omit to use the default of ComPWA/actions. Requires ComPWA/actions v4.1.8 or later.",
+    ),
+]
+UbuntuRunner = Annotated[
+    UbuntuRunnerLabel | None,
+    typer.Option(
+        "--ubuntu-runner",
+        click_type=TyperChoice(get_args(UbuntuRunnerLabel.__value__)),
+        help="GitHub Actions runner label for the Linux test jobs and the PyPI publish job, such as 'ubuntu-26.04'. Omit to use the default. Requires ComPWA/actions v4.1.8 or later.",
     ),
 ]
 NoCd = Annotated[
