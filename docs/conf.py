@@ -118,7 +118,9 @@ intersphinx_mapping = {
     "tomlkit": ("https://tomlkit.readthedocs.io/en/stable/", None),
     "typer": ("https://typer.tiangolo.com", None),
 }
+myst_colon_fence_exact_match = True
 myst_enable_extensions = [
+    "alert",
     "colon_fence",
 ]
 nitpick_ignore = [
