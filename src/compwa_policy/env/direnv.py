@@ -32,12 +32,12 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
     if package_manager == "none":
         return
     if package_manager == "uv":
-        script = __get_uv_direnv(variables) + "\n"
+        script = __get_uv_direnv(session, variables) + "\n"
         session.changelog += __update_envrc_content(script)
         return
     if package_manager == "pixi+uv":
         script = __get_pixi_direnv(session) + "\n"
-        script += __get_uv_direnv(variables) + "\n"
+        script += __get_uv_direnv(session, variables) + "\n"
         session.changelog += __update_envrc_content(script)
         return
     if package_manager == "pixi":
@@ -67,14 +67,23 @@ def __get_pixi_direnv(session: Session, /) -> str:
     """).strip()
 
 
-def __get_uv_direnv(variables: dict[str, str]) -> str:
-    script = dedent("""
-    uv sync --all-extras --quiet
+def __get_uv_direnv(session: Session, variables: dict[str, str]) -> str:
+    extras_flag = " --all-extras" if __has_optional_dependencies(session) else ""
+    script = dedent(f"""
+    uv sync{extras_flag} --quiet
     source .venv/bin/activate
     """)
     for name, value in variables.items():
         script += f"\nexport {name}={value}"
     return script.strip()
+
+
+def __has_optional_dependencies(session: Session, /) -> bool:
+    pyproject = session.pyproject
+    table_key = "project.optional-dependencies"
+    if pyproject is None or not pyproject.has_table(table_key):
+        return False
+    return bool(pyproject.get_table(table_key))
 
 
 def __determine_pixi_dev_environment(session: Session, /) -> str | None:
