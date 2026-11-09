@@ -23,7 +23,7 @@ from compwa_policy.utilities.pyproject import (
     complies_with_subset,
 )
 from compwa_policy.utilities.pyproject.setters import split_dependency_definition
-from compwa_policy.utilities.readme import add_badge
+from compwa_policy.utilities.readme import add_badge, remove_badge
 from compwa_policy.utilities.toml import (
     to_inline_table,
     to_multiline_string,
@@ -52,9 +52,11 @@ def update_pixi_configuration(
     config = __get_pixi_config(session, package_manager)
     if config is None:
         return
+    # Spell the scheme as a character class so link checkers skip this regex.
+    remove_badge(session, r"\[!\[Pixi Badge\]\(.*\)\]\(https[:]//pixi\.sh/?\)")
     add_badge(
         session,
-        "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)",
+        "[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.prefix.dev)",
     )
     _rename_workspace_table(config)
     _define_minimal_project(session, package_manager)
