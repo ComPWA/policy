@@ -15,7 +15,7 @@ classifiers = [
 ]
 dependencies = [
     "PyYAML",
-    "attrs >=20.1.0",  # https://github.com/python-attrs/attrs/releases/tag/20.1.0
+    "attrs>=20.1.0",  # https://github.com/python-attrs/attrs/releases/tag/20.1.0
     "html2text",
     "ini2toml",
     "jinja2",
@@ -23,14 +23,14 @@ dependencies = [
     "packaging",
     "pathspec",
     "pip-tools",
-    "pydantic-settings >=2",
-    "pydantic >=2.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2",
     "ruamel.yaml",  # better YAML dumping
     "setuptools",
     "tomli",  # fast, read-only parsing
     "tomli-w",  # write TOML without preserving formatting
     "tomlkit",  # preserve original TOML formatting
-    "typer >=0.26.0",
+    "typer>=0.26.0",
     'typing-extensions; python_version <"3.12.0"',  # override
 ]
 dynamic = ["version"]
@@ -66,12 +66,12 @@ dev = [
     { include-group = "test" },
 ]
 doc = [
-    "myst-parser",
+    "myst-parser>=5.1.0",
     "sphinx",
     "sphinx-api-relink",
     "sphinx-book-theme",
     "sphinx-codeautolink",
-    "sphinx-config-schema",
+    "sphinx-config-schema>=0.0.4",
     "sphinx-copybutton",
     "sphinxcontrib-typer",
 ]

@@ -85,7 +85,7 @@ repos:
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.3
+    rev: v0.17.4
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -111,7 +111,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: v1.9.8
+    rev: v1.11.1
     hooks:
       - id: tombi-format
       - id: tombi-lint
@@ -144,7 +144,7 @@ repos:
           )$
 
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: v0.0.95
+    rev: v0.0.99
     hooks:
       - id: ty
         args: [--group=types, --no-default-groups]
