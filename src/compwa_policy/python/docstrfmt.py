@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from compwa_policy.utilities import CONFIG_PATH
 from compwa_policy.utilities.check_hook import check_hook
+from compwa_policy.utilities.match import is_committed
 from compwa_policy.utilities.precommit.struct import Hook, Repo
 
 if TYPE_CHECKING:
@@ -27,9 +28,10 @@ __DEFAULT_SETTINGS = {
     enabled=lambda _args, ctx: ctx.is_python_repo,
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
+    """Install docstrfmt, or remove it if disabled or there are no Python files."""
     precommit = session.precommit
     pyproject = session.pyproject
-    if args.docstrfmt:
+    if args.docstrfmt and is_committed("*.py", "*.pyi", untracked=True):
         precommit.update_single_hook_repo(
             Repo(
                 repo="https://github.com/LilSpazJoekp/docstrfmt",
