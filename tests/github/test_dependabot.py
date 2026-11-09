@@ -53,6 +53,19 @@ def describe_check() -> None:
             run_check(check, session, dependabot_ecosystems=[])
             assert session.changelog == []
 
+    @pytest.mark.parametrize(
+        ("assignees", "expected"),
+        [([], None), (["redeboer"], ["redeboer"])],
+        ids=["none", "configured"],
+    )
+    def sets_assignees(
+        repo: Path, run_check, assignees: list[str], expected: list[str] | None
+    ) -> None:
+        with Session() as session:
+            run_check(check, session, dependabot_assignees=assignees)
+        config = yaml.safe_load((repo / ".github" / "dependabot.yml").read_text())
+        assert config["multi-ecosystem-groups"]["lock"].get("assignees") == expected
+
     def rejects_unknown_ecosystem(repo: Path, run_check) -> None:
         del repo
         with Session() as session, pytest.raises(ValueError, match="npm"):
