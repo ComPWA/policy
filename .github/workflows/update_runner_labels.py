@@ -71,15 +71,15 @@ def parse_runner_labels(readme: str) -> dict[str, list[str]]:
 
 
 def update_runner_labels(config: str, labels: dict[str, list[str]]) -> str:
-    r'''Replace the named alias assignments while preserving all surrounding source.
+    r'''Replace the named label assignments while preserving all surrounding source.
 
     >>> from textwrap import dedent
     >>> config = dedent("""
     ...     # Keep this comment.
-    ...     MacosRunnerLabel = TypeAliasType("MacosRunnerLabel", Literal["old"])
+    ...     MacosRunnerLabel = Literal["old"]
     ...     "Supported macOS labels."
     ...     OTHER_SETTING = True
-    ...     UbuntuRunnerLabel = TypeAliasType("UbuntuRunnerLabel", Literal["old"])
+    ...     UbuntuRunnerLabel = Literal["old"]
     ... """)
     >>> updated = update_runner_labels(
     ...     config, {"macos": ["macos-26"], "ubuntu": ["ubuntu-26.04"]}
@@ -87,20 +87,14 @@ def update_runner_labels(config: str, labels: dict[str, list[str]]) -> str:
     >>> print(updated)
     <BLANKLINE>
     # Keep this comment.
-    MacosRunnerLabel = TypeAliasType(
-        "MacosRunnerLabel",
-        Literal[
-            "macos-26",
-        ],
-    )
+    MacosRunnerLabel = Literal[
+        "macos-26",
+    ]
     "Supported macOS labels."
     OTHER_SETTING = True
-    UbuntuRunnerLabel = TypeAliasType(
-        "UbuntuRunnerLabel",
-        Literal[
-            "ubuntu-26.04",
-        ],
-    )
+    UbuntuRunnerLabel = Literal[
+        "ubuntu-26.04",
+    ]
     <BLANKLINE>
     >>> update_runner_labels(
     ...     updated, {"macos": ["macos-26"], "ubuntu": ["ubuntu-26.04"]}
@@ -135,9 +129,9 @@ def update_runner_labels(config: str, labels: dict[str, list[str]]) -> str:
             raise ValueError(msg)
         start = sum(map(len, source_lines[: node.lineno - 1])) + node.col_offset
         end = sum(map(len, source_lines[: node.end_lineno - 1])) + node.end_col_offset
-        lines = [f"{name} = TypeAliasType(", f'    "{name}",', "    Literal["]
-        lines.extend(f'        "{value}",' for value in values)
-        lines.extend(["    ],", ")"])
+        lines = [f"{name} = Literal["]
+        lines.extend(f'    "{value}",' for value in values)
+        lines.append("]")
         replacements.append((start, end, "\n".join(lines).encode("utf-8")))
     for start, end, replacement in sorted(replacements, reverse=True):
         source = source[:start] + replacement + source[end:]

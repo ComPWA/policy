@@ -128,9 +128,28 @@
           "type": "string"
         },
         "macos-runner": {
-          "anyOf": [{ "$ref": "#/$defs/MacosRunnerLabel" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "enum": [
+                "macos-14",
+                "macos-15",
+                "macos-15-intel",
+                "macos-15-large",
+                "macos-15-xlarge",
+                "macos-26",
+                "macos-26-intel",
+                "macos-26-large",
+                "macos-26-xlarge",
+                "macos-latest",
+                "macos-latest-large"
+              ],
+              "type": "string"
+            },
+            { "type": "null" }
+          ],
           "default": null,
-          "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default."
+          "description": "Runner label for the macOS test job; omitting it keeps the ComPWA/actions default.",
+          "title": "Macos Runner"
         },
         "no-cd": {
           "default": false,
@@ -176,11 +195,24 @@
         },
         "ubuntu-runner": {
           "anyOf": [
-            { "$ref": "#/$defs/UbuntuRunnerLabel" },
+            {
+              "enum": [
+                "ubuntu-22.04",
+                "ubuntu-22.04-arm",
+                "ubuntu-24.04",
+                "ubuntu-24.04-arm",
+                "ubuntu-26.04",
+                "ubuntu-26.04-arm",
+                "ubuntu-latest",
+                "ubuntu-slim"
+              ],
+              "type": "string"
+            },
             { "type": "null" }
           ],
           "default": null,
-          "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default."
+          "description": "Runner label for the Linux test and PyPI jobs; omitting it keeps the default.",
+          "title": "Ubuntu Runner"
         },
         "upgrade-frequency": {
           "default": "quarterly",
@@ -354,36 +386,5 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false,
-  "$defs": {
-    "MacosRunnerLabel": {
-      "enum": [
-        "macos-14",
-        "macos-15",
-        "macos-15-intel",
-        "macos-15-large",
-        "macos-15-xlarge",
-        "macos-26",
-        "macos-26-intel",
-        "macos-26-large",
-        "macos-26-xlarge",
-        "macos-latest",
-        "macos-latest-large"
-      ],
-      "type": "string"
-    },
-    "UbuntuRunnerLabel": {
-      "enum": [
-        "ubuntu-22.04",
-        "ubuntu-22.04-arm",
-        "ubuntu-24.04",
-        "ubuntu-24.04-arm",
-        "ubuntu-26.04",
-        "ubuntu-26.04-arm",
-        "ubuntu-latest",
-        "ubuntu-slim"
-      ],
-      "type": "string"
-    }
-  }
+  "additionalProperties": false
 }
