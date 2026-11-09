@@ -291,6 +291,13 @@ KeepWorkflow = Annotated[
         help="Names of the GitHub Actions workflows that should not be updated or removed, including the .yml extension.",
     ),
 ]
+DependabotAssignees = Annotated[
+    list[str] | None,
+    typer.Option(
+        "--dependabot-assignee",
+        help="GitHub user to assign to Dependabot lock upgrade PRs. Can be repeated. If not specified, no one is assigned and review requests follow CODEOWNERS.",
+    ),
+]
 DependabotEcosystems = Annotated[
     list[DependabotEcosystem] | None,
     typer.Option(
