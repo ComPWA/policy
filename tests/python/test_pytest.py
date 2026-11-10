@@ -464,7 +464,7 @@ def describe_migrate_codecov_threshold():
             (None, None, None, None),
         ],
     )
-    def imports_codecov_first_and_removes_old_settings(
+    def imports_codecov_first_and_removes_numeric_target(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         *,
@@ -526,7 +526,10 @@ def describe_migrate_codecov_threshold():
         )
         assert "--cov-fail-under" not in path.read_text()
         config = yaml.safe_load(codecov.read_text())
-        assert config["coverage"]["status"]["project"]["default"] == {"paths": ["src/"]}
+        expected_settings = {"threshold": "1%", "paths": ["src/"]}
+        if target == "auto":
+            expected_settings = {"target": "auto", **expected_settings}
+        assert config["coverage"]["status"]["project"]["default"] == expected_settings
         assert config["coverage"]["status"]["patch"]["default"]["target"] == "80%"
         assert "paths: null" in codecov.read_text()
         assert "# Keep other repository settings" in codecov.read_text()

@@ -259,18 +259,16 @@ def _migrate_codecov_threshold(session: Session) -> float | None:
     settings = project.get("default", {})
     if not isinstance(settings, MutableMapping):
         return None
-    target = settings.get("target")
-    if "target" in settings or "threshold" in settings:
-        settings.pop("target", None)
-        settings.pop("threshold", None)
-        resource.write_text(
-            _dump_codecov_yaml(yaml, config),
-            "Removed Codecov project coverage threshold",
-        )
     try:
-        return float(str(target).removesuffix("%"))
+        target = float(str(settings.get("target")).removesuffix("%"))
     except ValueError:
         return None
+    del settings["target"]
+    resource.write_text(
+        _dump_codecov_yaml(yaml, config),
+        "Removed Codecov project coverage target",
+    )
+    return target
 
 
 def _dump_codecov_yaml(yaml_parser: YAML, data: Any) -> str:
