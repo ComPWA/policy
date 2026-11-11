@@ -108,6 +108,7 @@ repo-title = "ComPWA repository policy"
 allow-labels = true
 no-pypi = true
 release-name-template = "{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
+ubuntu-runner = "ubuntu-26.04"
 
 [tool.compwa.policy.python]
 branch-coverage = false
@@ -239,7 +240,7 @@ name = "paths"
 positional = true
 
 [tool.poe.groups.test.tasks.test]
-cmd = "pytest --no-summary ${paths}"
+cmd = "pytest ${paths}"
 executor = { group = "test" }
 help = "Run all unit tests"
 

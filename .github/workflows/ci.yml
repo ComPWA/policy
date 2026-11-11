@@ -36,3 +36,4 @@ jobs:
       coverage-python-version: "3.14"
       macos-python-version: "3.11"
       multithreaded: false
+      ubuntu-runner: ubuntu-26.04
