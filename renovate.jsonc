@@ -19,7 +19,8 @@
     {
       "description": "Group updates of the GitHub Actions in the workflow templates",
       "groupName": "GitHub Actions in workflow templates",
-      "matchManagers": ["github-actions"]
+      "matchManagers": ["github-actions"],
+      "semanticCommitType": "MAINT"
     }
   ],
   "pinDigest": {
@@ -28,5 +29,6 @@
   "reviewers": ["redeboer"],
   "semanticCommits": "enabled",
   "semanticCommitScope": "",
-  "semanticCommitType": "MAINT"
+  "semanticCommitType": "MAINT",
+  "separateMajorMinor": false // Combine major updates with the other updates in a single PR
 }
