@@ -300,8 +300,9 @@ def _update_autofix_workflow(
 ) -> None:
     """Let the autofix.ci GitHub App commit fixes instead of a personal access token.
 
-    The app takes over the automatic fix commits of pre-commit.ci, so that both do not
-    push the same fixes to a PR.
+    pre-commit.ci keeps committing the fixes of the hooks it runs. The shared workflow
+    only runs the hooks under ``ci.skip``, or all hooks if there is no ``ci`` section,
+    so that both do not push the same fixes to a PR.
     """
     yaml = create_prettier_round_trip_yaml()
     template = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / "autofix.ci.yml"
@@ -315,10 +316,11 @@ def _update_autofix_workflow(
         yaml, config, workflow_path, repository=repository
     )
     precommit_ci = session.precommit.document.get("ci")
-    if precommit_ci is not None and precommit_ci.get("autofix_prs") is not False:
-        precommit_ci["autofix_prs"] = False
+    if precommit_ci is not None and precommit_ci.get("autofix_prs") is False:
+        del precommit_ci["autofix_prs"]
         session.precommit.changelog.append(
-            "Set ci.autofix_prs to false, because autofix.ci commits the fixes"
+            "Removed ci.autofix_prs: false, because autofix.ci only commits the fixes"
+            " of hooks that pre-commit.ci skips"
         )
 
 

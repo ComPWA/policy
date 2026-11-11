@@ -309,10 +309,10 @@ def describe_autofix_ci():
             assert autofix["jobs"]["autofix"]["with"] == {"python-version": "3.12"}
 
     @pytest.mark.usefixtures("workflows_repo")
-    def disables_precommit_ci_autofix(run_check):
+    def reenables_precommit_ci_autofix(run_check):
         precommit = dedent("""\
             ci:
-              autofix_prs: true
+              autofix_prs: false
               skip: [ty]
             repos: []
         """)
