@@ -28,6 +28,7 @@
   },
   "rebaseWhen": "never",
   "reviewers": ["redeboer"],
+  "schedule": ["before 6am on monday"],
   "semanticCommits": "enabled",
   "semanticCommitScope": "",
   "semanticCommitType": "MAINT",
