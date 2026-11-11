@@ -21,4 +21,4 @@ permissions:
 
 jobs:
   autofix:
-    uses: ComPWA/actions/.github/workflows/autofix.ci.yml@v4 # shared-autofix
+    uses: ComPWA/actions/.github/workflows/autofix.ci.yml@a024afbb9e182bea4924a73fc60ae59462849ebb # v4.2.0
