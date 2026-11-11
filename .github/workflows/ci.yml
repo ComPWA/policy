@@ -46,13 +46,13 @@ jobs:
             "3.15"
           ],
           "runs-on": [
-            "ubuntu-24.04"
+            "ubuntu-26.04"
           ],
           "include": [
             {
               "codecov": "codecov",
               "python-version": "3.14",
-              "runs-on": "ubuntu-24.04"
+              "runs-on": "ubuntu-26.04"
             },
             {
               "python-version": "3.11",
@@ -61,4 +61,3 @@ jobs:
           ]
         }
       multithreaded: false
-      ubuntu-runner: ubuntu-26.04
