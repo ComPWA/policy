@@ -28,6 +28,7 @@
   },
   "rebaseWhen": "never",
   "reviewers": ["redeboer"],
+  "schedule": ["* 0-5 1-7 1,4,7,10 1"], // First Monday of each quarter, before 6 am UTC
   "semanticCommits": "enabled",
   "semanticCommitScope": "",
   "semanticCommitType": "MAINT",
