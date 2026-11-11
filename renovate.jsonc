@@ -26,6 +26,7 @@
   "pinDigest": {
     "commitMessageAction": "pin"
   },
+  "rebaseWhen": "never", // Keep manual edits; rebase only via the PR checkbox
   "reviewers": ["redeboer"],
   "semanticCommits": "enabled",
   "semanticCommitScope": "",
