@@ -1,4 +1,5 @@
 import io
+import json
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -93,6 +94,135 @@ def _run_main(
 
 
 def describe_check():
+    def checks_links_without_documentation(workflows_repo: Path, run_check, git_add):
+        (workflows_repo / "docs" / "conf.py").unlink()
+        (workflows_repo / "docs").rmdir()
+        git_add(workflows_repo)
+        (workflows_repo / "lychee.toml").touch()
+        _run_main(run_check)
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert "linkcheck" in jobs
+        assert "doc" not in jobs
+
+    def calls_sphinx_linkcheck_workflow(workflows_repo: Path, run_check):
+        path = workflows_repo / "pyproject.toml"
+        path.write_text(
+            path.read_text()
+            + dedent("""\
+            [tool.poe.tasks]
+            linkcheck = "sphinx-build -b linkcheck docs docs/_build"
+            """)
+        )
+        _run_main(run_check)
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert "/linkcheck.yml@" in jobs["linkcheck"]["uses"]
+        assert "doc" in jobs
+
+    def writes_repository_facts_as_inputs(workflows_repo: Path, run_check, git_add):
+        path = workflows_repo / "pyproject.toml"
+        path.write_text(path.read_text() + '[tool.pixi.tasks]\ntest = "pytest"\n')
+        (workflows_repo / "docs" / "nb.ipynb").write_text("{}")
+        (workflows_repo / _WORKFLOW_DIR).mkdir(parents=True)
+        (workflows_repo / _WORKFLOW_DIR / "autofix.ci.yml").touch()
+        git_add(workflows_repo)
+        precommit = "ci:\n  skip: [ty, uv-lock]\nrepos: []\n"
+        _run_main(run_check, precommit_content=precommit, macos_python_version="3.11")
+        yaml = create_prettier_round_trip_yaml()
+        jobs = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")["jobs"]
+        assert jobs["doc"]["with"]["task-runner"] == "pixi"
+        assert dict(jobs["style"]["with"]) == {
+            "autofix-ci": True,
+            "hooks": "ty uv-lock",
+            "notebooks": True,
+            "python-version": "3.13",
+        }
+        assert jobs["test"]["with"]["task-runner"] == "pixi"
+        matrix = json.loads(jobs["test"]["with"]["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-24.04"]
+        assert matrix["python-version"][0] == "3.10"
+        assert matrix["include"] == [{"python-version": "3.11", "runs-on": "macos-15"}]
+
+    @pytest.mark.parametrize(
+        ("filename", "content"),
+        [
+            ("lychee.toml", ""),
+            (".lychee.toml", ""),
+            ("pyproject.toml", "[tool.lychee]"),
+            (
+                "pyproject.toml",
+                dedent('''\
+                [tool.poe.tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pyproject.toml",
+                dedent("""\
+                    [tool.poe.groups.doc.tasks]
+                    linkcheck = {cmd = "lychee ."}"""),
+            ),
+            (
+                "pyproject.toml",
+                dedent('''\
+                [tool.pixi.tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pixi.toml",
+                dedent('''\
+                [tasks]
+                linkcheck = "lychee ."'''),
+            ),
+            (
+                "pixi.toml",
+                dedent("""\
+                [feature.doc.tasks]
+                linkcheck = {cmd = "lychee ."}"""),
+            ),
+        ],
+        ids=[
+            "config",
+            "hidden-config",
+            "pyproject",
+            "poe",
+            "poe-group",
+            "pixi-pyproject",
+            "pixi",
+            "pixi-feature",
+        ],
+    )
+    def manages_lychee_job(
+        workflows_repo: Path, run_check, filename: str, content: str
+    ):
+        path = workflows_repo / filename
+        original = path.read_text() if path.exists() else ""
+        path.write_text(original + content)
+        _run_main(run_check, python_version="3.12", doc_apt_packages=["graphviz"])
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        yaml = create_prettier_round_trip_yaml()
+        job = yaml.load(ci_path)["jobs"]["linkcheck"]
+        assert set(job) == {"uses"}
+        assert job["uses"].startswith(
+            "ComPWA/actions/.github/workflows/ci-linkcheck.yml@"
+        )
+        pinned = re.sub(
+            r"ci-linkcheck.yml@\S+",
+            "ci-linkcheck.yml@0123456789abcdef",
+            ci_path.read_text(),
+        )
+        ci_path.write_text(pinned)
+        assert not _run_main(
+            run_check, python_version="3.12", doc_apt_packages=["graphviz"]
+        )
+        assert ci_path.read_text() == pinned
+        if filename == "pyproject.toml":
+            path.write_text(original)
+        else:
+            path.unlink()
+        _run_main(run_check)
+        assert "linkcheck" not in yaml.load(ci_path)["jobs"]
+
     @pytest.mark.parametrize("existing", [False, True], ids=["new", "migration"])
     def grants_version_branch_permissions_without_secrets(
         workflows_repo: Path, run_check, existing: bool
@@ -160,23 +290,26 @@ def describe_check():
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-24.04",
+            ubuntu_runner="ubuntu-26.04",
         )
         yaml = create_prettier_round_trip_yaml()
         ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
         cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
         test_inputs = ci["jobs"]["test"]["with"]
-        assert test_inputs["ubuntu-runner"] == "ubuntu-24.04"
+        matrix = json.loads(test_inputs["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-26.04"]
         if macos_python_version == "disable":
-            assert "macos-runner" not in test_inputs
+            assert "include" not in matrix
         else:
-            assert test_inputs["macos-runner"] == "macos-26"
-        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
+            assert matrix["include"] == [
+                {"python-version": "3.12", "runs-on": "macos-26"}
+            ]
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
         assert not _run_main(
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-24.04",
+            ubuntu_runner="ubuntu-26.04",
         )
 
     def keeps_default_runner_images(workflows_repo: Path, run_check):
@@ -185,8 +318,9 @@ def describe_check():
         ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
         cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
         test_inputs = ci["jobs"]["test"]["with"]
-        assert "macos-runner" not in test_inputs
-        assert "ubuntu-runner" not in test_inputs
+        matrix = json.loads(test_inputs["matrix"])
+        assert matrix["runs-on"] == ["ubuntu-24.04"]
+        assert matrix["include"] == [{"python-version": "3.12", "runs-on": "macos-15"}]
         assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
 
     def skips_cd_workflow(workflows_repo: Path, run_check):
@@ -361,8 +495,24 @@ def describe_preserve_action_versions():
                 "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
                 "jobs:\n  lock:\n    uses: ComPWA/actions/.github/workflows/lock.yml@sha2\n",
             ),
+            (
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha2 # v4.1.8\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+            ),
+            (
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha3 # v5.0.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha4 # v5.1.0\n",
+                "    uses: ComPWA/actions/.github/workflows/test.yml@sha4 # v5.1.0\n",
+            ),
         ],
-        ids=["repeated-action", "unknown-action", "reusable-workflow"],
+        ids=[
+            "repeated-action",
+            "unknown-action",
+            "reusable-workflow",
+            "older-major",
+            "newer-minor",
+        ],
     )
     def substitutes_references(expected: str, existing: str, output: str):
         assert preserve_action_versions(expected, existing) == output
@@ -387,7 +537,7 @@ def describe_action_pins():
         (workflows_repo / "codecov.yml").touch()
         _run_main(run_check)
         ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
-        assert 'coverage-python-version: "3.14"' in ci_path.read_text()
+        assert '"codecov": "codecov"' in ci_path.read_text()
         pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
         ci_path.write_text(pinned)
         assert not _run_main(run_check)

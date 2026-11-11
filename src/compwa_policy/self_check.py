@@ -105,11 +105,16 @@ def _check_hook_definition(
     expected = definitions.get(hook["id"])
     if expected is None:
         return False
+    hook_values = cast("dict[str, object]", hook)
     expected_values = __reduce(expected)
     if local:
         expected_values["entry"] = f"uv run {expected['entry']}"
         expected_values["language"] = "system"
-    hook_values = cast("dict[str, object]", hook)
+        if any(
+            hook_values.get(key, expected[key]) != expected[key]
+            for key in ("entry", "language")
+        ):
+            expected_values.update(_get_runner_overrides(hook_values))
     args_are_last = "args" not in hook_values or next(reversed(hook_values)) == "args"
     if __reduce(hook) == expected_values and args_are_last:
         return False
@@ -120,6 +125,16 @@ def _check_hook_definition(
     if args is not None:
         hook_values["args"] = args
     return True
+
+
+def _get_runner_overrides(hook: dict[str, object]) -> dict[str, object]:
+    """Keep how a local hook is run, so that it can run through ``uv run``.
+
+    Git clients like VS Code do not activate the environment, so the local hooks of this
+    repository call the CLI through ``uv run`` with ``language: system`` instead of the
+    ``entry`` and ``language`` from the hook manifest.
+    """
+    return {k: hook[k] for k in ("entry", "language") if k in hook}
 
 
 def _write_precommit_config(precommit: Precommit) -> None:

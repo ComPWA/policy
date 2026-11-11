@@ -18,7 +18,7 @@ from compwa_policy.utilities.pyproject import ModifiablePyproject
 from compwa_policy.utilities.toml import to_toml_array
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping
+    from collections.abc import Iterable, MutableMapping
 
     from compwa_policy import Arguments
     from compwa_policy.utilities.check_hook import CheckContext
@@ -105,6 +105,21 @@ DEFAULT_EXTENSIONS = (
     "xml",
 )
 """Lychee's default extensions, which an explicit extensions option replaces."""
+LYCHEE_MINIMUM_VERSION = "0.24.0"
+LYCHEE_REQUIREMENT = f"lychee-bin>={LYCHEE_MINIMUM_VERSION}"
+
+
+def uses_lychee(session: Session) -> bool:
+    """Detect lychee configuration or a Poe/Pixi linkcheck task in this session."""
+    if any(Path(name).exists() for name in ("lychee.toml", ".lychee.toml")):
+        return True
+    configs = [session.pyproject] if session.pyproject is not None else []
+    if CONFIG_PATH.pixi_toml.exists():
+        configs.append(session.pixi)
+    return any(
+        config.has_table("tool.lychee") or _has_lychee_task(config)
+        for config in configs
+    )
 
 
 def configure_lychee(
@@ -181,23 +196,56 @@ def require_lychee(config: ModifiablePyproject, /, group: str) -> None:
             if not isinstance(dependency, str):
                 found = update(dependency["include-group"]) or found
                 continue
-            requirement = Requirement(dependency)
-            if requirement.name != "lychee-bin":
+            if Requirement(dependency).name != "lychee-bin":
                 continue
             found = True
-            if any(
-                spec.operator in {">=", ">", "~=", "=="}
-                and Version(spec.version.rstrip(".*")) >= Version("0.24.0")
-                for spec in requirement.specifier
-            ):
-                continue
-            separator = "," if requirement.specifier else ""
-            requirement.specifier = type(requirement.specifier)(
-                f"{requirement.specifier}{separator}>=0.24.0"
-            )
-            dependencies[index] = str(requirement)
-            config.changelog.append("Required lychee-bin>=0.24.0")
+            required = _require_minimum_version(dependency)
+            if required != dependency:
+                dependencies[index] = required
+                config.changelog.append(f"Required {LYCHEE_REQUIREMENT}")
         return found
 
     if not update(group):
-        config.add_dependency("lychee-bin>=0.24.0", group=group)
+        config.add_dependency(LYCHEE_REQUIREMENT, group=group)
+
+
+def require_lychee_in_with(dependencies: str | Iterable[str] | None) -> list[str]:
+    """Require lychee in the ``with`` dependencies of a Poe task executor.
+
+    >>> require_lychee_in_with(None)
+    ['lychee-bin>=0.24.0']
+    >>> require_lychee_in_with("sphinx")
+    ['sphinx', 'lychee-bin>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.20,<1"])
+    ['lychee-bin<1,>=0.20,>=0.24.0']
+    >>> require_lychee_in_with(["lychee-bin>=0.25"])
+    ['lychee-bin>=0.25']
+    """
+    if dependencies is None:
+        dependencies = []
+    elif isinstance(dependencies, str):
+        dependencies = [dependencies]
+    required = [
+        _require_minimum_version(dependency)
+        if Requirement(dependency).name == "lychee-bin"
+        else dependency
+        for dependency in dependencies
+    ]
+    if not any(Requirement(dependency).name == "lychee-bin" for dependency in required):
+        required.append(LYCHEE_REQUIREMENT)
+    return required
+
+
+def _require_minimum_version(dependency: str) -> str:
+    requirement = Requirement(dependency)
+    if any(
+        spec.operator in {">=", ">", "~=", "=="}
+        and Version(spec.version.rstrip(".*")) >= Version(LYCHEE_MINIMUM_VERSION)
+        for spec in requirement.specifier
+    ):
+        return dependency
+    separator = "," if requirement.specifier else ""
+    requirement.specifier = type(requirement.specifier)(
+        f"{requirement.specifier}{separator}>={LYCHEE_MINIMUM_VERSION}"
+    )
+    return str(requirement)

@@ -18,6 +18,7 @@
       \.github/.*|
       \.gitignore|
       \.gitpod\.yml|
+      \.lychee\.toml|
       \.markdownlint\.json|
       \.markdownlint\.yaml|
       \.pre\-commit\-config\.yaml|
