@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     directories=(CONFIG_PATH.pip_constraints,),
 )
 def check(session: Session, args: Arguments, _: CheckContext) -> None:
-    if not args.gitpod:
+    if not args.manages("gitpod"):
         session.changelog += remove_gitpod_config()
         remove_badge(
             session,
@@ -68,7 +68,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
 def remove_gitpod_config() -> Changelog:
     if CONFIG_PATH.gitpod.exists():
         os.remove(CONFIG_PATH.gitpod)
-        return [f"Removed {CONFIG_PATH.gitpod} (add back by setting --gitpod)"]
+        return [f"Removed {CONFIG_PATH.gitpod} (add back with enable = ['gitpod'])"]
     return []
 
 

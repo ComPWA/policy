@@ -37,6 +37,7 @@ __GENERATED_LOCK_FILES = [
         CONFIG_PATH.vscode_extensions,
         CONFIG_PATH.pixi_lock,
     ],
+    tool="prettier",
 )
 def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
     precommit = session.precommit

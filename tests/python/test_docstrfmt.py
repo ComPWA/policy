@@ -37,7 +37,7 @@ def describe_check():
         )
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
-            run_check(check, session, docstrfmt=True)
+            run_check(check, session)
 
         assert "id: docstrfmt" in path.read_text()
         settings = pyproject_path.read_text()
@@ -68,7 +68,7 @@ def describe_check():
         )
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
-            run_check(check, session, docstrfmt=True)
+            run_check(check, session)
 
         result = path.read_text()
         assert hook_options not in result
@@ -98,17 +98,15 @@ def describe_check():
         original = pyproject_path.read_text()
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
-            run_check(check, session, docstrfmt=True)
+            run_check(check, session)
 
         assert not precommit.changelog
         assert pyproject_path.read_text() == original
 
-    @pytest.mark.parametrize("disable", ["option", "no-python-files"])
-    def removes_hook_and_settings(
-        run_check, tmp_path: Path, pyproject_path: Path, disable: str
+    def removes_hook_and_settings_without_python_files(
+        run_check, tmp_path: Path, pyproject_path: Path
     ):
-        if disable == "no-python-files":
-            (tmp_path / "module.py").unlink()
+        (tmp_path / "module.py").unlink()
         pyproject_path.write_text(
             dedent("""
             [project]
@@ -130,7 +128,51 @@ def describe_check():
         )
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
-            run_check(check, session, docstrfmt=disable == "no-python-files")
+            run_check(check, session)
 
         assert "docstrfmt" not in path.read_text()
         assert "docstrfmt" not in pyproject_path.read_text()
+
+    def preserves_hook_and_settings_when_unmanaged(
+        run_check, tmp_path: Path, pyproject_path: Path
+    ):
+        pyproject_path.write_text(
+            dedent("""
+            [project]
+            name = "my-package"
+
+            [tool.docstrfmt]
+            docstring-trailing-line = false
+            """).lstrip()
+        )
+        path = tmp_path / ".pre-commit-config.yaml"
+        path.write_text(
+            dedent("""
+            repos:
+              - repo: https://github.com/LilSpazJoekp/docstrfmt
+                rev: v2.2.1
+                hooks:
+                  - id: docstrfmt
+            """).lstrip()
+        )
+        original_hook = path.read_text()
+        original_settings = pyproject_path.read_text()
+        precommit = ModifiablePrecommit.load(path)
+        with Session.load(precommit) as session:
+            run_check(check, session, disable={"docstrfmt"})
+
+        assert path.read_text() == original_hook
+        assert pyproject_path.read_text() == original_settings
+
+    def skips_installation_when_unmanaged(
+        run_check, tmp_path: Path, pyproject_path: Path
+    ):
+        path = tmp_path / ".pre-commit-config.yaml"
+        path.write_text("repos: []\n")
+        original_settings = pyproject_path.read_text()
+        precommit = ModifiablePrecommit.load(path)
+        with Session.load(precommit) as session:
+            run_check(check, session, disable={"docstrfmt"})
+
+        assert "docstrfmt" not in path.read_text()
+        assert pyproject_path.read_text() == original_settings

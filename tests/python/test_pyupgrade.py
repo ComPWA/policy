@@ -36,7 +36,7 @@ def describe_check():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            run_check(check, session, no_ruff=True)
+            run_check(check, session, disable={"ruff"})
 
         assert precommit.changelog  # something changed
         result = precommit.dumps()
@@ -55,7 +55,7 @@ def describe_check():
         """).lstrip()
         precommit = ModifiablePrecommit.load(io.StringIO(config))
         with Session.load(precommit) as session:
-            run_check(check, session, no_ruff=False)
+            run_check(check, session, disable=set())
 
         assert any("pyupgrade" in m for m in precommit.changelog)
         assert "pyupgrade" not in precommit.dumps()

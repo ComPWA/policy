@@ -2,7 +2,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
-from typing import cast
+from typing import cast, get_args
 
 import pytest
 import typer
@@ -20,10 +20,10 @@ from compwa_policy.cli._checks import (
     run_checks,
 )
 from compwa_policy.cli._options import build_arguments
-from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION
+from compwa_policy.config import DEFAULT_DEV_PYTHON_VERSION, OPT_IN_TOOLS, Tool
 from compwa_policy.repo import readthedocs
 from compwa_policy.utilities import match
-from compwa_policy.utilities.check_hook import CheckContext, Group
+from compwa_policy.utilities.check_hook import CheckContext, Group, check_hook
 from compwa_policy.utilities.session import Session
 
 _PYPROJECT = dedent("""
@@ -212,7 +212,7 @@ def describe_check_hooks():
             for hook, (name, _) in zip(CHECK_HOOKS, _EXPECTED_CHECK_HOOKS, strict=True)
         )
         monkeypatch.setattr("compwa_policy.cli._checks.CHECK_HOOKS", hooks)
-        args = build_arguments(dev_python_version="3.12")
+        args = build_arguments(dev_python_version="3.12", disable=[])
         context = CheckContext(False, False, [], {})
 
         run_checks(cast("Session", None), args, context, groups=frozenset({group}))
@@ -236,6 +236,32 @@ def describe_check_hooks():
                 )
             for directory in hook.files.directories:
                 assert trigger.search((directory / "example").as_posix())
+
+    def register_every_default_tool():
+        tools = {hook.tool for hook in CHECK_HOOKS if hook.tool is not None}
+        assert tools == set(get_args(Tool)) - OPT_IN_TOOLS
+
+    @pytest.mark.parametrize(
+        ("disable", "expected_calls"),
+        [(set(), 1), ({"ruff"}, 0)],
+        ids=["enabled", "disabled"],
+    )
+    def skip_a_disabled_tool(disable: set[str], expected_calls: int):
+        calls = []
+
+        @check_hook(group="python", paths=["pyproject.toml"], tool="ruff")
+        def check(*_: object) -> None:
+            calls.append(None)
+
+        args = build_arguments(dev_python_version="3.12", disable=disable)
+        context = CheckContext(
+            is_python_repo=True,
+            has_notebooks=False,
+            doc_apt_packages=[],
+            environment_variables={},
+        )
+        check(cast("Session", None), args, context)
+        assert len(calls) == expected_calls
 
     def excludes_ordinary_python_source_files():
         assert re.search(CHECK_DEV_FILES_PATTERN, "src/package/module.py") is None

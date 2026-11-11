@@ -23,22 +23,62 @@
       "title": "Dev Python Version",
       "type": "string"
     },
+    "disable": {
+      "default": [],
+      "description": "Tools that policy must not install or configure; takes precedence over ``enable``.",
+      "items": {
+        "enum": [
+          "binder",
+          "cspell",
+          "docstrfmt",
+          "editorconfig",
+          "github-actions",
+          "gitpod",
+          "labels",
+          "nbstripout",
+          "prettier",
+          "pyupgrade",
+          "ruff"
+        ],
+        "type": "string"
+      },
+      "title": "Disable",
+      "type": "array",
+      "x-tombi-array-values-order": "ascending"
+    },
     "doc-apt-packages": {
       "default": "",
       "description": "APT packages required to build the documentation.",
       "title": "Doc Apt Packages",
       "type": "string"
     },
+    "enable": {
+      "default": [],
+      "description": "Tools that policy should install and configure, even if they are off by default.",
+      "items": {
+        "enum": [
+          "binder",
+          "cspell",
+          "docstrfmt",
+          "editorconfig",
+          "github-actions",
+          "gitpod",
+          "labels",
+          "nbstripout",
+          "prettier",
+          "pyupgrade",
+          "ruff"
+        ],
+        "type": "string"
+      },
+      "title": "Enable",
+      "type": "array",
+      "x-tombi-array-values-order": "ascending"
+    },
     "format": {
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
       "properties": {
-        "no-cspell-update": {
-          "default": false,
-          "description": "Do not enforce the shared cSpell configuration.",
-          "title": "No Cspell Update",
-          "type": "boolean"
-        },
         "tombi-errors-on-warnings": {
           "default": true,
           "description": "Make the Tombi lint hook fail when it emits warnings.",
@@ -63,12 +103,6 @@
           "default": false,
           "description": "Allow deprecated continuous-integration workflows.",
           "title": "Allow Deprecated Workflows",
-          "type": "boolean"
-        },
-        "allow-labels": {
-          "default": false,
-          "description": "Do not enforce the shared ``labels.toml`` configuration.",
-          "title": "Allow Labels",
           "type": "boolean"
         },
         "autofix-ci": {
@@ -157,12 +191,6 @@
           "title": "No Cd",
           "type": "boolean"
         },
-        "no-github-actions": {
-          "default": false,
-          "description": "Do not add the standard ComPWA GitHub Actions workflows.",
-          "title": "No Github Actions",
-          "type": "boolean"
-        },
         "no-milestones": {
           "default": false,
           "description": "Do not add workflows that manage GitHub milestones.",
@@ -241,21 +269,9 @@
           "title": "Excluded Dependencies",
           "type": "array",
           "x-tombi-array-values-order": "ascending"
-        },
-        "no-binder": {
-          "default": false,
-          "description": "Do not update the Binder configuration.",
-          "title": "No Binder",
-          "type": "boolean"
         }
       },
       "additionalProperties": false
-    },
-    "no-ruff": {
-      "default": false,
-      "description": "Do not enforce Ruff as a linter.",
-      "title": "No Ruff",
-      "type": "boolean"
     },
     "package-manager": {
       "default": "uv",
@@ -284,12 +300,6 @@
           "default": true,
           "description": "Enable branch coverage in the Coverage.py pytest configuration.",
           "title": "Branch Coverage",
-          "type": "boolean"
-        },
-        "docstrfmt": {
-          "default": true,
-          "description": "Format docstrings with docstrfmt.",
-          "title": "Docstrfmt",
           "type": "boolean"
         },
         "excluded-python-versions": {
@@ -335,12 +345,6 @@
       "type": "object",
       "x-tombi-table-keys-order": "ascending",
       "properties": {
-        "gitpod": {
-          "default": false,
-          "description": "Create and maintain a Gitpod configuration file.",
-          "title": "Gitpod",
-          "type": "boolean"
-        },
         "keep-issue-templates": {
           "default": false,
           "description": "Do not remove the GitHub issue-template directory.",

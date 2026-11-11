@@ -59,13 +59,11 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--excluded-python-versions",
         "--imports-on-top",
         "--no-branch-coverage",
-        "--no-ruff",
         "--pytest-single-threaded",
         "--type-checker",
     ),
     "github": (
         "--allow-deprecated-workflows",
-        "--allow-labels",
         "--autofix-ci",
         "--ci-skipped-tests",
         "--dependabot-ecosystem",
@@ -76,7 +74,6 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--macos-python-version",
         "--macos-runner",
         "--no-cd",
-        "--no-github-actions",
         "--no-milestones",
         "--no-pypi",
         "--no-version-branches",
@@ -92,17 +89,14 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
     "nb": (
         "--allowed-cell-metadata",
         "--exclude-dependency",
-        "--no-binder",
     ),
-    "format": ("--no-cspell-update",),
-    "repo": (
-        "--gitpod",
-        "--keep-issue-templates",
-    ),
+    "repo": ("--keep-issue-templates",),
 }
 #: Flags that are shared by several groups and stay on the run-all hook.
 _SHARED_FLAGS = (
     "--dev-python-version",
+    "--disable",
+    "--enable",
     "--python",
     "--no-python",
     "--repo-name",
@@ -216,6 +210,8 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
     {'python': False, 'setup': {'env': {'A': '1', 'B': '2'}}}
     >>> _build_policy(["--excluded-python-versions=3.14,3.15"])
     {'python': {'excluded-python-versions': ['3.14', '3.15']}}
+    >>> _build_policy(["--disable=ruff", "--disable=binder", "--enable=gitpod"])
+    {'disable': ['binder', 'ruff'], 'enable': ['gitpod']}
     """
     policy: dict[str, Any] = {}
     environment_variables: dict[str, str] = {}
@@ -245,6 +241,9 @@ def _build_policy(args: list[str]) -> dict[str, Any]:
             target[key] = raw_value
     if environment_variables:
         policy.setdefault("setup", {})["env"] = environment_variables
+    for key in ("disable", "enable"):
+        if key in policy:
+            policy[key] = sorted(set(policy[key]))
     return policy
 
 

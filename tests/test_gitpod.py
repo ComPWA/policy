@@ -1,4 +1,15 @@
-from compwa_policy.repo.gitpod import _extract_extensions, _generate_gitpod_config
+import contextlib
+from pathlib import Path
+
+import pytest
+
+from compwa_policy.errors import PolicyError
+from compwa_policy.repo.gitpod import (
+    _extract_extensions,
+    _generate_gitpod_config,
+    check,
+)
+from compwa_policy.utilities.precommit import ModifiablePrecommit
 from compwa_policy.utilities.session import Session
 
 
@@ -30,3 +41,26 @@ def describe_generate_gitpod_config():
             assert gitpod_content["vscode"]["extensions"] == _extract_extensions(
                 session
             )
+
+
+def describe_check():
+    @pytest.mark.parametrize(
+        ("enable", "expect_config"),
+        [(set(), False), ({"gitpod"}, True)],
+        ids=["default", "enabled"],
+    )
+    def manages_config_only_when_enabled(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        run_check,
+        enable: set[str],
+        expect_config: bool,
+    ):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".gitpod.yml").write_text("tasks: []\n")
+        config = tmp_path / ".pre-commit-config.yaml"
+        config.write_text("repos: []\n")
+        precommit = ModifiablePrecommit.load(config)
+        with contextlib.suppress(PolicyError), Session.load(precommit) as session:
+            run_check(check, session, enable=enable)
+        assert (tmp_path / ".gitpod.yml").exists() is expect_config

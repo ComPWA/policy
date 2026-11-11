@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal, Self, TypeAlias
 from attrs import frozen
 
 from compwa_policy import Arguments
+from compwa_policy.config import Tool  # ruff: ignore[typing-only-first-party-import]
 from compwa_policy.utilities.session import Session
 
 if TYPE_CHECKING:
@@ -101,6 +102,8 @@ class CheckHook:
     files: FileSet
     run: Check
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled
+    tool: Tool | None = None
+    """Tool that the check manages; the check is skipped when policy does not manage it."""
 
     def __call__(
         self,
@@ -108,6 +111,8 @@ class CheckHook:
         args: Arguments,
         context: CheckContext,
     ) -> None:
+        if self.tool is not None and not args.manages(self.tool):
+            return
         if self.enabled(args, context):
             self.run(session, args, context)
 
@@ -119,11 +124,12 @@ def check_hook(
     directories: ExplicitCollection[Path | str] = (),
     patterns: ExplicitCollection[str] = (),
     enabled: Callable[[Arguments, CheckContext], bool] = _always_enabled,
+    tool: Tool | None = None,
 ) -> Callable[[Check], CheckHook]:
     """Attach dispatch and trigger metadata to a ``check`` function."""
 
     def register(run: Check) -> CheckHook:
-        return CheckHook(group, files, run, enabled)
+        return CheckHook(group, files, run, enabled, tool)
 
     files = FileSet.create(
         *paths,
