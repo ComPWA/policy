@@ -48,6 +48,17 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     _update_lock_workflow(
         session, frequency, args.keep_workflow, autofix_ci=args.autofix_ci
     )
+    _remove_deprecated_workflows(session, args.keep_workflow)
+
+
+def _remove_deprecated_workflows(session: Session, keep_workflow: set[str]) -> None:
+    for workflow in (
+        "requirements.yml",
+        "requirements-cron.yml",
+        "requirements-pr.yml",
+    ):
+        if workflow not in keep_workflow:
+            session.changelog += remove_workflow(workflow)
 
 
 def _remove_script(script_name: str) -> Changelog:
@@ -68,6 +79,7 @@ def _update_lock_workflow(
     autofix_ci: bool = False,
 ) -> None:
     precommit = session.precommit
+    dependabot_triggers = bool(get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS)
 
     def overwrite_workflow(workflow_file: str) -> None:
         expected_workflow_path = (
@@ -86,9 +98,8 @@ def _update_lock_workflow(
         expected_data["on"]["pull_request"]["paths"] = existing_paths
         if autofix_ci:
             del expected_data["on"]["pull_request"]
-        if (
-            get_dependabot_ecosystems() & __TRIGGER_ECOSYSTEMS
-            or "autoupdate_schedule" in precommit.document.get("ci", {})
+        if dependabot_triggers or "autoupdate_schedule" in precommit.document.get(
+            "ci", {}
         ):
             del expected_data["on"]["schedule"]
         else:
@@ -102,14 +113,20 @@ def _update_lock_workflow(
             session.changelog += update_workflow(yaml, expected_data, workflow_path)
 
     if "lock.yml" not in keep_workflow:
-        overwrite_workflow("lock.yml")
-    for workflow in (
-        "requirements.yml",
-        "requirements-cron.yml",
-        "requirements-pr.yml",
-    ):
-        if workflow not in keep_workflow:
-            session.changelog += remove_workflow(workflow)
+        if autofix_ci and dependabot_triggers:
+            _remove_lock_workflow(session)
+        else:
+            overwrite_workflow("lock.yml")
+
+
+def _remove_lock_workflow(session: Session) -> None:
+    path = CONFIG_PATH.github_workflow_dir / "lock.yml"
+    if path.exists():
+        path.unlink()
+        session.changelog.append(
+            f"Removed {path}, because Dependabot opens lock PRs and autofix.ci"
+            " regenerates the remaining lock files"
+        )
 
 
 def _to_cron_schedule(frequency: UpgradeFrequency) -> str:
