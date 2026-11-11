@@ -9,6 +9,7 @@ from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
     create_sub_table,
     remove_dependency,
+    remove_empty_dependency_groups,
 )
 
 
@@ -184,3 +185,29 @@ def describe_create_sub_table():
             cmd = "pytest"
         """)
         assert new_content.strip() == expected.strip()
+
+
+def describe_remove_empty_dependency_groups():
+    def removes_nested_includes():
+        pyproject = load_pyproject_toml(
+            dedent("""
+            [dependency-groups]
+            dev = ["ruff", { include-group = "doc" }, { include-group = "style" }]
+            doc = [{ include-group = "style" }]
+            style = []
+            types = [{ include-group = "dev" }]
+            """),
+            modifiable=True,
+        )
+        assert remove_empty_dependency_groups(pyproject) == ["style", "doc"]
+        assert pyproject["dependency-groups"] == {
+            "dev": ["ruff"],
+            "types": [{"include-group": "dev"}],
+        }
+
+    def removes_table_if_all_empty():
+        pyproject = load_pyproject_toml(
+            "[dependency-groups]\nstyle = []\n", modifiable=True
+        )
+        assert remove_empty_dependency_groups(pyproject) == ["style"]
+        assert "dependency-groups" not in pyproject

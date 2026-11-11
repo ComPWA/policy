@@ -37,6 +37,7 @@ from compwa_policy.utilities.pyproject.setters import (
     add_dependency,
     create_sub_table,
     remove_dependency,
+    remove_empty_dependency_groups,
     split_dependency_definition,
 )
 from compwa_policy.utilities.resource import Changelog, ModifiableResource
@@ -191,6 +192,8 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         _exc_value: BaseException | None,
         _tb: TracebackType | None,
     ) -> Literal[False]:
+        if _exc_type is None:
+            self.remove_empty_dependency_groups()
         if self._changelog and self._source is not None:
             self.dump(self._source)
         return False
@@ -275,6 +278,13 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             for definition in dict.fromkeys(definitions):
                 self.add_dependency(definition, group=group)
             self._changelog.append(f"Moved {package} to dependency group {group}")
+
+    def remove_empty_dependency_groups(self) -> None:
+        self.__assert_is_in_context()
+        removed = remove_empty_dependency_groups(self._document)
+        if removed:
+            groups = ", ".join(removed)
+            self._changelog.append(f"Removed empty dependency groups: {groups}")
 
     def remove_dependency(
         self,
