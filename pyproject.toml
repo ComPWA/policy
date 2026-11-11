@@ -240,7 +240,7 @@ name = "paths"
 positional = true
 
 [tool.poe.groups.test.tasks.test]
-cmd = "pytest --no-summary ${paths}"
+cmd = "pytest ${paths}"
 executor = { group = "test" }
 help = "Run all unit tests"
 
