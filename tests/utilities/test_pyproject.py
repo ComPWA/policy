@@ -155,7 +155,6 @@ def describe_move_dependencies_to_group():
                 == []
             )
             assert list(pyproject.get_table("dependency-groups")["dev"]) == [
-                {"include-group": "style"},
                 "ruff>=0.1",
                 "ty>=0.2",
             ]
@@ -182,8 +181,8 @@ def describe_move_single_dependency_to_group():
             pyproject.move_dependencies_to_group([tool], "dev")
         with ModifiablePyproject.load(path) as pyproject:
             groups = pyproject.get_table("dependency-groups")
-            assert list(groups["dev"]) == [{"include-group": "style"}, f"{tool}>=0.1"]
-            assert list(groups["style"]) == []
+            assert list(groups["dev"]) == [f"{tool}>=0.1"]
+            assert "style" not in groups
             assert list(groups["types"]) == ["types-PyYAML"]
             pyproject.move_dependencies_to_group([tool], "dev")
             assert not pyproject.changelog

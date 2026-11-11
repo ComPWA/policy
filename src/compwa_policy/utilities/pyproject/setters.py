@@ -185,12 +185,49 @@ def remove_dependency(  # ruff: ignore[complex-structure, too-many-branches]
                 dependencies.pop(idx)
                 updated = True
         if updated:
-            empty_sections = [k for k, v in dependency_groups.items() if not v]
-            for section in empty_sections:
-                del dependency_groups[section]
-            if not dependency_groups:
-                del pyproject["dependency-groups"]
+            remove_empty_dependency_groups(pyproject)
     return updated
+
+
+def remove_empty_dependency_groups(pyproject: PyprojectTOML, /) -> list[str]:
+    """Remove empty dependency groups and the ``include-group`` entries to them.
+
+    Removing an ``include-group`` entry can leave another group empty, so this repeats
+    until no empty group remains. Returns the names of the removed groups.
+
+    >>> import tomlkit
+    >>> pyproject = tomlkit.parse(
+    ...     '''
+    ... [dependency-groups]
+    ... dev = ["ruff", {include-group = "doc"}, {include-group = "style"}]
+    ... doc = [{include-group = "style"}]
+    ... style = []
+    ... '''
+    ... )
+    >>> remove_empty_dependency_groups(pyproject)
+    ['style', 'doc']
+    >>> pyproject["dependency-groups"].unwrap()
+    {'dev': ['ruff']}
+    """
+    dependency_groups = pyproject.get("dependency-groups")
+    if dependency_groups is None:
+        return []
+    removed: list[str] = []
+    while empty_groups := [k for k, v in dependency_groups.items() if not v]:
+        for group in empty_groups:
+            del dependency_groups[group]
+            removed.append(group)
+        for dependencies in dependency_groups.values():
+            for idx in reversed(range(len(dependencies))):
+                dependency = dependencies[idx]
+                if (
+                    isinstance(dependency, abc.Mapping)
+                    and dependency.get("include-group") in empty_groups
+                ):
+                    dependencies.pop(idx)
+    if not dependency_groups:
+        del pyproject["dependency-groups"]
+    return removed
 
 
 def split_dependency_definition(requirement: str) -> tuple[str, str, str]:
