@@ -14,6 +14,7 @@
   ],
   "includePaths": ["src/compwa_policy/.github/workflows/**"],
   "labels": ["⬆️ Lock"],
+  "mode": "full", // The Mend-hosted app runs in silent mode by default, which creates no PRs.
   "packageRules": [
     {
       "description": "Group updates of the GitHub Actions in the workflow templates",
