@@ -26,10 +26,10 @@
   "pinDigest": {
     "commitMessageAction": "pin"
   },
-  "rebaseWhen": "never", // Keep manual edits; rebase only via the PR checkbox
+  "rebaseWhen": "never",
   "reviewers": ["redeboer"],
   "semanticCommits": "enabled",
   "semanticCommitScope": "",
   "semanticCommitType": "MAINT",
-  "separateMajorMinor": false // Combine major updates with the other updates in a single PR
+  "separateMajorMinor": false
 }
