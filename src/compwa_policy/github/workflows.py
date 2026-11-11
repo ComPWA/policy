@@ -180,7 +180,9 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
         if not expected_data.get("jobs"):
             workflow_path.unlink()
             return ["Removed redundant CI workflows"]
-        if existing_data != expected_data:
+        if existing_data != expected_data or list(existing_data["jobs"]) != list(
+            expected_data["jobs"]
+        ):
             return update_workflow(
                 yaml, expected_data, workflow_path, repository=repository
             )
@@ -202,12 +204,19 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
 
 
 def __preserve_custom_jobs(expected: dict, existing: dict, filename: str) -> None:
-    """Add jobs from the existing workflow that the policy template does not define."""
+    """Add jobs from the existing workflow that the policy template does not define.
+
+    All jobs are then sorted alphabetically by name.
+    """
     yaml = create_prettier_round_trip_yaml()
     template = yaml.load(COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename)
+    jobs = expected["jobs"]
     for name, job_def in existing.get("jobs", {}).items():
         if name not in template["jobs"]:
-            expected["jobs"][name] = job_def
+            jobs[name] = job_def
+    sorted_jobs = sorted(jobs.items())
+    jobs.clear()
+    jobs.update(sorted_jobs)
 
 
 def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]

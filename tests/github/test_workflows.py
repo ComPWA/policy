@@ -2,7 +2,7 @@ import io
 import re
 from collections.abc import Callable
 from pathlib import Path
-from textwrap import dedent
+from textwrap import dedent, indent
 
 import pytest
 
@@ -247,10 +247,37 @@ def describe_check():
     def preserves_custom_ci_jobs(workflows_repo: Path, run_check):
         _run_main(run_check)
         ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
-        custom_job = "  preview:\n    needs: doc\n    runs-on: ubuntu-24.04\n    steps:\n      - run: echo preview\n"
+        custom_job = indent(
+            dedent("""\
+                upload:
+                  needs: doc
+                  runs-on: ubuntu-24.04
+                  steps:
+                    - run: echo upload
+            """),
+            "  ",
+        )
         ci_path.write_text(ci_path.read_text() + custom_job)
         assert not _run_main(run_check)
         assert ci_path.read_text().endswith(custom_job)
+
+    def sorts_ci_jobs_alphabetically(workflows_repo: Path, run_check):
+        _run_main(run_check)
+        ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
+        custom_job = indent(
+            dedent("""\
+                linkcheck:
+                  runs-on: ubuntu-24.04
+                  steps:
+                    - run: lychee .
+            """),
+            "  ",
+        )
+        ci_path.write_text(ci_path.read_text() + custom_job)
+        assert _run_main(run_check)
+        ci = ci_path.read_text()
+        assert ci.index("  doc:") < ci.index("  linkcheck:") < ci.index("  style:")
+        assert not _run_main(run_check)
 
     def removes_dropped_template_ci_jobs(workflows_repo: Path, run_check):
         _run_main(run_check)
