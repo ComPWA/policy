@@ -160,23 +160,23 @@ def describe_check():
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-26.04",
+            ubuntu_runner="ubuntu-24.04",
         )
         yaml = create_prettier_round_trip_yaml()
         ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
         cd = yaml.load(workflows_repo / _WORKFLOW_DIR / "cd.yml")
         test_inputs = ci["jobs"]["test"]["with"]
-        assert test_inputs["ubuntu-runner"] == "ubuntu-26.04"
+        assert test_inputs["ubuntu-runner"] == "ubuntu-24.04"
         if macos_python_version == "disable":
             assert "macos-runner" not in test_inputs
         else:
             assert test_inputs["macos-runner"] == "macos-26"
-        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
         assert not _run_main(
             run_check,
             macos_python_version=macos_python_version,
             macos_runner="macos-26",
-            ubuntu_runner="ubuntu-26.04",
+            ubuntu_runner="ubuntu-24.04",
         )
 
     def keeps_default_runner_images(workflows_repo: Path, run_check):
@@ -187,7 +187,7 @@ def describe_check():
         test_inputs = ci["jobs"]["test"]["with"]
         assert "macos-runner" not in test_inputs
         assert "ubuntu-runner" not in test_inputs
-        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
+        assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-26.04"
 
     def skips_cd_workflow(workflows_repo: Path, run_check):
         changes = _run_main(run_check, no_cd=True)
