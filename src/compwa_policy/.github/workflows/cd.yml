@@ -22,7 +22,7 @@ jobs:
       - package-name
     permissions:
       id-token: write
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: ComPWA/actions/build-pypi-distribution@826112415aa683bb2d73df87e84444a047f8cad7 # v4.1.8
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
