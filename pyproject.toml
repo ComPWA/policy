@@ -108,6 +108,7 @@ repo-title = "ComPWA repository policy"
 allow-labels = true
 no-pypi = true
 release-name-template = "{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
+ubuntu-runner = "ubuntu-26.04"
 
 [tool.compwa.policy.python]
 branch-coverage = false
