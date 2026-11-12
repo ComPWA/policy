@@ -9,10 +9,12 @@ from compwa_policy.characterization import uses_quarto
 from compwa_policy.env.pixi._helpers import has_pixi_config
 from compwa_policy.repo.lychee import configure_lychee
 from compwa_policy.repo.upgrade import (
+    PLUTO_UPGRADE_COMMAND,
     get_julia_manifest_paths,
     get_julia_upgrade_command,
     get_uv_upgrade_script,
     has_nested_uv_lock,
+    has_pluto_notebooks,
     migrate_precommit_style_command,
 )
 from compwa_policy.utilities import CONFIG_PATH, add_to_gitignore, append_safe, vscode
@@ -404,11 +406,16 @@ def _set_upgrade_task(
     manifest_paths = get_julia_manifest_paths()
     if manifest_paths:
         helper_tasks["_upgrade-julia"] = _get_julia_upgrade_task(manifest_paths)
+    if has_pluto_notebooks():
+        helper_tasks["_upgrade-pluto"] = {
+            "cmd": to_multiline_string(PLUTO_UPGRADE_COMMAND)
+        }
     helper_names = {
         "_upgrade-pixi",
         "_upgrade-precommit",
         "_upgrade-uv",
         "_upgrade-julia",
+        "_upgrade-pluto",
     }
     expected = {
         "depends-on": to_toml_array(helper_tasks),

@@ -384,3 +384,47 @@ def describe_set_upgrade_task():
         assert '"--directory"' in uv_cmd
         assert "git ls-files" in julia_cmd
         assert "Pkg.activate(project)" in julia_cmd
+
+    def upgrades_pluto_notebooks(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "docs").mkdir()
+        (tmp_path / "docs" / "notebook.jl").write_text(
+            "### A Pluto.jl notebook ###\n# v0.20.4\n"
+        )
+        (tmp_path / "script.jl").write_text("println(1)\n")
+        git_add(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text("[tasks]\n")
+
+        with ModifiablePyproject.load(config_path) as config:
+            _set_upgrade_task(config, package_manager="pixi")
+
+        tasks = Pyproject.load(config_path).get_table("tasks")
+        assert tasks["upgrade"]["depends-on"] == ["_upgrade-pixi", "_upgrade-pluto"]
+        assert "Pluto.update_notebook_environment" in tasks["_upgrade-pluto"]["cmd"]
+
+    def ignores_plain_julia_files(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "script.jl").write_text("println(1)\n")
+        git_add(tmp_path)
+        config_path = tmp_path / "pixi.toml"
+        config_path.write_text("[tasks._upgrade-pluto]\ncmd = 'outdated'\n")
+
+        with ModifiablePyproject.load(config_path) as config:
+            _set_upgrade_task(config, package_manager="pixi")
+
+        tasks = Pyproject.load(config_path).get_table("tasks")
+        assert tasks["upgrade"]["depends-on"] == ["_upgrade-pixi"]
+        assert "_upgrade-pluto" not in tasks

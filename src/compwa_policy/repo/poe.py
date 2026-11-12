@@ -14,11 +14,13 @@ from compwa_policy.characterization import has_documentation, uses_quarto
 from compwa_policy.errors import PolicyError
 from compwa_policy.repo.lychee import configure_lychee, require_lychee
 from compwa_policy.repo.upgrade import (
+    PLUTO_UPGRADE_COMMAND,
     UV_UPGRADE_EXPRESSION,
     UV_UPGRADE_IMPORTS,
     get_julia_manifest_paths,
     get_julia_upgrade_command,
     has_nested_uv_lock,
+    has_pluto_notebooks,
     migrate_precommit_style_command,
 )
 from compwa_policy.utilities import CONFIG_PATH, remove_lines
@@ -544,27 +546,13 @@ def _set_upgrade_task(
     pyproject: ModifiablePyproject, package_manager: PackageManagerChoice
 ) -> None:
     tasks = pyproject.get_table("tool.poe.tasks")
-    helper_tasks = {}
-    if is_committed(".pre-commit-config.yaml"):
-        helper_tasks["_upgrade-precommit"] = {
-            "cmd": "prek autoupdate",
-            "executor": to_inline_table({"type": "simple"}),
-        }
-    if "uv" in package_manager:
-        helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
-    if "pixi" in package_manager:
-        helper_tasks["_upgrade-pixi"] = {
-            "cmd": "pixi update",
-            "executor": to_inline_table({"type": "simple"}),
-        }
-    julia_task = _get_julia_upgrade_task()
-    if julia_task is not None:
-        helper_tasks["_upgrade-julia"] = julia_task
+    helper_tasks = _get_upgrade_helper_tasks(package_manager)
     helper_names = {
         "_upgrade-precommit",
         "_upgrade-uv",
         "_upgrade-pixi",
         "_upgrade-julia",
+        "_upgrade-pluto",
     }
     if not helper_tasks:
         removed = {"upgrade", *helper_names} & tasks.keys()
@@ -591,6 +579,31 @@ def _set_upgrade_task(
         pyproject.changelog.append(msg)
 
 
+def _get_upgrade_helper_tasks(
+    package_manager: PackageManagerChoice,
+) -> dict[str, dict[str, Any]]:
+    helper_tasks: dict[str, dict[str, Any]] = {}
+    if is_committed(".pre-commit-config.yaml"):
+        helper_tasks["_upgrade-precommit"] = {
+            "cmd": "prek autoupdate",
+            "executor": to_inline_table({"type": "simple"}),
+        }
+    if "uv" in package_manager:
+        helper_tasks["_upgrade-uv"] = _get_uv_upgrade_task()
+    if "pixi" in package_manager:
+        helper_tasks["_upgrade-pixi"] = {
+            "cmd": "pixi update",
+            "executor": to_inline_table({"type": "simple"}),
+        }
+    julia_task = _get_julia_upgrade_task()
+    if julia_task is not None:
+        helper_tasks["_upgrade-julia"] = julia_task
+    pluto_task = _get_pluto_upgrade_task()
+    if pluto_task is not None:
+        helper_tasks["_upgrade-pluto"] = pluto_task
+    return helper_tasks
+
+
 def _unwrap_toml(value: Any) -> Any:
     """Recursively convert Tomlkit items into formatting-independent Python values."""
     if isinstance(value, Mapping):
@@ -599,6 +612,15 @@ def _unwrap_toml(value: Any) -> Any:
         return [_unwrap_toml(item) for item in value]
     unwrap = getattr(value, "unwrap", None)
     return unwrap() if unwrap is not None else value
+
+
+def _get_pluto_upgrade_task() -> dict[str, Any] | None:
+    if not has_pluto_notebooks():
+        return None
+    return {
+        "cmd": to_multiline_string(PLUTO_UPGRADE_COMMAND),
+        "executor": to_inline_table({"type": "simple"}),
+    }
 
 
 def _get_julia_upgrade_task() -> dict[str, Any] | None:

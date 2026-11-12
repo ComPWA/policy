@@ -3,11 +3,27 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from compwa_policy.utilities.match import git_ls_files
 
 _PRECOMMIT_RUN_PATTERN = re.compile(r"pre-commit run(\s+(--all-files|-a))?")
 
+PLUTO_NOTEBOOK_HEADER = "### A Pluto.jl notebook ###"
+PLUTO_UPGRADE_COMMAND = f"""
+julia --eval='
+using Pkg
+Pkg.activate(temp=true)
+Pkg.add("Pluto")
+using Pluto
+
+files = readlines(`git ls-files -- "*.jl"`)
+for file in files
+    startswith(readline(file), "{PLUTO_NOTEBOOK_HEADER}") || continue
+    Pluto.update_notebook_environment(file; backup=false)
+end
+'
+"""
 UV_UPGRADE_IMPORTS = ["pathlib", "subprocess"]
 UV_UPGRADE_EXPRESSION = """
 all([
@@ -78,3 +94,16 @@ failed = [
 exit(!isempty(failed))
 '
 """
+
+
+def has_pluto_notebooks() -> bool:
+    """Check whether any tracked Julia file is a Pluto notebook.
+
+    Pluto notebooks embed their own package environment, which is not covered by the
+    upgrade of :file:`Manifest.toml` files.
+    """
+    for path in git_ls_files("*.jl"):
+        with Path(path).open(encoding="utf-8", errors="ignore") as stream:
+            if stream.readline().startswith(PLUTO_NOTEBOOK_HEADER):
+                return True
+    return False

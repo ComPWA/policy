@@ -824,6 +824,26 @@ def describe_set_upgrade_task():
         assert "git ls-files" in task["cmd"]
         assert "Pkg.activate(project)" in task["cmd"]
 
+    def upgrades_pluto_notebooks(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "notebook.jl").write_text("### A Pluto.jl notebook ###\n")
+        config_path = tmp_path / "pyproject.toml"
+        config_path.write_text("[tool.poe.tasks]\n")
+        git_add(tmp_path)
+
+        with ModifiablePyproject.load(config_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        tasks = Pyproject.load(config_path).get_table("tool.poe.tasks")
+        assert tasks["upgrade"]["parallel"] == ["_upgrade-uv", "_upgrade-pluto"]
+        assert "Pluto.update_notebook_environment" in tasks["_upgrade-pluto"]["cmd"]
+
 
 def test_migrate_tasks_to_groups_without_empty_headers():
     src = dedent("""
