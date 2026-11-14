@@ -428,6 +428,10 @@ def _set_jupyter_lab_task(pyproject: ModifiablePyproject, /) -> None:
         pyproject.changelog.append(msg)
 
 
+__NB_PLUGIN = "pytest-nbclient @ git+https://github.com/ComPWA/pytest-nbclient@6bd8b0f3d61dd430363966df586f4261f5a811ab"
+__OBSOLETE_NB_PLUGINS = {"ipykernel", "nbclient", "nbmake"}
+
+
 def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
     tasks = _get_or_create_group_tasks(pyproject, "notebook")
     existing = cast("Table", tasks.get("nb", {}))
@@ -440,24 +444,25 @@ def _set_nb_task(pyproject: ModifiablePyproject, /) -> None:
                 "positional": True,
             }
         ]),
-        "cmd": "pytest --nbmake --nbmake-timeout=0 ${paths}",
+        "cmd": "pytest --nbclient ${paths}",
         "help": "Run all notebooks",
     }
     executor = {}
     if "notebooks" in pyproject.get_table("dependency-groups", fallback=set()):
         executor["group"] = "notebooks"
-    existing_executor_with = existing.get("executor", {}).get("with")
-    if existing_executor_with is not None and existing_executor_with not in (
-        "nbmake",
-        ["nbmake"],
-    ):
-        if isinstance(existing_executor_with, str):
-            existing_executor_with = [existing_executor_with]
-        if "nbmake" not in existing_executor_with:
-            existing_executor_with.append("nbmake")
-        executor["with"] = existing_executor_with
+    existing_executor_with = existing.get("executor", {}).get("with", [])
+    if isinstance(existing_executor_with, str):
+        existing_executor_with = [existing_executor_with]
+    executor_with = [
+        p
+        for p in existing_executor_with
+        if p not in __OBSOLETE_NB_PLUGINS and not p.startswith("pytest-nbclient")
+    ]
+    executor_with.append(__NB_PLUGIN)
+    if len(executor_with) == 1:
+        executor["with"] = executor_with[0]
     else:
-        executor["with"] = "nbmake"
+        executor["with"] = to_toml_array(executor_with)
     expected["executor"] = to_inline_table(executor)
     if existing != expected:
         tasks["nb"] = expected
