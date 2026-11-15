@@ -437,7 +437,7 @@ def _recommend_vscode_extension(session: Session, /) -> None:
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
-            "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
+            "github-actions.workflows.pinned.workflows": [ci_workflow.as_posix()],
         }
         vscode.update_settings(session, action_settings)
 
