@@ -490,3 +490,8 @@ possibly-unresolved-reference = "warn"
 
 [tool.ty.terminal]
 error-on-warning = true
+
+[tool.uv.extra-build-variables]
+# Avoid requiring a C compiler when PyYAML wheels are unavailable, as on Python 3.15
+# https://github.com/yaml/pyyaml/issues/951
+pyyaml = { PYYAML_FORCE_LIBYAML = "0" }
