@@ -64,6 +64,7 @@ def _run_main(
     single_threaded: bool = False,
     skip_tests: list[str] | None = None,
     ubuntu_runner: UbuntuRunnerLabel | None = None,
+    windows_python_version: PythonVersion | None = None,
 ) -> list[str]:
     with Session.load(_precommit(precommit_content)) as session:
         run_check(
@@ -88,11 +89,26 @@ def _run_main(
             pytest_single_threaded=single_threaded,
             ci_skipped_tests=",".join(skip_tests or []),
             ubuntu_runner=ubuntu_runner,
+            windows_python_version=windows_python_version,
         )
         return session.collect_changes()
 
 
 def describe_check():
+    @pytest.mark.parametrize("windows_python_version", [None, "3.14"])
+    def configures_optional_windows_job(
+        workflows_repo: Path, run_check, windows_python_version: PythonVersion | None
+    ):
+        _run_main(run_check, windows_python_version=windows_python_version)
+        yaml = create_prettier_round_trip_yaml()
+        ci = yaml.load(workflows_repo / _WORKFLOW_DIR / "ci.yml")
+        inputs = ci["jobs"]["test"].get("with", {})
+        if windows_python_version is None:
+            assert "windows-python-version" not in inputs
+        else:
+            assert inputs["windows-python-version"] == windows_python_version
+        assert not _run_main(run_check, windows_python_version=windows_python_version)
+
     @pytest.mark.parametrize("existing", [False, True], ids=["new", "migration"])
     def grants_version_branch_permissions_without_secrets(
         workflows_repo: Path, run_check, existing: bool
@@ -404,7 +420,7 @@ def describe_action_pins():
             pinned[filename] = re.sub(
                 r"@[^\s#]+", "@0123456789abcdef # pinned", path.read_text()
             )
-            path.write_text(pinned[filename])
+            path.write_text(pinned[filename], encoding="utf-8", newline="\n")
         changes = _run_main(run_check)
         assert not changes  # pins alone must not trigger an update
         for filename, content in pinned.items():
@@ -416,6 +432,6 @@ def describe_action_pins():
         ci_path = workflows_repo / _WORKFLOW_DIR / "ci.yml"
         assert 'coverage-python-version: "3.14"' in ci_path.read_text()
         pinned = re.sub(r"@[^\s#]+", "@0123456789abcdef # pinned", ci_path.read_text())
-        ci_path.write_text(pinned)
+        ci_path.write_text(pinned, encoding="utf-8", newline="\n")
         assert not _run_main(run_check)
         assert ci_path.read_text() == pinned

@@ -63,6 +63,7 @@ class Arguments:
     keep_workflow: set[str] = field(converter=set)
     macos_python_version: PythonVersion | None
     macos_runner: MacosRunnerLabel | None
+    windows_python_version: PythonVersion | None
     no_binder: bool
     no_cd: bool
     no_cspell_update: bool

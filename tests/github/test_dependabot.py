@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 
 
 def _read_ecosystems(repo: Path) -> list[str]:
-    config = yaml.safe_load((repo / ".github" / "dependabot.yml").read_text())
+    config = yaml.safe_load(
+        (repo / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+    )
     return [entry["package-ecosystem"] for entry in config["updates"]]
 
 
@@ -47,7 +49,9 @@ def describe_check() -> None:
         assert (repo / ".github" / "dependabot.yml").exists()
         with Session() as session:
             run_check(check, session, dependabot_ecosystems=[])
-            assert session.changelog == ["Removed .github/dependabot.yml"]
+            assert session.changelog == [
+                f"Removed {repo.joinpath('.github', 'dependabot.yml').relative_to(repo)}"
+            ]
         assert not (repo / ".github" / "dependabot.yml").exists()
         with Session() as session:
             run_check(check, session, dependabot_ecosystems=[])
@@ -63,7 +67,9 @@ def describe_check() -> None:
     ) -> None:
         with Session() as session:
             run_check(check, session, dependabot_assignees=assignees)
-        config = yaml.safe_load((repo / ".github" / "dependabot.yml").read_text())
+        config = yaml.safe_load(
+            (repo / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+        )
         assert config["multi-ecosystem-groups"]["lock"].get("assignees") == expected
 
     def rejects_unknown_ecosystem(repo: Path, run_check) -> None:

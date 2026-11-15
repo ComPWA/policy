@@ -85,6 +85,9 @@ def describe_update_post_build():
             binder._update_post_build(session, package_manager="conda")
 
 
+@pytest.mark.skipif(
+    os.name == "nt", reason="Windows does not support Unix executable bits"
+)
 def describe_make_executable():
     def sets_executable_bit(tmp_path: Path):
         script = tmp_path / "postBuild"

@@ -115,6 +115,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "tag_prefix",
         "ubuntu_runner",
         "upgrade_frequency",
+        "windows_python_version",
     }),
     "nb": frozenset({
         "allowed_cell_metadata",
@@ -264,6 +265,8 @@ class Settings(BaseSettings):
     """Runner label for the macOS test job; omitting it keeps the ComPWA/actions default."""
     ubuntu_runner: UbuntuRunnerLabel | None = None
     """Runner label for the Linux test and PyPI jobs; omitting it keeps the default."""
+    windows_python_version: PythonVersion | None = None
+    """Opt into a Windows test job; requires a ComPWA/actions revision with Windows support."""
     no_cd: bool = False
     """Do not add continuous-deployment workflows."""
     no_milestones: bool = False

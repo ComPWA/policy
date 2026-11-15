@@ -32,6 +32,7 @@ from compwa_policy.cli._options import (
     TagPrefix,
     UbuntuRunner,
     UpgradeFrequency,
+    WindowsPythonVersion,
     build_arguments,
 )
 
@@ -47,6 +48,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
     keep_pr_linting: KeepPrLinting = None,
     macos_python_version: MacosPythonVersion = None,
     macos_runner: MacosRunner = None,
+    windows_python_version: WindowsPythonVersion = None,
     ubuntu_runner: UbuntuRunner = None,
     no_cd: NoCd = None,
     no_milestones: NoMilestones = None,
@@ -78,6 +80,7 @@ def github(  # ruff: ignore[too-many-positional-arguments]
         keep_pr_linting=keep_pr_linting,
         macos_python_version=macos_python_version,
         macos_runner=macos_runner,
+        windows_python_version=windows_python_version,
         ubuntu_runner=ubuntu_runner,
         no_cd=no_cd,
         no_milestones=no_milestones,

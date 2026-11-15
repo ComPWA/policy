@@ -231,6 +231,13 @@ MacosRunner = Annotated[
         help="GitHub Actions runner label for the macOS test job, such as 'macos-26' or 'macos-26-intel'. Omit to use the default of ComPWA/actions. Requires ComPWA/actions v4.1.8 or later.",
     ),
 ]
+WindowsPythonVersion = Annotated[
+    PythonVersion | None,
+    typer.Option(
+        "--windows-python-version",
+        help="Opt into a Windows test job on this Python version. Requires a ComPWA/actions revision with Windows support.",
+    ),
+]
 UbuntuRunner = Annotated[
     UbuntuRunnerLabel | None,
     typer.Option(
