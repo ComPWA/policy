@@ -54,11 +54,11 @@ def main(precommit: Precommit | None = None) -> int:
 def _update_policy_schema() -> None:
     expected = create_policy_schema()
     try:
-        existing = json.loads(SCHEMA_PATH.read_text())
+        existing = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         existing = None
     if existing != expected:
-        SCHEMA_PATH.write_text(render_policy_schema())
+        SCHEMA_PATH.write_text(render_policy_schema(), encoding="utf-8", newline="\n")
 
 
 def _load_precommit_hook_definitions() -> tuple[dict[str, Hook], list[Hook]]:
@@ -89,7 +89,7 @@ def _update_manifest_definition(definitions: dict[str, Hook]) -> bool:
 
 def _write_hook_manifest(hooks: list[Hook]) -> None:
     parser = _create_hook_manifest_parser()
-    with open(__HOOK_DEFINITION_FILE, "w", encoding="utf-8") as stream:
+    with open(__HOOK_DEFINITION_FILE, "w", encoding="utf-8", newline="\n") as stream:
         parser.dump(hooks, stream)
 
 
@@ -128,7 +128,7 @@ def _write_precommit_config(precommit: Precommit) -> None:
         return
     content = precommit.dumps()
     if isinstance(source, Path):
-        source.write_text(content)
+        source.write_text(content, encoding="utf-8", newline="\n")
         return
     position = source.tell()
     source.seek(0)

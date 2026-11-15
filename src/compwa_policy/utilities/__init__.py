@@ -110,7 +110,7 @@ def write(
             _get_path_resource(session, target).write_text(content)
             return
         target.parent.mkdir(exist_ok=True)
-        with open(target, "w", encoding="utf-8") as output_stream:
+        with open(target, "w", encoding="utf-8", newline="\n") as output_stream:
             output_stream.write(content)
     elif isinstance(target, io.TextIOBase):
         target.write(content)
@@ -195,7 +195,7 @@ def update_file(
     else:
         template_dir = COMPWA_POLICY_DIR
     template_path = template_dir / relative_path
-    expected_content = template_path.read_text()
+    expected_content = template_path.read_text(encoding="utf-8")
     resource = _get_path_resource(session, relative_path)
     if not resource.exists:
         message = f"{relative_path} is missing, so created a new one. Please commit it."

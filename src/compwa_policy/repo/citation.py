@@ -114,7 +114,7 @@ def _write_citation_cff(citation_cff: CommentedMap) -> None:
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.width = 88
     yaml.allow_unicode = True
-    with open(CONFIG_PATH.citation, "w", encoding="utf-8") as stream:
+    with open(CONFIG_PATH.citation, "w", encoding="utf-8", newline="\n") as stream:
         yaml.dump(citation_cff, stream)
 
 

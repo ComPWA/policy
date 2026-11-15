@@ -54,7 +54,8 @@ def update_conda_environment(
     updated |= __update_python_version(python_version, conda_deps)
     updated |= __update_pip_dependencies(python_version, conda_deps)
     if updated:
-        yaml.dump(conda_env, CONFIG_PATH.conda)
+        with open(CONFIG_PATH.conda, "w", encoding="utf-8", newline="\n") as stream:
+            yaml.dump(conda_env, stream)
         msg = f"Updated Conda environment for Python {python_version}"
         session.changelog.append(msg)
 

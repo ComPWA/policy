@@ -133,7 +133,7 @@ def _configure_standalone(extra_extensions: set[str], changelog: Changelog) -> N
     path = Path("lychee.toml")
     document = tomlkit.loads(path.read_text(encoding="utf-8") if path.exists() else "")
     if _configure_table(document, extra_extensions):
-        path.write_text(tomlkit.dumps(document), encoding="utf-8")
+        path.write_text(tomlkit.dumps(document), encoding="utf-8", newline="\n")
         changelog.append("Configured lychee.toml")
 
 

@@ -41,6 +41,7 @@ from compwa_policy.repo import (
     citation,
     commitlint,
     deprecated,
+    gitattributes,
     gitpod,
     lychee,
     poe,
@@ -80,6 +81,7 @@ ALL_GROUPS: frozenset[Group] = frozenset(get_args(Group))
 CHECK_HOOKS = (
     citation.check,
     commitlint.check,
+    gitattributes.check,
     conda.check,
     editorconfig.check,
     labels.check,

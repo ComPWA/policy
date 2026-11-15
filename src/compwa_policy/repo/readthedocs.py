@@ -404,7 +404,7 @@ class ReadTheDocs:
         if target is None:
             target = self.source
         if isinstance(target, (Path, str)):
-            with open(target, "w", encoding="utf-8") as f:
+            with open(target, "w", encoding="utf-8", newline="\n") as f:
                 self.__parser.dump(self.document, f)
         else:
             target.seek(0)

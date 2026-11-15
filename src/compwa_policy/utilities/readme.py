@@ -40,7 +40,7 @@ class ModifiableReadme(ModifiableResource):
     def dump(self) -> None:
         if not self._changelog:
             return
-        with self._source.open("w", encoding="utf-8") as stream:
+        with self._source.open("w", encoding="utf-8", newline="\n") as stream:
             stream.writelines(self._lines)
 
     def add_badge(self, badge: str) -> None:

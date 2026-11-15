@@ -64,11 +64,13 @@ def _update_draft(
     )
     output_path = CONFIG_PATH.release_drafter_config
     if not os.path.exists(output_path):
-        yaml.dump(expected, output_path)
+        with open(output_path, "w", encoding="utf-8", newline="\n") as stream:
+            yaml.dump(expected, stream)
         return [f"Created {output_path}"]
     existing = _get_existing_config()
     if existing != expected:
-        yaml.dump(expected, output_path)
+        with open(output_path, "w", encoding="utf-8", newline="\n") as stream:
+            yaml.dump(expected, stream)
         return [f"Updated {output_path}"]
     return []
 

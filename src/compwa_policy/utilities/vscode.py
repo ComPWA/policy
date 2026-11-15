@@ -352,7 +352,7 @@ def _to_lower(lst: list[str]) -> list[str]:
 
 
 def _dump_config(config: dict, path: Path) -> None:
-    with open(path, "w", encoding="utf-8") as stream:
+    with open(path, "w", encoding="utf-8", newline="\n") as stream:
         json.dump(config, stream, ensure_ascii=False, indent=2, sort_keys=True)
         stream.write("\n")
 

@@ -249,13 +249,15 @@ def _update_conda_environment(precommit: ModifiablePrecommit) -> None:
         if key not in variables:
             variables[key] = 1
             conda_env["variables"] = variables
-            yaml.dump(conda_env, path)
+            with open(path, "w", encoding="utf-8", newline="\n") as stream:
+                yaml.dump(conda_env, stream)
             precommit.changelog.append(f"Set {key} environment variable in {path}")
     elif key in variables:
         del variables[key]
         if not variables:
             del conda_env["variables"]
-        yaml.dump(conda_env, path)
+        with open(path, "w", encoding="utf-8", newline="\n") as stream:
+            yaml.dump(conda_env, stream)
         precommit.changelog.append(f"Removed {key} environment variable {path}")
 
 

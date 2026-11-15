@@ -208,7 +208,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             raise ValueError(msg)
         if isinstance(target, (Path, str)):
             src = self.dumps()
-            with open(target, "w", encoding="utf-8") as stream:
+            with open(target, "w", encoding="utf-8", newline="\n") as stream:
                 stream.write(src)
         elif isinstance(target, io.IOBase):
             current_position = target.tell()

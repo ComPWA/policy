@@ -291,7 +291,7 @@ def _update_taplo_config(session: Session, /) -> None:
 
     expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
     if not CONFIG_PATH.taplo.exists():
-        with open(CONFIG_PATH.taplo, "w", encoding="utf-8") as stream:
+        with open(CONFIG_PATH.taplo, "w", encoding="utf-8", newline="\n") as stream:
             stream.write(expected_str)
         msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
         session.changelog.append(msg)
@@ -300,7 +300,7 @@ def _update_taplo_config(session: Session, /) -> None:
         existing = tomlkit.load(f)
     existing_str = tomlkit.dumps(existing, sort_keys=True)
     if existing_str.strip() != expected_str.strip():
-        with open(CONFIG_PATH.taplo, "w", encoding="utf-8") as stream:
+        with open(CONFIG_PATH.taplo, "w", encoding="utf-8", newline="\n") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
         session.changelog.append(msg)

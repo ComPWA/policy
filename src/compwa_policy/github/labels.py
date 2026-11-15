@@ -88,7 +88,7 @@ def _remove_all_labels_requirement() -> None:
 def _remove_labels_requirement(path: Path) -> None:
     with open(path, encoding="utf-8") as stream:
         original_lines = stream.readlines()
-    with open(path, "w", encoding="utf-8") as stream:
+    with open(path, "w", encoding="utf-8", newline="\n") as stream:
         for line in original_lines:
             requirement = line
             requirement = requirement.split("<")[0]

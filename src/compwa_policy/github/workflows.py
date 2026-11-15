@@ -399,7 +399,7 @@ def copy_workflow_file(
 ) -> None:
     """Install a workflow that is copied verbatim from the policy templates."""
     template_path = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
-    expected_content = template_path.read_text()
+    expected_content = template_path.read_text(encoding="utf-8")
     if repository is not None:
         expected_content = resolve_self_references(expected_content, repository)
     if not CONFIG_PATH.pip_constraints.exists():
@@ -556,13 +556,13 @@ def update_workflow(
         expected_content = resolve_self_references(expected_content, repository)
     if not path.exists():
         path.parent.mkdir(exist_ok=True, parents=True)
-        path.write_text(expected_content, encoding="utf-8")
+        path.write_text(expected_content, encoding="utf-8", newline="\n")
         return [f"Created {path} workflow"]
     existing_content = path.read_text(encoding="utf-8")
     expected_content = preserve_action_versions(expected_content, existing_content)
     if expected_content == existing_content:
         return []
-    path.write_text(expected_content, encoding="utf-8")
+    path.write_text(expected_content, encoding="utf-8", newline="\n")
     return [f"Updated {path} workflow"]
 
 

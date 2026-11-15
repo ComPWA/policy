@@ -39,6 +39,7 @@ _PYPROJECT = dedent("""
 _EXPECTED_CHECK_HOOKS = (
     ("citation", "repo"),
     ("commitlint", "repo"),
+    ("gitattributes", "repo"),
     ("conda", "env"),
     ("editorconfig", "format"),
     ("labels", "github"),

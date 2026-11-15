@@ -129,13 +129,13 @@ def _has_table(document: dict[str, Any], dotted_key: str) -> bool:
 def _load_pyproject() -> dict[str, Any]:
     if not CONFIG_PATH.pyproject.exists():
         return {}
-    return tomli.loads(CONFIG_PATH.pyproject.read_text())
+    return tomli.loads(CONFIG_PATH.pyproject.read_text(encoding="utf-8"))
 
 
 def _precommit_hook_ids() -> set[str]:
     if not CONFIG_PATH.precommit.exists():
         return set()
-    document = yaml.safe_load(CONFIG_PATH.precommit.read_text()) or {}
+    document = yaml.safe_load(CONFIG_PATH.precommit.read_text(encoding="utf-8")) or {}
     return {
         hook["id"]
         for repo in document.get("repos", [])

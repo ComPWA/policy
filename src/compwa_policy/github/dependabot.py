@@ -31,7 +31,8 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
 
     def dump_dependabot_config() -> Changelog:
         dependabot_path.parent.mkdir(exist_ok=True)
-        rt_yaml.dump(expected, dependabot_path)
+        with open(dependabot_path, "w", encoding="utf-8", newline="\n") as stream:
+            rt_yaml.dump(expected, stream)
         return [f"Updated {dependabot_path}"]
 
     def get_ecosystem(ecosystem_name: str, /) -> dict[str, Any]:

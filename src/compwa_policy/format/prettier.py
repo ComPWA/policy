@@ -131,5 +131,5 @@ def __get_existing_lines() -> list[str]:
 
 def __write_lines(lines: ExplicitCollection[str]) -> None:
     content = "\n".join(sorted(set(lines) - {""})) + "\n"
-    with open(CONFIG_PATH.prettier_ignore, "w", encoding="utf-8") as f:
+    with open(CONFIG_PATH.prettier_ignore, "w", encoding="utf-8", newline="\n") as f:
         f.write(content)
