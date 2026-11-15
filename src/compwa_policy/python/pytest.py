@@ -84,7 +84,7 @@ def _merge_coverage_into_pyproject(pyproject: ModifiablePyproject) -> None:
 def _merge_pytest_into_pyproject(pyproject: ModifiablePyproject) -> None:
     if not CONFIG_PATH.pytest_ini.exists():
         return
-    with open(CONFIG_PATH.pytest_ini) as stream:
+    with open(CONFIG_PATH.pytest_ini, encoding="utf-8") as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name="pytest.ini")
     pytest_config = tomli.loads(toml_str)

@@ -112,7 +112,7 @@ class ModifiablePrecommit(Precommit, ModifiableResource):
             target.truncate()
             target.seek(current_position)
         elif isinstance(target, Path):
-            with open(target, "w") as stream:
+            with open(target, "w", encoding="utf-8", newline="\n") as stream:
                 self.parser.dump(self.document, stream)
         else:
             msg = f"Target of type {type(target).__name__} is not supported"

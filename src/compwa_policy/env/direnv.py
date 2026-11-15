@@ -104,7 +104,7 @@ def __determine_pixi_dev_environment(session: Session, /) -> str | None:
 
 def __get_pixi_environment_names(session: Session, /) -> set[str]:
     if CONFIG_PATH.pixi_toml.exists():
-        pixi_config = tomli.loads(CONFIG_PATH.pixi_toml.read_text())
+        pixi_config = tomli.loads(CONFIG_PATH.pixi_toml.read_text(encoding="utf-8"))
         return set(pixi_config.get("environments", set()))
     pyproject = session.pyproject
     if pyproject is not None and pyproject.has_table("tool.pixi.environments"):
@@ -129,7 +129,7 @@ def _update_envrc(statements: list[tuple[str | None, str]]) -> Changelog:
 def __update_envrc_content(expected: str) -> Changelog:
     if __get_existing_envrc() == expected:
         return []
-    with open(CONFIG_PATH.envrc, "w") as f:
+    with open(CONFIG_PATH.envrc, "w", encoding="utf-8", newline="\n") as f:
         f.write(expected)
     msg = f"Updated {CONFIG_PATH.envrc} for direnv"
     return [msg]
@@ -138,5 +138,5 @@ def __update_envrc_content(expected: str) -> Changelog:
 def __get_existing_envrc() -> str | None:
     if not CONFIG_PATH.envrc.exists():
         return None
-    with open(CONFIG_PATH.envrc) as f:
+    with open(CONFIG_PATH.envrc, encoding="utf-8") as f:
         return f.read()

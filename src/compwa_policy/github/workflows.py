@@ -390,7 +390,7 @@ def __update_with_section(config: dict, job_name: str) -> None:
 def __get_coverage_python_version() -> PythonVersion:
     python_version_file = Path(".python-version")
     if python_version_file.exists():
-        return python_version_file.read_text().strip()  # ty:ignore[invalid-return-type]
+        return python_version_file.read_text(encoding="utf-8").strip()  # ty:ignore[invalid-return-type]
     return DEFAULT_DEV_PYTHON_VERSION
 
 
@@ -399,7 +399,7 @@ def copy_workflow_file(
 ) -> None:
     """Install a workflow that is copied verbatim from the policy templates."""
     template_path = COMPWA_POLICY_DIR / CONFIG_PATH.github_workflow_dir / filename
-    expected_content = template_path.read_text()
+    expected_content = template_path.read_text(encoding="utf-8")
     if repository is not None:
         expected_content = resolve_self_references(expected_content, repository)
     if not CONFIG_PATH.pip_constraints.exists():
@@ -437,7 +437,7 @@ def _recommend_vscode_extension(session: Session, /) -> None:
     ci_workflow = CONFIG_PATH.github_workflow_dir / "ci.yml"
     if ci_workflow.exists():
         action_settings = {
-            "github-actions.workflows.pinned.workflows": [str(ci_workflow)],
+            "github-actions.workflows.pinned.workflows": [ci_workflow.as_posix()],
         }
         vscode.update_settings(session, action_settings)
 
@@ -556,13 +556,13 @@ def update_workflow(
         expected_content = resolve_self_references(expected_content, repository)
     if not path.exists():
         path.parent.mkdir(exist_ok=True, parents=True)
-        path.write_text(expected_content)
+        path.write_text(expected_content, encoding="utf-8", newline="\n")
         return [f"Created {path} workflow"]
-    existing_content = path.read_text()
+    existing_content = path.read_text(encoding="utf-8")
     expected_content = preserve_action_versions(expected_content, existing_content)
     if expected_content == existing_content:
         return []
-    path.write_text(expected_content)
+    path.write_text(expected_content, encoding="utf-8", newline="\n")
     return [f"Updated {path} workflow"]
 
 

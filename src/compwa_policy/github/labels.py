@@ -52,7 +52,7 @@ def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
 
 
 def _check_has_labels_requirement(path: Path) -> bool:
-    with open(path) as stream:
+    with open(path, encoding="utf-8") as stream:
         lines = stream.readlines()
     for line in lines:
         requirement = _get_package_name(line)
@@ -86,9 +86,9 @@ def _remove_all_labels_requirement() -> None:
 
 
 def _remove_labels_requirement(path: Path) -> None:
-    with open(path) as stream:
+    with open(path, encoding="utf-8") as stream:
         original_lines = stream.readlines()
-    with open(path, "w") as stream:
+    with open(path, "w", encoding="utf-8", newline="\n") as stream:
         for line in original_lines:
             requirement = line
             requirement = requirement.split("<")[0]

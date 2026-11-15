@@ -162,7 +162,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         """Load a ``pyproject.toml`` file from a file, I/O stream, or `str`."""
         _ = session
         if isinstance(source, Path):
-            with open(source) as stream:
+            with open(source, encoding="utf-8") as stream:
                 document = tomlkit.load(stream)
             return cls(document, source)  # ty:ignore[invalid-argument-type]
         if isinstance(source, str):
@@ -208,7 +208,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
             raise ValueError(msg)
         if isinstance(target, (Path, str)):
             src = self.dumps()
-            with open(target, "w") as stream:
+            with open(target, "w", encoding="utf-8", newline="\n") as stream:
                 stream.write(src)
         elif isinstance(target, io.IOBase):
             current_position = target.tell()

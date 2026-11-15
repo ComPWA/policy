@@ -40,7 +40,7 @@ def describe_check():
             run_check(check, session, docstrfmt=True)
 
         assert "id: docstrfmt" in path.read_text()
-        settings = pyproject_path.read_text()
+        settings = pyproject_path.read_text(encoding="utf-8")
         assert "[tool.docstrfmt]" in settings
         assert "docstring-trailing-line = false" in settings
         assert "format-python-code-blocks = false" in settings
@@ -83,7 +83,8 @@ def describe_check():
             [tool.docstrfmt]
             docstring-trailing-line = true
             format-python-code-blocks = false
-            """).lstrip()
+            """).lstrip(),
+            encoding="utf-8",
         )
         path = tmp_path / ".pre-commit-config.yaml"
         path.write_text(
@@ -95,13 +96,13 @@ def describe_check():
                   - id: docstrfmt
             """).lstrip()
         )
-        original = pyproject_path.read_text()
+        original = pyproject_path.read_text(encoding="utf-8")
         precommit = ModifiablePrecommit.load(path)
         with Session.load(precommit) as session:
             run_check(check, session, docstrfmt=True)
 
         assert not precommit.changelog
-        assert pyproject_path.read_text() == original
+        assert pyproject_path.read_text(encoding="utf-8") == original
 
     @pytest.mark.parametrize("disable", ["option", "no-python-files"])
     def removes_hook_and_settings(
@@ -116,7 +117,8 @@ def describe_check():
 
             [tool.docstrfmt]
             docstring-trailing-line = false
-            """).lstrip()
+            """).lstrip(),
+            encoding="utf-8",
         )
         path = tmp_path / ".pre-commit-config.yaml"
         path.write_text(
@@ -133,4 +135,4 @@ def describe_check():
             run_check(check, session, docstrfmt=disable == "no-python-files")
 
         assert "docstrfmt" not in path.read_text()
-        assert "docstrfmt" not in pyproject_path.read_text()
+        assert "docstrfmt" not in pyproject_path.read_text(encoding="utf-8")

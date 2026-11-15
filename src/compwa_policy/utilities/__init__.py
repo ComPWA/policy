@@ -63,7 +63,7 @@ def contains_line(input: Path | io.TextIOBase | str, expected_line: str) -> bool
     if isinstance(input, io.TextIOBase):
         lines = input.readlines()
     else:
-        with open(input) as stream:
+        with open(input, encoding="utf-8") as stream:
             lines = stream.readlines()
     return expected_line in {line.strip() for line in lines}
 
@@ -89,7 +89,7 @@ def read(
     if isinstance(input, (Path, str)):
         if session is not None:
             return _get_path_resource(session, input).read_text()
-        with open(input) as input_stream:
+        with open(input, encoding="utf-8") as input_stream:
             return input_stream.read()
     if isinstance(input, io.TextIOBase):
         return input.read()
@@ -110,7 +110,7 @@ def write(
             _get_path_resource(session, target).write_text(content)
             return
         target.parent.mkdir(exist_ok=True)
-        with open(target, "w") as output_stream:
+        with open(target, "w", encoding="utf-8", newline="\n") as output_stream:
             output_stream.write(content)
     elif isinstance(target, io.TextIOBase):
         target.write(content)
@@ -195,7 +195,7 @@ def update_file(
     else:
         template_dir = COMPWA_POLICY_DIR
     template_path = template_dir / relative_path
-    expected_content = template_path.read_text()
+    expected_content = template_path.read_text(encoding="utf-8")
     resource = _get_path_resource(session, relative_path)
     if not resource.exists:
         message = f"{relative_path} is missing, so created a new one. Please commit it."

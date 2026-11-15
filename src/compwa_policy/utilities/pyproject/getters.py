@@ -123,7 +123,7 @@ def _get_requires_python(project: Mapping[str, Any]) -> str:
         return requires_python
     python_version_file = Path(".python-version")
     if python_version_file.exists():
-        pinned_version = python_version_file.read_text().strip()
+        pinned_version = python_version_file.read_text(encoding="utf-8").strip()
         return f"~={pinned_version}"
     return ""
 

@@ -177,10 +177,10 @@ def _update_runtime_txt(python_version: PythonVersion) -> Changelog:
 def __update_file(expected_content: str, path: Path) -> Changelog:
     path.parent.mkdir(exist_ok=True)
     if path.exists():
-        with open(path) as stream:
+        with open(path, encoding="utf-8") as stream:
             if stream.read() == expected_content:
                 return []
-    with open(path, "w") as stream:
+    with open(path, "w", encoding="utf-8", newline="\n") as stream:
         stream.write(expected_content)
     msg = f"Updated {path}"
     return [msg]

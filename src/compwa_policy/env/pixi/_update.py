@@ -222,7 +222,7 @@ def _define_minimal_project(
 def _import_conda_dependencies(config: ModifiablePyproject) -> None:
     if not CONFIG_PATH.conda.exists():
         return
-    with CONFIG_PATH.conda.open() as stream:
+    with CONFIG_PATH.conda.open(encoding="utf-8") as stream:
         conda = yaml.safe_load(stream)
     conda_dependencies = conda.get("dependencies", [])
     if not conda_dependencies:
@@ -270,7 +270,7 @@ def __to_pixi_dependency(conda_dependency: str) -> tuple[str, str]:
 def _import_conda_environment(config: ModifiablePyproject) -> None:
     if not CONFIG_PATH.conda.exists():
         return
-    with CONFIG_PATH.conda.open() as stream:
+    with CONFIG_PATH.conda.open(encoding="utf-8") as stream:
         conda = yaml.safe_load(stream)
     conda_variables = {k: str(v) for k, v in conda.get("variables", {}).items()}
     if not conda_variables:

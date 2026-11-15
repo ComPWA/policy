@@ -15,7 +15,7 @@ def this_dir() -> Path:
 
 @pytest.fixture
 def example_config(this_dir: Path) -> str:
-    with open(this_dir / ".pre-commit-config.yaml") as file:
+    with open(this_dir / ".pre-commit-config.yaml", encoding="utf-8") as file:
         return file.read()
 
 

@@ -387,7 +387,6 @@ ignore = [
     "undocumented-public-init",
     "undocumented-public-method",
     "unnecessary-collection-call",
-    "unspecified-encoding",
     "write-whole-file",
 ]
 select = ["ALL"]

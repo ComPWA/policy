@@ -31,7 +31,8 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
 
     def dump_dependabot_config() -> Changelog:
         dependabot_path.parent.mkdir(exist_ok=True)
-        rt_yaml.dump(expected, dependabot_path)
+        with open(dependabot_path, "w", encoding="utf-8", newline="\n") as stream:
+            rt_yaml.dump(expected, stream)
         return [f"Updated {dependabot_path}"]
 
     def get_ecosystem(ecosystem_name: str, /) -> dict[str, Any]:
@@ -87,6 +88,6 @@ def get_dependabot_ecosystems() -> set[str]:
     dependabot_path = CONFIG_PATH.github_workflow_dir.parent / "dependabot.yml"
     if not dependabot_path.exists():
         return set()
-    with dependabot_path.open("r") as stream:
+    with dependabot_path.open(encoding="utf-8") as stream:
         config = yaml.load(stream, Loader=yaml.SafeLoader)
     return {entry["package-ecosystem"] for entry in config["updates"]}
