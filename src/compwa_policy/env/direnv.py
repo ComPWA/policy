@@ -129,7 +129,7 @@ def _update_envrc(statements: list[tuple[str | None, str]]) -> Changelog:
 def __update_envrc_content(expected: str) -> Changelog:
     if __get_existing_envrc() == expected:
         return []
-    with open(CONFIG_PATH.envrc, "w") as f:
+    with open(CONFIG_PATH.envrc, "w", encoding="utf-8") as f:
         f.write(expected)
     msg = f"Updated {CONFIG_PATH.envrc} for direnv"
     return [msg]
@@ -138,5 +138,5 @@ def __update_envrc_content(expected: str) -> Changelog:
 def __get_existing_envrc() -> str | None:
     if not CONFIG_PATH.envrc.exists():
         return None
-    with open(CONFIG_PATH.envrc) as f:
+    with open(CONFIG_PATH.envrc, encoding="utf-8") as f:
         return f.read()

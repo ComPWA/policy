@@ -121,7 +121,7 @@ def _update_editor_config() -> Changelog:
     existing_content = CONFIG_PATH.editorconfig.read_text()
     if expected_content in existing_content:
         return []
-    with open(CONFIG_PATH.editorconfig, "a") as stream:
+    with open(CONFIG_PATH.editorconfig, "a", encoding="utf-8") as stream:
         stream.write("\n" + expected_content + "\n")
     return [f"Updated {CONFIG_PATH.editorconfig} for uv.lock"]
 
@@ -147,11 +147,11 @@ def _update_python_version_file(
 
     existing_python_version = ""
     if python_version_file.exists():
-        with open(python_version_file) as stream:
+        with open(python_version_file, encoding="utf-8") as stream:
             existing_python_version = stream.read().strip()
     if existing_python_version == dev_python_version:
         return
-    with open(".python-version", "w") as stream:
+    with open(".python-version", "w", encoding="utf-8") as stream:
         stream.write(dev_python_version + "\n")
     msg = f"Updated {python_version_file} to {dev_python_version}"
     session.changelog.append(msg)
@@ -192,9 +192,9 @@ def _update_contributing_file(
     expected_content = template.render(context).strip() + "\n"
     existing_content = ""
     if contributing_file.exists():
-        existing_content = contributing_file.read_text()
+        existing_content = contributing_file.read_text(encoding="utf-8")
     if expected_content != existing_content:
-        contributing_file.write_text(expected_content)
+        contributing_file.write_text(expected_content, encoding="utf-8")
         msg = f"Updated {contributing_file} to latest template"
         session.changelog.append(msg)
 

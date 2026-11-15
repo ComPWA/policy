@@ -33,7 +33,9 @@ __BADGE = "[![Spelling checked](https://img.shields.io/badge/cspell-checked-brig
 __REPO_URL = "https://github.com/streetsidesoftware/cspell-cli"
 
 
-with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell) as __STREAM:
+with open(
+    COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.cspell, encoding="utf-8"
+) as __STREAM:
     __EXPECTED_CONFIG = json.load(__STREAM)
 
 
@@ -94,12 +96,12 @@ def _remove_configuration(session: Session, /) -> None:
         session.changelog.append(msg)
         return
     if CONFIG_PATH.editorconfig.exists():
-        with open(CONFIG_PATH.editorconfig) as stream:
+        with open(CONFIG_PATH.editorconfig, encoding="utf-8") as stream:
             prettier_ignore_content = stream.readlines()
         expected_line = str(CONFIG_PATH.cspell) + "\n"
         if expected_line in set(prettier_ignore_content):
             prettier_ignore_content.remove(expected_line)
-            with open(CONFIG_PATH.editorconfig, "w") as stream:
+            with open(CONFIG_PATH.editorconfig, "w", encoding="utf-8") as stream:
                 stream.writelines(prettier_ignore_content)
             msg = (
                 f'"{CONFIG_PATH.cspell}" in {CONFIG_PATH.editorconfig} is no longer'
@@ -122,7 +124,7 @@ def _update_precommit_repo(precommit: ModifiablePrecommit) -> None:
 
 def _update_config_content() -> Changelog:
     if not CONFIG_PATH.cspell.exists():
-        with open(CONFIG_PATH.cspell, "w") as stream:
+        with open(CONFIG_PATH.cspell, "w", encoding="utf-8") as stream:
             stream.write("{}")
     config = __get_config(CONFIG_PATH.cspell)
     original_config = deepcopy(config)
@@ -223,12 +225,12 @@ def __express_list_of_sections(sections: OrderedCollection[str]) -> str:
 
 
 def __get_config(path: str | Path) -> dict:
-    with open(path) as stream:
+    with open(path, encoding="utf-8") as stream:
         return json.load(stream)
 
 
 def __write_config(config: dict) -> None:
-    with open(CONFIG_PATH.cspell, "w") as stream:
+    with open(CONFIG_PATH.cspell, "w", encoding="utf-8") as stream:
         json.dump(config, stream, indent=2, ensure_ascii=False)
         stream.write("\n")
 

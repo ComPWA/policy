@@ -50,7 +50,7 @@ def check(session: Session, _args: Arguments, _ctx: CheckContext) -> None:
 
 
 def convert_zenodo_json() -> Changelog:
-    with open(CONFIG_PATH.zenodo) as f:
+    with open(CONFIG_PATH.zenodo, encoding="utf-8") as f:
         zenodo = json.load(f)
     citation_cff = _convert_zenodo(zenodo)
     _write_citation_cff(citation_cff)
@@ -114,7 +114,7 @@ def _write_citation_cff(citation_cff: CommentedMap) -> None:
     yaml.indent(mapping=2, sequence=4, offset=2)
     yaml.width = 88
     yaml.allow_unicode = True
-    with open(CONFIG_PATH.citation, "w") as stream:
+    with open(CONFIG_PATH.citation, "w", encoding="utf-8") as stream:
         yaml.dump(citation_cff, stream)
 
 
@@ -160,7 +160,7 @@ def check_citation_keys() -> None:
     }
     if os.path.exists("docs/"):
         expected.add("url")
-    with open(CONFIG_PATH.citation) as f:
+    with open(CONFIG_PATH.citation, encoding="utf-8") as f:
         yaml = YAML()
         citation_cff = yaml.load(f)
     if not citation_cff:

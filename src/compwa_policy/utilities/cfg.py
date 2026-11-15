@@ -64,7 +64,7 @@ def write_config(cfg: ConfigParser, output: Path | io.TextIOBase | str) -> None:
     if isinstance(output, io.TextIOBase):
         cfg.write(output)
     elif isinstance(output, (Path, str)):
-        with open(output) as stream:
+        with open(output, encoding="utf-8") as stream:
             cfg.write(stream)
     else:
         msg = f"Cannot write a {ConfigParser.__name__} to a {type(output).__name__}"

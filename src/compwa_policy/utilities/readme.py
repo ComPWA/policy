@@ -30,7 +30,7 @@ class ModifiableReadme(ModifiableResource):
     def load(cls, source: Path = CONFIG_PATH.readme) -> ModifiableReadme:
         if not source.exists():
             return cls([], source, exists=False)
-        with source.open() as stream:
+        with source.open(encoding="utf-8") as stream:
             return cls(stream.readlines(), source, exists=True)
 
     @property
@@ -40,7 +40,7 @@ class ModifiableReadme(ModifiableResource):
     def dump(self) -> None:
         if not self._changelog:
             return
-        with self._source.open("w") as stream:
+        with self._source.open("w", encoding="utf-8") as stream:
             stream.writelines(self._lines)
 
     def add_badge(self, badge: str) -> None:

@@ -87,6 +87,6 @@ def get_dependabot_ecosystems() -> set[str]:
     dependabot_path = CONFIG_PATH.github_workflow_dir.parent / "dependabot.yml"
     if not dependabot_path.exists():
         return set()
-    with dependabot_path.open("r") as stream:
+    with dependabot_path.open(encoding="utf-8") as stream:
         config = yaml.load(stream, Loader=yaml.SafeLoader)
     return {entry["package-ecosystem"] for entry in config["updates"]}

@@ -40,7 +40,7 @@ class _ModifiableJsonResource(ModifiableResource):
     def load(cls) -> Self:
         if not cls.path.exists():
             return cls({}, exists=False)
-        with cls.path.open() as stream:
+        with cls.path.open(encoding="utf-8") as stream:
             return cls(json.load(stream), exists=True)
 
     @property
@@ -327,7 +327,7 @@ def __add_extension(extension_name: str, key: str) -> Changelog:
 def __remove_extension(extension_name: str, key: str) -> Changelog:
     if not CONFIG_PATH.vscode_extensions.exists():
         return []
-    with open(CONFIG_PATH.vscode_extensions) as stream:
+    with open(CONFIG_PATH.vscode_extensions, encoding="utf-8") as stream:
         config = json.load(stream)
     recommended_extensions = _to_lower(config.get(key, []))
     extension_name = extension_name.lower()
@@ -352,7 +352,7 @@ def _to_lower(lst: list[str]) -> list[str]:
 
 
 def _dump_config(config: dict, path: Path) -> None:
-    with open(path, "w") as stream:
+    with open(path, "w", encoding="utf-8") as stream:
         json.dump(config, stream, ensure_ascii=False, indent=2, sort_keys=True)
         stream.write("\n")
 
@@ -361,5 +361,5 @@ def __load_config(path: Path, create: bool = False) -> dict:
     if not path.exists() and create:
         path.parent.mkdir(exist_ok=True)
         return {}
-    with open(path) as stream:
+    with open(path, encoding="utf-8") as stream:
         return json.load(stream)

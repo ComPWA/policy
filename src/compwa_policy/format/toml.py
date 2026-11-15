@@ -261,7 +261,7 @@ def _rename_taplo_config() -> Changelog:
 
 def _update_taplo_config(session: Session, /) -> None:
     template_path = COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.taplo
-    with open(template_path) as f:
+    with open(template_path, encoding="utf-8") as f:
         expected = tomlkit.load(f)
 
     excludes = filter_patterns(expected["exclude"])
@@ -291,16 +291,16 @@ def _update_taplo_config(session: Session, /) -> None:
 
     expected_str = tomlkit.dumps(expected, sort_keys=True).lstrip()
     if not CONFIG_PATH.taplo.exists():
-        with open(CONFIG_PATH.taplo, "w") as stream:
+        with open(CONFIG_PATH.taplo, "w", encoding="utf-8") as stream:
             stream.write(expected_str)
         msg = f"Added {CONFIG_PATH.taplo} config for TOML formatting"
         session.changelog.append(msg)
         return
-    with open(CONFIG_PATH.taplo) as f:
+    with open(CONFIG_PATH.taplo, encoding="utf-8") as f:
         existing = tomlkit.load(f)
     existing_str = tomlkit.dumps(existing, sort_keys=True)
     if existing_str.strip() != expected_str.strip():
-        with open(CONFIG_PATH.taplo, "w") as stream:
+        with open(CONFIG_PATH.taplo, "w", encoding="utf-8") as stream:
             stream.write(expected_str)
         msg = f"Updated {CONFIG_PATH.taplo} config file"
         session.changelog.append(msg)

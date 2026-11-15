@@ -41,7 +41,7 @@ def check(session: Session, args: Arguments, _: CheckContext) -> None:
     error_message = ""
     expected_config = _generate_gitpod_config(session, args.dev_python_version)
     if CONFIG_PATH.gitpod.exists():
-        with open(CONFIG_PATH.gitpod) as stream:
+        with open(CONFIG_PATH.gitpod, encoding="utf-8") as stream:
             existing_config = yaml.load(stream, Loader=yaml.SafeLoader)
         if existing_config != expected_config:
             error_message = "GitPod config does not have expected content"
@@ -77,7 +77,9 @@ def _extract_extensions(session: Session, /) -> list[str]:
 
 
 def _generate_gitpod_config(session: Session, /, python_version: PythonVersion) -> dict:
-    with open(COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.gitpod) as stream:
+    with open(
+        COMPWA_POLICY_DIR / ".template" / CONFIG_PATH.gitpod, encoding="utf-8"
+    ) as stream:
         gitpod_config = yaml.load(stream, Loader=yaml.SafeLoader)
     tasks = gitpod_config["tasks"]
     tasks[0]["init"] = f"pyenv local {python_version}"

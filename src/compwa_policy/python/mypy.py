@@ -58,7 +58,7 @@ def _merge_mypy_into_pyproject(pyproject: ModifiablePyproject) -> None:
     old_config_path = ".mypy.ini"
     if not os.path.exists(old_config_path):
         return
-    with open(old_config_path) as stream:
+    with open(old_config_path, encoding="utf-8") as stream:
         original_contents = stream.read()
     toml_str = Translator().translate(original_contents, profile_name=old_config_path)
     mypy_config = tomli.loads(toml_str)

@@ -55,7 +55,7 @@ def _merge_config_into_pyproject(
     old_config_path = path
     if not os.path.exists(old_config_path):
         return
-    with open(old_config_path) as stream:
+    with open(old_config_path, encoding="utf-8") as stream:
         existing_config = json.load(stream)
     for key, value in existing_config.items():
         if isinstance(value, list):

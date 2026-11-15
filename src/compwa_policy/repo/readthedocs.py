@@ -395,7 +395,7 @@ class ReadTheDocs:
         self.changelog: Changelog = []
         self.source = source
         if isinstance(source, (Path, str)):
-            with open(source) as f:
+            with open(source, encoding="utf-8") as f:
                 self.document = cast("dict", self.__parser.load(f))
         else:
             self.document = cast("dict", self.__parser.load(source))
@@ -404,7 +404,7 @@ class ReadTheDocs:
         if target is None:
             target = self.source
         if isinstance(target, (Path, str)):
-            with open(target, "w") as f:
+            with open(target, "w", encoding="utf-8") as f:
                 self.__parser.dump(self.document, f)
         else:
             target.seek(0)

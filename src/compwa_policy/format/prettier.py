@@ -125,11 +125,11 @@ def __insert_expected_paths() -> Changelog:
 def __get_existing_lines() -> list[str]:
     if not os.path.exists(CONFIG_PATH.prettier_ignore):
         return [""]
-    with open(CONFIG_PATH.prettier_ignore) as f:
+    with open(CONFIG_PATH.prettier_ignore, encoding="utf-8") as f:
         return f.read().split("\n")
 
 
 def __write_lines(lines: ExplicitCollection[str]) -> None:
     content = "\n".join(sorted(set(lines) - {""})) + "\n"
-    with open(CONFIG_PATH.prettier_ignore, "w") as f:
+    with open(CONFIG_PATH.prettier_ignore, "w", encoding="utf-8") as f:
         f.write(content)

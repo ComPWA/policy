@@ -63,7 +63,7 @@ def _update_policy_schema() -> None:
 
 def _load_precommit_hook_definitions() -> tuple[dict[str, Hook], list[Hook]]:
     parser = _create_hook_manifest_parser()
-    with open(__HOOK_DEFINITION_FILE) as f:
+    with open(__HOOK_DEFINITION_FILE, encoding="utf-8") as f:
         hooks: list[Hook] = parser.load(f)
     hook_ids = [h["id"] for h in hooks]
     if len(hook_ids) != len(set(hook_ids)):
@@ -89,7 +89,7 @@ def _update_manifest_definition(definitions: dict[str, Hook]) -> bool:
 
 def _write_hook_manifest(hooks: list[Hook]) -> None:
     parser = _create_hook_manifest_parser()
-    with open(__HOOK_DEFINITION_FILE, "w") as stream:
+    with open(__HOOK_DEFINITION_FILE, "w", encoding="utf-8") as stream:
         parser.dump(hooks, stream)
 
 

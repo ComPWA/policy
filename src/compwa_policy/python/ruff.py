@@ -343,7 +343,6 @@ def __update_ruff_lint_settings(pyproject: ModifiablePyproject) -> None:
         "undocumented-public-function",
         "undocumented-public-init",
         "undocumented-public-method",
-        "unspecified-encoding",
         "write-whole-file",
     }
     if "3.6" in pyproject.get_supported_python_versions():

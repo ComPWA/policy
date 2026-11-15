@@ -89,12 +89,12 @@ def describe_consolidate_formatters(original: dict, expected: dict):
         monkeypatch.chdir(tmp_path)
         path = Path(".vscode/settings.json")
         path.parent.mkdir()
-        path.write_text(json.dumps(original))
+        path.write_text(json.dumps(original), encoding="utf-8")
         with Session() as session:
             settings = session.get(ModifiableVscodeSettings)
             assert settings.changed == (original != expected)
             session.flush()
-        assert json.loads(path.read_text()) == expected
+        assert json.loads(path.read_text(encoding="utf-8")) == expected
         before = path.read_bytes()
         with Session() as session:
             session.get(ModifiableVscodeSettings)
@@ -111,21 +111,22 @@ def describe_formatter_updates():
             "[css][json]": {"editor.defaultFormatter": "prettier"},
             "[json]": {"editor.wordWrap": "on"},
         }
-        path.write_text(json.dumps(original))
+        path.write_text(json.dumps(original), encoding="utf-8")
         with Session() as session:
             update_settings(
                 session, {"[json]": {"editor.defaultFormatter": "prettier"}}
             )
             update_settings(session, {"[css]": {"editor.defaultFormatter": "prettier"}})
             assert session.flush() == []
-        assert json.loads(path.read_text()) == original
+        assert json.loads(path.read_text(encoding="utf-8")) == original
 
     def reports_other_changes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.chdir(tmp_path)
         path = Path(".vscode/settings.json")
         path.parent.mkdir()
         path.write_text(
-            json.dumps({"[css][json]": {"editor.defaultFormatter": "prettier"}})
+            json.dumps({"[css][json]": {"editor.defaultFormatter": "prettier"}}),
+            encoding="utf-8",
         )
         with Session() as session:
             update_settings(
@@ -138,7 +139,7 @@ def describe_formatter_updates():
                 },
             )
             assert session.flush() == ["Updated VS Code settings"]
-        assert json.loads(path.read_text()) == {
+        assert json.loads(path.read_text(encoding="utf-8")) == {
             "[css][json]": {"editor.defaultFormatter": "prettier"},
             "[json]": {"editor.wordWrap": "on"},
         }

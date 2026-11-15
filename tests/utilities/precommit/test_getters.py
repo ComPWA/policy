@@ -10,7 +10,7 @@ from compwa_policy.utilities.precommit.getters import find_repo, find_repo_with_
 @pytest.fixture(scope="session")
 def example_yaml() -> str:
     config_path = Path(__file__).parent / ".pre-commit-config.yaml"
-    with open(config_path) as stream:
+    with open(config_path, encoding="utf-8") as stream:
         return stream.read()
 
 
