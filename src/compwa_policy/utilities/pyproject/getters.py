@@ -114,7 +114,7 @@ def _extract_python_versions(classifiers: list[str]) -> list[PythonVersion]:
     identifier = "Programming Language :: Python :: 3."
     version_classifiers = [s for s in classifiers if s.startswith(identifier)]
     prefix = identifier[:-2]
-    return [s.replace(prefix, "") for s in version_classifiers]  # ty:ignore[invalid-return-type]
+    return [s.replace(prefix, "") for s in version_classifiers]  # ty:ignore[invalid-explicit-return]
 
 
 def _get_requires_python(project: Mapping[str, Any]) -> str:
@@ -151,7 +151,7 @@ def _get_allowed_versions(
     allowed_versions = [str(v) for v in versions_to_check if v in specifier]
     if exclude is not None:
         allowed_versions = [v for v in allowed_versions if v not in exclude]
-    return allowed_versions  # ty:ignore[invalid-return-type]
+    return allowed_versions  # ty:ignore[invalid-explicit-return]
 
 
 def __sort_version(version: str) -> tuple[int, ...]:

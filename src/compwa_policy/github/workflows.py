@@ -400,7 +400,7 @@ def __update_with_section(config: dict, job_name: str) -> None:
 def __get_coverage_python_version() -> PythonVersion:
     python_version_file = Path(".python-version")
     if python_version_file.exists():
-        return python_version_file.read_text(encoding="utf-8").strip()  # ty:ignore[invalid-return-type]
+        return python_version_file.read_text(encoding="utf-8").strip()  # ty:ignore[invalid-explicit-return]
     return DEFAULT_DEV_PYTHON_VERSION
 
 

@@ -231,7 +231,7 @@ class ModifiablePyproject(Pyproject, ModifiableResource):
         self.__assert_is_in_context()
         if create:
             create_sub_table(self._document, dotted_header)
-        return super().get_table(dotted_header, fallback=fallback)  # ty:ignore[invalid-return-type]
+        return super().get_table(dotted_header, fallback=fallback)  # ty:ignore[invalid-explicit-return]
 
     def add_dependency(
         self,
@@ -466,10 +466,10 @@ def load_pyproject_toml(source: IO | Path | str, modifiable: bool) -> PyprojectT
         source.seek(current_position)
         if isinstance(text, bytes):
             text = text.decode()
-        return parser.loads(text)  # ty:ignore[invalid-return-type]
+        return parser.loads(text)  # ty:ignore[invalid-explicit-return]
     if isinstance(source, Path):
-        return parser.loads(source.read_text())  # ty:ignore[invalid-return-type]
+        return parser.loads(source.read_text())  # ty:ignore[invalid-explicit-return]
     if isinstance(source, str):
-        return parser.loads(source)  # ty:ignore[invalid-return-type]
+        return parser.loads(source)  # ty:ignore[invalid-explicit-return]
     msg = f"Source of type {type(source).__name__} is not supported"
     raise TypeError(msg)
