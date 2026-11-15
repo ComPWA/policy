@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import runpy
+from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
 
 import pytest
 
 from compwa_policy.repo.upgrade import get_uv_upgrade_script
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def describe_get_uv_upgrade_script():
@@ -35,5 +32,5 @@ def describe_get_uv_upgrade_script():
         with pytest.raises(SystemExit) as exception:
             runpy.run_path(str(script))
 
-        assert directories == [".", "docs/a", "docs/b"]
+        assert directories == [str(Path(path)) for path in (".", "docs/a", "docs/b")]
         assert exception.value.code == (not all(code == 0 for code in return_codes))

@@ -111,6 +111,7 @@ macos-runner = "macos-26"
 no-pypi = true
 release-name-template = "{{ TAG_PREFIX }}$NEXT_PATCH_VERSION"
 ubuntu-runner = "ubuntu-26.04"
+windows-python-version = "3.14"
 
 [tool.compwa.policy.python]
 branch-coverage = false

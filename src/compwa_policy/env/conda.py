@@ -95,7 +95,7 @@ def __update_pip_dependencies(version: PythonVersion, conda_deps: CommentedSeq) 
     if constraints_file is None:
         expected_pip = "-e .[dev]"
     else:
-        expected_pip = f"-c {constraints_file} -e .[dev]"
+        expected_pip = f"-c {constraints_file.as_posix()} -e .[dev]"
     if len(pip_deps) and pip_deps[0] != expected_pip:
         pip_deps[0] = PlainScalarString(expected_pip)
         return True

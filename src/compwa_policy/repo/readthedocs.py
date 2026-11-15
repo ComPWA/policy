@@ -73,7 +73,7 @@ def _set_sphinx_configuration(config: ReadTheDocs) -> None:
     conf_path = __get_sphinx_config_path()
     if conf_path is None:
         return
-    conf_path = str(conf_path)
+    conf_path = conf_path.as_posix()
     if config.document.get("sphinx", {}).get("configuration", "") != conf_path:
         if "sphinx" not in config.document:
             config.document["sphinx"] = {}

@@ -220,6 +220,29 @@
           "enum": ["monthly", "quarterly", "semiannually"],
           "title": "Upgrade Frequency",
           "type": "string"
+        },
+        "windows-python-version": {
+          "anyOf": [
+            {
+              "enum": [
+                "3.6",
+                "3.7",
+                "3.8",
+                "3.9",
+                "3.10",
+                "3.11",
+                "3.12",
+                "3.13",
+                "3.14",
+                "3.15"
+              ],
+              "type": "string"
+            },
+            { "type": "null" }
+          ],
+          "default": null,
+          "description": "Opt into a Windows test job; requires a ComPWA/actions revision with Windows support.",
+          "title": "Windows Python Version"
         }
       },
       "additionalProperties": false

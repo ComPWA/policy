@@ -230,7 +230,7 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
     if not keys:
         return obj
     if isinstance(obj, list):
-        return [k for k in obj if k not in keys]  # ty:ignore[invalid-return-type]
+        return [k for k in obj if k not in keys]  # ty:ignore[invalid-explicit-return]
     if isinstance(obj, dict):
         if isinstance(keys, dict):
             new_dict = {}
@@ -245,10 +245,10 @@ def _remove_keys(obj: T, keys: RemovedKeys) -> T:
                 ):
                     continue
                 new_dict[key] = _remove_keys(value, keys.get(key, {}))
-            return new_dict  # ty:ignore[invalid-return-type]
+            return new_dict  # ty:ignore[invalid-explicit-return]
         if isinstance(keys, abc.Iterable) and not isinstance(keys, str):
             removed_keys = set(keys)
-            return {k: v for k, v in obj.items() if k not in removed_keys}  # ty:ignore[invalid-return-type]
+            return {k: v for k, v in obj.items() if k not in removed_keys}  # ty:ignore[invalid-explicit-return]
         msg = f"Invalid type for removed keys: {type(keys)}"
         raise TypeError(msg)
     return obj
@@ -291,9 +291,9 @@ def _update_dict_recursively(old: dict, new: dict, sort: bool = False) -> dict:
 
 def _determine_new_value(old: V, new: V, sort: bool = False) -> V:
     if isinstance(old, dict) and isinstance(new, dict):
-        return _update_dict_recursively(old, new, sort)  # ty:ignore[invalid-return-type]
+        return _update_dict_recursively(old, new, sort)  # ty:ignore[invalid-explicit-return]
     if isinstance(old, list) and isinstance(new, list):
-        return sorted({*old, *new})  # ty:ignore[invalid-return-type]
+        return sorted({*old, *new})  # ty:ignore[invalid-explicit-return]
     return new
 
 

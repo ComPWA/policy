@@ -71,6 +71,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         _to_list(args.ci_skipped_tests),
         repository,
         autofix_ci=args.autofix_ci,
+        windows_python_version=args.windows_python_version,
     )
     if args.autofix_ci and "autofix.ci.yml" not in keep:
         _update_autofix_workflow(
@@ -151,6 +152,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     repository: str,
     *,
     autofix_ci: bool,
+    windows_python_version: PythonVersion | None = None,
 ) -> None:
     def update() -> Changelog:
         precommit = session.precommit
@@ -167,6 +169,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             single_threaded,
             skip_tests,
             autofix_ci=autofix_ci,
+            windows_python_version=windows_python_version,
         )
         workflow_path = CONFIG_PATH.github_workflow_dir / "ci.yml"
         if not workflow_path.exists():
@@ -233,6 +236,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     skip_tests: list[str],
     *,
     autofix_ci: bool = False,
+    windows_python_version: PythonVersion | None = None,
 ) -> tuple[YAML, dict]:
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
@@ -245,6 +249,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
         skip_tests,
         macos_runner=macos_runner,
         ubuntu_runner=ubuntu_runner,
+        windows_python_version=windows_python_version,
     )
     __update_style_section(config, python_version, precommit, autofix_ci=autofix_ci)
     return yaml, config
@@ -348,6 +353,7 @@ def __update_pytest_section(
     *,
     macos_runner: MacosRunnerLabel | None,
     ubuntu_runner: UbuntuRunnerLabel | None,
+    windows_python_version: PythonVersion | None = None,
 ) -> None:
     test_dir = "tests"
     if not os.path.exists(test_dir):
@@ -358,12 +364,16 @@ def __update_pytest_section(
             with_section["coverage-python-version"] = DoubleQuotedScalarString(
                 __get_coverage_python_version()
             )
-        if macos_python_version is not None:
-            with_section["macos-python-version"] = DoubleQuotedScalarString(
-                macos_python_version
+        with_section.update({
+            f"{platform}-python-version": DoubleQuotedScalarString(version)
+            for platform, version in (
+                ("macos", macos_python_version),
+                ("windows", windows_python_version),
             )
-            if macos_runner:
-                with_section["macos-runner"] = macos_runner
+            if version is not None
+        })
+        if macos_python_version is not None and macos_runner:
+            with_section["macos-runner"] = macos_runner
         if ubuntu_runner:
             with_section["ubuntu-runner"] = ubuntu_runner
         if skip_tests:
@@ -390,7 +400,7 @@ def __update_with_section(config: dict, job_name: str) -> None:
 def __get_coverage_python_version() -> PythonVersion:
     python_version_file = Path(".python-version")
     if python_version_file.exists():
-        return python_version_file.read_text(encoding="utf-8").strip()  # ty:ignore[invalid-return-type]
+        return python_version_file.read_text(encoding="utf-8").strip()  # ty:ignore[invalid-explicit-return]
     return DEFAULT_DEV_PYTHON_VERSION
 
 
