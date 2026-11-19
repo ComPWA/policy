@@ -13,7 +13,7 @@ from compwa_policy.repo.upgrade import (
     get_julia_manifest_paths,
     get_julia_upgrade_command,
     get_uv_upgrade_script,
-    has_nested_uv_lock,
+    has_multiple_uv_locks,
     has_pluto_notebooks,
     migrate_precommit_style_command,
 )
@@ -431,7 +431,7 @@ def _set_upgrade_task(
 
 
 def _get_uv_upgrade_task() -> dict[str, Any]:
-    if not has_nested_uv_lock():
+    if not has_multiple_uv_locks():
         return {"cmd": "uv lock --upgrade"}
     script = get_uv_upgrade_script()
     return {

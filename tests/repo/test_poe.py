@@ -754,6 +754,30 @@ def describe_set_upgrade_task():
         assert task["imports"] == ["pathlib", "subprocess"]
         assert task["assert"] is True
 
+    def uses_expression_uv_upgrade_for_script_lock(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        git_init: Callable[[Path], None],
+        git_add: Callable[[Path], None],
+    ):
+        git_init(tmp_path)
+        (tmp_path / "uv.lock").touch()
+        scripts = tmp_path / "scripts"
+        scripts.mkdir()
+        (scripts / "bench.py").touch()
+        (scripts / "bench.py.lock").touch()
+        git_add(tmp_path)
+        monkeypatch.chdir(tmp_path)
+
+        pyproject_path = tmp_path / "pyproject.toml"
+        pyproject_path.write_text("[tool.poe.tasks]\n", encoding="utf-8", newline="\n")
+        with ModifiablePyproject.load(pyproject_path) as pyproject:
+            _set_upgrade_task(pyproject, package_manager="uv")
+
+        task = pyproject.get_table("tool.poe.tasks._upgrade-uv")
+        assert "cmd" not in task
+        assert "--script" in task["expr"]
+
     def is_idempotent_after_dumping_tombi_spaced_inline_tables(
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
