@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from compwa_policy.utilities.match import git_ls_files
+from compwa_policy.utilities.match import git_ls_files, is_committed
 
 _PRECOMMIT_RUN_PATTERN = re.compile(r"pre-commit run(\s+(--all-files|-a))?")
 
@@ -28,16 +28,18 @@ UV_UPGRADE_IMPORTS = ["pathlib", "subprocess"]
 UV_UPGRADE_EXPRESSION = """
 all([
     subprocess.run(
-        ["uv", "lock", "--upgrade", "--directory", str(pathlib.Path(file).parent)],
+        ["uv", "lock", "--upgrade", "--directory", str(path.parent)]
+        if path.name == "pyproject.toml"
+        else ["uv", "lock", "--upgrade", "--script", str(path.with_suffix(""))],
         check=False,
     ).returncode == 0
-    for file in subprocess.run(
+    for path in map(pathlib.Path, subprocess.run(
         ["git", "ls-files"],
         check=True,
         capture_output=True,
         text=True,
-    ).stdout.splitlines()
-    if pathlib.Path(file).name == "pyproject.toml"
+    ).stdout.splitlines())
+    if path.name == "pyproject.toml" or path.name.endswith(".py.lock")
 ])
 """
 
@@ -57,8 +59,14 @@ def migrate_precommit_style_command(cmd: str) -> str | None:
     return _PRECOMMIT_RUN_PATTERN.sub("prek run --all-files", cmd)
 
 
-def has_nested_uv_lock() -> bool:
-    return any(path != "uv.lock" for path in git_ls_files("uv.lock", "**/uv.lock"))
+def has_multiple_uv_locks() -> bool:
+    """Check whether ``uv lock --upgrade`` in the root misses tracked lock files.
+
+    That is the case for nested :file:`uv.lock` files and for lock files of scripts with
+    inline metadata (:file:`*.py.lock`).
+    """
+    nested_locks = git_ls_files("uv.lock", "**/uv.lock")
+    return any(path != "uv.lock" for path in nested_locks) or is_committed("*.py.lock")
 
 
 def get_uv_upgrade_script() -> str:
