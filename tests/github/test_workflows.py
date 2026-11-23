@@ -187,6 +187,7 @@ def describe_check():
             assert "macos-runner" not in test_inputs
         else:
             assert test_inputs["macos-runner"] == "macos-26"
+        assert cd["jobs"]["build"]["runs-on"] == "ubuntu-24.04"
         assert cd["jobs"]["pypi"]["runs-on"] == "ubuntu-24.04"
         assert not _run_main(
             run_check,
@@ -214,7 +215,9 @@ def describe_check():
         _run_main(run_check, no_pypi=True, no_milestones=True, no_version_branches=True)
         cd_path = workflows_repo / _WORKFLOW_DIR / "cd.yml"
         if cd_path.exists():
-            assert "pypi" not in cd_path.read_text()
+            cd = cd_path.read_text()
+            assert "pypi" not in cd
+            assert "build:" not in cd
 
     def configures_codecov(workflows_repo: Path, run_check):
         (workflows_repo / "codecov.yml").touch()
