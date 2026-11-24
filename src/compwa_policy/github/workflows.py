@@ -306,7 +306,7 @@ def __update_doc_section(
 def __add_readthedocs_upload_trigger(config: CommentedMap) -> None:
     """Run CI on tag pushes, so that tags and ``stable`` are uploaded too."""
     push = config["on"]["push"]
-    push["tags"] = ["*"]
+    push["tags"] = [DoubleQuotedScalarString("*")]
 
 
 def __update_style_section(
