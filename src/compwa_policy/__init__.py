@@ -75,6 +75,7 @@ class Arguments:
     package_manager: PackageManagerChoice
     pytest_single_threaded: bool
     python: bool | None
+    readthedocs_upload: bool
     repo_name: str
     repo_organization: str
     repo_title: str

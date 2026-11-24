@@ -212,6 +212,17 @@ GithubPages = Annotated[
     bool | None,
     typer.Option("--github-pages", help="Host documentation on GitHub Pages."),
 ]
+ReadthedocsUpload = Annotated[
+    bool | None,
+    typer.Option(
+        "--readthedocs-upload",
+        help=(
+            "Build the documentation in CI and upload it to Read the Docs. Requires"
+            " a READTHEDOCS_TOKEN secret and a Read the Docs project that accepts"
+            " uploads."
+        ),
+    ),
+]
 KeepPrLinting = Annotated[
     bool | None,
     typer.Option("--keep-pr-linting", help="Do not overwrite the PR linting workflow."),

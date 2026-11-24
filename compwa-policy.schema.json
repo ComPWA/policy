@@ -181,6 +181,12 @@
           "title": "No Version Branches",
           "type": "boolean"
         },
+        "readthedocs-upload": {
+          "default": false,
+          "description": "Upload the documentation built in CI to Read the Docs.",
+          "title": "Readthedocs Upload",
+          "type": "boolean"
+        },
         "release-name-template": {
           "default": "{{ REPO_TITLE }} $NEXT_PATCH_VERSION",
           "description": "Release title template supporting repository and Release Drafter variables.",

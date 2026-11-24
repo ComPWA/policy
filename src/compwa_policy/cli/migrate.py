@@ -80,6 +80,7 @@ GROUP_FLAGS: dict[str, tuple[str, ...]] = {
         "--no-milestones",
         "--no-pypi",
         "--no-version-branches",
+        "--readthedocs-upload",
         "--tag-prefix",
         "--ubuntu-runner",
         "--upgrade-frequency",
