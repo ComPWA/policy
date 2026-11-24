@@ -50,6 +50,7 @@ def _run_main(
     doc_apt_packages: list[str] | None = None,
     environment_variables: dict[str, str] | None = None,
     github_pages: bool = False,
+    readthedocs_upload: bool = False,
     keep_workflow: set[str] | None = None,
     macos_python_version: PythonVersion | None = None,
     macos_runner: MacosRunnerLabel | None = None,
@@ -75,6 +76,7 @@ def _run_main(
             doc_apt_packages=doc_apt_packages or [],
             environment_variables=environment_variables or {},
             github_pages=github_pages,
+            readthedocs_upload=readthedocs_upload,
             keep_pr_linting=False,
             keep_workflow=keep_workflow or set(),
             macos_python_version=macos_python_version,
@@ -169,6 +171,14 @@ def describe_check():
         ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
         assert "graphviz" in ci
         assert "PYTHONHASHSEED" in ci
+
+    def uploads_to_readthedocs(workflows_repo: Path, run_check):
+        _run_main(run_check, readthedocs_upload=True)
+        ci = (workflows_repo / _WORKFLOW_DIR / "ci.yml").read_text()
+        assert "readthedocs-upload: true" in ci
+        assert "readthedocs-token: ${{ secrets.READTHEDOCS_TOKEN }}" in ci
+        assert "gh-pages" not in ci
+        assert "tags:" in ci
 
     @pytest.mark.parametrize("macos_python_version", ["3.12", "disable"])
     def sets_runner_images(workflows_repo: Path, run_check, macos_python_version):

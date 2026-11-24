@@ -111,6 +111,7 @@ _SCOPED_OPTIONS: dict[str, frozenset[str]] = {
         "no_milestones",
         "no_pypi",
         "no_version_branches",
+        "readthedocs_upload",
         "release_name_template",
         "tag_prefix",
         "ubuntu_runner",
@@ -257,6 +258,8 @@ class Settings(BaseSettings):
     """Do not add the standard ComPWA GitHub Actions workflows."""
     github_pages: bool = False
     """Publish the documentation through GitHub Pages."""
+    readthedocs_upload: bool = False
+    """Upload the documentation built in CI to Read the Docs."""
     keep_pr_linting: bool = False
     """Do not overwrite the pull-request linting workflow."""
     macos_python_version: str = "3.11"

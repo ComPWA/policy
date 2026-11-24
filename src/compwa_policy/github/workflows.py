@@ -63,6 +63,7 @@ def check(session: Session, args: Arguments, ctx: CheckContext) -> None:
         ctx.doc_apt_packages,
         ctx.environment_variables,
         args.github_pages,
+        args.readthedocs_upload,
         args.macos_python_version,
         args.macos_runner,
         args.ubuntu_runner,
@@ -143,6 +144,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
     github_pages: bool,
+    readthedocs_upload: bool,
     macos_python_version: PythonVersion | None,
     macos_runner: MacosRunnerLabel | None,
     ubuntu_runner: UbuntuRunnerLabel | None,
@@ -162,6 +164,7 @@ def _update_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
             doc_apt_packages,
             environment_variables,
             github_pages,
+            readthedocs_upload,
             macos_python_version,
             macos_runner,
             ubuntu_runner,
@@ -228,6 +231,7 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     doc_apt_packages: list[str],
     environment_variables: dict[str, str],
     github_pages: bool,
+    readthedocs_upload: bool,
     macos_python_version: PythonVersion | None,
     macos_runner: MacosRunnerLabel | None,
     ubuntu_runner: UbuntuRunnerLabel | None,
@@ -241,7 +245,9 @@ def _get_ci_workflow(  # ruff: ignore[too-many-positional-arguments]
     yaml = create_prettier_round_trip_yaml()
     config = yaml.load(path)
     __update_env_section(config, environment_variables)
-    __update_doc_section(config, doc_apt_packages, python_version, github_pages)
+    __update_doc_section(
+        config, doc_apt_packages, python_version, github_pages, readthedocs_upload
+    )
     __update_pytest_section(
         config,
         macos_python_version,
@@ -272,6 +278,7 @@ def __update_doc_section(
     apt_packages: list[str],
     python_version: PythonVersion,
     github_pages: bool,
+    readthedocs_upload: bool,
 ) -> None:
     if has_documentation():
         with_section = {}
@@ -279,13 +286,27 @@ def __update_doc_section(
             with_section["python-version"] = DoubleQuotedScalarString(python_version)
         if apt_packages:
             with_section["apt-packages"] = " ".join(apt_packages)
-        if not CONFIG_PATH.readthedocs.exists() or github_pages:
+        hosted_on_readthedocs = CONFIG_PATH.readthedocs.exists() or readthedocs_upload
+        if not hosted_on_readthedocs or github_pages:
             with_section["gh-pages"] = True
+        if readthedocs_upload:
+            with_section["readthedocs-upload"] = True
+            __add_readthedocs_upload_trigger(config)
         if with_section:
             config["jobs"]["doc"]["with"] = with_section
         __update_with_section(config, job_name="doc")
+        if readthedocs_upload:
+            config["jobs"]["doc"]["secrets"] = {
+                "readthedocs-token": "${{ secrets.READTHEDOCS_TOKEN }}"
+            }
     else:
         del config["jobs"]["doc"]
+
+
+def __add_readthedocs_upload_trigger(config: CommentedMap) -> None:
+    """Run CI on tag pushes, so that tags and ``stable`` are uploaded too."""
+    push = config["on"]["push"]
+    push["tags"] = ["*"]
 
 
 def __update_style_section(
