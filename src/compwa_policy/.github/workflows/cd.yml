@@ -12,6 +12,14 @@ jobs:
     uses: ComPWA/actions/.github/workflows/close-milestone.yml@eadda724984c78a55a6acb4dcdbb2167fb5eba03 # v4.2.1
   package-name:
     uses: ComPWA/actions/.github/workflows/get-pypi-name.yml@eadda724984c78a55a6acb4dcdbb2167fb5eba03 # v4.2.1
+  build:
+    if: startsWith(github.ref, 'refs/tags')
+    name: Build distribution
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: ComPWA/actions/build-pypi-distribution@eadda724984c78a55a6acb4dcdbb2167fb5eba03 # v4.2.1
   pypi:
     environment:
       name: PyPI
@@ -19,12 +27,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags')
     name: Publish to PyPI
     needs:
+      - build
       - package-name
     permissions:
       id-token: write
     runs-on: ubuntu-26.04
     steps:
-      - uses: ComPWA/actions/build-pypi-distribution@eadda724984c78a55a6acb4dcdbb2167fb5eba03 # v4.2.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: artifact
+          path: dist/
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
   push:
     if: startsWith(github.ref, 'refs/tags') && !github.event.release.prerelease

@@ -103,6 +103,7 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
         if no_milestones:
             banned_jobs.add("milestone")
         if no_pypi or not has_pyproject_package_name(session):
+            banned_jobs.add("build")
             banned_jobs.add("package-name")
             banned_jobs.add("pypi")
         if no_version_branches:
@@ -111,8 +112,9 @@ def _update_cd_workflow(  # ruff: ignore[complex-structure]
             return remove_workflow("cd.yml")
         for name in banned_jobs:
             expected_data["jobs"].pop(name, None)
-        if ubuntu_runner and "pypi" in expected_data["jobs"]:
-            expected_data["jobs"]["pypi"]["runs-on"] = ubuntu_runner
+        runner_jobs = {"build", "pypi"} & set(expected_data["jobs"])
+        for name in runner_jobs if ubuntu_runner else ():
+            expected_data["jobs"][name]["runs-on"] = ubuntu_runner
         if not expected_data["jobs"]:
             return remove_workflow("cd.yml")
         if not workflow_path.exists():
